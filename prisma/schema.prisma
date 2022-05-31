@@ -1,0 +1,28 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Commission {
+  id              Int     @id @default(autoincrement())
+  commission_key  String  @unique
+  custodial       Boolean
+  amount          Int?
+
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+}
+
+model Project {
+  id            Int     @id @default(autoincrement())
+  contract_key  String  @unique
+  chain         String
+  name          String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+

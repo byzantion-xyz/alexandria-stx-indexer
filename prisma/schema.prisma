@@ -20,9 +20,14 @@ model Commission {
 model Project {
   id            Int     @id @default(autoincrement())
   contract_key  String  @unique
-  chain         String
+  chain         Chain
   name          String
+
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 }
 
+enum Chain {
+  Near
+  Stacks
+}

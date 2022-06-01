@@ -15,7 +15,7 @@ $ yarn install
 $ yarn start
 
 # watch mode
-$ yarnstart:dev
+$ yarn start:dev
 
 # production mode
 $ yarn start:prod

@@ -123,10 +123,11 @@ model NftMeta {
   token_id   Int
   rarity     Int?
   ranking    Int
-  burned     Boolean @default(false)
   asset_name String?
   grouping   String?
   spec       String?
+
+  attributes Json[]
 
   collection    Collection @relation(fields: [collection_id], references: [id])
   collection_id Int
@@ -141,7 +142,48 @@ model NftMeta {
   updated_at DateTime @updatedAt
 
   nft_meta_bns NftMetaBns?
+  nft_state    NftState?
   actions      Action[]
+}
+
+model NftState {
+  id Int @id @default(autoincrement())
+
+  burned Boolean @default(false)
+
+  minted  Boolean @default(false)
+  mint_tx String
+
+  listed            Boolean @default(false)
+  list_price        Int
+  list_seller       String
+  list_block_height Int
+  list_tx_index     Int
+  list_contract     String
+
+  asking              Boolean @default(false)
+  asking_price        Int
+  asking_block_height Int
+  asking_tx_index     Int
+  asking_seller       String
+
+  bid              Boolean @default(false)
+  bid_price        Int
+  bid_buyer        String
+  bid_contract     String
+  bid_block_height Int
+  bid_tx_index     Int
+
+  staked              Boolean @default(false)
+  staking_contract    String
+  staked_owner        String
+  staked_block_height Int
+  staked_tx_index     Int
+
+  meta    NftMeta @relation(fields: [meta_id], references: [id])
+  meta_id Int     @unique
+
+  updated_at DateTime @updatedAt
 }
 
 model NftMetaBns {

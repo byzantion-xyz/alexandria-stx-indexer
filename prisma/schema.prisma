@@ -9,13 +9,20 @@ datasource db {
 }
 
 model SmartContract {
-  id                    Int          @id @default(autoincrement())
-  contract_key          String       @unique
-  name                  String
-  scanned_transactions  Int          @default(0)
+  id                        Int                     @id @default(autoincrement())
+  contract_key              String                  @unique
+  name                      String
+  scanned_transactions      Int                     @default(0)
+  type                      String
 
-  created_at            DateTime     @default(now())
-  updated_at            DateTime     @updatedAt
+  chain                     Chain @relation(fields: [chain], references: [id])
+  chain_id                  Int
+
+  commission                Commission?
+  smart_contract_functions  SmartContractFunction[]
+
+  created_at                DateTime     @default(now())
+  updated_at                DateTime     @updatedAt
 }
 
 model SmartContractFunction {
@@ -26,19 +33,33 @@ model SmartContractFunction {
 
   smart_contract    SmartContract @relation(fields: [smart_contract_id], references: [id])
   smart_contract_id Int
+
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
 }
 
 model Commission {
+  id                        Int     @id @default(autoincrement())
+  commission_key            String  @unique
+  custodial                 Boolean
+  amount                    Int?
+
+  smart_contract            SmartContract @relation(fields: [smart_contract], references: [id])
+  smart_contract_id         Int
+
+  created_at                DateTime @default(now())
+  updated_at                DateTime @updatedAt
+}
+
+model Chain {
   id                Int     @id @default(autoincrement())
-  commission_key    String  @unique
-  custodial         Boolean
-  amount            Int?
+  name              String
 
-  smart_contract    SmartContract @relation(fields: [smart_contract], references: [id])
-  smart_contract_id Int
+  smart_contracts   SmartContract[]
+  nft_metas         NftMeta[]
 
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
 }
 
 model Collection {
@@ -54,26 +75,29 @@ model Collection {
   title           String?
   frozen          Boolean @default(false)
 
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
 
-  Meta       Meta[]
+  metas           Meta[]
 }
 
-model Meta {
-  id         Int     @id @default(autoincrement())
-  name       String
-  namespace  String?
-  image      String
-  token_id   Int
-  rarity     Int?
-  ranking    Int
-  burned     Boolean @default(false)
-  asset_name String?
-  grouping   String?
+model NftMeta {
+  id            Int     @id @default(autoincrement())
+  name          String
+  namespace     String?
+  image         String
+  token_id      Int
+  rarity        Int?
+  ranking       Int
+  burned        Boolean @default(false)
+  asset_name    String?
+  grouping      String?
 
   collection    Collection @relation(fields: [collection_id], references: [id])
   collection_id Int
+
+  chain         Chain @relation(fields: [chain_id], references: [id])
+  chain_id      Int
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
@@ -83,3 +107,4 @@ enum Chain {
   Near
   Stacks
 }
+

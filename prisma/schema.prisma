@@ -9,11 +9,11 @@ datasource db {
 }
 
 model SmartContract {
-  id                   Int    @id @default(autoincrement())
-  contract_key         String @unique
+  id                   Int               @id @default(autoincrement())
+  contract_key         String            @unique
   name                 String
-  scanned_transactions Int    @default(0)
-  type                 String
+  scanned_transactions Int               @default(0)
+  type                 SmartContractType
 
   chain    Chain @relation(fields: [chain_id], references: [id])
   chain_id Int
@@ -240,4 +240,12 @@ enum ActionName {
   list
   unlist
   buy
+}
+
+enum SmartContractType {
+  sip009
+  marketplace
+  staking
+  fungible_tokens
+  bridge
 }

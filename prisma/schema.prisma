@@ -99,9 +99,10 @@ model NftMeta {
   chain    Chain @relation(fields: [chain_id], references: [id])
   chain_id Int
 
-  created_at DateTime     @default(now())
-  updated_at DateTime     @updatedAt
-  NftMetaBns NftMetaBns[]
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  nft_meta_bns NftMetaBns?
 }
 
 model NftMetaBns {
@@ -110,5 +111,5 @@ model NftMetaBns {
   namespace String
 
   meta    NftMeta @relation(fields: [meta_id], references: [id])
-  meta_id Int
+  meta_id Int     @unique
 }

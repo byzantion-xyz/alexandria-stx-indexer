@@ -116,6 +116,7 @@ model CollectionBid {
 
 model NftMeta {
   id         Int     @id @default(autoincrement())
+  uuid       String  @default(uuid())
   name       String
   namespace  String?
   image      String

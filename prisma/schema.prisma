@@ -78,7 +78,7 @@ model Collection {
   created_at      DateTime @default(now())
   updated_at      DateTime @updatedAt
 
-  metas           Meta[]
+  metas           NftMeta[]
 }
 
 model NftMeta {
@@ -110,7 +110,7 @@ model NftMetaBns {
   name          String
   namespace     String
 
-  meta          Meta @relation(fields: [meta], references: [id])
+  meta          NftMeta @relation(fields: [meta], references: [id])
   meta_id       Int
 }
 

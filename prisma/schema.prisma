@@ -99,8 +99,19 @@ model NftMeta {
   chain         Chain @relation(fields: [chain_id], references: [id])
   chain_id      Int
 
+  nft_meta_bns  NftMetaBns
+
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
+}
+
+model NftMetaBns {
+  id            Int     @id @default(autoincrement())
+  name          String
+  namespace     String
+
+  meta          Meta @relation(fields: [meta], references: [id])
+  meta_id       Int
 }
 
 enum Chain {

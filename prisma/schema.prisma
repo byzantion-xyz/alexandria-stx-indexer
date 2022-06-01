@@ -5,69 +5,79 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+}
+
+model SmartContract {
+  id                    Int          @id @default(autoincrement())
+  contract_key          String       @unique
+  name                  String
+  scanned_transactions  Int          @default(0)
+
+  created_at            DateTime     @default(now())
+  updated_at            DateTime     @updatedAt
+}
+
+model SmartContractFunction {
+  id                Int     @id @default(autoincrement())
+  name              String
+  function_name     String
+  args              Json
+
+  smart_contract    SmartContract @relation(fields: [smart_contract_id], references: [id])
+  smart_contract_id Int
 }
 
 model Commission {
-  id               Int     @id @default(autoincrement())
-  commission_key   String  @unique
-  custodial        Boolean
-  amount           Int?
+  id                Int     @id @default(autoincrement())
+  commission_key    String  @unique
+  custodial         Boolean
+  amount            Int?
 
-  project          Project @relation(fields: [project_id], references: [id])
-  project_id
+  smart_contract    SmartContract @relation(fields: [smart_contract], references: [id])
+  smart_contract_id Int
 
-  created_at       DateTime @default(now())
-  updated_at       DateTime @updatedAt
-}
-
-model Project {
-  id              Int     @id @default(autoincrement())
-  contract_key    String  @unique
-  chain           Chain
-  name            String
-
-  created_at      DateTime @default(now())
-  updated_at      DateTime @updatedAt
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 }
 
 model Collection {
-  id              Int        @id @default(autoincrement())
+  id              Int     @id @default(autoincrement())
   asset_name      String
   collection_size Int?
   description     String?
   external_url    String?
-  volume          Int         @default(0)
-  floor           Int         @default(0)
+  volume          Int     @default(0)
+  floor           Int     @default(0)
   cover_image     String?
-  trending        Boolean     @default(false)
+  trending        Boolean @default(false)
   title           String?
-  frozen          Boolean     @default(false)
+  frozen          Boolean @default(false)
 
-  project         Project    @relation(fields: [project_id], references: [id])
-  project_id      Int
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
-  created_at      DateTime @default(now())
-  updated_at      DateTime @updatedAt
+  Meta       Meta[]
 }
 
 model Meta {
-  name            String
-  namespace       String 
-  image           String
-  token_id        Int
-  rarity          Int?
-  ranking         Int
-  burned          Boolean     @default(false)
-  asset_name      String?
-  grouping        String?
+  id         Int     @id @default(autoincrement())
+  name       String
+  namespace  String?
+  image      String
+  token_id   Int
+  rarity     Int?
+  ranking    Int
+  burned     Boolean @default(false)
+  asset_name String?
+  grouping   String?
 
-  collection      Collection  @relation(fields: [collection_id], references: [id])
-  collection_id   Int
+  collection    Collection @relation(fields: [collection_id], references: [id])
+  collection_id Int
 
-  created_at      DateTime @default(now())
-  updated_at      DateTime @updatedAt
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 }
-
 
 enum Chain {
   Near

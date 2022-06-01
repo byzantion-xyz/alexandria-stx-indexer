@@ -114,8 +114,3 @@ model NftMetaBns {
   meta_id       Int
 }
 
-enum Chain {
-  Near
-  Stacks
-}
-

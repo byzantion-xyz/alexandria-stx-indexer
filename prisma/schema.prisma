@@ -23,9 +23,33 @@ model Project {
   chain         Chain
   name          String
 
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
 }
+
+model Collection {
+  id              Int        @id @default(autoincrement())
+  asset_name      String
+  collection_size Int?
+  description     String?
+  external_url    String?
+  volume          Int         @default(0)
+  floor           Int         @default(0)
+  cover_image     String?
+  trending        Boolean     @default(false)
+  title           String?
+  frozen          Boolean     @default(false)
+
+  project         Project    @relation(fields: [project_id], references: [id])
+  project_id      Int
+
+  commission      Commission @relation(fields: [commission_id], references: [id])
+  commission_id
+
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+}
+
 
 enum Chain {
   Near

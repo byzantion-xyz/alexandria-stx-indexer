@@ -97,7 +97,7 @@ model CollectionBid {
   status             CollectionBidStatus @default(active)
 
   pending_txs String[]
-  pendin_txs  String
+  pending_tx  String
 
   tx_id        String
   block_height Int

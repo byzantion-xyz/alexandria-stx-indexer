@@ -22,9 +22,10 @@ model SmartContract {
   smart_contract_functions SmartContractFunction[]
   nft_metas                NftMeta[]
 
-  created_at    DateTime        @default(now())
-  updated_at    DateTime        @updatedAt
-  CollectionBid CollectionBid[]
+  created_at      DateTime        @default(now())
+  updated_at      DateTime        @updatedAt
+  collection_bids CollectionBid[]
+  actions         Action[]
 }
 
 model SmartContractFunction {
@@ -80,7 +81,8 @@ model Collection {
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
-  metas NftMeta[]
+  metas   NftMeta[]
+  actions Action[]
 }
 
 model CollectionBid {
@@ -123,6 +125,7 @@ model NftMeta {
   burned     Boolean @default(false)
   asset_name String?
   grouping   String?
+  spec       String?
 
   collection    Collection @relation(fields: [collection_id], references: [id])
   collection_id Int
@@ -137,6 +140,7 @@ model NftMeta {
   updated_at DateTime @updatedAt
 
   nft_meta_bns NftMetaBns?
+  actions      Action[]
 }
 
 model NftMetaBns {
@@ -146,6 +150,34 @@ model NftMetaBns {
 
   meta    NftMeta @relation(fields: [meta_id], references: [id])
   meta_id Int     @unique
+}
+
+model Action {
+  id            Int        @id @default(autoincrement())
+
+  action        ActionName
+  bid_attribute Json?
+  list_price    Int?
+  seller        String?
+  buyer         String?
+  bid_price     Int
+  block_height  Int
+  tx_index      Int
+  block_time    DateTime
+  tx_id         String
+  segment       Boolean    @default(false)
+  market_name   String?
+  nonce         Int?
+  units         Int?
+
+  smart_contract    SmartContract @relation(fields: [smart_contract_id], references: [id])
+  smart_contract_id Int
+
+  nft_meta    NftMeta @relation(fields: [nft_meta_id], references: [id])
+  nft_meta_id Int
+
+  collection    Collection @relation(fields: [collection_id], references: [id])
+  collection_id Int
 }
 
 enum CollectionBidStatus {
@@ -159,4 +191,10 @@ enum BidType {
   collection
   attribute
   solo
+}
+
+enum ActionName {
+  list
+  unlist
+  buy
 }

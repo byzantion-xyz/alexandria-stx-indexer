@@ -20,9 +20,11 @@ model SmartContract {
 
   commission               Commission?
   smart_contract_functions SmartContractFunction[]
+  nft_metas                NftMeta[]
 
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  created_at    DateTime        @default(now())
+  updated_at    DateTime        @updatedAt
+  CollectionBid CollectionBid[]
 }
 
 model SmartContractFunction {
@@ -81,6 +83,35 @@ model Collection {
   metas NftMeta[]
 }
 
+model CollectionBid {
+  id Int @id @default(autoincrement())
+
+  token_id      String
+  token_id_list String[]
+
+  nonce              Int
+  bid_contract_nonce String
+  bid_price          String
+  bid_buyer          String
+  bid_seller         String
+  status             CollectionBidStatus @default(active)
+
+  pending_txs String[]
+  pendin_txs  String
+
+  tx_id        String
+  block_height Int
+  match_tx_id  String
+  cancel_tx_id String
+  bid_type     BidType
+
+  smart_contract    SmartContract @relation(fields: [smart_contract_id], references: [id])
+  smart_contract_id Int
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
 model NftMeta {
   id         Int     @id @default(autoincrement())
   name       String
@@ -99,6 +130,9 @@ model NftMeta {
   chain    Chain @relation(fields: [chain_id], references: [id])
   chain_id Int
 
+  smart_contract    SmartContract @relation(fields: [smart_contract_id], references: [id])
+  smart_contract_id Int
+
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
@@ -112,4 +146,17 @@ model NftMetaBns {
 
   meta    NftMeta @relation(fields: [meta_id], references: [id])
   meta_id Int     @unique
+}
+
+enum CollectionBidStatus {
+  active
+  pending
+  cancelled
+  matched
+}
+
+enum BidType {
+  collection
+  attribute
+  solo
 }

@@ -165,7 +165,7 @@ model NftMeta {
   chain_id String @db.Uuid
 
   smart_contract    SmartContract @relation(fields: [smart_contract_id], references: [id])
-  smart_contract_id String
+  smart_contract_id String @db.Uuid
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt

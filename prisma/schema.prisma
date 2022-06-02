@@ -26,6 +26,8 @@ model SmartContract {
   updated_at      DateTime        @updatedAt
   collection_bids CollectionBid[]
   actions         Action[]
+
+  @@map("smart_contract")
 }
 
 model SmartContractFunction {

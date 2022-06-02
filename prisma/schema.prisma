@@ -37,7 +37,7 @@ model SmartContractFunction {
   args          Json
 
   smart_contract    SmartContract @relation(fields: [smart_contract_id], references: [id])
-  smart_contract_id String @db.Uuid
+  smart_contract_id String        @db.Uuid
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
@@ -91,7 +91,7 @@ model Collection {
 
   metas      NftMeta[]
   actions    Action[]
-  attributes CollectionAttribute?
+  attributes CollectionAttribute[]
 
   @@map("collection")
 }
@@ -99,10 +99,13 @@ model Collection {
 model CollectionAttribute {
   id String @id @default(uuid()) @db.Uuid
 
-  meta Json
+  name   String
+  value  String
+  rarity Int
+  total  Int
 
   collection    Collection @relation(fields: [collection_id], references: [id])
-  collection_id String     @unique @db.Uuid
+  collection_id String     @db.Uuid
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
@@ -133,7 +136,7 @@ model CollectionBid {
   bid_type     BidType
 
   smart_contract    SmartContract @relation(fields: [smart_contract_id], references: [id])
-  smart_contract_id String @db.Uuid
+  smart_contract_id String        @db.Uuid
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
@@ -158,7 +161,7 @@ model NftMeta {
   attributes Json[]
 
   collection    Collection @relation(fields: [collection_id], references: [id])
-  collection_id String @db.Uuid
+  collection_id String     @db.Uuid
 
   chain    Chain  @relation(fields: [chain_id], references: [id])
   chain_id String @db.Uuid
@@ -248,13 +251,13 @@ model Action {
   units         Int?
 
   smart_contract    SmartContract? @relation(fields: [smart_contract_id], references: [id])
-  smart_contract_id String? @db.Uuid
+  smart_contract_id String?        @db.Uuid
 
   nft_meta    NftMeta? @relation(fields: [nft_meta_id], references: [id])
-  nft_meta_id String? @db.Uuid
+  nft_meta_id String?  @db.Uuid
 
   collection    Collection? @relation(fields: [collection_id], references: [id])
-  collection_id String? @db.Uuid
+  collection_id String?     @db.Uuid
 
   @@map("action")
 }

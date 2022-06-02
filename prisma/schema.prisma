@@ -158,8 +158,6 @@ model NftMeta {
   grouping   String?
   spec       String?
 
-  attributes Json[]
-
   collection    Collection @relation(fields: [collection_id], references: [id])
   collection_id String     @db.Uuid
 
@@ -175,8 +173,26 @@ model NftMeta {
   nft_meta_bns NftMetaBns?
   nft_state    NftState?
   actions      Action[]
+  attributes   NftMetaAttribute[]
 
   @@map("nft_meta")
+}
+
+model NftMetaAttribute {
+  id String @id @default(uuid()) @db.Uuid
+
+  trait_type  String
+  trait_group String?
+  value       String?
+  rarity      Int     @default(0)
+  sequence    String
+  score       Int     @default(0)
+
+  meta    NftMeta @relation(fields: [meta_id], references: [id])
+  meta_id String  @unique @db.Uuid
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 }
 
 model NftState {

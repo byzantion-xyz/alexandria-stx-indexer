@@ -41,6 +41,8 @@ model SmartContractFunction {
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
+
+  @@map("smart_contract_function")
 }
 
 model Commission {
@@ -54,6 +56,8 @@ model Commission {
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
+
+  @@map("commission")
 }
 
 model Chain {
@@ -65,6 +69,8 @@ model Chain {
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
+
+  @@map("chain")
 }
 
 model Collection {
@@ -86,6 +92,8 @@ model Collection {
   metas      NftMeta[]
   actions    Action[]
   attributes CollectionAttribute?
+
+  @@map("collection")
 }
 
 model CollectionAttribute {
@@ -98,6 +106,8 @@ model CollectionAttribute {
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
+
+  @@map("collection_attribute")
 }
 
 model CollectionBid {
@@ -127,6 +137,8 @@ model CollectionBid {
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
+
+  @@map("collection_bid")
 }
 
 model NftMeta {
@@ -159,6 +171,8 @@ model NftMeta {
   nft_meta_bns NftMetaBns?
   nft_state    NftState?
   actions      Action[]
+
+  @@map("nft_meta")
 }
 
 model NftState {
@@ -199,6 +213,8 @@ model NftState {
   meta_id Int     @unique
 
   updated_at DateTime @updatedAt
+
+  @@map("nft_state")
 }
 
 model NftMetaBns {
@@ -208,6 +224,8 @@ model NftMetaBns {
 
   meta    NftMeta @relation(fields: [meta_id], references: [id])
   meta_id Int     @unique
+
+  @@map("nft_meta_bns")
 }
 
 model Action {
@@ -236,6 +254,8 @@ model Action {
 
   collection    Collection? @relation(fields: [collection_id], references: [id])
   collection_id Int?
+
+  @@map("action")
 }
 
 enum CollectionBidStatus {

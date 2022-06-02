@@ -9,14 +9,14 @@ datasource db {
 }
 
 model SmartContract {
-  id                   Int               @id @default(autoincrement())
+  id                   String            @id @default(uuid()) @db.Uuid
   contract_key         String            @unique
   name                 String
   scanned_transactions Int               @default(0)
   type                 SmartContractType
 
-  chain    Chain @relation(fields: [chain_id], references: [id])
-  chain_id Int
+  chain    Chain  @relation(fields: [chain_id], references: [id])
+  chain_id String
 
   commission               Commission?
   smart_contract_functions SmartContractFunction[]
@@ -31,13 +31,13 @@ model SmartContract {
 }
 
 model SmartContractFunction {
-  id            Int    @id @default(autoincrement())
+  id            String @id @default(uuid()) @db.Uuid
   name          String
   function_name String
   args          Json
 
   smart_contract    SmartContract @relation(fields: [smart_contract_id], references: [id])
-  smart_contract_id Int
+  smart_contract_id String
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
@@ -46,13 +46,13 @@ model SmartContractFunction {
 }
 
 model Commission {
-  id             Int     @id @default(autoincrement())
+  id             String  @id @default(uuid()) @db.Uuid
   commission_key String  @unique
   custodial      Boolean
   amount         Int?
 
   smart_contract    SmartContract @relation(fields: [smart_contract_id], references: [id])
-  smart_contract_id Int           @unique
+  smart_contract_id String        @unique
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
@@ -61,7 +61,7 @@ model Commission {
 }
 
 model Chain {
-  id   Int    @id @default(autoincrement())
+  id   String @id @default(uuid()) @db.Uuid
   name String
 
   smart_contracts SmartContract[]
@@ -74,7 +74,7 @@ model Chain {
 }
 
 model Collection {
-  id              Int     @id @default(autoincrement())
+  id              String  @id @default(uuid()) @db.Uuid
   asset_name      String
   collection_size Int?
   description     String?
@@ -97,12 +97,12 @@ model Collection {
 }
 
 model CollectionAttribute {
-  id Int @id @default(autoincrement())
+  id String @id @default(uuid()) @db.Uuid
 
   meta Json
 
   collection    Collection @relation(fields: [collection_id], references: [id])
-  collection_id Int        @unique
+  collection_id String     @unique
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
@@ -111,7 +111,7 @@ model CollectionAttribute {
 }
 
 model CollectionBid {
-  id Int @id @default(autoincrement())
+  id String @id @default(uuid()) @db.Uuid
 
   token_id      String
   token_id_list String[]
@@ -133,7 +133,7 @@ model CollectionBid {
   bid_type     BidType
 
   smart_contract    SmartContract @relation(fields: [smart_contract_id], references: [id])
-  smart_contract_id Int
+  smart_contract_id String
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
@@ -142,7 +142,8 @@ model CollectionBid {
 }
 
 model NftMeta {
-  id         Int     @id @default(autoincrement())
+  id String @id @default(uuid()) @db.Uuid
+
   uuid       String  @default(uuid())
   name       String
   namespace  String?
@@ -157,13 +158,13 @@ model NftMeta {
   attributes Json[]
 
   collection    Collection @relation(fields: [collection_id], references: [id])
-  collection_id Int
+  collection_id String
 
-  chain    Chain @relation(fields: [chain_id], references: [id])
-  chain_id Int
+  chain    Chain  @relation(fields: [chain_id], references: [id])
+  chain_id String
 
   smart_contract    SmartContract @relation(fields: [smart_contract_id], references: [id])
-  smart_contract_id Int
+  smart_contract_id String
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
@@ -176,7 +177,7 @@ model NftMeta {
 }
 
 model NftState {
-  id Int @id @default(autoincrement())
+  id String @id @default(uuid()) @db.Uuid
 
   burned Boolean @default(false)
 
@@ -210,7 +211,7 @@ model NftState {
   staked_tx_index     Int
 
   meta    NftMeta @relation(fields: [meta_id], references: [id])
-  meta_id Int     @unique
+  meta_id String  @unique
 
   updated_at DateTime @updatedAt
 
@@ -218,18 +219,18 @@ model NftState {
 }
 
 model NftMetaBns {
-  id        Int    @id @default(autoincrement())
+  id        String @id @default(uuid()) @db.Uuid
   name      String
   namespace String
 
   meta    NftMeta @relation(fields: [meta_id], references: [id])
-  meta_id Int     @unique
+  meta_id String  @unique
 
   @@map("nft_meta_bns")
 }
 
 model Action {
-  id Int @id @default(autoincrement())
+  id String @id @default(uuid()) @db.Uuid
 
   action        ActionName
   bid_attribute Json?
@@ -247,13 +248,13 @@ model Action {
   units         Int?
 
   smart_contract    SmartContract? @relation(fields: [smart_contract_id], references: [id])
-  smart_contract_id Int?
+  smart_contract_id String?
 
   nft_meta    NftMeta? @relation(fields: [nft_meta_id], references: [id])
-  nft_meta_id Int?
+  nft_meta_id String?
 
   collection    Collection? @relation(fields: [collection_id], references: [id])
-  collection_id Int?
+  collection_id String?
 
   @@map("action")
 }

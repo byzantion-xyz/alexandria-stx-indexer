@@ -81,8 +81,21 @@ model Collection {
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
-  metas   NftMeta[]
-  actions Action[]
+  metas      NftMeta[]
+  actions    Action[]
+  attributes CollectionAttribute?
+}
+
+model CollectionAttribute {
+  id Int @id @default(autoincrement())
+
+  meta Json
+
+  collection    Collection @relation(fields: [collection_id], references: [id])
+  collection_id Int        @unique
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 }
 
 model CollectionBid {

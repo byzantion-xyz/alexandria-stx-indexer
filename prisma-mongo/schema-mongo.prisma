@@ -1,0 +1,179 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/@internal/prisma/client"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("NEAR_STREAMER_DATABASE_URL")
+}
+
+type ReceiptsExecutionOutcome {
+  block_hash String
+  id         String
+  outcome    ReceiptsExecutionOutcomeOutcome
+  proof      ReceiptsExecutionOutcomeProof[]
+}
+
+type ReceiptsExecutionOutcomeOutcome {
+  executor_id  String
+  gas_burnt    BigInt
+  logs         String[]
+  metadata     ReceiptsExecutionOutcomeOutcomeMetadata
+  receipt_ids  String[]
+  status       ReceiptsExecutionOutcomeOutcomeStatus
+  tokens_burnt String
+}
+
+type ReceiptsExecutionOutcomeOutcomeMetadata {
+  gas_profile ReceiptsExecutionOutcomeOutcomeMetadataGasProfile[]
+  version     BigInt
+}
+
+type ReceiptsExecutionOutcomeOutcomeMetadataGasProfile {
+  cost          String
+  cost_category String
+  gas_used      String
+}
+
+type ReceiptsExecutionOutcomeOutcomeStatus {
+  Failure      ReceiptsExecutionOutcomeOutcomeStatusFailure?
+  SuccessValue String?
+}
+
+type ReceiptsExecutionOutcomeOutcomeStatusFailure {
+  ActionError ReceiptsExecutionOutcomeOutcomeStatusFailureActionError
+}
+
+type ReceiptsExecutionOutcomeOutcomeStatusFailureActionError {
+  index BigInt
+  kind  ReceiptsExecutionOutcomeOutcomeStatusFailureActionErrorKind
+}
+
+type ReceiptsExecutionOutcomeOutcomeStatusFailureActionErrorKind {
+  FunctionCallError ReceiptsExecutionOutcomeOutcomeStatusFailureActionErrorKindFunctionCallError
+}
+
+type ReceiptsExecutionOutcomeOutcomeStatusFailureActionErrorKindFunctionCallError {
+  ExecutionError String
+}
+
+type ReceiptsExecutionOutcomeProof {
+  direction String
+  hash      String
+}
+
+type ReceiptsReceipt {
+  predecessor_id String
+  receipt        ReceiptsReceiptReceipt
+  receipt_id     String
+  receiver_id    String
+}
+
+type ReceiptsReceiptReceipt {
+  Action ReceiptsReceiptReceiptAction
+}
+
+type ReceiptsReceiptReceiptAction {
+  actions               ReceiptsReceiptReceiptActionActions[]
+  gas_price             String
+  /// Could not determine type: the field only had null or empty values in the sample set.
+  input_data_ids        Json?
+  /// Could not determine type: the field only had null or empty values in the sample set.
+  output_data_receivers Json?
+  signer_id             String
+  signer_public_key     String
+}
+
+type ReceiptsReceiptReceiptActionActions {
+  FunctionCall ReceiptsReceiptReceiptActionActionsFunctionCall
+}
+
+type ReceiptsReceiptReceiptActionActionsFunctionCall {
+  args        String
+  deposit     String
+  gas         BigInt
+  method_name String
+}
+
+type TransactionsOutcome {
+  execution_outcome TransactionsOutcomeExecutionOutcome
+  /// Could not determine type: the field only had null or empty values in the sample set.
+  receipt           Json?
+}
+
+type TransactionsOutcomeExecutionOutcome {
+  block_hash String
+  id         String
+  outcome    TransactionsOutcomeExecutionOutcomeOutcome
+  proof      TransactionsOutcomeExecutionOutcomeProof[]
+}
+
+type TransactionsOutcomeExecutionOutcomeOutcome {
+  executor_id  String
+  gas_burnt    BigInt
+  /// Could not determine type: the field only had null or empty values in the sample set.
+  logs         Json?
+  metadata     TransactionsOutcomeExecutionOutcomeOutcomeMetadata
+  receipt_ids  String[]
+  status       TransactionsOutcomeExecutionOutcomeOutcomeStatus
+  tokens_burnt String
+}
+
+type TransactionsOutcomeExecutionOutcomeOutcomeMetadata {
+  /// Could not determine type: the field only had null or empty values in the sample set.
+  gas_profile Json?
+  version     BigInt
+}
+
+type TransactionsOutcomeExecutionOutcomeOutcomeStatus {
+  SuccessReceiptId String
+}
+
+type TransactionsOutcomeExecutionOutcomeProof {
+  direction String
+  hash      String
+}
+
+type TransactionsTransaction {
+  actions     TransactionsTransactionActions[]
+  hash        String
+  nonce       BigInt
+  public_key  String
+  receiver_id String
+  signature   String
+  signer_id   String
+}
+
+type TransactionsTransactionActions {
+  FunctionCall TransactionsTransactionActionsFunctionCall
+}
+
+type TransactionsTransactionActionsFunctionCall {
+  args        String
+  deposit     String
+  gas         BigInt
+  method_name String
+}
+
+model blocks {
+  id           String @id @default(auto()) @map("_id") @db.ObjectId
+  block_height BigInt @unique(map: "block_height_1")
+  hash         String
+}
+
+model receipts {
+  id                String                   @id @default(auto()) @map("_id") @db.ObjectId
+  execution_outcome ReceiptsExecutionOutcome
+  receipt           ReceiptsReceipt
+
+  @@unique([receipt.receipt_id], map: "receipt.receipt_id_1")
+}
+
+model transactions {
+  id          String                  @id @default(auto()) @map("_id") @db.ObjectId
+  outcome     TransactionsOutcome
+  transaction TransactionsTransaction
+
+  @@unique([transaction.hash], map: "transaction.hash_1")
+}

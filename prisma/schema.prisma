@@ -63,7 +63,7 @@ model Commission {
 model Chain {
   id   String @id @default(uuid()) @db.Uuid
   name String
-  symbol String
+  symbol String @unique
   coin String?
 
   smart_contracts SmartContract[]

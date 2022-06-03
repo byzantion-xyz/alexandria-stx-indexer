@@ -42,6 +42,8 @@ model SmartContractFunction {
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
+  @@unique([function_name, smart_contract_id])
+
   @@map("smart_contract_function")
 }
 

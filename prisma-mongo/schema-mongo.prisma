@@ -156,24 +156,29 @@ type TransactionsTransactionActionsFunctionCall {
   method_name String
 }
 
-model blocks {
+model Block {
   id           String @id @default(auto()) @map("_id") @db.ObjectId
   block_height BigInt @unique(map: "block_height_1")
   hash         String
+
+  @@map("blocks")
 }
 
-model receipts {
+model Receipt {
   id                String                   @id @default(auto()) @map("_id") @db.ObjectId
   execution_outcome ReceiptsExecutionOutcome
   receipt           ReceiptsReceipt
 
   @@unique([receipt.receipt_id], map: "receipt.receipt_id_1")
+  @@map("receipts")
+
 }
 
-model transactions {
+model Transaction {
   id          String                  @id @default(auto()) @map("_id") @db.ObjectId
   outcome     TransactionsOutcome
   transaction TransactionsTransaction
 
   @@unique([transaction.hash], map: "transaction.hash_1")
+  @@map("transactions")
 }

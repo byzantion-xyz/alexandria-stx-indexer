@@ -179,6 +179,8 @@ model NftMeta {
   actions      Action[]
   attributes   NftMetaAttribute[]
 
+  @@unique([smart_contract_id, token_id])
+
   @@map("nft_meta")
 }
 

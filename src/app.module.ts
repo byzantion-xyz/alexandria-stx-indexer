@@ -7,6 +7,7 @@ import { PrismaService } from './prisma.service'
 
 import { MongooseModule } from '@nestjs/mongoose';
 import { IndexersModule } from './indexers/indexers.module';
+import { ScrapersModule } from './scrapers/scrapers.module';
 
 @Module({
   imports: [
@@ -20,7 +21,8 @@ import { IndexersModule } from './indexers/indexers.module';
       connectionName: 'near-streamer',
       inject: [ConfigService]
     }),
-    IndexersModule
+    IndexersModule,
+    ScrapersModule
   ],
   controllers: [
     AppController

@@ -21,33 +21,33 @@ export class NearIndexerService {
   async runIndexer() {
     this.logger.debug('Initialize');
 
-    let finder = { where: { contract_key: 'marketplace.paras.near' }};
-
     const transactions: Transaction[] = await this.prismaMongoService.transaction.findMany();
     this.logger.debug('Processing %d transactions', transactions.length);
 
     for (let transaction of transactions) {
-      let finder = { where: { 
-        contract_key: transaction.transaction.receiver_id, 
-        type: SmartContractType.marketplace
-      }};
-      const smart_contract = await this.prismaService.smartContract.findFirst(finder);
-
       let method_name = transaction.transaction.actions[0].FunctionCall.method_name;
 
-      switch (method_name) {
-        case 'buy': this.buyTransaction.process(transaction);
-          break;
+      let finder = {
+        where: { contract_key: transaction.transaction.receiver_id },
+        include: { smart_contract_functions: true }
+      };
+      const smart_contract = await this.prismaService.smartContract.findUnique(finder);
 
-        case 'list': this.listingTransaction.process(transaction);
-          break;
+      let smart_contract_function = smart_contract.smart_contract_functions.find(f => f.function_name === method_name);
 
-        default: this.logger.debug(`Transaction method_name: ${method_name} not processed `);
-      }
-      
+      const result = await this.getTxHandler(smart_contract_function.function_name)
+        .process(transaction, smart_contract, smart_contract_function);
     }
 
     this.logger.debug('Completed');
+  }
+
+  getTxHandler(name: string) {
+    switch (name) {
+      case 'buy': return this.buyTransaction;
+      case 'list': return this.listingTransaction;
+      default: throw new Error(`No service defined for the context: ${name}`);
+    }
   }
 
 }

@@ -42,6 +42,8 @@ model SmartContractFunction {
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
+  @@unique([function_name, smart_contract_id])
+
   @@map("smart_contract_function")
 }
 
@@ -63,6 +65,8 @@ model Commission {
 model Chain {
   id   String @id @default(uuid()) @db.Uuid
   name String
+  symbol String @unique
+  coin String?
 
   smart_contracts SmartContract[]
   nft_metas       NftMeta[]
@@ -121,7 +125,7 @@ model CollectionBid {
 
   nonce              Int
   bid_contract_nonce String
-  bid_price          String
+  bid_price          BigInt
   bid_buyer          String
   bid_seller         String
   status             CollectionBidStatus @default(active)
@@ -175,6 +179,8 @@ model NftMeta {
   actions      Action[]
   attributes   NftMetaAttribute[]
 
+  @@unique([smart_contract_id, token_id])
+
   @@map("nft_meta")
 }
 
@@ -206,20 +212,20 @@ model NftState {
   mint_tx String
 
   listed            Boolean @default(false)
-  list_price        Int
+  list_price        BigInt
   list_seller       String
   list_block_height Int
   list_tx_index     Int
   list_contract     String
 
   asking              Boolean @default(false)
-  asking_price        Int
+  asking_price        BigInt
   asking_block_height Int
   asking_tx_index     Int
   asking_seller       String
 
   bid              Boolean @default(false)
-  bid_price        Int
+  bid_price        BigInt
   bid_buyer        String
   bid_contract     String
   bid_block_height Int
@@ -255,10 +261,10 @@ model Action {
 
   action        ActionName
   bid_attribute Json?
-  list_price    Int?
+  list_price    BigInt?
   seller        String?
   buyer         String?
-  bid_price     Int
+  bid_price     BigInt?
   block_height  Int
   tx_index      Int
   block_time    DateTime

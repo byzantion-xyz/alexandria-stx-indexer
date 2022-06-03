@@ -1,13 +1,10 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { PrismaService } from './prisma.service'
-
-import { MongooseModule } from '@nestjs/mongoose';
 import { IndexersModule } from './indexers/indexers.module';
 import { ScrapersModule } from './scrapers/scrapers.module';
+import { MongooseModule } from '@nestjs/mongoose';
 
 @Module({
   imports: [
@@ -28,8 +25,7 @@ import { ScrapersModule } from './scrapers/scrapers.module';
     AppController
   ],
   providers: [
-    AppService,
-    PrismaService
+    AppService
   ],
 })
 export class AppModule {}

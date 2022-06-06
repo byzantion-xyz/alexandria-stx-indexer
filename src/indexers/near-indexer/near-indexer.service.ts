@@ -22,13 +22,22 @@ export class NearIndexerService {
   async runIndexer() {
     this.logger.debug('Initialize');
 
-    const transactions: Transaction[] = await this.prismaMongoService.transaction.findMany();
+    const transactions: Transaction[] = await this.prismaMongoService.transaction.findMany({
+      where: {
+        processed: false,
+        missing: false
+      },
+      orderBy: [{ transaction: { nonce: 'asc' }}],
+    });
+    
     this.logger.debug('Processing %d transactions', transactions.length);
 
     for (let transaction of transactions) {
-      let block: Block = await this.prismaMongoService.block.findFirst({ where: { 
-        hash: transaction.outcome.execution_outcome.block_hash 
-      }});
+      let block: Block = await this.prismaMongoService.block.findFirst({
+        where: {
+          hash: transaction.outcome.execution_outcome.block_hash
+        }
+      });
 
       let method_name = transaction.transaction.actions[0].FunctionCall.method_name;
 
@@ -44,15 +53,15 @@ export class NearIndexerService {
       const result: TxProcessResult = await txHandler.process(transaction, block, smart_contract, smart_contract_function);
 
       if (result.processed || result.missing) {
-          this.prismaMongoService.transaction.update({
-            where: { id: transaction.id },
-            data: { 
-              missing: false,
-              processed: false
-            }
-          });
+        this.prismaMongoService.transaction.update({
+          where: { id: transaction.id },
+          data: {
+            missing: false,
+            processed: false
+          }
+        });
       }
-      
+
     }
 
     this.logger.debug('Completed');

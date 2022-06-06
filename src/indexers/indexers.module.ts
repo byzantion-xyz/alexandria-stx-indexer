@@ -5,6 +5,7 @@ import { NearIndexerController } from './near-indexer/near-indexer.controller';
 import { NearIndexerService } from './near-indexer/near-indexer.service';
 import { BuyTransactionService } from './near-indexer/buy-transaction/buy-transaction.service';
 import { ListingTransactionService } from './near-indexer/listing-transaction/listing-transaction.service';
+import { TxHelperService } from './near-indexer/helpers/tx-helper/tx-helper.service';
 
 @Module({
   controllers: [NearIndexerController],
@@ -14,6 +15,7 @@ import { ListingTransactionService } from './near-indexer/listing-transaction/li
     PrismaMongoService,
     BuyTransactionService,
     ListingTransactionService,
+    TxHelperService,
   ]
 })
 export class IndexersModule {}

@@ -157,7 +157,7 @@ model NftMeta {
   name       String
   namespace  String?
   image      String
-  token_id   Int
+  token_id   String
   rarity     Int?
   ranking    Int
   asset_name String?

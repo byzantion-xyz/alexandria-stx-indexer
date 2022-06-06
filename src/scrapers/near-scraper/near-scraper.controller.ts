@@ -11,9 +11,9 @@ export class NearScraperController {
 
   @Post('collection')
   async loadCollectionFromChain(
-    @Body() data: { contract_key, asset_name, artist, slug, external_url }
+    @Body() data: { contract_key }
   ) {
-    const hello = this.nearScraper.loadCollectionFromChain(data);
+    const hello = this.nearScraper.scrape(data);
 
     return hello;
   }

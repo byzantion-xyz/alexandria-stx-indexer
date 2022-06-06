@@ -224,7 +224,7 @@ model NftState {
   asking              Boolean @default(false)
   asking_price        BigInt
   asking_block_height BigInt
-  asking_tx_index     Int
+  asking_tx_index     BigInt
   asking_seller       String
 
   bid              Boolean @default(false)
@@ -232,13 +232,13 @@ model NftState {
   bid_buyer        String
   bid_contract     String
   bid_block_height BigInt
-  bid_tx_index     Int
+  bid_tx_index     BigInt
 
   staked              Boolean @default(false)
   staking_contract    String
   staked_owner        String
   staked_block_height BigInt
-  staked_tx_index     Int
+  staked_tx_index     BigInt
 
   meta    NftMeta @relation(fields: [meta_id], references: [id])
   meta_id String  @unique @db.Uuid
@@ -269,7 +269,7 @@ model Action {
   buyer         String?
   bid_price     BigInt?
   block_height  BigInt
-  tx_index      Int
+  tx_index      BigInt
   block_time    DateTime
   tx_id         String
   segment       Boolean    @default(false)

@@ -36,16 +36,15 @@ export class NearScraperService {
     this.logger.debug('start scrape');
     const { contract_key } = data
 
-    const { tokenMetas, nftContractMetadata } = await this.getContractAndTokenMetaData(contract_key);
+    const { tokenMetas, nftContractMetadata, collectionSize } = await this.getContractAndTokenMetaData(contract_key);
 
     if (!tokenMetas) return {
       msg: `No tokens found for contract ${contract_key}`
     };
 
-    await this.loadSmartContract(contract_key, nftContractMetadata)
-    //await this.loadCollection(tokenMetas, nftContractMetadata)
+    //await this.loadSmartContract(contract_key, nftContractMetadata)
+    const byzCollection = await this.loadCollection(tokenMetas, nftContractMetadata, contract_key, collectionSize)
     //await this.loadNftMetas()
-
     return "Success"
   }
 
@@ -67,40 +66,37 @@ export class NearScraperService {
     return createSmartCollection
   }
 
-  // async loadCollection(tokenMetas, nftContractMetadata) {
-  //   this.logger.debug('loadCollection');
+  async loadCollection(tokenMetas, nftContractMetadata, contract_key, collectionSize) {
+    this.logger.debug('loadCollection');
 
-  //   // get first token meta for some collection table info
-  //   const firstTokenMeta = tokenMetas[0]
+    // get first token data for the collection record data
+    const firstTokenMeta = tokenMetas[0]
+    const firstTokenIpfsUrl = this.getTokenIpfsUrl(nftContractMetadata.base_uri, firstTokenMeta.metadata.reference);
+    const firstTokenIpfsImageUrl = this.getTokenIpfsMediaUrl(nftContractMetadata.base_uri, firstTokenMeta.metadata.media)
+    const { data: tokenIpfsMeta } = await axios.get(firstTokenIpfsUrl);
 
-  //   const firstTokenIpfsUrl = this.getTokenIpfsUrl(nftContractMetadata.base_uri, firstTokenMeta.metadata.reference);
-  //   const firstTokenIpfsImageUrl = this.getTokenIpfsMediaUrl(nftContractMetadata.base_uri, firstTokenMeta.metadata.media)
-  //   const { data: tokenIpfsMeta } = await axios.get(firstTokenIpfsUrl);
+    // // Look to see if collection exists
+    // let byzCollection = this.prismaService.collection.findUnique({
+    //   where: { contract_key: contract_key }
+    // });
+    let byzCollection = null
 
-  //   // // Look to see if collection exists
-  //   // let byzCollection = await Collection.findOne({ contract_key });
- 
-  //   let byzCollection = this.prismaService.collection.findUnique({
-  //     where: { contract_key: contract_key }
-  //   });
+    if (byzCollection) {
+      console.log(`[scraping ${contract_key}] Existing Collection found: `, byzCollection.contract_key);
+    }
 
-  //   if (byzCollection) {
-  //     console.log(`[scraping ${asset_name}] Existing Collection found: `, byzCollection.contract_key);
-  //   }
-
-  //   if (!byzCollection) {
-  //     byzCollection = this.prismaService.collection.create({
-  //       data: {
-  //         asset_name,
-  //         collection_size: Number(collectionSize),
-  //         description: firstTokenMeta?.metadata?.description || tokenIpfsMeta?.description || "",
-  //         cover_image: firstTokenIpfsImageUrl,
-  //         title: nftContractMetadata.name,
-  //       }
-  //     });
-  //   }
-  //   return byzCollection
-  // }
+    if (!byzCollection) {
+      byzCollection = this.prismaService.collection.create({
+        data: {
+          collection_size: Number(collectionSize),
+          description: firstTokenMeta?.metadata?.description || tokenIpfsMeta?.description || "",
+          cover_image: firstTokenIpfsImageUrl,
+          title: nftContractMetadata.name,
+        }
+      });
+    }
+    return byzCollection
+  }
 
   // async loadNftMetas(tokenMetas, nftContractMetadata, byzCollection) {
   //   for (let i = 0; i < tokenMetas.length; i++) {
@@ -214,7 +210,8 @@ export class NearScraperService {
 
     return {
       tokenMetas,
-      nftContractMetadata
+      nftContractMetadata,
+      collectionSize
     }
   }
 

@@ -1,8 +1,9 @@
 import { Logger, Injectable, NotAcceptableException } from '@nestjs/common';
 import { Transaction, Block } from '@internal/prisma/client';
 import { PrismaService } from 'src/prisma.service';
-import { SmartContract, SmartContractFunction } from '@prisma/client';
+import { Prisma, NftMeta, SmartContract, SmartContractFunction } from '@prisma/client';
 import { TxProcessResult } from 'src/common/interfaces/tx-process-result.interface';
+import { TxHelperService } from '../helpers/tx-helper/tx-helper.service';
 
 @Injectable()
 export class BuyTransactionService {
@@ -10,6 +11,7 @@ export class BuyTransactionService {
 
   constructor(
     private readonly prismaService: PrismaService,
+    private txHelper: TxHelperService
   ) {}
 
   async process(
@@ -46,13 +48,9 @@ export class BuyTransactionService {
     });
     
     // TODO: Use handle to check when meta is newly updated
-    if (nftMeta &&
-      (!nftMeta.nft_state.list_block_height ||
-        block.block_height > nftMeta.nft_state.list_block_height ||
-        (block.block_height === nftMeta.nft_state.list_block_height && tx.transaction.nonce > nftMeta.nft_state.list_tx_index)
-      )
-    ) {
-
+    if (nftMeta && this.txHelper.isNewNftListOrSale(tx, nftMeta.nft_state, block)) {
+    
+      
       txResult.processed = true;        
     } else if (nftMeta) {
       this.logger.log(`Too Late`);

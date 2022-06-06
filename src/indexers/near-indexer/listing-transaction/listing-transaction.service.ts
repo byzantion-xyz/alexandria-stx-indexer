@@ -2,8 +2,9 @@ import { Logger, Injectable } from '@nestjs/common';
 import { Transaction, Block } from '@internal/prisma/client';
 import { PrismaService } from 'src/prisma.service';
 import moment from 'moment';
-import { SmartContract, SmartContractFunction, ActionName } from '@prisma/client';
+import { SmartContract, SmartContractFunction, ActionName, Prisma } from '@prisma/client';
 import { TxProcessResult } from 'src/common/interfaces/tx-process-result.interface';
+import { TxHelperService } from '../helpers/tx-helper/tx-helper.service';
 
 @Injectable()
 export class ListingTransactionService {
@@ -11,6 +12,7 @@ export class ListingTransactionService {
 
   constructor(
     private readonly prismaService: PrismaService,
+    private txHelper: TxHelperService
   ) { }
 
   async process(
@@ -42,13 +44,8 @@ export class ListingTransactionService {
         nft_state: true
       }
     });
-
-    if (nftMeta &&
-      (!nftMeta.nft_state.list_block_height ||
-        block.block_height > nftMeta.nft_state.list_block_height ||
-        (block.block_height === nftMeta.nft_state.list_block_height && tx.transaction.nonce > nftMeta.nft_state.list_tx_index)
-      )
-    ) {
+    
+    if (nftMeta && this.txHelper.isNewNftListOrSale(tx, nftMeta.nft_state, block)) {
 
       // TODO: Use unified service to update NftMeta and handle NftState changes
       await this.prismaService.nftMeta.update({
@@ -96,6 +93,7 @@ export class ListingTransactionService {
       txResult.processed = true;
     } else if (nftMeta) {
       this.logger.log(`Too Late`);
+      // TODO: Create possible missing action
     } else {
       // TODO: Call Missing Collection handle once built
       txResult.missing = true;

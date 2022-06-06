@@ -44,13 +44,13 @@ export class NearIndexerService {
       const result: TxProcessResult = await txHandler.process(transaction, block, smart_contract, smart_contract_function);
 
       if (result.processed || result.missing) {
-          /*this.prismaMongoService.transaction.update({
+          this.prismaMongoService.transaction.update({
             where: { id: transaction.id },
             data: { 
               missing: false,
-              procesed: false
+              processed: false
             }
-          });**/
+          });
       }
       
     }

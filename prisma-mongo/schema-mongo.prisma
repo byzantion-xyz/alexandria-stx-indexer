@@ -178,6 +178,8 @@ model Transaction {
   id          String                  @id @default(auto()) @map("_id") @db.ObjectId
   outcome     TransactionsOutcome
   transaction TransactionsTransaction
+  missing     Boolean 
+  processed   Boolean
 
   @@unique([transaction.hash], map: "transaction.hash_1")
   @@map("transactions")

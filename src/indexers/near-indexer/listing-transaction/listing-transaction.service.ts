@@ -68,6 +68,7 @@ export class ListingTransactionService {
           data: {
             action: ActionName.list,
             list_price: price,
+            seller: tx.transaction.signer_id,
             block_height: block.block_height,
             tx_index: tx.transaction.nonce,
             block_time: moment().toDate(), // TODO: Use block timestamp

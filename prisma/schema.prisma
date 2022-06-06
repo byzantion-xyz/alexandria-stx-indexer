@@ -14,6 +14,8 @@ model SmartContract {
   name                 String
   scanned_transactions Int               @default(0)
   type                 SmartContractType
+  asset_name           String?
+  frozen               Boolean           @default(false)
 
   chain    Chain  @relation(fields: [chain_id], references: [id])
   chain_id String @db.Uuid
@@ -81,7 +83,6 @@ model Chain {
 
 model Collection {
   id              String  @id @default(uuid()) @db.Uuid
-  asset_name      String
   collection_size Int?
   description     String?
   external_url    String?
@@ -90,7 +91,6 @@ model Collection {
   cover_image     String?
   trending        Boolean @default(false)
   title           String?
-  frozen          Boolean @default(false)
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
@@ -310,6 +310,7 @@ enum ActionName {
 
 enum SmartContractType {
   sip009
+  nep148
   marketplace
   staking
   fungible_tokens

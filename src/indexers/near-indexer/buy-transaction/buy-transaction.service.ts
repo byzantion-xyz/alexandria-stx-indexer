@@ -15,31 +15,49 @@ export class BuyTransactionService {
   async process(
     tx: Transaction, 
     block: Block,
-    smart_contract: SmartContract, 
-    smart_contract_function: SmartContractFunction
+    sc: SmartContract, 
+    scf: SmartContractFunction
   ) {
     this.logger.debug(`process() ${tx.transaction.hash}`);
     let txResult: TxProcessResult = { processed: false, missing: false };
 
+    let args;
     try {
       // TODO: Arguments will be parsed in the streamer directly.
-      const args = JSON.parse(tx.transaction.actions[0].FunctionCall.args);
+      args = JSON.parse(tx.transaction.actions[0].FunctionCall.args);
     } catch (err) {
       this.logger.error('Error parsing transaction arguments');
       throw err;
     }
 
+    const token_id = args[scf.args['token_id']];
+    const price = args[scf.args['price']];
+    const smart_contract_id = args[scf.args['nft_contract_id']];
+
+    // TODO: Use findUnique
     const nftMeta = await this.prismaService.nftMeta.findFirst({
       where: {
-        smart_contract_id: smart_contract.id,
-        token_id: smart_contract_function.args['token_id']
+        smart_contract_id: sc.id,
+        token_id: scf.args['token_id']
+      },
+      include: {
+        nft_state: true
       }
     });
+    
+    // TODO: Use handle to check when meta is newly updated
+    if (nftMeta &&
+      (!nftMeta.nft_state.list_block_height ||
+        block.block_height > nftMeta.nft_state.list_block_height ||
+        (block.block_height === nftMeta.nft_state.list_block_height && tx.transaction.nonce > nftMeta.nft_state.list_tx_index)
+      )
+    ) {
 
-    if (nftMeta) {
-        
+      txResult.processed = true;        
+    } else if (nftMeta) {
+      this.logger.log(`Too Late`);
     } else {
-
+      txResult.missing = true;
     }
 
     this.logger.debug(`process() completed ${tx.transaction.hash}`);

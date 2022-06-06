@@ -310,7 +310,7 @@ enum ActionName {
 
 enum SmartContractType {
   sip009
-  nep148
+  nep178
   marketplace
   staking
   fungible_tokens

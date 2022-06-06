@@ -44,8 +44,8 @@ model SmartContractFunction {
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
-  @@unique([function_name, smart_contract_id])
 
+  @@unique([function_name, smart_contract_id])
   @@map("smart_contract_function")
 }
 
@@ -65,10 +65,10 @@ model Commission {
 }
 
 model Chain {
-  id   String @id @default(uuid()) @db.Uuid
-  name String
-  symbol String @unique
-  coin String?
+  id     String  @id @default(uuid()) @db.Uuid
+  name   String
+  symbol String  @unique
+  coin   String?
 
   smart_contracts SmartContract[]
   nft_metas       NftMeta[]
@@ -136,7 +136,7 @@ model CollectionBid {
   pending_tx  String
 
   tx_id        String
-  block_height Int
+  block_height BigInt
   match_tx_id  String
   cancel_tx_id String
   bid_type     BidType
@@ -171,7 +171,7 @@ model NftMeta {
   chain_id String @db.Uuid
 
   smart_contract    SmartContract @relation(fields: [smart_contract_id], references: [id])
-  smart_contract_id String @db.Uuid
+  smart_contract_id String        @db.Uuid
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
@@ -181,8 +181,8 @@ model NftMeta {
   actions      Action[]
   attributes   NftMetaAttribute[]
 
-  @@unique([smart_contract_id, token_id])
 
+  @@unique([smart_contract_id, token_id])
   @@map("nft_meta")
 }
 
@@ -216,14 +216,14 @@ model NftState {
   listed            Boolean        @default(false)
   list_price        BigInt
   list_seller       String
-  list_block_height Int
+  list_block_height BigInt
   list_tx_index     BigInt
   list_contract     SmartContract? @relation(fields: [list_contract_id], references: [id])
   list_contract_id  String         @db.Uuid
 
   asking              Boolean @default(false)
   asking_price        BigInt
-  asking_block_height Int
+  asking_block_height BigInt
   asking_tx_index     Int
   asking_seller       String
 
@@ -231,13 +231,13 @@ model NftState {
   bid_price        BigInt
   bid_buyer        String
   bid_contract     String
-  bid_block_height Int
+  bid_block_height BigInt
   bid_tx_index     Int
 
   staked              Boolean @default(false)
   staking_contract    String
   staked_owner        String
-  staked_block_height Int
+  staked_block_height BigInt
   staked_tx_index     Int
 
   meta    NftMeta @relation(fields: [meta_id], references: [id])
@@ -268,7 +268,7 @@ model Action {
   seller        String?
   buyer         String?
   bid_price     BigInt?
-  block_height  Int
+  block_height  BigInt
   tx_index      Int
   block_time    DateTime
   tx_id         String

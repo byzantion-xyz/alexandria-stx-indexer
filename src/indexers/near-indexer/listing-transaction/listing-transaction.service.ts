@@ -37,11 +37,20 @@ export class ListingTransactionService {
 
     // TODO: Use findUnique
     const nftMeta = await this.prismaService.nftMeta.findFirst({
-      where: { smart_contract_id: sc.id, token_id }
+      where: { smart_contract_id: sc.id, token_id },
+      include: {
+        nft_state: true
+      }
     });
 
-    if (nftMeta) {
-       // TODO: Use unified service to update NftMeta and handle NftState changes
+    if (nftMeta &&
+      (!nftMeta.nft_state.list_block_height ||
+        block.block_height > nftMeta.nft_state.list_block_height ||
+        (block.block_height === nftMeta.nft_state.list_block_height && tx.transaction.nonce > nftMeta.nft_state.list_tx_index)
+      )
+    ) {
+
+      // TODO: Use unified service to update NftMeta and handle NftState changes
       await this.prismaService.nftMeta.update({
         where: { id: nftMeta.id },
         data: {
@@ -85,6 +94,8 @@ export class ListingTransactionService {
 
       await this.sendNotifications();
       txResult.processed = true;
+    } else if (nftMeta) {
+      this.logger.log(`Too Late`);
     } else {
       // TODO: Call Missing Collection handle once built
       txResult.missing = true;

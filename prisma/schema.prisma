@@ -217,7 +217,7 @@ model NftState {
   list_price        BigInt
   list_seller       String
   list_block_height Int
-  list_tx_index     Int
+  list_tx_index     BigInt
   list_contract     SmartContract? @relation(fields: [list_contract_id], references: [id])
   list_contract_id  String         @db.Uuid
 

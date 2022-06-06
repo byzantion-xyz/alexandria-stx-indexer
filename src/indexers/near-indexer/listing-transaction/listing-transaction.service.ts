@@ -3,7 +3,6 @@ import { Transaction, Block } from '@internal/prisma/client';
 import { PrismaService } from 'src/prisma.service';
 import moment from 'moment';
 import { SmartContract, SmartContractFunction, ActionName } from '@prisma/client';
-import { MetadataScanner } from '@nestjs/core';
 import { TxProcessResult } from 'src/common/interfaces/tx-process-result.interface';
 
 @Injectable()

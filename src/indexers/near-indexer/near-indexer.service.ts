@@ -1,11 +1,12 @@
 import { Logger, Injectable } from '@nestjs/common';
 import { PrismaService as PrismaMongoService } from 'src/prisma.mongo.service';
 import { PrismaService } from 'src/prisma.service';
-import { Transaction } from '@internal/prisma/client';
-import { SmartContractType } from '@prisma/client';
+import { Transaction, Block } from '@internal/prisma/client';
 
 import { BuyTransactionService } from './buy-transaction/buy-transaction.service';
 import { ListingTransactionService } from './listing-transaction/listing-transaction.service';
+import { TxProcessResult } from 'src/common/interfaces/tx-process-result.interface';
+
 
 @Injectable()
 export class NearIndexerService {
@@ -25,6 +26,10 @@ export class NearIndexerService {
     this.logger.debug('Processing %d transactions', transactions.length);
 
     for (let transaction of transactions) {
+      let block: Block = await this.prismaMongoService.block.findFirst({ where: { 
+        hash: transaction.outcome.execution_outcome.block_hash 
+      }});
+
       let method_name = transaction.transaction.actions[0].FunctionCall.method_name;
 
       let finder = {
@@ -35,8 +40,19 @@ export class NearIndexerService {
 
       let smart_contract_function = smart_contract.smart_contract_functions.find(f => f.function_name === method_name);
 
-      const result = await this.getTxHandler(smart_contract_function.function_name)
-        .process(transaction, smart_contract, smart_contract_function);
+      const txHandler = this.getTxHandler(smart_contract_function.function_name)
+      const result: TxProcessResult = await txHandler.process(transaction, block, smart_contract, smart_contract_function);
+
+      if (result.processed || result.missing) {
+          this.prismaMongoService.transaction.update({
+            where: { id: transaction.id },
+            data: { 
+              missing: false,
+              processed: false
+            }
+          });
+      }
+      
     }
 
     this.logger.debug('Completed');

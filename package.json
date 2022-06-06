@@ -28,7 +28,11 @@
     "@nestjs/mongoose": "^9.1.0",
     "@nestjs/platform-express": "^8.0.0",
     "@prisma/client": "^3.14.0",
+<<<<<<< HEAD
     "axios": "^0.27.2",
+=======
+    "moment": "^2.29.3",
+>>>>>>> main
     "mongoose": "^6.3.4",
     "near-api-js": "^0.44.2",
     "reflect-metadata": "^0.1.13",

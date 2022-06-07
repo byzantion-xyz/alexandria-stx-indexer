@@ -34,12 +34,14 @@ export class BuyTransactionService {
     }
 
     const token_id = args[scf.args['token_id']];
-    const smart_contract_id = args[scf.args['nft_contract_id']];
+    const contract_key = args[scf.args['contract_key']];
+
+    const nft_smart_contract = await this.prismaService.smartContract.findUnique({ where: { contract_key }});
 
     // TODO: Use findUnique
     const nftMeta = await this.prismaService.nftMeta.findFirst({
       where: { 
-        smart_contract_id: smart_contract_id, 
+        smart_contract_id: nft_smart_contract.id, 
         token_id: token_id
       },
       include: { nft_state: true }
@@ -90,7 +92,7 @@ export class BuyTransactionService {
     } else if (nftMeta) {
       this.logger.log(`Too Late`);
     } else {
-      this.logger.log(`NftMeta not found by`, { smart_contract_id, token_id });
+      this.logger.log(`NftMeta not found by`, { contract_key, token_id });
       txResult.missing = true;
     }
 

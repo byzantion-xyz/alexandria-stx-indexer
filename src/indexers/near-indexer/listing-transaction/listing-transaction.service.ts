@@ -35,14 +35,14 @@ export class ListingTransactionService {
 
     const token_id = args[scf.args['token_id']];
     const price = args[scf.args['price']];
-    const smart_contract_id = args[scf.args['nft_contract_id']];
+    const contract_key = args[scf.args['contract_key']];
+
+    const nft_smart_contract = await this.prismaService.smartContract.findUnique({ where: { contract_key }});
 
     // TODO: Use findUnique
     const nftMeta = await this.prismaService.nftMeta.findFirst({
-      where: { smart_contract_id, token_id },
-      include: {
-        nft_state: true
-      }
+      where: { smart_contract_id: nft_smart_contract.id, token_id },
+      include: { nft_state: true }
     });
     
     if (nftMeta && this.txHelper.isNewNftListOrSale(tx, nftMeta.nft_state, block)) {
@@ -51,7 +51,6 @@ export class ListingTransactionService {
       await this.prismaService.nftMeta.update({
         where: { id: nftMeta.id },
         data: {
-          smart_contract_id: sc.id,
           nft_state: {
             update: {
               listed: true,
@@ -95,7 +94,7 @@ export class ListingTransactionService {
       this.logger.log(`Too Late`);
       // TODO: Create possible missing action
     } else {
-      this.logger.log(`NftMeta not found by`, { smart_contract_id, token_id });
+      this.logger.log(`NftMeta not found by`, { contract_key, token_id });
       // TODO: Call Missing Collection handle once built
       txResult.missing = true;
     }

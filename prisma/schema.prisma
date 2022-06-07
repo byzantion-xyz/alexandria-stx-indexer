@@ -91,6 +91,7 @@ model Collection {
   cover_image     String?
   trending        Boolean @default(false)
   title           String?
+  slug            String?
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt

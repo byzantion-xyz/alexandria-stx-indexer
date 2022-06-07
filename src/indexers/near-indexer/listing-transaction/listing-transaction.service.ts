@@ -27,7 +27,7 @@ export class ListingTransactionService {
     let args;
     // TODO: Arguments will come parsed once near-streamer is updated
     try {
-      args = JSON.parse(tx.transaction.actions[0].FunctionCall.args);
+      args = JSON.parse(Buffer.from(tx.transaction.actions[0].FunctionCall.args, 'base64').toString());
     } catch (err) {
       this.logger.error('Error parsing transaction arguments');
       throw err;

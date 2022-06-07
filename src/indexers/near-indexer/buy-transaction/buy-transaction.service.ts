@@ -27,7 +27,7 @@ export class BuyTransactionService {
     let args;
     try {
       // TODO: Arguments will be parsed in the streamer directly.
-      args = JSON.parse(tx.transaction.actions[0].FunctionCall.args);
+      args = JSON.parse(Buffer.from(tx.transaction.actions[0].FunctionCall.args, 'base64').toString());
     } catch (err) {
       this.logger.error('Error parsing transaction arguments');
       throw err;

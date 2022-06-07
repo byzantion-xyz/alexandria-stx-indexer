@@ -27,7 +27,7 @@ export class ListingTransactionService {
     let args;
     // TODO: Arguments will come parsed once near-streamer is updated
     try {
-      args = JSON.parse(tx.transaction.actions[0].FunctionCall.args);
+      args = JSON.parse(Buffer.from(tx.transaction.actions[0].FunctionCall.args, 'base64').toString());
     } catch (err) {
       this.logger.error('Error parsing transaction arguments');
       throw err;
@@ -35,15 +35,9 @@ export class ListingTransactionService {
 
     const token_id = args[scf.args['token_id']];
     const price = args[scf.args['price']];
-    const smart_contract_id = args[scf.args['nft_contract_id']];
+    const contract_key = args[scf.args['contract_key']];
 
-    // TODO: Use findUnique
-    const nftMeta = await this.prismaService.nftMeta.findFirst({
-      where: { smart_contract_id: sc.id, token_id },
-      include: {
-        nft_state: true
-      }
-    });
+    const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
     
     if (nftMeta && this.txHelper.isNewNftListOrSale(tx, nftMeta.nft_state, block)) {
 
@@ -51,12 +45,11 @@ export class ListingTransactionService {
       await this.prismaService.nftMeta.update({
         where: { id: nftMeta.id },
         data: {
-          smart_contract_id: sc.id,
           nft_state: {
             update: {
               listed: true,
               list_price: price,
-              list_contract_id: smart_contract_id,
+              list_contract_id: sc.id,
               list_tx_index: tx.transaction.nonce,
               list_seller: tx.transaction.signer_id,
               list_block_height: block.block_height
@@ -95,6 +88,7 @@ export class ListingTransactionService {
       this.logger.log(`Too Late`);
       // TODO: Create possible missing action
     } else {
+      this.logger.log(`NftMeta not found by`, { contract_key, token_id });
       // TODO: Call Missing Collection handle once built
       txResult.missing = true;
     }

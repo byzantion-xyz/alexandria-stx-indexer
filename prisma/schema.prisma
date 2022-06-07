@@ -91,6 +91,7 @@ model Collection {
   cover_image     String?
   trending        Boolean @default(false)
   title           String?
+  slug            String?
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
@@ -157,7 +158,7 @@ model NftMeta {
   name       String
   namespace  String?
   image      String
-  token_id   Int
+  token_id   String
   rarity     Int?
   ranking    Int
   asset_name String?

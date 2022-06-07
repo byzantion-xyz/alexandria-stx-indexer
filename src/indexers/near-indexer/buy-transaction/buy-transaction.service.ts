@@ -90,6 +90,7 @@ export class BuyTransactionService {
     } else if (nftMeta) {
       this.logger.log(`Too Late`);
     } else {
+      this.logger.log(`NftMeta not found by`, { smart_contract_id, token_id });
       txResult.missing = true;
     }
 

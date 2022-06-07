@@ -197,7 +197,7 @@ model NftMetaAttribute {
   score       Int     @default(0)
 
   meta    NftMeta @relation(fields: [meta_id], references: [id])
-  meta_id String  @unique @db.Uuid
+  meta_id String  @db.Uuid
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt

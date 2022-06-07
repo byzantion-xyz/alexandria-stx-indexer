@@ -3,6 +3,7 @@ import { PrismaService } from 'src/prisma.service';
 import { SmartContractType } from '@prisma/client'
 const axios = require('axios').default;
 const nearAPI = require("near-api-js");
+import { v4 as uuidv4 } from 'uuid';
 
 const { keyStores, connect } = nearAPI;
 const homedir = require("os").homedir();
@@ -42,14 +43,15 @@ export class NearScraperService {
       msg: `No tokens found for contract ${contract_key}`
     };
 
-    //await this.loadSmartContract(contract_key, nftContractMetadata)
+    const smartContract = await this.loadSmartContract(nftContractMetadata, contract_key);
     const byzCollection = await this.loadCollection(tokenMetas, nftContractMetadata, contract_key, collectionSize)
-    //await this.loadNftMetas()
+    const nftMetas = await this.loadNftMetas(tokenMetas, nftContractMetadata, smartContract, byzCollection, contract_key);
+    console.log("nftMetas", nftMetas);
     return "Success"
   }
 
-  async loadSmartContract(contract_key, nftContractMetadata) {
-    this.logger.debug('loadSmartCollection');
+  async loadSmartContract(nftContractMetadata, contract_key) {
+    this.logger.debug('loadSmartContract');
     const createSmartCollection = await this.prismaService.smartContract.create({
       data: {
         contract_key: contract_key,
@@ -82,11 +84,11 @@ export class NearScraperService {
     let byzCollection = null
 
     if (byzCollection) {
-      console.log(`[scraping ${contract_key}] Existing Collection found: `, byzCollection.contract_key);
+      this.logger.debug(`[scraping ${contract_key}] Existing Collection found: `, byzCollection.contract_key);
     }
 
     if (!byzCollection) {
-      byzCollection = this.prismaService.collection.create({
+      byzCollection = await this.prismaService.collection.create({
         data: {
           collection_size: Number(collectionSize),
           description: firstTokenMeta?.metadata?.description || tokenIpfsMeta?.description || "",
@@ -98,81 +100,64 @@ export class NearScraperService {
     return byzCollection
   }
 
-  // async loadNftMetas(tokenMetas, nftContractMetadata, byzCollection) {
-  //   for (let i = 0; i < tokenMetas.length; i++) {
-  //     // Check if meta already exists
-  //     const meta = await Meta.findOne({ contract_key, token_id: i + 1 });
-  //     if (!meta) {
-  //       // Create the Meta Model and queue it for insertMany
-  //       const mediaUrl = getTokenIpfsMediaUrl(nftContractMetadata.base_uri, tokenMetas[i].metadata.media)
-  
-  //       const byzMeta = new Meta({
-  //         collection_id: byzCollection._id,
-  //         contract_key,
-  //         name: tokenMetas[i].metadata.title,
-  //         image: mediaUrl,
-  //         token_id: i,
-  //         rarity: 0,
-  //         minted: false,
-  //         attributes: [
-  //           {
-  //             trait_type: byzCollection.artist,
-  //             value: byzCollection.asset_name
-  //           }
-  //         ],
-  //         slug
-  //       });
-  
-  //       // process attributes
-  //       let attributes = []
-  //       if (contract_key == "misfits.tenk.near") {
-  //         const tokenIpfsUrl = getTokenIpfsUrl(nftContractMetadata.base_uri, tokenMetas[i].metadata.reference);
-  //         let { data: tokenIpfsMeta } = await axios.get(tokenIpfsUrl);
-  //         for (const property in tokenIpfsMeta) {
-  //           const newAttribute = {
-  //             trait_type: property,
-  //             value: tokenIpfsMeta[property]
-  //           }
-  //           attributes.push(newAttribute)
-  //         }
-  //       } else if (contract_key == "nearnautnft.near") {
-  //         let attributesObject = JSON.parse(tokenMetas[i].metadata.extra)
-  //         for (const property in attributesObject) {
-  //           const splitProperty = property.split('_')
-  //           if (splitProperty[0] != "attributes") continue
-  //           const newAttribute = {
-  //             trait_type: splitProperty[1].charAt(0).toUpperCase() + splitProperty[1].slice(1),
-  //             value: attributesObject[property]
-  //           }
-  //           attributes.push(newAttribute)
-  //         }
-  //       } else if (contract_key == "engineart.near") {
-  //         attributes = JSON.parse(tokenMetas[i].metadata.extra)
-  //       } else {
-  //         const tokenIpfsUrl = getTokenIpfsUrl(nftContractMetadata.base_uri, tokenMetas[i].metadata.reference);
-  //         let { data: tokenIpfsMeta } = await axios.get(tokenIpfsUrl);
-  //         attributes = tokenIpfsMeta.attributes;
-  //       }
-  
-  //       // Check whether the tokenIpfsMeta has attributes using the following criteria:
-  //       // If attributes exists, if attibutes is an array, if attributes has 1 or more items
-  //       // Otherwise stick with the default
-  //       if (attributes && Array.isArray(attributes) && attributes.length > 0) {
-  //         byzMeta.attributes = attributes;
-  //       }
-  //       metaInsertBatch.push(byzMeta);
-  //     }
-  //     if (i % 100 === 0) console.log(`[scraping ${asset_name}] Metas processed: ${i} of ${collectionSize}`);
-  //   };
-      
-  //   // Perform a batch insert of the Metas into the database
-  //   await Meta.insertMany(metaInsertBatch);
-  //   console.log(`[scraping ${asset_name}] Meta batch inserted`, metaInsertBatch.length);
-  
+  async loadNftMetas(tokenMetas, nftContractMetadata, smartContract, byzCollection, contract_key) {
+    let nftMetaInsertBatch = []
+    for (let i = 0; i < tokenMetas.length; i++) {
+
+      const nftMeta = await this.prismaService.nftMeta.findFirst({
+        where: {
+          smart_contract_id: smartContract.id,
+          token_id: Number(i)
+        },
+      })
+
+      const nftMetaId = uuidv4();
+
+      const attributes = await this.getNftMetaAttributes(nftContractMetadata, tokenMetas[i], contract_key, byzCollection, nftMetaId);
+      console.log("attributes")
+      console.log("")
+      console.log("")
+      console.log(attributes)
+
+      if (!nftMeta) {
+        const mediaUrl = this.getTokenIpfsMediaUrl(nftContractMetadata.base_uri, tokenMetas[i].metadata.media)
+        nftMetaInsertBatch.push({
+          id: nftMetaId,
+          collection_id: byzCollection.id,
+          smart_contract_id: smartContract.id,
+          chain_id: NEAR_PROTOCOL_DB_ID,
+          name: tokenMetas[i].metadata.title,
+          image: mediaUrl,
+          token_id: i + 1,
+          rarity: 0,
+          ranking: 0,
+          attributes: {
+            create: {
+              data: attributes
+            }
+          }
+        });
+      }
+
+      if (i % 100 === 0) this.logger.debug(`[scraping ${contract_key}] Metas processed: ${i} of ${byzCollection.collection_size}`);
+    };
+
+    // Perform a batch insert of the NftMetas into the database
+    const nftMetas = await this.prismaService.nftMeta.createMany({
+      data: nftMetaInsertBatch
+    })
+    this.logger.debug(`[scraping ${contract_key}] Meta batch inserted`, nftMetaInsertBatch.length);
+
+    return nftMetas
+  }
+
+  // async asdf(tokenMetas, nftContractMetadata, smartContract, byzCollection, contract_key) {
   //   // Update Rarity
   //   // Gets the collection with all metas, sets rarity and score values
   //   // on attributes as well as rarity and ranking on the meta
   //   await exports.updateRarity(byzCollection._id, asset_name);
+
+ 
   
   //   // Insert Attributes record
   //   // Adds a record to the attributes collection for use by the
@@ -235,4 +220,63 @@ export class NearScraperService {
     if (media.includes("https")) return media
     return `${base_uri}/${media}`
   };
+
+  async getNftMetaAttributes(nftContractMetadata, tokenMeta, contract_key, byzCollection, nftMetaId) {
+    let attributes = []
+    if (contract_key == "misfits.tenk.near") {
+      const tokenIpfsUrl = this.getTokenIpfsUrl(nftContractMetadata.base_uri, tokenMeta.metadata.reference);
+      let { data: tokenIpfsMeta } = await axios.get(tokenIpfsUrl);
+      for (const property in tokenIpfsMeta) {
+        const newAttribute = {
+          trait_type: property,
+          value: tokenIpfsMeta[property]
+        }
+        attributes.push(newAttribute)
+      }
+    } 
+    else if (contract_key == "nearnautnft.near") {
+      let attributesObject = JSON.parse(tokenMeta.metadata.extra)
+      for (const property in attributesObject) {
+        const splitProperty = property.split('_')
+        if (splitProperty[0] != "attributes") continue
+        const newAttribute = {
+          trait_type: splitProperty[1].charAt(0).toUpperCase() + splitProperty[1].slice(1),
+          value: attributesObject[property]
+        }
+        attributes.push(newAttribute)
+      }
+    } 
+    else if (contract_key == "engineart.near") {
+      attributes = JSON.parse(tokenMeta.metadata.extra)
+    } 
+    else {
+      const tokenIpfsUrl = this.getTokenIpfsUrl(nftContractMetadata.base_uri, tokenMeta.metadata.reference);
+      let { data: tokenIpfsMeta } = await axios.get(tokenIpfsUrl);
+      attributes = tokenIpfsMeta.attributes;
+    }
+
+    if (!attributes) {
+      attributes = [
+        {
+          trait_type: byzCollection.contract_key,
+          value: byzCollection.title
+        }
+      ]
+    }
+
+    const attributesWithIDs = attributes.map((attr) => {
+      return {
+        ...attr,
+        meta_id: nftMetaId,
+        sequence: "1"
+      }
+    })
+
+    console.log("attributesWithIDs", attributesWithIDs)
+
+    const nftMetaAttributes = await this.prismaService.nftMetaAttribute.createMany({
+      data: attributesWithIDs
+    })
+    return nftMetaAttributes
+  }
 }

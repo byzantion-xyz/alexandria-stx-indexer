@@ -2,7 +2,7 @@ import { Logger, Injectable } from '@nestjs/common';
 import { Transaction, Block } from '@internal/prisma/client';
 import { PrismaService } from 'src/prisma.service';
 import moment from 'moment';
-import { SmartContract, SmartContractFunction, ActionName, Prisma } from '@prisma/client';
+import { SmartContract, SmartContractFunction, ActionName } from '@prisma/client';
 import { TxProcessResult } from 'src/common/interfaces/tx-process-result.interface';
 import { TxHelperService } from '../helpers/tx-helper/tx-helper.service';
 
@@ -24,14 +24,8 @@ export class ListingTransactionService {
     this.logger.debug(`process() ${tx.transaction.hash}`);
     let txResult: TxProcessResult = { processed: false, missing: false };
 
-    let args;
     // TODO: Arguments will come parsed once near-streamer is updated
-    try {
-      args = JSON.parse(Buffer.from(tx.transaction.actions[0].FunctionCall.args, 'base64').toString());
-    } catch (err) {
-      this.logger.error('Error parsing transaction arguments');
-      throw err;
-    }
+    const args = this.txHelper.parseBase64Arguments(tx);
 
     const token_id = args[scf.args['token_id']];
     const price = args[scf.args['price']];
@@ -40,7 +34,6 @@ export class ListingTransactionService {
     const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
     
     if (nftMeta && this.txHelper.isNewNftListOrSale(tx, nftMeta.nft_state, block)) {
-
       // TODO: Use unified service to update NftMeta and handle NftState changes
       await this.prismaService.nftMeta.update({
         where: { id: nftMeta.id },

@@ -24,15 +24,9 @@ export class BuyTransactionService {
     this.logger.debug(`process() ${tx.transaction.hash}`);
     let txResult: TxProcessResult = { processed: false, missing: false };
 
-    let args;
-    try {
-      // TODO: Arguments will be parsed in the streamer directly.
-      args = JSON.parse(Buffer.from(tx.transaction.actions[0].FunctionCall.args, 'base64').toString());
-    } catch (err) {
-      this.logger.error('Error parsing transaction arguments');
-      throw err;
-    }
-
+    // TODO: Arguments will be parsed in the streamer directly.
+    let args = this.txHelper.parseBase64Arguments(tx);
+   
     const token_id = args[scf.args['token_id']];
     const contract_key = args[scf.args['contract_key']];
 
@@ -40,21 +34,7 @@ export class BuyTransactionService {
 
     // TODO: Use handle to check when meta is newly updated
     if (nftMeta && this.txHelper.isNewNftListOrSale(tx, nftMeta.nft_state, block)) {
-      await this.prismaService.nftMeta.update({
-        where: { id: nftMeta.id },
-        data: {
-          nft_state: {
-            update: {
-              listed: false,
-              list_price: null,
-              list_seller: null,
-              list_contract_id: null,
-              list_tx_index: tx.transaction.nonce,
-              list_block_height: block.block_height
-            }
-          }
-        }
-      });
+      await this.txHelper.unlistMeta(nftMeta.id, tx.transaction.nonce, block.block_height);
 
       try {
         const action = await this.prismaService.action.create({

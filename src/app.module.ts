@@ -27,7 +27,6 @@ import { CommonModule } from './common/common.module';
   ],
   providers: [
     AppService
-  ],
-  exports: [MongooseModule]
+  ]
 })
 export class AppModule {}

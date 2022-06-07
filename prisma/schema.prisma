@@ -165,8 +165,8 @@ model NftMeta {
   grouping   String?
   spec       String?
 
-  collection    Collection @relation(fields: [collection_id], references: [id])
-  collection_id String     @db.Uuid
+  collection    Collection? @relation(fields: [collection_id], references: [id])
+  collection_id String?     @db.Uuid
 
   chain    Chain  @relation(fields: [chain_id], references: [id])
   chain_id String @db.Uuid

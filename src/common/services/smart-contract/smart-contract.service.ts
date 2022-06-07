@@ -1,10 +1,18 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma.service';
+import { SmartContractType } from '@prisma/client';
 
 class createSmartContractFunctionArgs {
   name: string
   function_name: string
   args: object
+}
+
+class createSmartContractArgs {
+  contract_key: string 
+  name: string
+  type: SmartContractType
+  asset_name?: string
 }
 
 @Injectable()
@@ -13,8 +21,20 @@ export class SmartContractService {
     private readonly prisma: PrismaService
   ) { }
 
-  async createSmartContract() {
-
+  async createSmartContract(chainSymbol: string, params: createSmartContractArgs) {
+    await this.prisma.chain.update({
+      where: { symbol: chainSymbol },
+      data: {
+        smart_contracts: {
+          create: {
+            contract_key: params.contract_key,
+            name: params.name,
+            type: params.type,
+            asset_name: params.asset_name,
+          }
+        }
+      }
+    });
   }
 
   async createSmartContractFunction(contract_key: string, params: createSmartContractFunctionArgs) {

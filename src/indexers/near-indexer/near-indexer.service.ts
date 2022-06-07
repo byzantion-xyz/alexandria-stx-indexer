@@ -22,24 +22,28 @@ export class NearIndexerService {
     this.logger.debug('Initialize');
 
     const cursor = this.connection.db.collection('transactions').aggregate([
-      { $match: {
-        $and: [ 
-          { $or: [{ processed: { $exists: false }}, { processed: false }]},
-          { $or: [{ processed: { $exists: false }}, { processed: false }]},
-        ]
-      }},
-      { $lookup: { 
-        from: 'blocks',
-        localField: 'transaction.outcome.execution_outcome.block_hash',
-        foreignField: 'hash',
-        as: 'block'
-      }},
+      {
+        $match: {
+          $and: [
+            { $or: [{ processed: { $exists: false } }, { processed: false }] },
+            { $or: [{ processed: { $exists: false } }, { processed: false }] },
+          ]
+        }
+      },
+      {
+        $lookup: {
+          from: 'blocks',
+          localField: 'transaction.outcome.execution_outcome.block_hash',
+          foreignField: 'hash',
+          as: 'block'
+        }
+      },
       { $limit: 2 }
     ]);
-    
+
     this.logger.debug('Processing transactions');
 
-    for await(const doc of cursor) {
+    for await (const doc of cursor) {
       let transaction: Transaction = <Transaction>doc;
       let method_name = transaction.transaction.actions[0].FunctionCall.method_name;
 
@@ -54,12 +58,7 @@ export class NearIndexerService {
       const txHandler = this.getTxHandler(smart_contract_function.function_name)
       const result: TxProcessResult = await txHandler.process(transaction, doc.block, smart_contract, smart_contract_function);
 
-      if (result.processed || result.missing) {
-        this.connection.db.collection('transactions').findOneAndUpdate({ _id: transaction.id }, {
-          processed: result.processed,
-          missing: result.missing
-        });
-      }
+      await this.setTransactionResult(transaction.id, result);
     }
 
     this.logger.debug('Completed');
@@ -70,6 +69,17 @@ export class NearIndexerService {
       case 'buy': return this.buyTransaction;
       case 'list': return this.listingTransaction;
       default: throw new Error(`No service defined for the context: ${name}`);
+    }
+  }
+
+  async setTransactionResult(id: string, result: TxProcessResult) {
+    if (result.processed || result.missing) {
+      this.connection.db.collection('transactions').findOneAndUpdate({ id: id }, {
+        $set: {
+          processed: result.processed,
+          missing: result.missing
+        }
+      });
     }
   }
 

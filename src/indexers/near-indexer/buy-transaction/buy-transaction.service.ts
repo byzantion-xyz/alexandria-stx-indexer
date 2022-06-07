@@ -36,17 +36,8 @@ export class BuyTransactionService {
     const token_id = args[scf.args['token_id']];
     const contract_key = args[scf.args['contract_key']];
 
-    const nft_smart_contract = await this.prismaService.smartContract.findUnique({ where: { contract_key }});
+    const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
 
-    // TODO: Use findUnique
-    const nftMeta = await this.prismaService.nftMeta.findFirst({
-      where: { 
-        smart_contract_id: nft_smart_contract.id, 
-        token_id: token_id
-      },
-      include: { nft_state: true }
-    });
-  
     // TODO: Use handle to check when meta is newly updated
     if (nftMeta && this.txHelper.isNewNftListOrSale(tx, nftMeta.nft_state, block)) {
       await this.prismaService.nftMeta.update({

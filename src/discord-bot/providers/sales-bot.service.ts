@@ -1,6 +1,6 @@
 import { InjectDiscordClient } from '@discord-nestjs/core';
 import { Injectable, Logger } from '@nestjs/common';
-import { NftMeta, NftState } from '@prisma/client';
+import { Action, NftMeta, NftState, SmartContract } from '@prisma/client';
 import { Client, ColorResolvable } from 'discord.js';
 import { DiscordBotDto } from 'src/discord-bot/dto/discord-bot.dto';
 import { BotHelperService } from './bot-helper.service';
@@ -26,5 +26,10 @@ export class SalesBotService {
     } catch (err) {
       this.logger.warn('Discord error', err);
     }
+  }
+
+  async createAndSend(nftMeta: NftMeta, nftState: NftState, action: Action, sc: SmartContract) {
+    const data: DiscordBotDto = this.botHelper.createDiscordBotDto(nftMeta, nftState, action, sc);
+    await this.send(data);
   }
 }

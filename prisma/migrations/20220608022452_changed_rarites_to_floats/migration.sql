@@ -1,0 +1,6 @@
+-- AlterTable
+ALTER TABLE "nft_meta" ALTER COLUMN "rarity" SET DATA TYPE DOUBLE PRECISION;
+
+-- AlterTable
+ALTER TABLE "nft_meta_attribute" ALTER COLUMN "rarity" SET DEFAULT 0,
+ALTER COLUMN "rarity" SET DATA TYPE DOUBLE PRECISION;

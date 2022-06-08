@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
 import { DiscordBotController } from './discord-bot.controller';
 import { DiscordModule } from '@discord-nestjs/core';
-import { ListBotService } from './providers/list-bot/list-bot.service';
-import { BotHelperService } from './providers/bot-helper/bot-helper.service';
-import { SalesBotService } from './providers/sales-bot/sales-bot.service';
+import { ListBotService } from './providers/list-bot.service';
+import { BotHelperService } from './providers/bot-helper.service';
+import { SalesBotService } from './providers/sales-bot.service';
 
 @Module({
   imports: [

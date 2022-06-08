@@ -2,7 +2,7 @@ import { InjectDiscordClient } from '@discord-nestjs/core';
 import { Injectable, Logger } from '@nestjs/common';
 import { Client, ColorResolvable } from 'discord.js';
 import { DiscordBotDto } from 'src/discord-bot/dto/discord-bot.dto';
-import { BotHelperService } from '../bot-helper/bot-helper.service';
+import { BotHelperService } from './bot-helper.service';
 
 @Injectable()
 export class SalesBotService {

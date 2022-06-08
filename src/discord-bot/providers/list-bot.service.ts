@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectDiscordClient } from '@discord-nestjs/core';
 import { Client, ColorResolvable, MessageAttachment, MessageEmbed } from 'discord.js';
 
-import { BotHelperService } from '../bot-helper/bot-helper.service';
+import { BotHelperService } from './bot-helper.service';
 import { DiscordBotDto } from 'src/discord-bot/dto/discord-bot.dto';
 
 @Injectable()

@@ -2,8 +2,8 @@ import { Injectable, Logger, Controller, Post, Body, UsePipes, ValidationPipe } 
 import { Once, InjectDiscordClient } from '@discord-nestjs/core';
 import { Client } from 'discord.js';
 import { DiscordBotDto } from './dto/discord-bot.dto'; 
-import { ListBotService } from './providers/list-bot/list-bot.service';
-import { SalesBotService } from './providers/sales-bot/sales-bot.service';
+import { ListBotService } from './providers/list-bot.service';
+import { SalesBotService } from './providers/sales-bot.service';
 
 @Controller('discord-bot')
 export class DiscordBotController {

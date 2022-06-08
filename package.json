@@ -18,7 +18,8 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json"
+    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "postinstall": "npx prisma generate --schema ./prisma-mongo/schema-mongo.prisma"
   },
   "dependencies": {
     "@discord-nestjs/core": "^3.3.2",
@@ -30,6 +31,7 @@
     "@nestjs/mongoose": "^9.1.0",
     "@nestjs/platform-express": "^8.0.0",
     "@prisma/client": "^3.14.0",
+    "@types/sharp": "^0.30.4",
     "axios": "^0.27.2",
     "class-validator": "^0.13.2",
     "discord-api-types": "^0.33.5",

@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "nft_meta_attribute" ALTER COLUMN "score" SET DEFAULT 0,
+ALTER COLUMN "score" SET DATA TYPE DOUBLE PRECISION;

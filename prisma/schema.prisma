@@ -159,7 +159,7 @@ model NftMeta {
   namespace  String?
   image      String
   token_id   String
-  rarity     Int?
+  rarity     Float?
   ranking    Int
   asset_name String?
   grouping   String?
@@ -192,10 +192,10 @@ model NftMetaAttribute {
 
   trait_type  String
   trait_group String?
-  value       String?
-  rarity      Int     @default(0)
-  sequence    String
-  score       Int     @default(0)
+  value       String
+  rarity      Float   @default(0)
+  sequence    String?
+  score       Float   @default(0)
 
   meta    NftMeta @relation(fields: [meta_id], references: [id])
   meta_id String  @db.Uuid

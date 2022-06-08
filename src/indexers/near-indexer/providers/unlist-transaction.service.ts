@@ -3,7 +3,7 @@ import { Transaction, Block } from '@internal/prisma/client';
 import { PrismaService } from 'src/prisma.service';
 import { Prisma, NftMeta, SmartContract, SmartContractFunction, ActionName } from '@prisma/client';
 import { TxProcessResult } from 'src/common/interfaces/tx-process-result.interface';
-import { TxHelperService, CreateUnlistAction, CreateActionCommonArgs } from '../helpers/tx-helper/tx-helper.service';
+import { TxHelperService, CreateUnlistAction, CreateActionCommonArgs } from './tx-helper.service';
 
 @Injectable()
 export class UnlistTransactionService {

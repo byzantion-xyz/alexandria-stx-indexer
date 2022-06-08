@@ -3,12 +3,12 @@ import { PrismaService } from 'src/prisma.service';
 import { Transaction, Block } from '@internal/prisma/client';
 import { InjectConnection } from '@nestjs/mongoose';
 import { Connection } from 'mongoose';
-import { BuyTransactionService } from './buy-transaction/buy-transaction.service';
-import { ListingTransactionService } from './listing-transaction/listing-transaction.service';
+import { BuyTransactionService } from './providers/buy-transaction.service';
+import { ListingTransactionService } from './providers/listing-transaction.service';
 import { TxProcessResult } from 'src/common/interfaces/tx-process-result.interface';
 import { SmartContractService } from 'src/common/services/smart-contract/smart-contract.service';
-import { UnlistTransactionService } from './unlist-transaction/unlist-transaction.service';
-import { TxHelperService } from './helpers/tx-helper/tx-helper.service';
+import { UnlistTransactionService } from './providers/unlist-transaction.service';
+import { TxHelperService } from './providers/tx-helper.service';
 
 @Injectable()
 export class NearIndexerService {

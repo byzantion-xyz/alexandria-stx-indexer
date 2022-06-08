@@ -7,7 +7,7 @@ import {
   TxHelperService,
   CreateBuyAction,
   CreateActionCommonArgs
-} from '../helpers/tx-helper/tx-helper.service';
+} from './tx-helper.service';
 
 import moment from 'moment';
 

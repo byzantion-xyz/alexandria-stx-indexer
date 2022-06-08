@@ -3,7 +3,7 @@ import { Transaction, Block } from '@internal/prisma/client';
 import { PrismaService } from 'src/prisma.service';
 import { SmartContract, SmartContractFunction, ActionName } from '@prisma/client';
 import { TxProcessResult } from 'src/common/interfaces/tx-process-result.interface';
-import { TxHelperService, CreateListAction, CreateActionCommonArgs } from '../helpers/tx-helper/tx-helper.service';
+import { TxHelperService, CreateListAction, CreateActionCommonArgs } from './tx-helper.service';
 import { timingSafeEqual } from 'crypto';
 
 @Injectable()

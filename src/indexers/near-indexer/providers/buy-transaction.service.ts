@@ -1,7 +1,7 @@
 import { Logger, Injectable, NotAcceptableException } from '@nestjs/common';
 import { Transaction, Block } from '@internal/prisma/client';
 import { PrismaService } from 'src/prisma.service';
-import { Prisma, NftMeta, SmartContract, SmartContractFunction, ActionName } from '@prisma/client';
+import { Prisma, NftMeta, SmartContract, SmartContractFunction, ActionName, Action } from '@prisma/client';
 import { TxProcessResult } from 'src/common/interfaces/tx-process-result.interface';
 import {
   TxHelperService,
@@ -9,7 +9,7 @@ import {
   CreateActionCommonArgs
 } from './tx-helper.service';
 
-import moment from 'moment';
+import { SalesBotService } from 'src/discord-bot/providers/sales-bot.service';
 
 @Injectable()
 export class BuyTransactionService {
@@ -17,7 +17,8 @@ export class BuyTransactionService {
 
   constructor(
     private readonly prismaService: PrismaService,
-    private txHelper: TxHelperService
+    private txHelper: TxHelperService,
+    private salesBotService: SalesBotService
   ) { }
 
   async process(
@@ -49,7 +50,10 @@ export class BuyTransactionService {
         buyer: tx.transaction.signer_id,
       };
 
-      await this.createAction(buyActionParams);
+      const newAction = await this.createAction(buyActionParams);
+      if (newAction) {
+        this.salesBotService.createAndSend(nftMeta, nftMeta.nft_state, newAction, sc);
+      }
 
       txResult.processed = true;
     } else if (nftMeta) {
@@ -71,6 +75,7 @@ export class BuyTransactionService {
       });
 
       this.logger.log(`New action ${params.action}: ${action.id} `);
+      return action;
     } catch (err) {
       this.logger.warn(err);
     }

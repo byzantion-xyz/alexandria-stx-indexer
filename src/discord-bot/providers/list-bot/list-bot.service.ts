@@ -3,7 +3,7 @@ import { Once, InjectDiscordClient } from '@discord-nestjs/core';
 import { AnyChannel, Channel, Client, MessageAttachment, MessageEmbed, TextChannel } from 'discord.js';
 import { DiscordListDto } from 'src/discord-bot/dto/discord-list.dto';
 import axios from 'axios';
-import sharp from 'sharp';
+import * as sharp from 'sharp';
 import { BotHelperService } from '../bot-helper/bot-helper.service';
 import { ChannelType } from 'discord-api-types/v10';
 
@@ -20,7 +20,6 @@ export class ListBotService {
     try {
       const { title, rarity, price, byzantionLink, transactionLink, image } = data;
       const byzFinalLink = this.botHelperService.enrichByzLink(byzantionLink, server.server_name);
-
       const embed = new MessageEmbed().setColor('YELLOW');
       let attachments = [];
 
@@ -51,7 +50,7 @@ export class ListBotService {
       if (embed.video) attachments = []; // Do not include video files
       embed.setTimestamp();
       const channel = await this.client.channels.fetch(server.channel_id);
-
+    
       if (channel.type === 'GUILD_TEXT') {
         await channel.send({
           embeds: [embed],

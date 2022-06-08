@@ -1,9 +1,12 @@
 import { InjectDiscordClient } from '@discord-nestjs/core';
 import { Injectable, Logger } from '@nestjs/common';
+import { Action, NftMeta, NftState, SmartContract } from '@prisma/client';
 import axios from 'axios';
 import { Client, ColorResolvable, MessageAttachment, MessageEmbed } from 'discord.js';
 import * as sharp from 'sharp';
 import { DiscordBotDto } from 'src/discord-bot/dto/discord-bot.dto';
+
+
 
 @Injectable()
 export class BotHelperService {
@@ -16,6 +19,21 @@ export class BotHelperService {
   enrichByzLink(byzLink: string, server_name: string): string {
     return encodeURI(`${byzLink}?utm_source=byzantion_bot&utm_medium=${server_name}`);
   };
+
+  createDiscordBotDto(nftMeta: NftMeta, nftState: NftState, action: Action, sc: SmartContract): DiscordBotDto {
+    const byzantionLink = `https://byzantion.xyz/collections`; // TODO: Add link to chain collection
+    const transactionLink = `https://explorer.stacks.co/txid/${action.tx_id}?chain=mainnet`;
+
+    return {
+      contract_key: sc.contract_key,
+      title: nftMeta.name,
+      rarity: nftMeta.rarity,
+      price: `${ Number(nftState.list_price) / 1e24} Near`, // TODO: Round to USD also
+      byzantionLink,
+      transactionLink,
+      image: nftMeta.image
+    };
+  }
 
   async sendMessage(message, server) {
     const channel = await this.client.channels.fetch(server.channel_id);
@@ -63,5 +81,5 @@ export class BotHelperService {
 
     return { embeds: [embed], files: attachments };
   }
-
+ 
 }

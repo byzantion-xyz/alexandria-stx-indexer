@@ -4,6 +4,7 @@ import { Block, Transaction } from '@internal/prisma/client';
 import { PrismaService } from 'src/prisma.service';
 import { Action, CreateAccount } from 'near-api-js/lib/transaction';
 import moment from 'moment';
+import { DiscordBotDto } from 'src/discord-bot/dto/discord-bot.dto';
 
 export interface CreateActionCommonArgs {
   nft_meta_id: string

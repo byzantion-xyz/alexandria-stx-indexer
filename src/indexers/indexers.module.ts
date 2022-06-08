@@ -7,10 +7,12 @@ import { ListingTransactionService } from './near-indexer/providers/listing-tran
 import { TxHelperService } from './near-indexer/providers/tx-helper.service';
 import { MongooseModule } from '@nestjs/mongoose';
 import { UnlistTransactionService } from './near-indexer/providers/unlist-transaction.service';
+import { DiscordBotModule } from 'src/discord-bot/discord-bot.module';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([], 'near-streamer')
+    MongooseModule.forFeature([], 'near-streamer'),
+    DiscordBotModule
   ],
   controllers: [NearIndexerController],
   providers: [

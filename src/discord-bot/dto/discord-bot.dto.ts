@@ -1,7 +1,8 @@
 export class DiscordBotDto {
+  contract_key: string;
   title: string;
   rarity: number;
-  price: bigint;
+  price: string;
   byzantionLink: string;
   transactionLink: string;
   image: string;

@@ -10,6 +10,10 @@ import { SalesBotService } from './providers/sales-bot.service';
     DiscordModule.forFeature()
   ],
   controllers: [DiscordBotController],
-  providers: [ListBotService, BotHelperService, SalesBotService]
+  providers: [ListBotService, BotHelperService, SalesBotService],
+  exports: [
+    ListBotService,
+    SalesBotService
+  ]
 })
 export class DiscordBotModule {}

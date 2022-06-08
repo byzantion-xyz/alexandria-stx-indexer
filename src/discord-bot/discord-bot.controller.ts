@@ -18,18 +18,15 @@ export class DiscordBotController {
   @Post('listing')
   @UsePipes(new ValidationPipe({ transform: true }))
   async postListing(@Body() listing: DiscordBotDto) {
-    // TODO: Use provider to fetch channel and server data from contract_key
-    const server = { channel_id: '948998237040283709', server_name: 'Byzantion test' };
-    this.listBotService.send(listing, server);
+   
+    this.listBotService.send(listing);
   }
 
   @Post('sale')
   @UsePipes(new ValidationPipe({ transform: true }))
   async postSale(@Body() sale: DiscordBotDto) {
-    // TODO: Use provider to fetch channel and server data from contract_key
-    const server = { channel_id: '948998237040283709', server_name: 'Byzantion test' };
 
-    this.saleBotService.send(sale, server);
+    this.saleBotService.send(sale);
   }
 
   // Feature module must wait until discord client is logged in

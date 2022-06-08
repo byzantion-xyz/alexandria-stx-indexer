@@ -6,6 +6,8 @@ import { Connection } from 'mongoose';
 import { BuyTransactionService } from './buy-transaction/buy-transaction.service';
 import { ListingTransactionService } from './listing-transaction/listing-transaction.service';
 import { TxProcessResult } from 'src/common/interfaces/tx-process-result.interface';
+import { SmartContractService } from 'src/common/services/smart-contract/smart-contract.service';
+import { UnlistTransactionService } from './unlist-transaction/unlist-transaction.service';
 
 @Injectable()
 export class NearIndexerService {
@@ -13,9 +15,11 @@ export class NearIndexerService {
 
   constructor(
     private readonly prismaService: PrismaService,
-    private buyTransaction: BuyTransactionService,
     @InjectConnection('near-streamer') private readonly connection: Connection,
-    private listingTransaction: ListingTransactionService
+    private buyTransaction: BuyTransactionService,
+    private smartContractService: SmartContractService,
+    private listingTransaction: ListingTransactionService,
+    private unlistTransaction: UnlistTransactionService
   ) { }
 
   async runIndexer() {
@@ -38,7 +42,7 @@ export class NearIndexerService {
           as: 'block'
         }
       },
-      { $limit: 2 }
+      { $limit: 50 }
     ]);
 
     this.logger.debug('Processing transactions');
@@ -68,6 +72,7 @@ export class NearIndexerService {
     switch (name) {
       case 'buy': return this.buyTransaction;
       case 'list': return this.listingTransaction;
+      case 'unlist': return this.unlistTransaction;
       default: throw new Error(`No service defined for the context: ${name}`);
     }
   }

@@ -6,6 +6,7 @@ import { BuyTransactionService } from './near-indexer/buy-transaction/buy-transa
 import { ListingTransactionService } from './near-indexer/listing-transaction/listing-transaction.service';
 import { TxHelperService } from './near-indexer/helpers/tx-helper/tx-helper.service';
 import { MongooseModule } from '@nestjs/mongoose';
+import { UnlistTransactionService } from './near-indexer/unlist-transaction/unlist-transaction.service';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { MongooseModule } from '@nestjs/mongoose';
     BuyTransactionService,
     ListingTransactionService,
     TxHelperService,
+    UnlistTransactionService,
   ]
 })
 export class IndexersModule {}

@@ -52,12 +52,14 @@ export class ListBotService {
       embed.setTimestamp();
       const channel = await this.client.channels.fetch(server.channel_id);
 
-      this.logger.log(channel.type);
-     
-      await (channel as TextChannel).send({
-        embeds: [embed],
-        files: attachments
-      });
+      if (channel.type === 'GUILD_TEXT') {
+        await channel.send({
+          embeds: [embed],
+          files: attachments
+        });
+      } else {
+        this.logger.warn('Not a valid text channel');
+      }
     } catch (err) {
       this.logger.warn('Discord error', err);
     }

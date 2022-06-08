@@ -1,10 +1,10 @@
 import { Logger, Injectable } from '@nestjs/common';
 import { Transaction, Block } from '@internal/prisma/client';
 import { PrismaService } from 'src/prisma.service';
-import moment from 'moment';
 import { SmartContract, SmartContractFunction, ActionName } from '@prisma/client';
 import { TxProcessResult } from 'src/common/interfaces/tx-process-result.interface';
-import { TxHelperService } from '../helpers/tx-helper/tx-helper.service';
+import { TxHelperService, CreateListAction, CreateActionCommonArgs } from './tx-helper.service';
+import { timingSafeEqual } from 'crypto';
 
 @Injectable()
 export class ListingTransactionService {
@@ -51,35 +51,22 @@ export class ListingTransactionService {
         }
       });
 
-      try {
-        // TODO: Use unified service to update actions and handle errors
-        const price = args[scf.args['price']];
-        const smart_contract_id = args[scf.args['nft_contract_id']];
+      const actionCommonArgs: CreateActionCommonArgs = this.txHelper.setCommonActionParams(tx, block, sc, nftMeta);
+      const listActionParams: CreateListAction = {
+        ...actionCommonArgs,
+        action: ActionName.list,
+        list_price: price,
+        seller: tx.transaction.signer_id
+      };
 
-        const action = await this.prismaService.action.create({
-          data: {
-            action: ActionName.list,
-            list_price: price,
-            seller: tx.transaction.signer_id,
-            block_height: block.block_height,
-            tx_index: tx.transaction.nonce,
-            block_time: moment().toDate(), // TODO: Use block timestamp
-            tx_id: tx.transaction.hash,
-            nft_meta_id: nftMeta.id,
-            smart_contract_id: smart_contract_id,
-          }
-        });
-
-        this.logger.log(`New action list: ${action.id} `);
-      } catch (err) {
-        this.logger.warn(err);
-      }
+      await this.createAction(listActionParams);  
 
       await this.sendNotifications();
       txResult.processed = true;
     } else if (nftMeta) {
       this.logger.log(`Too Late`);
       // TODO: Create possible missing action
+      txResult.processed = true;
     } else {
       this.logger.log(`NftMeta not found by`, { contract_key, token_id });
       // TODO: Call Missing Collection handle once built
@@ -92,6 +79,18 @@ export class ListingTransactionService {
 
   async sendNotifications() {
     this.logger.debug('Skipping notifications until implemented ...');
+  }
+
+  async createAction(params: CreateListAction) {
+    try {
+      const action = await this.prismaService.action.create({
+        data: { ...params }
+      });
+
+      this.logger.log(`New action ${params.action}: ${action.id} `);
+    } catch (err) {
+      this.logger.warn(err);
+    }
   }
 
 }

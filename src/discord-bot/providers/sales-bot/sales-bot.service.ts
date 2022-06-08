@@ -1,23 +1,21 @@
-import { Injectable, Logger } from '@nestjs/common';
 import { InjectDiscordClient } from '@discord-nestjs/core';
-import { Client, ColorResolvable, MessageAttachment, MessageEmbed } from 'discord.js';
-
-import { BotHelperService } from '../bot-helper/bot-helper.service';
+import { Injectable, Logger } from '@nestjs/common';
+import { Client, ColorResolvable } from 'discord.js';
 import { DiscordBotDto } from 'src/discord-bot/dto/discord-bot.dto';
+import { BotHelperService } from '../bot-helper/bot-helper.service';
 
 @Injectable()
-export class ListBotService {
-  private readonly logger = new Logger(ListBotService.name);
+export class SalesBotService {
+  private readonly logger = new Logger(SalesBotService.name);
 
   constructor(
-    @InjectDiscordClient() private client: Client,
     private botHelper: BotHelperService
   ) { }
 
   async send(data: DiscordBotDto, server) {
     try {
-      const subTitle = 'has been listed for sale';
-      const color: ColorResolvable = 'YELLOW';
+      const subTitle = 'has been sold';
+      const color: ColorResolvable = 'BLUE';
       let messageContent = await this.botHelper.buildMessage(data, server, color, subTitle);
 
       await this.botHelper.sendMessage(messageContent, server);
@@ -26,4 +24,3 @@ export class ListBotService {
     }
   }
 }
-

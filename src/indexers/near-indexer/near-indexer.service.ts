@@ -8,6 +8,7 @@ import { ListingTransactionService } from './listing-transaction/listing-transac
 import { TxProcessResult } from 'src/common/interfaces/tx-process-result.interface';
 import { SmartContractService } from 'src/common/services/smart-contract/smart-contract.service';
 import { UnlistTransactionService } from './unlist-transaction/unlist-transaction.service';
+import { TxHelperService } from './helpers/tx-helper/tx-helper.service';
 
 @Injectable()
 export class NearIndexerService {
@@ -55,12 +56,18 @@ export class NearIndexerService {
         where: { contract_key: transaction.transaction.receiver_id },
         include: { smart_contract_functions: true }
       };
+
       const smart_contract = await this.prismaService.smartContract.findUnique(finder);
 
+      let result: TxProcessResult = { processed: transaction.processed, missing: transaction.missing };
       let smart_contract_function = smart_contract.smart_contract_functions.find(f => f.function_name === method_name);
-
-      const txHandler = this.getTxHandler(smart_contract_function.function_name)
-      const result: TxProcessResult = await txHandler.process(transaction, doc.block, smart_contract, smart_contract_function);
+      if (smart_contract && smart_contract_function) {
+        const txHandler = this.getTxHandler(smart_contract_function.name)
+        result = await txHandler.process(transaction, doc.block, smart_contract, smart_contract_function);
+      } else {
+        this.logger.log(`function_name: ${method_name} not found in ${transaction.transaction.receiver_id}`);
+        result.missing = true;
+      }
 
       await this.setTransactionResult(transaction.id, result);
     }

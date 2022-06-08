@@ -4,7 +4,7 @@ import { PrismaService } from 'src/prisma.service';
 import { SmartContract, SmartContractFunction, ActionName } from '@prisma/client';
 import { TxProcessResult } from 'src/common/interfaces/tx-process-result.interface';
 import { TxHelperService, CreateListAction, CreateActionCommonArgs } from './tx-helper.service';
-import { timingSafeEqual } from 'crypto';
+import { ListBotService } from 'src/discord-bot/providers/list-bot.service';
 
 @Injectable()
 export class ListingTransactionService {
@@ -12,7 +12,8 @@ export class ListingTransactionService {
 
   constructor(
     private readonly prismaService: PrismaService,
-    private txHelper: TxHelperService
+    private txHelper: TxHelperService,
+    private listBotService: ListBotService
   ) { }
 
   async process(
@@ -59,9 +60,11 @@ export class ListingTransactionService {
         seller: tx.transaction.signer_id
       };
 
-      await this.createAction(listActionParams);  
+      const newAction = await this.createAction(listActionParams);  
+      if (newAction) {
+        await this.listBotService.createAndSend(nftMeta, nftMeta.nft_state, newAction, sc);
+      }
 
-      await this.sendNotifications();
       txResult.processed = true;
     } else if (nftMeta) {
       this.logger.log(`Too Late`);
@@ -77,10 +80,6 @@ export class ListingTransactionService {
     return txResult;
   }
 
-  async sendNotifications() {
-    this.logger.debug('Skipping notifications until implemented ...');
-  }
-
   async createAction(params: CreateListAction) {
     try {
       const action = await this.prismaService.action.create({
@@ -88,6 +87,7 @@ export class ListingTransactionService {
       });
 
       this.logger.log(`New action ${params.action}: ${action.id} `);
+      return action;
     } catch (err) {
       this.logger.warn(err);
     }

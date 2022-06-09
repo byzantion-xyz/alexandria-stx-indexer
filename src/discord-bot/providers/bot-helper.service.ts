@@ -20,9 +20,9 @@ export class BotHelperService {
     return encodeURI(`${byzLink}?utm_source=byzantion_bot&utm_medium=${server_name}`);
   };
 
-  createDiscordBotDto(nftMeta: NftMeta, nftState: NftState, action: Action, sc: SmartContract): DiscordBotDto {
+  createDiscordBotDto(nftMeta: NftMeta, nftState: NftState, sc: SmartContract, txHash: string): DiscordBotDto {
     const byzantionLink = `https://byzantion.xyz/collections`; // TODO: Add link to chain collection
-    const transactionLink = `https://explorer.stacks.co/txid/${action.tx_id}?chain=mainnet`;
+    const transactionLink = `https://explorer.near.org/transactions/${txHash}`;
 
     return {
       contract_key: sc.contract_key,

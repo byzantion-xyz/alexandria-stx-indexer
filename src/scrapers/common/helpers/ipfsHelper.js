@@ -1,6 +1,6 @@
 const axios = require('axios').default;
-const appConfig = require('../config/appConfig');
-const { pinataApiKey, pinataSecretApiKey } = require('../config/appConfig');
+const pinataGatewayUrl = 'https://byzantion.mypinata.cloud/ipfs/'
+const pinataApiKey = '6c5c98bf2b9c3f63f565'
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -28,11 +28,17 @@ exports.pinIpfsFolder = async (ipfsUrl, pinName) => {
   return {
     pin_status: isPinning ? 'pinning' : 'pinned',
     pinHash,
-    pinHashUrl: `${appConfig.pinataGatewayUrl}${pinHash}`
+    pinHashUrl: `${pinataGatewayUrl}${pinHash}`
   };
 };
 
 exports.getPinHashFromUrl = (ipfsUrl) => {
+
+  //https://cloudflare-ipfs.com/ipfs/QmP3shtToBeoeHizRtvgUPJTeGbcVn2rdZhERSwEiQHtJh
+  //https://bafybeic6xpqfeirsmfszjjonassdwaif56focrxw44n4gabqippnn4tjuq.ipfs.dweb.link
+  //https://dev.nagmi.art/ipfs/QmapNeyQBV14ZMJFU7WAW2sV5ZnMpKj6f7VCE4kfctDxWb
+  //https://ipfs.io/ipfs/bafybeibvdkthkvso4lrxaxazfof2qs6bkjwikfubktiojlksz3tj5txdyi
+
   ipfsUrl = ipfsUrl.replace(/"/g, '');
   let ipfs_no_protocol;
   if (ipfsUrl.startsWith('ipfs://')) {
@@ -56,17 +62,17 @@ exports.getPinHashFromUrl = (ipfsUrl) => {
 exports.getByzMetaIpfsUrl = (ipfs, token_id) => {
   return ipfs.value.value.data
     .replace(/"/g, '')
-    .replace('ipfs://ipfs/', appConfig.pinataGatewayUrl)
-    .replace('ipfs://', appConfig.pinataGatewayUrl)
+    .replace('ipfs://ipfs/', pinataGatewayUrl)
+    .replace('ipfs://', pinataGatewayUrl)
     .replace('{id}', token_id)
     .replace(`$TOKEN_ID`, token_id);
 };
 
 exports.getByzImageIpfsUrl = (ipfsUrl) => {
   return ipfsUrl
-    .replace('ipfs://ipfs/', appConfig.pinataGatewayUrl)
-    .replace('ipfs://', appConfig.pinataGatewayUrl)
-    .replace('https://cloudflare-ipfs.com/ipfs/', appConfig.pinataGatewayUrl);
+    .replace('ipfs://ipfs/', pinataGatewayUrl)
+    .replace('ipfs://', pinataGatewayUrl)
+    .replace('https://cloudflare-ipfs.com/ipfs/', pinataGatewayUrl);
 };
 
 const checkIfPinning = async (pinHash) => {

@@ -91,15 +91,17 @@ model Collection {
 }
 
 model CollectionAttribute {
-  id            String     @id @default(uuid()) @db.Uuid
-  name          String
-  value         String
-  rarity        Float
-  total         Int
+  id String @id @default(uuid()) @db.Uuid
+
+  name   String
+  value  String
+  rarity Float
+  total  Int
+
+  collection    Collection @relation(fields: [collection_id], references: [id])
   collection_id String     @db.Uuid
   created_at    DateTime   @default(now())
   updated_at    DateTime   @updatedAt
-  collection    Collection @relation(fields: [collection_id], references: [id])
 
   @@map("collection_attribute")
 }

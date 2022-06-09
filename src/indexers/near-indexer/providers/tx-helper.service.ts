@@ -1,9 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ActionName, NftMeta, NftState, SmartContract } from '@prisma/client';
+import { ActionName, NftMeta, NftState, SmartContract, SmartContractFunction } from '@prisma/client';
 import { Block, Transaction } from '@internal/prisma/client';
 import { PrismaService } from 'src/prisma.service';
 import { Action, CreateAccount } from 'near-api-js/lib/transaction';
-import moment from 'moment';
+import * as moment from 'moment';
 import { DiscordBotDto } from 'src/discord-bot/dto/discord-bot.dto';
 
 export interface CreateActionCommonArgs {
@@ -37,17 +37,31 @@ export class TxHelperService {
   ) { }
 
   isNewNftListOrSale(tx: Transaction, nft_state: NftState, block: Block) {
-    return !nft_state.list_block_height ||
+    return !nft_state || !nft_state.list_block_height ||
       block.block_height > nft_state.list_block_height ||
       (block.block_height === nft_state.list_block_height && tx.transaction.nonce > nft_state.list_tx_index);
   }
 
   parseBase64Arguments(tx: Transaction) {
     try {
-      return JSON.parse(Buffer.from(tx.transaction.actions[0].FunctionCall.args, 'base64').toString());
+      let json = JSON.parse(Buffer.from(tx.transaction.actions[0].FunctionCall.args, 'base64').toString());
+      if (json.msg) {
+        json.msg = JSON.parse(json.msg);
+      }
+      return json;
     } catch (err) {
       this.logger.warn('parseBase64Arguments() failed. ', err);
       throw err;
+    }
+  }
+
+  extractArgumentData(args: JSON, scf: SmartContractFunction, field: string) {
+    const index = scf.args[field];
+    if (index.includes('.')) {
+      const indexArr = index.split('.');
+      return args[indexArr[0]][indexArr[1]];
+    } else {
+      return args[scf.args['token_id']];
     }
   }
 

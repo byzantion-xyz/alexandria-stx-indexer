@@ -233,7 +233,7 @@ model Action {
   tx_id             String
   segment           Boolean        @default(false)
   market_name       String?
-  nonce             Int?
+  nonce             BigInt?
   units             Int?
   smart_contract_id String?        @db.Uuid
   nft_meta_id       String?        @db.Uuid

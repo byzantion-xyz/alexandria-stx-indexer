@@ -56,6 +56,8 @@ export class NearScraperService {
 
   //   const firstTokenMeta = tokenMetas[0]
   //   const firstTokenIpfsUrl = this.getTokenIpfsUrl(nftContractMetadata.base_uri, firstTokenMeta.metadata.reference);
+  //   const firstTokenIpfsImageUrl = this.getTokenIpfsMediaUrl(nftContractMetadata.base_uri, firstTokenMeta.metadata.media)
+  //   const { data: tokenIpfsMeta } = await axios.get(firstTokenIpfsUrl);
 
   //   // Pin the collection metadata to byzantion ipfs cloud
   //   const pinMetaResult = await pinIpfsFolder(firstTokenIpfsUrl, `${contract_key} Meta`);
@@ -329,14 +331,17 @@ export class NearScraperService {
         data: {
           attributes: {
             deleteMany: {},
-            create: nftMeta.attributes.map((attr) => {
-              return {
-                name: attr.trait_type,
-                value: attr.value,
-                rarity: attr.rarity,
-                total: Number(Number((attr.rarity * nftMetas.length)).toFixed(0))
-              }
-            }),
+            createMany: {
+              data: nftMeta.attributes.map((attr) => {
+                return {
+                  trait_type: attr.trait_type,
+                  value: attr.value,
+                  rarity: attr.rarity,
+                  total: Number(Number((attr.rarity * nftMetas.length)).toFixed(0))
+                }
+              }),
+              skipDuplicates: true
+            }
           }
         }
       })

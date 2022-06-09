@@ -108,7 +108,7 @@ model CollectionAttribute {
 
   name   String
   value  String
-  rarity Int
+  rarity Float
   total  Int
 
   collection    Collection @relation(fields: [collection_id], references: [id])

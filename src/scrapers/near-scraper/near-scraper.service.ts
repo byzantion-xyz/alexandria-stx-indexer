@@ -1,11 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from 'src/prisma.service';
 import { SmartContractType } from '@prisma/client'
-import console from 'console';
 const axios = require('axios').default;
-const nearAPI = require("near-api-js");
 
+const nearAPI = require("near-api-js");
 const { keyStores, connect } = nearAPI;
+
 const homedir = require("os").homedir();
 const CREDENTIALS_DIR = ".near-credentials";
 const credentialsPath = require("path").join(homedir, CREDENTIALS_DIR);
@@ -23,7 +23,6 @@ const nearConfig = {
 };
 
 const NEAR_PROTOCOL_DB_ID = "174c3df6-0221-4ca7-b966-79ac8d981bdb"
-
 
 @Injectable()
 export class NearScraperService {
@@ -44,12 +43,56 @@ export class NearScraperService {
     };
 
     const smartContract = await this.loadSmartContract(nftContractMetadata, contract_key);
-    await this.loadNftMetas(tokenMetas, nftContractMetadata, smartContract.id, contract_key, collectionSize);
-    await this.loadNftMetaAttributes(tokenMetas, nftContractMetadata, smartContract.id, contract_key);
-    await this.loadCollection(tokenMetas, nftContractMetadata, contract_key, collectionSize);
-    await this.updateRarity(smartContract, contract_key);
+    const collection = await this.loadCollection(tokenMetas, nftContractMetadata, contract_key, collectionSize);
+    const numNftMetasLoaded = await this.loadNftMetasAndTheirAttributes(tokenMetas, nftContractMetadata, smartContract.id, contract_key, collection);
+    if (numNftMetasLoaded > 0) {
+      await this.updateRarities(smartContract, contract_key);
+      await this.loadCollectionAttributes(collection.id, contract_key);
+    }
     return "Success"
   }
+
+  // async pin(tokenMetas, nftContractMetadata, contract_key) {
+
+  //   const firstTokenMeta = tokenMetas[0]
+  //   const firstTokenIpfsUrl = this.getTokenIpfsUrl(nftContractMetadata.base_uri, firstTokenMeta.metadata.reference);
+
+  //   // Pin the collection metadata to byzantion ipfs cloud
+  //   const pinMetaResult = await pinIpfsFolder(firstTokenIpfsUrl, `${contract_key} Meta`);
+  //   if (pinMetaResult.pin_status === 'pinning') {
+  //     return {
+  //       msg: 'Meta pinning in progress'
+  //     };
+  //   }
+
+  //   // Get token_meta from Byzantion pinata - should work in most cases
+  //   let metaIpfsUrl = metaIpfs.value.value.data
+  //     .replace(/"/g, '')
+  //     .replace('ipfs://ipfs/', appConfig.pinataGatewayUrl)
+  //     .replace('ipfs://', appConfig.pinataGatewayUrl)
+  //     .replace('{id}', first_token)
+  //     .replace('$TOKEN_ID', first_token)
+  //     .replace('1.json1.json', '1.json'); // edge case
+  //   console.log(metaIpfsUrl);
+  //   let { data: token_meta } = await axios.get(metaIpfsUrl, { timeout: 20000 });
+  //   if (typeof token_meta === 'string') {
+  //     const data = await tryMetaFileOptions(metaIpfsUrl, first_token);
+  //     token_meta = data.token_meta;
+  //     metaIpfsUrl = data.metaIpfsUrl;
+  //   }
+
+  //   // // Call pinFolder to pin the folder for all images
+  //   const mediaIpfs = token_meta.image ?? token_meta.imageUrl ?? token_meta.video;
+  //   if (!mediaIpfs)
+  //     throw new Error(`Media IPFS folder not found. Likely due to a non-standard naming format: ${metaIpfsUrl} `);
+  //   const pinImagesResult = await pinIpfsFolder(mediaIpfs, `${contract_key} Images`);
+  //   return {
+  //     msg: pinImagesResult.pin_status === 'pinning' ? 'Image pinning in progress' : 'Pinning of meta and images complete',
+  //     meta_pin_hash: pinMetaResult.pinHash,
+  //     meta_ipfs_url: metaIpfsUrl,
+  //     image_pin_hash: pinImagesResult.pinHash
+  //   };
+  // };
 
   async loadSmartContract(nftContractMetadata, contract_key) {
     this.logger.debug('loadSmartContract');
@@ -77,71 +120,6 @@ export class NearScraperService {
     return smartContract
   }
 
-  async loadNftMetas(tokenMetas, nftContractMetadata, smartContractId, contract_key, collectionSize) {
-    let nftMetaInsertBatch = []
-    for (let i = 0; i < tokenMetas.length; i++) {
-
-      const nftMeta = await this.prismaService.nftMeta.findFirst({
-        where: {
-          smart_contract_id: smartContractId,
-          token_id: tokenMetas[i].token_id
-        },
-      })
-
-      if (!nftMeta) {
-        const mediaUrl = this.getTokenIpfsMediaUrl(nftContractMetadata.base_uri, tokenMetas[i].metadata.media)
-        nftMetaInsertBatch.push({
-          smart_contract_id: smartContractId,
-          chain_id: NEAR_PROTOCOL_DB_ID,
-          name: tokenMetas[i].metadata.title,
-          image: mediaUrl,
-          token_id: tokenMetas[i].token_id,
-          rarity: 0,
-          ranking: 0,
-        });
-      }
-
-      if (i % 100 === 0) this.logger.debug(`[scraping ${contract_key}] Metas processed: ${i} of ${collectionSize}`);
-    };
-
-    // Perform a batch insert of the NftMetas into the database
-    await this.prismaService.nftMeta.createMany({
-      data: nftMetaInsertBatch
-    })
-    this.logger.debug(`[scraping ${contract_key}] NftMeta batch inserted`, nftMetaInsertBatch.length);
-  }
-
-  async loadNftMetaAttributes(tokenMetas, nftContractMetadata, smartContractId, contract_key) {
-    // Get all of the NftMetas in the contract, select only the id field
-    const nftMetas = await this.prismaService.nftMeta.findMany({
-      where: {
-        smart_contract_id: smartContractId
-      },
-      select: {
-        id: true,
-      },
-    })
-
-    // Loop through each of the NftMetas and add the NftMetaAttributes for each of them
-    for (let i = 0; i < nftMetas.length; i++) {
-      const attributes = await this.getNftMetaAttributes(nftContractMetadata, tokenMetas[i], contract_key);
-
-      await this.prismaService.nftMeta.update({
-        where: {
-          id: nftMetas[i].id
-        },
-        data: {
-          attributes: {
-            createMany: {
-              data: attributes
-            },
-          },
-        },
-      })
-    };
-    this.logger.debug(`[scraping ${contract_key}] NftMetaAttributes inserted`);
-  }
-
   async loadCollection(tokenMetas, nftContractMetadata, contract_key, collectionSize) {
     this.logger.debug('loadCollection');
 
@@ -167,28 +145,206 @@ export class NearScraperService {
     return byzCollection
   }
 
-  // async asdf(tokenMetas, nftContractMetadata, smartContract, byzCollection, contract_key) {
-  //   // Update Rarity
-  //   // Gets the collection with all metas, sets rarity and score values
-  //   // on attributes as well as rarity and ranking on the meta
-  //   await exports.updateRarity(byzCollection._id, asset_name);
+  async loadNftMetasAndTheirAttributes(tokenMetas, nftContractMetadata, smartContractId, contract_key, collection) {
+    let nftMetaPromises = []
+    for (let i = 0; i < tokenMetas.length; i++) {
+
+      const nftMeta = await this.prismaService.nftMeta.findFirst({
+        where: {
+          smart_contract_id: smartContractId,
+          token_id: tokenMetas[i].token_id
+        },
+      })
+
+      if (!nftMeta) {
+        const mediaUrl = this.getTokenIpfsMediaUrl(nftContractMetadata.base_uri, tokenMetas[i].metadata.media)
+        const attributes = await this.getNftMetaAttributes(nftContractMetadata, tokenMetas[i], contract_key);
+        const nftMeta = this.prismaService.nftMeta.create({
+          data: {
+            smart_contract_id: smartContractId,
+            chain_id: NEAR_PROTOCOL_DB_ID,
+            collection_id: collection.id,
+            name: tokenMetas[i].metadata.title,
+            image: mediaUrl,
+            token_id: tokenMetas[i].token_id,
+            rarity: 0,
+            ranking: 0,
+            attributes: {
+              createMany: {
+                data: attributes
+              },
+            },
+          },
+        })
+        nftMetaPromises.push(nftMeta)
+      }
+      if (i % 100 === 0) this.logger.debug(`[scraping ${contract_key}] Metas processed: ${i} of ${collection.collection_size}`);
+    };
+
+    await Promise.all(nftMetaPromises)
+    this.logger.debug(`[scraping ${contract_key}] NftMeta batch inserted`, nftMetaPromises.length);
+    return nftMetaPromises.length
+  }
+
+  async updateRarities(smartContract, contract_key, only_minted = false, override_frozen = false) {
+    this.logger.debug(`[scraping ${contract_key}] Running updateRarity()`);
   
-  //   // Insert Attributes record
-  //   // Adds a record to the attributes collection for use by the
-  //   // filter function on website (grab the information from the database)
-  //   await exports.createAttributes(contract_key, asset_name);
+    if (smartContract.frozen && !override_frozen) {
+      const msg = `[scraping ${contract_key}] Collection is frozen, rarity update abandoned`;
+      this.logger.debug(msg);
+      return msg;
+    }
+
+    let nftMetas = []
+    nftMetas = await this.prismaService.nftMeta.findMany({
+      where: {
+        smart_contract_id: smartContract.id
+      },
+      include: {
+        attributes: true
+      }
+    })
   
-  //   // Rebuild UI if required. The default is true.
-  //   if (rebuild_ui) {
-  //     axios.get('https://api.vercel.com/v1/integrations/deploy/prj_s08WFRxHAEJPiBEMfck6L7TWeAcA/61XRF0FryQ');
-  //   }
+    this.logger.debug(`[scraping ${contract_key}] Checking for Trait Count`);
+    for (let nftMeta of nftMetas) {
+      let hasTraitCount = false;
+      for (let attr of nftMeta.attributes) {
+        if (attr.trait_type == 'Trait Count') {
+          hasTraitCount = true;
+        }
+      }
+
+      if (hasTraitCount) {
+        this.logger.debug(`[scraping ${contract_key}] SKIP - Adding Trait Count`);
+      }
+      else {
+        this.logger.debug(`[scraping ${contract_key}] Adding Trait Count`);
+        let attribute_count = 0;
+        for (let attr of nftMeta.attributes) {
+          if (attr.value != 'None' && attr.value != 'none' && attr.value != null) {
+            attribute_count++;
+          }
+        }
+
+        nftMeta.attributes.push({
+          trait_type: 'Trait Count',
+          value: attribute_count.toString()
+        })
+      }
+    }
+
+    this.logger.log(`[scraping ${contract_key}] Updating Rarity Scores...`);
+    let obj = {};
+    for (let nftMeta of nftMetas) {
+      for (let attr of nftMeta.attributes) {
+        obj[attr.trait_type] = {};
+      }
+    }
+    for (let nftMeta of nftMetas) {
+      for (let attr of nftMeta.attributes) {
+        obj[attr.trait_type][attr.value] = 0;
+      }
+    }
+    for (let nftMeta of nftMetas) {
+      for (let attr of nftMeta.attributes) {
+        obj[attr.trait_type][attr.value]++;
+      }
+    }
+
+    this.logger.debug(`[scraping ${contract_key}] Updating Rarity Scores to %`);
+    for (let nftMeta of nftMetas) {
+      for (let attr of nftMeta.attributes) {
+        attr.rarity = obj[attr.trait_type][attr.value];
+      }
+    }
+    for (let nftMeta of nftMetas) {
+      for (let attr of nftMeta.attributes) {
+        attr.rarity = attr.rarity / nftMetas.length;
+        attr.score = 1 / attr.rarity;
+      }
+    }
+
+    this.logger.debug(`[scraping ${contract_key}] Updating NftMeta Rarity`);
+    for (let nftMeta of nftMetas) {
+      let rarity_score = 0;
+      for (let attr of nftMeta.attributes) {
+        rarity_score += 1 / attr.rarity;
+      }
+      nftMeta.rarity = rarity_score;
+    }
+    nftMetas.sort((a, b) => {
+      return b.rarity - a.rarity;
+    });
+
+    let updatedNftMetaPromises = [];
+    let count = 0;
+    for (let nftMeta of nftMetas) {
+      const updatedNftMeta = await this.prismaService.nftMeta.update({
+        where: {
+          id: nftMeta.id
+        },
+        data: {
+          rarity: nftMeta.rarity,
+          ranking: (Number(count) + 1),
+          attributes: {
+            deleteMany: {},
+            create: nftMeta.attributes.map((attr) => {
+              return {
+                trait_type: attr.trait_type,
+                value: attr.value,
+                rarity: attr.rarity,
+                score: attr.score
+              }
+            }),
+          }
+        },
+      })
+
+      updatedNftMetaPromises.push(updatedNftMeta)
+      count++;
+    }
+
+    await Promise.all(updatedNftMetaPromises)
+    this.logger.debug(`[scraping ${contract_key}] Rarity and Ranking saved for ${updatedNftMetaPromises.length} Meta`);
+  };
+
+  async loadCollectionAttributes(collectionId, contract_key) {
+    this.logger.debug(`[scraping ${contract_key}] Running createAttributes()`);
   
-  //   return {
-  //     contract_key,
-  //     collection_id: byzCollection._id,
-  //     metas_loaded: metaInsertBatch.length
-  //   };
-  // }
+    const nftMetas = await this.prismaService.nftMeta.findMany({
+      where: {
+        collection_id: collectionId
+      },
+      include: {
+        attributes: true
+      }
+    })
+
+    let collectionAttributePromises = []
+    for (let nftMeta of nftMetas) {
+      const collectionAndCollectionAttributes = this.prismaService.collection.update({
+        where: {
+          id: collectionId
+        },
+        data: {
+          attributes: {
+            deleteMany: {},
+            create: nftMeta.attributes.map((attr) => {
+              return {
+                name: attr.trait_type,
+                value: attr.value,
+                rarity: attr.rarity,
+                total: Number(Number((attr.rarity * nftMetas.length)).toFixed(0))
+              }
+            }),
+          }
+        }
+      })
+      collectionAttributePromises.push(collectionAndCollectionAttributes)
+    }
+
+    await Promise.all(collectionAttributePromises)
+  };
 
   async getContractAndTokenMetaData(contract_key) {
     const near = await connect(nearConfig);
@@ -279,159 +435,4 @@ export class NearScraperService {
     }
     return attributes
   }
-
-  async updateRarity(smartContract, contract_key, only_minted = false, override_frozen = false) {
-    this.logger.debug(`[scraping ${contract_key}] Running updateRarity()`);
-  
-    if (smartContract.frozen && !override_frozen) {
-      const msg = `[scraping ${contract_key}] Collection is frozen, rarity update abandoned`;
-      this.logger.debug(msg);
-      return msg;
-    }
-
-    let nftMetas = []
-    if (only_minted) {
-      this.logger.debug("NEED TO IMPLEMENT A FIND MANY ONLY SELECT MINTED NFT METAS");
-    } else {
-      nftMetas = await this.prismaService.nftMeta.findMany({
-        where: {
-          smart_contract_id: smartContract.id
-        },
-        include: {
-          attributes: true
-        }
-      })
-    }
-  
-    this.logger.debug(`[scraping ${contract_key}] Checking for Trait Count`);
-    for (let nftMeta of nftMetas) {
-      let hasTraitCount = false;
-      for (let attr of nftMeta.attributes) {
-        if (attr.trait_type == 'Trait Count') {
-          hasTraitCount = true;
-        }
-      }
-
-      if (hasTraitCount) {
-        this.logger.debug(`[scraping ${contract_key}] SKIP - Adding Trait Count`);
-      }
-      else {
-        this.logger.debug(`[scraping ${contract_key}] Adding Trait Count`);
-        let attribute_count = 0;
-        for (let attr of nftMeta.attributes) {
-          if (attr.value != 'None' && attr.value != 'none' && attr.value != null) {
-            attribute_count++;
-          }
-        }
-
-        nftMeta.attributes.push({
-          trait_type: 'Trait Count',
-          value: attribute_count.toString()
-        })
-
-        await this.prismaService.nftMeta.update({
-          where: {
-            id: nftMeta.id
-          },
-          data: {
-            attributes: {
-              create: {
-                trait_type: 'Trait Count',
-                value: attribute_count.toString()
-              },
-            }
-          },
-          include: {
-            attributes: true
-          }
-        })
-      }
-    }
-
-    this.logger.log(`[scraping ${contract_key}] Updating Rarity Scores...`);
-    let obj = {};
-    for (let nftMeta of nftMetas) {
-      for (let attr of nftMeta.attributes) {
-        obj[attr.trait_type] = {};
-      }
-    }
-    for (let nftMeta of nftMetas) {
-      for (let attr of nftMeta.attributes) {
-        obj[attr.trait_type][attr.value] = 0;
-      }
-    }
-    for (let nftMeta of nftMetas) {
-      for (let attr of nftMeta.attributes) {
-        obj[attr.trait_type][attr.value]++;
-      }
-    }
-
-    this.logger.debug(`[scraping ${contract_key}] Updating Rarity Scores to %`);
-    for (let nftMeta of nftMetas) {
-      for (let attr of nftMeta.attributes) {
-        attr.rarity = obj[attr.trait_type][attr.value];
-      }
-    }
-    for (let nftMeta of nftMetas) {
-      for (let attr of nftMeta.attributes) {
-        attr.rarity = attr.rarity / nftMetas.length;
-        attr.score = 1 / attr.rarity;
-      }
-    }
-    this.logger.debug(`[scraping ${contract_key}] Updating Meta Rarity`);
-    for (let nftMeta of nftMetas) {
-      let rarity_score = 0;
-      for (let attr of nftMeta.attributes) {
-        rarity_score += 1 / attr.rarity;
-      }
-      nftMeta.rarity = rarity_score;
-    }
-    nftMetas.sort((a, b) => {
-      return b.rarity - a.rarity;
-    });
-
-    for (let nftMeta of nftMetas) {
-      const hello = await this.prismaService.nftMeta.update({
-        where: {
-          id: nftMeta.id
-        },
-        data: {
-          attributes: {
-            deleteMany: {},
-            createMany: {
-              data: nftMeta.attributes,
-            }
-          }
-        },
-        include: {
-          attributes: true
-        },
-      })
-
-      this.logger.log("hello")
-      this.logger.log("hello")
-      this.logger.log("hello")
-      this.logger.log("hello")
-      this.logger.log("hello")
-      this.logger.log("hello")
-      this.logger.log(hello)
-    }
-  
-    // console.log(`[scraping ${asset_name}] Saving Meta Rarity and Ranking`);
-    // // Save the changes made above
-    // let savePromises = [];
-    // let cnt = 0;
-    // for (let m in meta) {
-    //   meta[m].ranking = Number(m) + 1;
-    //   savePromises.push(meta[m].save());
-    //   cnt++;
-    //   if (cnt % 500 === 0) {
-    //     await Promise.all(savePromises);
-    //     savePromises = [];
-    //     console.log(`[scraping ${asset_name}] Rarity and Ranking saved for ${cnt} Meta`);
-    //   }
-    // }
-    // console.log(`[scraping ${asset_name}] Update Rarity done.`);
-    return 'done';
-  };
 }

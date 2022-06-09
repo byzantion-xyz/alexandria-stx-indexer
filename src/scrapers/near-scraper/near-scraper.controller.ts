@@ -13,8 +13,7 @@ export class NearScraperController {
   async loadCollectionFromChain(
     @Body() data: { contract_key }
   ) {
-    const hello = this.nearScraper.scrape(data);
-
-    return hello;
+    const result = this.nearScraper.scrape(data);
+    return result;
   }
 }

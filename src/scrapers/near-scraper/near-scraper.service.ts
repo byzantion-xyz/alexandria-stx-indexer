@@ -52,25 +52,21 @@ export class NearScraperService {
       await this.updateRarities(smartContract, contract_key);
       await this.loadCollectionAttributes(collection.id, contract_key);
     }
+    this.logger.debug('SCRAPING COMPLETE');
     return "Success"
   }
 
   async pin(tokenMetas, nftContractMetadata, contract_key) {
+    this.logger.debug('pin');
     const firstTokenMeta = tokenMetas[0]
     const firstTokenIpfsImageUrl = this.getTokenIpfsMediaUrl(nftContractMetadata.base_uri, firstTokenMeta.metadata.media)
 
-    // Pin the collection metadata to byzantion ipfs cloud
     const pinImagesResult = await this.ipfsHelperService.pinIpfsFolder(firstTokenIpfsImageUrl, `${contract_key}`);
     if (pinImagesResult.pin_status === 'pinning') {
-      return {
-        msg: 'IPFS pinning in progress'
-      };
+      this.logger.debug('IPFS pinning in progress');
+    } else {
+      this.logger.debug('Pinning complete');
     }
-
-    return {
-      msg: pinImagesResult.pin_status === 'pinning' ? 'IPFS pinning in progress' : 'Pinning complete',
-      pin_hash: pinImagesResult.pinHash,
-    };
   };
 
   async loadSmartContract(nftContractMetadata, contract_key) {
@@ -90,6 +86,9 @@ export class NearScraperService {
             id: NEAR_PROTOCOL_DB_ID,
           },
         },
+        json_meta: {
+          "chain_meta": nftContractMetadata
+        }
       },
       select: {
         id: true,
@@ -136,6 +135,8 @@ export class NearScraperService {
       })
 
       if (!nftMeta) {
+        const tokenIpfsUrl = this.getTokenIpfsUrl(nftContractMetadata.base_uri, tokenMetas[i].metadata.reference);
+        const { data: tokenIpfsMeta } = await axios.get(tokenIpfsUrl);
         const mediaUrl = this.getTokenIpfsMediaUrl(nftContractMetadata.base_uri, tokenMetas[i].metadata.media)
         const attributes = await this.getNftMetaAttributes(nftContractMetadata, tokenMetas[i], contract_key);
         const nftMeta = this.prismaService.nftMeta.create({
@@ -153,6 +154,10 @@ export class NearScraperService {
                 data: attributes
               },
             },
+            json_meta: {
+              "chain_meta": tokenMetas[i],
+              "ipfs_meta": tokenIpfsMeta
+            }
           },
         })
         nftMetaPromises.push(nftMeta)
@@ -336,8 +341,8 @@ export class NearScraperService {
     let nftTokensBatchSize = 5 // batch size limit for nft_tokens() to avoid exceeded gas limit per call
 
     let tokenMetas = []
-    for (let i = 0; i < 20; i += nftTokensBatchSize) {
-    const currentTokenMetasBatch = await contract.nft_tokens({from_index: Number(i).toString(), limit: nftTokensBatchSize});
+    for (let i = 0; i < 5; i += nftTokensBatchSize) {
+    const currentTokenMetasBatch = await contract.nft_tokens({from_index: Number(0).toString(), limit: nftTokensBatchSize});
       tokenMetas = tokenMetas.concat(currentTokenMetasBatch);
     }
 

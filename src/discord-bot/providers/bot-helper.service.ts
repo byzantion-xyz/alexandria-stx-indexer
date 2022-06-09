@@ -28,7 +28,7 @@ export class BotHelperService {
       contract_key: sc.contract_key,
       title: nftMeta.name,
       rarity: nftMeta.rarity,
-      price: `${ Number(nftState.list_price) / 1e24} Near`, // TODO: Round to USD also
+      price: `${ Number(Number(nftState.list_price) / 1e24).toFixed(2)} NEAR`, // TODO: Round to USD also
       byzantionLink,
       transactionLink,
       image: nftMeta.image

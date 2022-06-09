@@ -44,9 +44,7 @@ export class NearScraperService {
       msg: `No tokens found for contract ${contract_key}`
     };
 
-    const {msg, pin_hash} = await this.pin(tokenMetas, nftContractMetadata, contract_key);
-    this.logger.log(msg)
-    this.logger.log(pin_hash)
+    await this.pin(tokenMetas, nftContractMetadata, contract_key);
     const smartContract = await this.loadSmartContract(nftContractMetadata, contract_key);
     const collection = await this.loadCollection(tokenMetas, nftContractMetadata, contract_key, collectionSize);
     const numNftMetasLoaded = await this.loadNftMetasAndTheirAttributes(tokenMetas, nftContractMetadata, smartContract.id, contract_key, collection);
@@ -335,7 +333,6 @@ export class NearScraperService {
     const contract = await this.getContract(contract_key, account)
     const collectionSize = await contract.nft_total_supply();
 
-    //let nftTokensBatchSize = collectionSize
     let nftTokensBatchSize = 5 // batch size limit for nft_tokens() to avoid exceeded gas limit per call
 
     let tokenMetas = []

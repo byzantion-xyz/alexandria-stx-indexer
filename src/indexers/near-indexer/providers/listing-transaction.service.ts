@@ -42,13 +42,13 @@ export class ListingTransactionService {
         list_seller: tx.transaction.signer_id,
         list_block_height: block.block_height
       };
-
-
+    
       // TODO: Use unified service to update NftMeta and handle NftState changes
       await this.prismaService.nftMeta.update({
         where: { id: nftMeta.id },
         data: { nft_state: { upsert: { create: update, update: update }}}
       });
+      
       const actionCommonArgs: CreateActionCommonArgs = this.txHelper.setCommonActionParams(tx, block, sc, nftMeta);
       const listActionParams: CreateListAction = {
         ...actionCommonArgs,
@@ -57,9 +57,9 @@ export class ListingTransactionService {
         seller: tx.transaction.signer_id
       };
 
-      const newAction = await this.createAction(listActionParams);  
+      const newAction = await this.createAction(listActionParams); 
       if (newAction) {
-        await this.listBotService.createAndSend(nftMeta, nftMeta.nft_state, newAction, sc);
+        this.listBotService.createAndSend(nftMeta.id, tx.transaction.hash);
       }
 
       txResult.processed = true;

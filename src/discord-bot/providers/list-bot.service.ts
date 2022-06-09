@@ -5,6 +5,7 @@ import { Client, ColorResolvable, MessageAttachment, MessageEmbed } from 'discor
 import { BotHelperService } from './bot-helper.service';
 import { DiscordBotDto } from 'src/discord-bot/dto/discord-bot.dto';
 import { Action, NftMeta, NftState, SmartContract } from '@prisma/client';
+import { PrismaService } from 'src/prisma.service';
 
 @Injectable()
 export class ListBotService {
@@ -12,7 +13,8 @@ export class ListBotService {
 
   constructor(
     @InjectDiscordClient() private client: Client,
-    private botHelper: BotHelperService
+    private botHelper: BotHelperService,
+    private readonly prismaService: PrismaService
   ) { }
 
   async send(data: DiscordBotDto) {
@@ -30,8 +32,12 @@ export class ListBotService {
     }
   }
 
-  async createAndSend(nftMeta: NftMeta, nftState: NftState, action: Action, sc: SmartContract) {
-    const data: DiscordBotDto = this.botHelper.createDiscordBotDto(nftMeta, nftState, action, sc);
+  async createAndSend(nftMetaId: string, txHash: string) {
+    const nftMeta = await this.prismaService.nftMeta.findUnique({ 
+      where: { id: nftMetaId },
+      include: { nft_state: true, smart_contract: true }
+    });
+    const data: DiscordBotDto = this.botHelper.createDiscordBotDto(nftMeta, nftMeta.nft_state, nftMeta.smart_contract, txHash);
     await this.send(data);
   }
 }

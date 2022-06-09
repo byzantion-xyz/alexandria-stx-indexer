@@ -3,6 +3,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Action, NftMeta, NftState, SmartContract } from '@prisma/client';
 import { Client, ColorResolvable } from 'discord.js';
 import { DiscordBotDto } from 'src/discord-bot/dto/discord-bot.dto';
+import { PrismaService } from 'src/prisma.service';
 import { BotHelperService } from './bot-helper.service';
 
 @Injectable()
@@ -10,7 +11,8 @@ export class SalesBotService {
   private readonly logger = new Logger(SalesBotService.name);
 
   constructor(
-    private botHelper: BotHelperService
+    private botHelper: BotHelperService,
+    private readonly prismaService: PrismaService
   ) { }
 
   async send(data: DiscordBotDto) {
@@ -28,8 +30,12 @@ export class SalesBotService {
     }
   }
 
-  async createAndSend(nftMeta: NftMeta, nftState: NftState, action: Action, sc: SmartContract) {
-    const data: DiscordBotDto = this.botHelper.createDiscordBotDto(nftMeta, nftState, action, sc);
+  async createAndSend(nftMetaId: string, txHash: string) {
+    const nftMeta = await this.prismaService.nftMeta.findUnique({ 
+      where: { id: nftMetaId },
+      include: { nft_state: true, smart_contract: true }
+    });
+    const data: DiscordBotDto = this.botHelper.createDiscordBotDto(nftMeta, nftMeta.nft_state, nftMeta.smart_contract, txHash);
     await this.send(data);
   }
 }

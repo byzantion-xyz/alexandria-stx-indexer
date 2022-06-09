@@ -52,7 +52,7 @@ export class BuyTransactionService {
 
       const newAction = await this.createAction(buyActionParams);
       if (newAction) {
-        this.salesBotService.createAndSend(nftMeta, nftMeta.nft_state, newAction, sc);
+        this.salesBotService.createAndSend(nftMeta.id, tx.transaction.hash);
       }
 
       txResult.processed = true;

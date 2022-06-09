@@ -182,7 +182,7 @@ model NftState {
   minted              Boolean        @default(false)
   mint_tx             String?
   listed              Boolean        @default(false)
-  list_price          BigInt?
+  list_price          Decimal        @db.Decimal(32, 0)
   list_seller         String?
   list_block_height   BigInt?
   list_tx_index       BigInt?
@@ -225,7 +225,7 @@ model Action {
   id                String         @id @default(uuid()) @db.Uuid
   action            ActionName
   bid_attribute     Json?
-  list_price        BigInt?
+  list_price        Decimal?       @db.Decimal(32, 0)
   seller            String?
   buyer             String?
   bid_price         BigInt?
@@ -235,7 +235,7 @@ model Action {
   tx_id             String
   segment           Boolean        @default(false)
   market_name       String?
-  nonce             Int?
+  nonce             BigInt?
   units             Int?
   smart_contract_id String?        @db.Uuid
   nft_meta_id       String?        @db.Uuid

@@ -28,30 +28,27 @@ export class ListingTransactionService {
     // TODO: Arguments will come parsed once near-streamer is updated
     const args = this.txHelper.parseBase64Arguments(tx);
 
-    const token_id = args[scf.args['token_id']];
-    const price = args[scf.args['price']];
-    const contract_key = args[scf.args['contract_key']];
+    const token_id = this.txHelper.extractArgumentData(args, scf, 'token_id');
+    const price = this.txHelper.extractArgumentData(args, scf, 'price');
+    const contract_key = this.txHelper.extractArgumentData(args, scf, 'contract_key');
+    const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);    
 
-    const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
-    
     if (nftMeta && this.txHelper.isNewNftListOrSale(tx, nftMeta.nft_state, block)) {
+      let update = { 
+        listed: true,
+        list_price: price,
+        list_contract_id: sc.id,
+        list_tx_index: tx.transaction.nonce,
+        list_seller: tx.transaction.signer_id,
+        list_block_height: block.block_height
+      };
+
+
       // TODO: Use unified service to update NftMeta and handle NftState changes
       await this.prismaService.nftMeta.update({
         where: { id: nftMeta.id },
-        data: {
-          nft_state: {
-            update: {
-              listed: true,
-              list_price: price,
-              list_contract_id: sc.id,
-              list_tx_index: tx.transaction.nonce,
-              list_seller: tx.transaction.signer_id,
-              list_block_height: block.block_height
-            }
-          }
-        }
+        data: { nft_state: { upsert: { create: update, update: update }}}
       });
-
       const actionCommonArgs: CreateActionCommonArgs = this.txHelper.setCommonActionParams(tx, block, sc, nftMeta);
       const listActionParams: CreateListAction = {
         ...actionCommonArgs,

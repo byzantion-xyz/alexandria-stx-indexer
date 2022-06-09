@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from 'src/prisma.service';
 import { SmartContractType } from '@prisma/client'
+import { IpfsHelperService } from '../providers/ipfs-helper.service';
 const axios = require('axios').default;
 
 const nearAPI = require("near-api-js");
@@ -30,6 +31,7 @@ export class NearScraperService {
 
   constructor(
     private readonly prismaService: PrismaService,
+    private readonly ipfsHelperService: IpfsHelperService
   ) {}
 
   async scrape(data) {
@@ -42,6 +44,9 @@ export class NearScraperService {
       msg: `No tokens found for contract ${contract_key}`
     };
 
+    const {msg, pin_hash} = await this.pin(tokenMetas, nftContractMetadata, contract_key);
+    this.logger.log(msg)
+    this.logger.log(pin_hash)
     const smartContract = await this.loadSmartContract(nftContractMetadata, contract_key);
     const collection = await this.loadCollection(tokenMetas, nftContractMetadata, contract_key, collectionSize);
     const numNftMetasLoaded = await this.loadNftMetasAndTheirAttributes(tokenMetas, nftContractMetadata, smartContract.id, contract_key, collection);
@@ -52,49 +57,23 @@ export class NearScraperService {
     return "Success"
   }
 
-  // async pin(tokenMetas, nftContractMetadata, contract_key) {
+  async pin(tokenMetas, nftContractMetadata, contract_key) {
+    const firstTokenMeta = tokenMetas[0]
+    const firstTokenIpfsImageUrl = this.getTokenIpfsMediaUrl(nftContractMetadata.base_uri, firstTokenMeta.metadata.media)
 
-  //   const firstTokenMeta = tokenMetas[0]
-  //   const firstTokenIpfsUrl = this.getTokenIpfsUrl(nftContractMetadata.base_uri, firstTokenMeta.metadata.reference);
-  //   const firstTokenIpfsImageUrl = this.getTokenIpfsMediaUrl(nftContractMetadata.base_uri, firstTokenMeta.metadata.media)
-  //   const { data: tokenIpfsMeta } = await axios.get(firstTokenIpfsUrl);
+    // Pin the collection metadata to byzantion ipfs cloud
+    const pinImagesResult = await this.ipfsHelperService.pinIpfsFolder(firstTokenIpfsImageUrl, `${contract_key}`);
+    if (pinImagesResult.pin_status === 'pinning') {
+      return {
+        msg: 'IPFS pinning in progress'
+      };
+    }
 
-  //   // Pin the collection metadata to byzantion ipfs cloud
-  //   const pinMetaResult = await pinIpfsFolder(firstTokenIpfsUrl, `${contract_key} Meta`);
-  //   if (pinMetaResult.pin_status === 'pinning') {
-  //     return {
-  //       msg: 'Meta pinning in progress'
-  //     };
-  //   }
-
-  //   // Get token_meta from Byzantion pinata - should work in most cases
-  //   let metaIpfsUrl = metaIpfs.value.value.data
-  //     .replace(/"/g, '')
-  //     .replace('ipfs://ipfs/', appConfig.pinataGatewayUrl)
-  //     .replace('ipfs://', appConfig.pinataGatewayUrl)
-  //     .replace('{id}', first_token)
-  //     .replace('$TOKEN_ID', first_token)
-  //     .replace('1.json1.json', '1.json'); // edge case
-  //   console.log(metaIpfsUrl);
-  //   let { data: token_meta } = await axios.get(metaIpfsUrl, { timeout: 20000 });
-  //   if (typeof token_meta === 'string') {
-  //     const data = await tryMetaFileOptions(metaIpfsUrl, first_token);
-  //     token_meta = data.token_meta;
-  //     metaIpfsUrl = data.metaIpfsUrl;
-  //   }
-
-  //   // // Call pinFolder to pin the folder for all images
-  //   const mediaIpfs = token_meta.image ?? token_meta.imageUrl ?? token_meta.video;
-  //   if (!mediaIpfs)
-  //     throw new Error(`Media IPFS folder not found. Likely due to a non-standard naming format: ${metaIpfsUrl} `);
-  //   const pinImagesResult = await pinIpfsFolder(mediaIpfs, `${contract_key} Images`);
-  //   return {
-  //     msg: pinImagesResult.pin_status === 'pinning' ? 'Image pinning in progress' : 'Pinning of meta and images complete',
-  //     meta_pin_hash: pinMetaResult.pinHash,
-  //     meta_ipfs_url: metaIpfsUrl,
-  //     image_pin_hash: pinImagesResult.pinHash
-  //   };
-  // };
+    return {
+      msg: pinImagesResult.pin_status === 'pinning' ? 'IPFS pinning in progress' : 'Pinning complete',
+      pin_hash: pinImagesResult.pinHash,
+    };
+  };
 
   async loadSmartContract(nftContractMetadata, contract_key) {
     this.logger.debug('loadSmartContract');
@@ -139,7 +118,7 @@ export class NearScraperService {
       create: {
         collection_size: Number(collectionSize),
         description: firstTokenMeta?.metadata?.description || tokenIpfsMeta?.description || "",
-        cover_image: firstTokenIpfsImageUrl,
+        cover_image: this.ipfsHelperService.getByzImageIpfsUrl(firstTokenIpfsImageUrl),
         title: nftContractMetadata.name,
         slug: contract_key
       }
@@ -149,8 +128,8 @@ export class NearScraperService {
 
   async loadNftMetasAndTheirAttributes(tokenMetas, nftContractMetadata, smartContractId, contract_key, collection) {
     let nftMetaPromises = []
-    for (let i = 0; i < tokenMetas.length; i++) {
 
+    for (let i = 0; i < tokenMetas.length; i++) {
       const nftMeta = await this.prismaService.nftMeta.findFirst({
         where: {
           smart_contract_id: smartContractId,
@@ -167,7 +146,7 @@ export class NearScraperService {
             chain_id: NEAR_PROTOCOL_DB_ID,
             collection_id: collection.id,
             name: tokenMetas[i].metadata.title,
-            image: mediaUrl,
+            image: this.ipfsHelperService.getByzImageIpfsUrl(mediaUrl),
             token_id: tokenMetas[i].token_id,
             rarity: 0,
             ranking: 0,
@@ -188,7 +167,7 @@ export class NearScraperService {
     return nftMetaPromises.length
   }
 
-  async updateRarities(smartContract, contract_key, only_minted = false, override_frozen = false) {
+  async updateRarities(smartContract, contract_key, override_frozen = false) {
     this.logger.debug(`[scraping ${contract_key}] Running updateRarity()`);
   
     if (smartContract.frozen && !override_frozen) {
@@ -324,13 +303,12 @@ export class NearScraperService {
 
     let collectionAttributePromises = []
     for (let nftMeta of nftMetas) {
-      const collectionAndCollectionAttributes = this.prismaService.collection.update({
+      const collectionAndCollectionAttributes = await this.prismaService.collection.update({
         where: {
           id: collectionId
         },
         data: {
           attributes: {
-            deleteMany: {},
             createMany: {
               data: nftMeta.attributes.map((attr) => {
                 return {
@@ -361,8 +339,8 @@ export class NearScraperService {
     let nftTokensBatchSize = 5 // batch size limit for nft_tokens() to avoid exceeded gas limit per call
 
     let tokenMetas = []
-    for (let i = 0; i < 5; i += nftTokensBatchSize) {
-    const currentTokenMetasBatch = await contract.nft_tokens({from_index: Number(0).toString(), limit: nftTokensBatchSize});
+    for (let i = 0; i < 20; i += nftTokensBatchSize) {
+    const currentTokenMetasBatch = await contract.nft_tokens({from_index: Number(i).toString(), limit: nftTokensBatchSize});
       tokenMetas = tokenMetas.concat(currentTokenMetasBatch);
     }
 

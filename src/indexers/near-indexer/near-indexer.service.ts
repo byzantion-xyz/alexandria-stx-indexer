@@ -32,38 +32,38 @@ export class NearIndexerService {
           $and: [
             { $or: [{ processed: { $exists: false } }, { processed: false }] },
             { $or: [{ processed: { $exists: false } }, { processed: false }] },
-          ]
-        }
+          ]        }
       },
       {
         $lookup: {
           from: 'blocks',
-          localField: 'transaction.outcome.execution_outcome.block_hash',
+          localField: 'outcome.execution_outcome.block_hash',
           foreignField: 'hash',
           as: 'block'
         }
       },
-      { $limit: 50 }
+      { $unwind: { path: '$block' }},
+      { $limit: 1 },
     ]);
 
     this.logger.debug('Processing transactions');
 
     for await (const doc of cursor) {
-      let transaction: Transaction = <Transaction>doc;
-      let method_name = transaction.transaction.actions[0].FunctionCall.method_name;
+      const block = <Block>doc.block;
+      const transaction: Transaction = <Transaction>doc;
+      const method_name = transaction.transaction.actions[0].FunctionCall.method_name;
 
-      let finder = {
+      const finder = {
         where: { contract_key: transaction.transaction.receiver_id },
         include: { smart_contract_functions: true }
       };
 
       const smart_contract = await this.prismaService.smartContract.findUnique(finder);
-
       let result: TxProcessResult = { processed: transaction.processed, missing: transaction.missing };
       let smart_contract_function = smart_contract.smart_contract_functions.find(f => f.function_name === method_name);
       if (smart_contract && smart_contract_function) {
         const txHandler = this.getTxHandler(smart_contract_function.name)
-        result = await txHandler.process(transaction, doc.block, smart_contract, smart_contract_function);
+        result = await txHandler.process(transaction, block, smart_contract, smart_contract_function);
       } else {
         this.logger.log(`function_name: ${method_name} not found in ${transaction.transaction.receiver_id}`);
         result.missing = true;

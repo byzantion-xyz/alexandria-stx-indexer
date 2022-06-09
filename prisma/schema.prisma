@@ -9,283 +9,238 @@ datasource db {
 }
 
 model SmartContract {
-  id                   String            @id @default(uuid()) @db.Uuid
-  contract_key         String            @unique
-  name                 String
-  scanned_transactions Int               @default(0)
-  type                 SmartContractType
-  asset_name           String?
-  frozen               Boolean           @default(false)
-
-  chain    Chain  @relation(fields: [chain_id], references: [id])
-  chain_id String @db.Uuid
-
+  id                       String                  @id @default(uuid()) @db.Uuid
+  contract_key             String                  @unique
+  name                     String
+  scanned_transactions     Int                     @default(0)
+  type                     SmartContractType
+  chain_id                 String                  @db.Uuid
+  created_at               DateTime                @default(now())
+  updated_at               DateTime                @updatedAt
+  asset_name               String?
+  frozen                   Boolean                 @default(false)
+  chain                    Chain                   @relation(fields: [chain_id], references: [id])
+  actions                  Action[]
+  collection_bids          CollectionBid[]
   commission               Commission?
-  smart_contract_functions SmartContractFunction[]
   nft_metas                NftMeta[]
-
-  created_at      DateTime        @default(now())
-  updated_at      DateTime        @updatedAt
-  collection_bids CollectionBid[]
-  actions         Action[]
-
-  nft_state NftState[]
+  nft_state                NftState[]
+  smart_contract_functions SmartContractFunction[]
 
   @@map("smart_contract")
 }
 
 model SmartContractFunction {
-  id            String @id @default(uuid()) @db.Uuid
-  name          String
-  function_name String
-  args          Json
-
-  smart_contract    SmartContract @relation(fields: [smart_contract_id], references: [id])
+  id                String        @id @default(uuid()) @db.Uuid
+  name              String
+  function_name     String
+  args              Json
   smart_contract_id String        @db.Uuid
-
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-
+  created_at        DateTime      @default(now())
+  updated_at        DateTime      @updatedAt
+  smart_contract    SmartContract @relation(fields: [smart_contract_id], references: [id])
 
   @@unique([function_name, smart_contract_id])
   @@map("smart_contract_function")
 }
 
 model Commission {
-  id             String  @id @default(uuid()) @db.Uuid
-  commission_key String  @unique
-  custodial      Boolean
-  amount         Int?
-
-  smart_contract    SmartContract @relation(fields: [smart_contract_id], references: [id])
+  id                String        @id @default(uuid()) @db.Uuid
+  commission_key    String        @unique
+  custodial         Boolean
+  amount            Int?
   smart_contract_id String        @unique @db.Uuid
-
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  created_at        DateTime      @default(now())
+  updated_at        DateTime      @updatedAt
+  smart_contract    SmartContract @relation(fields: [smart_contract_id], references: [id])
 
   @@map("commission")
 }
 
 model Chain {
-  id     String  @id @default(uuid()) @db.Uuid
-  name   String
-  symbol String  @unique
-  coin   String?
-
-  smart_contracts SmartContract[]
+  id              String          @id @default(uuid()) @db.Uuid
+  name            String
+  created_at      DateTime        @default(now())
+  updated_at      DateTime        @updatedAt
+  coin            String?
+  symbol          String          @unique
   nft_metas       NftMeta[]
-
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  smart_contracts SmartContract[]
 
   @@map("chain")
 }
 
 model Collection {
-  id              String  @id @default(uuid()) @db.Uuid
+  id              String                @id @default(uuid()) @db.Uuid
   collection_size Int?
   description     String?
   external_url    String?
-  volume          Int     @default(0)
-  floor           Int     @default(0)
+  volume          Int                   @default(0)
+  floor           Int                   @default(0)
   cover_image     String?
-  trending        Boolean @default(false)
+  trending        Boolean               @default(false)
   title           String?
-  slug            String? @unique
-
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-
-  metas      NftMeta[]
-  actions    Action[]
-  attributes CollectionAttribute[]
+  created_at      DateTime              @default(now())
+  updated_at      DateTime              @updatedAt
+  slug            String?               @unique
+  actions         Action[]
+  attributes      CollectionAttribute[]
+  metas           NftMeta[]
 
   @@map("collection")
 }
 
 model CollectionAttribute {
-  id String @id @default(uuid()) @db.Uuid
-
-  name   String
-  value  String
-  rarity Int
-  total  Int
-
-  collection    Collection @relation(fields: [collection_id], references: [id])
+  id            String     @id @default(uuid()) @db.Uuid
+  name          String
+  value         String
+  rarity        Float
+  total         Int
   collection_id String     @db.Uuid
-
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  created_at    DateTime   @default(now())
+  updated_at    DateTime   @updatedAt
+  collection    Collection @relation(fields: [collection_id], references: [id])
 
   @@map("collection_attribute")
 }
 
 model CollectionBid {
-  id String @id @default(uuid()) @db.Uuid
-
-  token_id      String
-  token_id_list String[]
-
+  id                 String              @id @default(uuid()) @db.Uuid
+  token_id           String
+  token_id_list      String[]
   nonce              Int
   bid_contract_nonce String
-  bid_price          BigInt
   bid_buyer          String
   bid_seller         String
   status             CollectionBidStatus @default(active)
-
-  pending_txs String[]
-  pending_tx  String
-
-  tx_id        String
-  block_height BigInt
-  match_tx_id  String
-  cancel_tx_id String
-  bid_type     BidType
-
-  smart_contract    SmartContract @relation(fields: [smart_contract_id], references: [id])
-  smart_contract_id String        @db.Uuid
-
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  pending_txs        String[]
+  pending_tx         String
+  tx_id              String
+  block_height       BigInt
+  match_tx_id        String
+  cancel_tx_id       String
+  bid_type           BidType
+  smart_contract_id  String              @db.Uuid
+  created_at         DateTime            @default(now())
+  updated_at         DateTime            @updatedAt
+  bid_price          BigInt
+  smart_contract     SmartContract       @relation(fields: [smart_contract_id], references: [id])
 
   @@map("collection_bid")
 }
 
 model NftMeta {
-  id String @id @default(uuid()) @db.Uuid
-
-  uuid       String  @default(uuid())
-  name       String
-  namespace  String?
-  image      String
-  token_id   String
-  rarity     Float?
-  ranking    Int
-  asset_name String?
-  grouping   String?
-  spec       String?
-
-  collection    Collection? @relation(fields: [collection_id], references: [id])
-  collection_id String?     @db.Uuid
-
-  chain    Chain  @relation(fields: [chain_id], references: [id])
-  chain_id String @db.Uuid
-
-  smart_contract    SmartContract @relation(fields: [smart_contract_id], references: [id])
-  smart_contract_id String        @db.Uuid
-
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-
-  nft_meta_bns NftMetaBns?
-  nft_state    NftState?
-  actions      Action[]
-  attributes   NftMetaAttribute[]
-
+  id                String             @id @default(uuid()) @db.Uuid
+  uuid              String             @default(uuid())
+  name              String
+  namespace         String?
+  image             String
+  token_id          String
+  rarity            Float?
+  ranking           Int
+  asset_name        String?
+  grouping          String?
+  spec              String?
+  collection_id     String?            @db.Uuid
+  chain_id          String             @db.Uuid
+  smart_contract_id String             @db.Uuid
+  created_at        DateTime           @default(now())
+  updated_at        DateTime           @updatedAt
+  chain             Chain              @relation(fields: [chain_id], references: [id])
+  collection        Collection?        @relation(fields: [collection_id], references: [id])
+  smart_contract    SmartContract      @relation(fields: [smart_contract_id], references: [id])
+  actions           Action[]
+  attributes        NftMetaAttribute[]
+  nft_meta_bns      NftMetaBns?
+  nft_state         NftState?
 
   @@unique([smart_contract_id, token_id])
   @@map("nft_meta")
 }
 
 model NftMetaAttribute {
-  id String @id @default(uuid()) @db.Uuid
-
+  id          String   @id @default(uuid()) @db.Uuid
   trait_type  String
   trait_group String?
   value       String
-  rarity      Float   @default(0)
+  rarity      Float    @default(0)
   sequence    String?
-  score       Float   @default(0)
-
-  meta    NftMeta @relation(fields: [meta_id], references: [id])
-  meta_id String  @db.Uuid
-
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  score       Float    @default(0)
+  meta_id     String   @db.Uuid
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  meta        NftMeta  @relation(fields: [meta_id], references: [id])
 
   @@map("nft_meta_attribute")
 }
 
 model NftState {
-  id String @id @default(uuid()) @db.Uuid
-
-  burned Boolean @default(false)
-
-  minted  Boolean @default(false)
-  mint_tx String
-
-  listed            Boolean        @default(false)
-  list_price        BigInt
-  list_seller       String
-  list_block_height BigInt
-  list_tx_index     BigInt
-  list_contract     SmartContract? @relation(fields: [list_contract_id], references: [id])
-  list_contract_id  String         @db.Uuid
-
-  asking              Boolean @default(false)
+  id                  String        @id @default(uuid()) @db.Uuid
+  burned              Boolean       @default(false)
+  minted              Boolean       @default(false)
+  mint_tx             String
+  listed              Boolean       @default(false)
+  list_price          BigInt
+  list_seller         String
+  list_block_height   BigInt
+  list_tx_index       BigInt
+  asking              Boolean       @default(false)
   asking_price        BigInt
   asking_block_height BigInt
   asking_tx_index     BigInt
   asking_seller       String
-
-  bid              Boolean @default(false)
-  bid_price        BigInt
-  bid_buyer        String
-  bid_contract     String
-  bid_block_height BigInt
-  bid_tx_index     BigInt
-
-  staked              Boolean @default(false)
+  bid                 Boolean       @default(false)
+  bid_price           BigInt
+  bid_buyer           String
+  bid_contract        String
+  bid_block_height    BigInt
+  bid_tx_index        BigInt
+  staked              Boolean       @default(false)
   staking_contract    String
   staked_owner        String
   staked_block_height BigInt
   staked_tx_index     BigInt
-
-  meta    NftMeta @relation(fields: [meta_id], references: [id])
-  meta_id String  @unique @db.Uuid
-
-  updated_at DateTime @updatedAt
+  meta_id             String        @unique @db.Uuid
+  updated_at          DateTime      @updatedAt
+  list_contract_id    String        @db.Uuid
+  list_contract       SmartContract @relation(fields: [list_contract_id], references: [id])
+  meta                NftMeta       @relation(fields: [meta_id], references: [id])
 
   @@map("nft_state")
 }
 
 model NftMetaBns {
-  id        String @id @default(uuid()) @db.Uuid
+  id        String  @id @default(uuid()) @db.Uuid
   name      String
   namespace String
-
-  meta    NftMeta @relation(fields: [meta_id], references: [id])
-  meta_id String  @unique @db.Uuid
+  meta_id   String  @unique @db.Uuid
+  meta      NftMeta @relation(fields: [meta_id], references: [id])
 
   @@map("nft_meta_bns")
 }
 
 model Action {
-  id String @id @default(uuid()) @db.Uuid
-
-  action        ActionName
-  bid_attribute Json?
-  list_price    BigInt?
-  seller        String?
-  buyer         String?
-  bid_price     BigInt?
-  block_height  BigInt
-  tx_index      BigInt
-  block_time    DateTime
-  tx_id         String
-  segment       Boolean    @default(false)
-  market_name   String?
-  nonce         Int?
-  units         Int?
-
-  smart_contract    SmartContract? @relation(fields: [smart_contract_id], references: [id])
+  id                String         @id @default(uuid()) @db.Uuid
+  action            ActionName
+  bid_attribute     Json?
+  list_price        BigInt?
+  seller            String?
+  buyer             String?
+  bid_price         BigInt?
+  block_height      BigInt
+  tx_index          BigInt
+  block_time        DateTime
+  tx_id             String
+  segment           Boolean        @default(false)
+  market_name       String?
+  nonce             Int?
+  units             Int?
   smart_contract_id String?        @db.Uuid
-
-  nft_meta    NftMeta? @relation(fields: [nft_meta_id], references: [id])
-  nft_meta_id String?  @db.Uuid
-
-  collection    Collection? @relation(fields: [collection_id], references: [id])
-  collection_id String?     @db.Uuid
+  nft_meta_id       String?        @db.Uuid
+  collection_id     String?        @db.Uuid
+  collection        Collection?    @relation(fields: [collection_id], references: [id])
+  nft_meta          NftMeta?       @relation(fields: [nft_meta_id], references: [id])
+  smart_contract    SmartContract? @relation(fields: [smart_contract_id], references: [id])
 
   @@map("action")
 }

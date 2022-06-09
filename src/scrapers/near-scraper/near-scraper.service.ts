@@ -332,6 +332,14 @@ export class NearScraperService {
     await Promise.all(collectionAttributePromises)
   };
 
+  async getTokensFromParas() {
+    // const res = await axios.get("https://api-v2-mainnet.paras.id/token", {
+    //   params: {
+    //     collection_id: "blissedkong.near"
+    //   }
+    // })
+  }
+
   async getContractAndTokenMetaData(contract_key) {
     const near = await connect(nearConfig);
     const account = await near.account(nearAccountId);

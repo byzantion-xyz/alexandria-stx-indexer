@@ -33,8 +33,8 @@ export class BuyTransactionService {
     // TODO: Arguments will be parsed in the streamer directly.
     let args = this.txHelper.parseBase64Arguments(tx);
 
-    const token_id = args[scf.args['token_id']];
-    const contract_key = args[scf.args['contract_key']];
+    const token_id = this.txHelper.extractArgumentData(args, scf, 'token_id');
+    const contract_key = this.txHelper.extractArgumentData(args, scf, 'contract_key');
 
     const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
 

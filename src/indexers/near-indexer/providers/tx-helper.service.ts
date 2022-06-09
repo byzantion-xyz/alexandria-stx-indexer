@@ -5,6 +5,7 @@ import { PrismaService } from 'src/prisma.service';
 import { Action, CreateAccount } from 'near-api-js/lib/transaction';
 import * as moment from 'moment';
 import { DiscordBotDto } from 'src/discord-bot/dto/discord-bot.dto';
+import { Decimal } from '@prisma/client/runtime';
 
 export interface CreateActionCommonArgs {
   nft_meta_id: string
@@ -19,7 +20,7 @@ export interface CreateActionCommonArgs {
 }
 
 export interface CreateListAction extends CreateActionCommonArgs {
-  list_price: bigint
+  list_price: Decimal
   action: ActionName
   seller: string
 }

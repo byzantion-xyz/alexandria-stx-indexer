@@ -29,10 +29,10 @@ export class ListingTransactionService {
     const args = this.txHelper.parseBase64Arguments(tx);
 
     const token_id = this.txHelper.extractArgumentData(args, scf, 'token_id');
-    const price = BigInt(this.txHelper.extractArgumentData(args, scf, 'price'));
+    const price = this.txHelper.extractArgumentData(args, scf, 'price');
     const contract_key = this.txHelper.extractArgumentData(args, scf, 'contract_key');
-    const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
-    
+    const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);    
+
     if (nftMeta && this.txHelper.isNewNftListOrSale(tx, nftMeta.nft_state, block)) {
       let update = { 
         listed: true,

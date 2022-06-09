@@ -19,6 +19,7 @@ model SmartContract {
   updated_at               DateTime                @updatedAt
   asset_name               String?
   frozen                   Boolean                 @default(false)
+  json_meta                Json?
   chain                    Chain                   @relation(fields: [chain_id], references: [id])
   actions                  Action[]
   collection_bids          CollectionBid[]

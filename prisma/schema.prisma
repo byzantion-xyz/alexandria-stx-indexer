@@ -175,36 +175,36 @@ model NftMetaAttribute {
 }
 
 model NftState {
-  id                  String        @id @default(uuid()) @db.Uuid
-  burned              Boolean       @default(false)
-  minted              Boolean       @default(false)
-  mint_tx             String
-  listed              Boolean       @default(false)
-  list_price          BigInt
-  list_seller         String
-  list_block_height   BigInt
-  list_tx_index       BigInt
-  asking              Boolean       @default(false)
-  asking_price        BigInt
-  asking_block_height BigInt
-  asking_tx_index     BigInt
-  asking_seller       String
-  bid                 Boolean       @default(false)
-  bid_price           BigInt
-  bid_buyer           String
-  bid_contract        String
-  bid_block_height    BigInt
-  bid_tx_index        BigInt
-  staked              Boolean       @default(false)
-  staking_contract    String
-  staked_owner        String
-  staked_block_height BigInt
-  staked_tx_index     BigInt
-  meta_id             String        @unique @db.Uuid
-  updated_at          DateTime      @updatedAt
-  list_contract_id    String        @db.Uuid
-  list_contract       SmartContract @relation(fields: [list_contract_id], references: [id])
-  meta                NftMeta       @relation(fields: [meta_id], references: [id])
+  id                  String         @id @default(uuid()) @db.Uuid
+  burned              Boolean        @default(false)
+  minted              Boolean        @default(false)
+  mint_tx             String?
+  listed              Boolean        @default(false)
+  list_price          BigInt?
+  list_seller         String?
+  list_block_height   BigInt?
+  list_tx_index       BigInt?
+  asking              Boolean        @default(false)
+  asking_price        BigInt?
+  asking_block_height BigInt?
+  asking_tx_index     BigInt?
+  asking_seller       String?
+  bid                 Boolean        @default(false)
+  bid_price           BigInt?
+  bid_buyer           String?
+  bid_contract        String?
+  bid_block_height    BigInt?
+  bid_tx_index        BigInt?
+  staked              Boolean        @default(false)
+  staking_contract    String?
+  staked_owner        String?
+  staked_block_height BigInt?
+  staked_tx_index     BigInt?
+  meta_id             String         @unique @db.Uuid
+  updated_at          DateTime       @updatedAt
+  list_contract_id    String         @db.Uuid
+  list_contract       SmartContract? @relation(fields: [list_contract_id], references: [id])
+  meta                NftMeta        @relation(fields: [meta_id], references: [id])
 
   @@map("nft_state")
 }

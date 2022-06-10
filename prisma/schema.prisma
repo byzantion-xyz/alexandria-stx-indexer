@@ -252,11 +252,11 @@ model Action {
 }
 
 model DiscordServer {
-  id                   String                 @id @default(uuid()) @db.Uuid
-  server_id            BigInt
-  server_name          String
-  active               Boolean                @default(false)
-  DiscordServerChannel DiscordServerChannel[]
+  id                      String                 @id @default(uuid()) @db.Uuid
+  server_id               BigInt
+  server_name             String
+  active                  Boolean                @default(false)
+  discord_server_channels DiscordServerChannel[]
 
   @@map("discord_server")
 }

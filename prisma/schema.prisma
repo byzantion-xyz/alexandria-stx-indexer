@@ -11,6 +11,7 @@ datasource db {
 model SmartContract {
   id                       String                  @id @default(uuid()) @db.Uuid
   contract_key             String                  @unique
+  spec                     String?
   name                     String
   scanned_transactions     Int                     @default(0)
   type                     SmartContractType
@@ -27,6 +28,7 @@ model SmartContract {
   nft_metas                NftMeta[]
   nft_state                NftState[]
   smart_contract_functions SmartContractFunction[]
+
 
   discord_server_channels SmartContractOnDiscordServerChannel[]
   @@map("smart_contract")
@@ -145,7 +147,6 @@ model NftMeta {
   ranking           Int
   asset_name        String?
   grouping          String?
-  spec              String?
   collection_id     String?            @db.Uuid
   chain_id          String             @db.Uuid
   smart_contract_id String             @db.Uuid

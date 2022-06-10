@@ -78,6 +78,7 @@ export class NearScraperService {
       update: {},
       create: {
         contract_key: contract_key,
+        spec: nftContractMetadata.spec,
         name: nftContractMetadata.name,
         type: SmartContractType.non_fungible_tokens,
         asset_name: contract_key,

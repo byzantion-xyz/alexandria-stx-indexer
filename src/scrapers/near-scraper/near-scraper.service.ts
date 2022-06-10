@@ -125,7 +125,6 @@ export class NearScraperService {
 
   async loadNftMetasAndTheirAttributes(tokenMetas, nftContractMetadata, smartContractId, contract_key, collection) {
     let nftMetaPromises = []
-
     for (let i = 0; i < tokenMetas.length; i++) {
       const nftMeta = await this.prismaService.nftMeta.findFirst({
         where: {
@@ -162,10 +161,12 @@ export class NearScraperService {
         })
         nftMetaPromises.push(nftMeta)
       }
-      if (i % 100 === 0) this.logger.log(`[scraping ${contract_key}] Metas processed: ${i} of ${collection.collection_size}`);
+      if (i % 100 === 0) {
+        await Promise.all(nftMetaPromises)
+        nftMetaPromises = []
+      } this.logger.log(`[scraping ${contract_key}] Metas processed: ${i} of ${collection.collection_size}`);
     };
 
-    await Promise.all(nftMetaPromises)
     this.logger.log(`[scraping ${contract_key}] NftMeta batch inserted`, nftMetaPromises.length);
     return nftMetaPromises.length
   }

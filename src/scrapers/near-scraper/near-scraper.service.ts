@@ -407,7 +407,7 @@ export class NearScraperService {
     } catch(err) {
       this.logger.error(err)
       this.logger.log(`Error failed with IPFS URL: ${tokenIpfsUrl}`)
-      this.logger.log(`and token meta data: ${tokenMeta.metadata}`)
+      this.logger.log(`and token meta data: ${JSON.stringify(tokenMeta.metadata, null, 4)}`)
     }
     return tokenIpfsMeta
   }

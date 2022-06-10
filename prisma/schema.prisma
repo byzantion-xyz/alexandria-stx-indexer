@@ -257,6 +257,8 @@ model DiscordServer {
   server_name          String
   active               Boolean                @default(false)
   DiscordServerChannel DiscordServerChannel[]
+
+  @@map("discord_server")
 }
 
 model DiscordServerChannel {
@@ -267,6 +269,8 @@ model DiscordServerChannel {
   discord_server    DiscordServer                         @relation(fields: [discord_server_id], references: [id])
   discord_server_id String                                @db.Uuid
   smart_contracts   SmartContractOnDiscordServerChannel[]
+
+  @@map("discord_server_channel")
 }
 
 model SmartContractOnDiscordServerChannel {

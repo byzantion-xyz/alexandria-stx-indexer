@@ -73,7 +73,7 @@ export class NearIndexerService {
       const method_name = transaction.transaction.actions[0].FunctionCall.method_name;
 
       const notify = moment(new Date(this.txHelper.nanoToMiliSeconds(block.timestamp))).utc() >
-        moment().subtract(1, 'days').utc() ? true : false;
+        moment().subtract(2, 'hours').utc() ? true : false;
 
       const finder = {
         where: { contract_key: transaction.transaction.receiver_id },

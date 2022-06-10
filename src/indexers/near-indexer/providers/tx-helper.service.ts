@@ -66,7 +66,7 @@ export class TxHelperService {
       const indexArr = index.split('.');
       return args[indexArr[0]][indexArr[1]];
     } else {
-      return args[scf.args['token_id']];
+      return args[scf.args[field]];
     }
   }
 

@@ -61,16 +61,16 @@ export class IpfsHelperService {
     return pinHash;
   };
   
-  getByzMetaIpfsUrl(ipfs, token_id) {
-    return ipfs.value.value.data
-      .replace(/"/g, '')
-      .replace('ipfs://ipfs/', pinataGatewayUrl)
-      .replace('ipfs://', pinataGatewayUrl)
-      .replace('{id}', token_id)
-      .replace(`$TOKEN_ID`, token_id);
-  };
+  // getByzMetaIpfsUrl(ipfs, token_id) {
+  //   return ipfs.value.value.data
+  //     .replace(/"/g, '')
+  //     .replace('ipfs://ipfs/', pinataGatewayUrl)
+  //     .replace('ipfs://', pinataGatewayUrl)
+  //     .replace('{id}', token_id)
+  //     .replace(`$TOKEN_ID`, token_id);
+  // };
   
-  getByzImageIpfsUrl(ipfsUrl) {
+  getByzIpfsUrl(ipfsUrl) {
     let url = ipfsUrl
     if (url.includes('ipfs.dweb.link')) {
       return (url.substring(0, ipfsUrl.indexOf('https://')) + pinataGatewayUrl + url.substring(ipfsUrl.indexOf('https://')).replace('https://', '')).replace('.ipfs.dweb.link', '');

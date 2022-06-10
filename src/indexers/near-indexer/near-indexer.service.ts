@@ -55,6 +55,17 @@ export class NearIndexerService {
     for await (const doc of cursor) {
       const block = <Block>doc.block;
       const transaction: Transaction = <Transaction>doc;
+      const txResult: TxProcessResult = await this.processTransaction(transaction, block);
+      await this.setTransactionResult(transaction.id, txResult);
+    }
+
+    this.logger.debug('Completed');
+  }
+
+  async processTransaction(transaction: Transaction, block: Block): Promise<TxProcessResult> {
+    let result: TxProcessResult = { processed: transaction.processed, missing: transaction.missing };
+    
+    try {
       const method_name = transaction.transaction.actions[0].FunctionCall.method_name;
 
       const notify = moment(new Date(this.txHelper.nanoToMiliSeconds(block.timestamp))).utc() >
@@ -66,7 +77,7 @@ export class NearIndexerService {
       };
 
       const smart_contract = await this.prismaService.smartContract.findUnique(finder);
-      let result: TxProcessResult = { processed: transaction.processed, missing: transaction.missing };
+    
       let smart_contract_function = smart_contract.smart_contract_functions.find(f => f.function_name === method_name);
       if (smart_contract && smart_contract_function) {
         const txHandler = this.getTxHandler(smart_contract_function.name)
@@ -76,10 +87,12 @@ export class NearIndexerService {
         result.missing = true;
       }
 
-      await this.setTransactionResult(transaction.id, result);
+    } catch (err) {
+      this.logger.error(`Error processing transaction with hash: ${transaction.transaction.hash}`);
+      this.logger.error(err);
+    } finally {
+      return result;
     }
-
-    this.logger.debug('Completed');
   }
 
   getTxHandler(name: string) {

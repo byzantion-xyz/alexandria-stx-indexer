@@ -79,10 +79,9 @@ export class IpfsHelperService {
     return url
       .replace('ipfs://ipfs/', pinataGatewayUrl)
       .replace('ipfs://', pinataGatewayUrl)
-      .replace('ipfs.io/', pinataGatewayUrl)
+      .replace('https://ipfs.io/ipfs/', pinataGatewayUrl)
       .replace('dev.nagmi.art/', pinataGatewayUrl)
       .replace('https://cloudflare-ipfs.com/ipfs/', pinataGatewayUrl)
-      .replace('https://cloudflare-ipfs.com/ipfs/', pinataGatewayUrl);
   };
   
   async checkIfPinning(pinHash) {

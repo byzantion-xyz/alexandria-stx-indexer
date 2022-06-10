@@ -164,9 +164,10 @@ export class NearScraperService {
       if (i % 100 === 0) {
         await Promise.all(nftMetaPromises)
         nftMetaPromises = []
-      } this.logger.log(`[scraping ${contract_key}] Metas processed: ${i} of ${collection.collection_size}`);
+        this.logger.log(`[scraping ${contract_key}] Metas processed: ${i} of ${collection.collection_size}`);
+      } 
     };
-
+    await Promise.all(nftMetaPromises)
     this.logger.log(`[scraping ${contract_key}] NftMeta batch inserted`, nftMetaPromises.length);
     return nftMetaPromises.length
   }

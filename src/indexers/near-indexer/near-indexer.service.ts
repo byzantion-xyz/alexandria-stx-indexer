@@ -53,14 +53,13 @@ export class NearIndexerService {
       { $sort: { 'block.block_height': 1 } },
       { $limit: 1 }
     ]);
-
     this.logger.debug('Processing transactions');
 
     for await (const doc of cursor) {
       const block = <Block>doc.block;
       const transaction: Transaction = <Transaction>doc;
       const txResult: TxProcessResult = await this.processTransaction(transaction, block);
-      await this.setTransactionResult(transaction.id, txResult);
+      await this.setTransactionResult(doc._id, txResult);
     }
 
     this.logger.debug('Completed');
@@ -109,7 +108,7 @@ export class NearIndexerService {
 
   async setTransactionResult(id: string, result: TxProcessResult) {
     if (result.processed || result.missing) {
-      await this.connection.db.collection('transactions').findOneAndUpdate({ id: id }, {
+      await this.connection.db.collection('transactions').findOneAndUpdate({ _id: id }, {
         $set: {
           processed: result.processed,
           missing: result.missing

@@ -1,5 +1,5 @@
 import { Logger, Injectable } from '@nestjs/common';
-import { PrismaService } from 'src/prisma.service';
+import { PrismaService } from 'src/prisma/prisma.service';
 import { Transaction, Block } from '@internal/prisma/client';
 import { InjectConnection } from '@nestjs/mongoose';
 import { Connection } from 'mongoose';

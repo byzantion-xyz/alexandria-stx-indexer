@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { PrismaService } from 'src/prisma.service';
+import { PrismaService } from 'src/prisma/prisma.service';
 import { SmartContractType } from '@prisma/client'
 import { IpfsHelperService } from '../providers/ipfs-helper.service';
 const axios = require('axios').default;

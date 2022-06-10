@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { DiscordChannelType } from '@prisma/client';
-import { PrismaService } from 'src/prisma.service';
+import { PrismaService } from 'src/prisma/prisma.service';
 import { createDiscordServer } from '../dto/discord-server.dto';
 
 @Injectable()

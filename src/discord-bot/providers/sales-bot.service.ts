@@ -3,7 +3,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Action, DiscordChannelType, NftMeta, NftState, SmartContract } from '@prisma/client';
 import { Client, ColorResolvable } from 'discord.js';
 import { DiscordBotDto } from 'src/discord-bot/dto/discord-bot.dto';
-import { PrismaService } from 'src/prisma.service';
+import { PrismaService } from 'src/prisma/prisma.service';
 import { BotHelperService } from './bot-helper.service';
 import { DiscordServerService } from 'src/discord-server/providers/discord-server.service';
 

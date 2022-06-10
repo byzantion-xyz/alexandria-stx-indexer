@@ -1,6 +1,6 @@
 import { Logger, Injectable } from '@nestjs/common';
 import { Transaction, Block } from '@internal/prisma/client';
-import { PrismaService } from 'src/prisma.service';
+import { PrismaService } from 'src/prisma/prisma.service';
 import { SmartContract, SmartContractFunction, ActionName } from '@prisma/client';
 import { TxProcessResult } from 'src/common/interfaces/tx-process-result.interface';
 import { TxHelperService, CreateListAction, CreateActionCommonArgs } from './tx-helper.service';

@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ActionName, NftMeta, NftState, SmartContract, SmartContractFunction } from '@prisma/client';
 import { Block, Transaction } from '@internal/prisma/client';
-import { PrismaService } from 'src/prisma.service';
+import { PrismaService } from 'src/prisma/prisma.service';
 import { Action, CreateAccount } from 'near-api-js/lib/transaction';
 import * as moment from 'moment';
 import { DiscordBotDto } from 'src/discord-bot/dto/discord-bot.dto';

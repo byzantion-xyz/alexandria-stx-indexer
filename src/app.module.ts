@@ -10,6 +10,7 @@ import { DiscordModule } from '@discord-nestjs/core';
 import { Intents } from 'discord.js';
 import { DiscordBotModule } from './discord-bot/discord-bot.module';
 import { DiscordServerModule } from './discord-server/discord-server.module';
+import { PrismaModule } from './prisma/prisma.module';
 
 @Module({
   imports: [
@@ -35,7 +36,8 @@ import { DiscordServerModule } from './discord-server/discord-server.module';
     IndexersModule,
     CommonModule,
     DiscordBotModule,
-    DiscordServerModule
+    DiscordServerModule,
+    PrismaModule
   ],
   controllers: [
     AppController

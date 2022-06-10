@@ -5,7 +5,7 @@ import { Client, ColorResolvable, MessageAttachment, MessageEmbed } from 'discor
 import { BotHelperService } from './bot-helper.service';
 import { DiscordBotDto } from 'src/discord-bot/dto/discord-bot.dto';
 import { Action, DiscordChannelType, NftMeta, NftState, SmartContract } from '@prisma/client';
-import { PrismaService } from 'src/prisma.service';
+import { PrismaService } from 'src/prisma/prisma.service';
 import { DiscordServerService } from 'src/discord-server/providers/discord-server.service';
 
 @Injectable()

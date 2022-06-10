@@ -4,8 +4,9 @@ import { Client, ColorResolvable, MessageAttachment, MessageEmbed } from 'discor
 
 import { BotHelperService } from './bot-helper.service';
 import { DiscordBotDto } from 'src/discord-bot/dto/discord-bot.dto';
-import { Action, NftMeta, NftState, SmartContract } from '@prisma/client';
+import { Action, DiscordChannelType, NftMeta, NftState, SmartContract } from '@prisma/client';
 import { PrismaService } from 'src/prisma.service';
+import { DiscordServerService } from 'src/discord-server/providers/discord-server.service';
 
 @Injectable()
 export class ListBotService {
@@ -14,19 +15,20 @@ export class ListBotService {
   constructor(
     @InjectDiscordClient() private client: Client,
     private botHelper: BotHelperService,
-    private readonly prismaService: PrismaService
+    private readonly prismaService: PrismaService,
+    private discordServerService: DiscordServerService
   ) { }
 
   async send(data: DiscordBotDto) {
     try {
-       // TODO: Use provider to fetch channel and server data from contract_key
-      const server = { channel_id: '948998237040283709', server_name: 'Byzantion test' };
+      const channels = await this.discordServerService.fetchChannelsByContractKey(data.contract_key, DiscordChannelType.sales);
 
       const subTitle = 'has been listed for sale';
       const color: ColorResolvable = 'YELLOW';
-      let messageContent = await this.botHelper.buildMessage(data, server, color, subTitle);
+      if (!channels || !channels.length) return;
 
-      await this.botHelper.sendMessage(messageContent, server);
+      let messageContent = await this.botHelper.buildMessage(data, channels[0].discord_server.server_id, color, subTitle);
+      await this.botHelper.sendMessage(messageContent, channels[0].channel_id);
     } catch (err) {
       this.logger.warn('Discord error', err);
     }

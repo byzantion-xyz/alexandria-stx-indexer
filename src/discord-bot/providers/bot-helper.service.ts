@@ -6,8 +6,6 @@ import { Client, ColorResolvable, MessageAttachment, MessageEmbed } from 'discor
 import * as sharp from 'sharp';
 import { DiscordBotDto } from 'src/discord-bot/dto/discord-bot.dto';
 
-
-
 @Injectable()
 export class BotHelperService {
   private readonly logger = new Logger(BotHelperService.name);
@@ -35,20 +33,20 @@ export class BotHelperService {
     };
   }
 
-  async sendMessage(message, server) {
-    const channel = await this.client.channels.fetch(server.channel_id);
+  async sendMessage(message, channel_id: string) {
+    const channel = await this.client.channels.fetch(channel_id);
 
-    if (channel.type === 'GUILD_TEXT') {
+    if (channel.type === 'GUILD_TEXT' && process.env.NODE_ENV === 'production') {
       await channel.send(message);
     } else {
       this.logger.warn('Not a valid text channel');
     }
   }
 
-  async buildMessage(data: DiscordBotDto, server, color: ColorResolvable, subTitle: string) {
+  async buildMessage(data: DiscordBotDto, server_name: string, color: ColorResolvable, subTitle: string) {
     const { title, rarity, price, byzantionLink, transactionLink, image } = data;
     
-    const byzFinalLink = this.enrichByzLink(byzantionLink, server.server_name);
+    const byzFinalLink = this.enrichByzLink(byzantionLink, server_name);
     const embed = new MessageEmbed().setColor(color);
     let attachments = [];
 

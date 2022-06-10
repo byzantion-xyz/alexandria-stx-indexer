@@ -8,6 +8,7 @@ import { ListingTransactionService } from './providers/listing-transaction.servi
 import { TxProcessResult } from 'src/common/interfaces/tx-process-result.interface';
 import { SmartContractService } from 'src/common/services/smart-contract/smart-contract.service';
 import { UnlistTransactionService } from './providers/unlist-transaction.service';
+import * as moment from 'moment';
 import { TxHelperService } from './providers/tx-helper.service';
 
 @Injectable()
@@ -20,19 +21,25 @@ export class NearIndexerService {
     private buyTransaction: BuyTransactionService,
     private smartContractService: SmartContractService,
     private listingTransaction: ListingTransactionService,
-    private unlistTransaction: UnlistTransactionService
+    private unlistTransaction: UnlistTransactionService,
+    private txHelper: TxHelperService
   ) { }
 
   async runIndexer() {
     this.logger.debug('Initialize');
+    let smartContractFunctions = await this.prismaService.smartContractFunction.findMany();
+
+    const whitelistedActions = smartContractFunctions.map(func => func.function_name);
 
     const cursor = this.connection.db.collection('transactions').aggregate([
       {
         $match: {
+          'transaction.actions.FunctionCall.method_name': { $in: whitelistedActions },
           $and: [
             { $or: [{ processed: { $exists: false } }, { processed: false }] },
-            { $or: [{ processed: { $exists: false } }, { processed: false }] },
-          ]        }
+            { $or: [{ missing: { $exists: false } }, { missing: false }] },
+          ]
+        }
       },
       {
         $lookup: {
@@ -42,8 +49,9 @@ export class NearIndexerService {
           as: 'block'
         }
       },
-      { $unwind: { path: '$block' }},
-      { $limit: 1 },
+      { $unwind: { path: '$block' } },
+      { $sort: { 'block.block_height': 1 } },
+      { $limit: 1 }
     ]);
 
     this.logger.debug('Processing transactions');
@@ -51,7 +59,21 @@ export class NearIndexerService {
     for await (const doc of cursor) {
       const block = <Block>doc.block;
       const transaction: Transaction = <Transaction>doc;
+      const txResult: TxProcessResult = await this.processTransaction(transaction, block);
+      await this.setTransactionResult(transaction.id, txResult);
+    }
+
+    this.logger.debug('Completed');
+  }
+
+  async processTransaction(transaction: Transaction, block: Block): Promise<TxProcessResult> {
+    let result: TxProcessResult = { processed: transaction.processed, missing: transaction.missing };
+
+    try {
       const method_name = transaction.transaction.actions[0].FunctionCall.method_name;
+
+      const notify = moment(new Date(this.txHelper.nanoToMiliSeconds(block.timestamp))).utc() >
+        moment().subtract(1, 'days').utc() ? true : false;
 
       const finder = {
         where: { contract_key: transaction.transaction.receiver_id },
@@ -59,20 +81,21 @@ export class NearIndexerService {
       };
 
       const smart_contract = await this.prismaService.smartContract.findUnique(finder);
-      let result: TxProcessResult = { processed: transaction.processed, missing: transaction.missing };
+
       let smart_contract_function = smart_contract.smart_contract_functions.find(f => f.function_name === method_name);
       if (smart_contract && smart_contract_function) {
         const txHandler = this.getTxHandler(smart_contract_function.name)
-        result = await txHandler.process(transaction, block, smart_contract, smart_contract_function);
+        result = await txHandler.process(transaction, block, smart_contract, smart_contract_function, notify);
       } else {
         this.logger.log(`function_name: ${method_name} not found in ${transaction.transaction.receiver_id}`);
         result.missing = true;
       }
-
-      await this.setTransactionResult(transaction.id, result);
+    } catch (err) {
+      this.logger.error(`Error processing transaction with hash: ${transaction.transaction.hash}`);
+      this.logger.error(err);
+    } finally {
+      return result;
     }
-
-    this.logger.debug('Completed');
   }
 
   getTxHandler(name: string) {

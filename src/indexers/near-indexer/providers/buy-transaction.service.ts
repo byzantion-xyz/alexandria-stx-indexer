@@ -25,7 +25,8 @@ export class BuyTransactionService {
     tx: Transaction,
     block: Block,
     sc: SmartContract,
-    scf: SmartContractFunction
+    scf: SmartContractFunction,
+    notify: boolean
   ) {
     this.logger.debug(`process() ${tx.transaction.hash}`);
     let txResult: TxProcessResult = { processed: false, missing: false };
@@ -51,7 +52,7 @@ export class BuyTransactionService {
       };
 
       const newAction = await this.createAction(buyActionParams);
-      if (newAction) {
+      if (newAction && notify) {
         this.salesBotService.createAndSend(nftMeta.id, tx.transaction.hash);
       }
 

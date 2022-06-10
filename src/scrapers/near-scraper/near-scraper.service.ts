@@ -166,15 +166,16 @@ export class NearScraperService {
           },
         })
         nftMetaPromises.push(nftMeta)
+
+        if (i % 100 === 0) {
+          await Promise.all(nftMetaPromises)
+          nftMetaPromises = []
+          this.logger.log(`[scraping ${contract_key}] Metas processed: ${i} of ${collection.collection_size}`);
+        } 
       }
-      if (i % 100 === 0) {
-        await Promise.all(nftMetaPromises)
-        nftMetaPromises = []
-        this.logger.log(`[scraping ${contract_key}] Metas processed: ${i} of ${collection.collection_size}`);
-      } 
     };
     await Promise.all(nftMetaPromises)
-    this.logger.log(`[scraping ${contract_key}] NftMeta batch inserted`, nftMetaPromises.length);
+    this.logger.log(`[scraping ${contract_key}] NftMeta batch inserted`, collection.collection_size);
     return nftMetaPromises.length
   }
 
@@ -313,7 +314,7 @@ export class NearScraperService {
     })
 
     let collectionAttributePromises = []
-    for (let nftMeta of nftMetas) {
+    for (let i = 0; i < nftMetas.length; i++) {
       const collectionAndCollectionAttributes = await this.prismaService.collection.update({
         where: {
           id: collectionId
@@ -321,7 +322,7 @@ export class NearScraperService {
         data: {
           attributes: {
             createMany: {
-              data: nftMeta.attributes.map((attr) => {
+              data: nftMetas[i].attributes.map((attr) => {
                 return {
                   trait_type: attr.trait_type,
                   value: attr.value,
@@ -335,9 +336,16 @@ export class NearScraperService {
         }
       })
       collectionAttributePromises.push(collectionAndCollectionAttributes)
+
+      if (i % 100 === 0) {
+        await Promise.all(collectionAttributePromises)
+        collectionAttributePromises = []
+        this.logger.log(`[scraping ${contract_key}] CollectionAttributes batch inserted`, collectionAttributePromises.length);
+      } 
     }
 
     await Promise.all(collectionAttributePromises)
+    this.logger.log(`[scraping ${contract_key}] CollectionAttributes batch inserted`, collectionAttributePromises.length);
   };
 
   async getTokensFromParas() {

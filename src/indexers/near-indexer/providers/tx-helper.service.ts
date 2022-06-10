@@ -43,6 +43,10 @@ export class TxHelperService {
       (block.block_height === nft_state.list_block_height && tx.transaction.nonce > nft_state.list_tx_index);
   }
 
+  nanoToMiliSeconds(nanoseconds: bigint) {
+    return Number(BigInt(nanoseconds) / BigInt(1e6));
+  }
+
   parseBase64Arguments(tx: Transaction) {
     try {
       let json = JSON.parse(Buffer.from(tx.transaction.actions[0].FunctionCall.args, 'base64').toString());
@@ -112,7 +116,7 @@ export class TxHelperService {
       market_name: sc.name,
       block_height: block.block_height,
       tx_index: tx.transaction.nonce,
-      block_time: moment(new Date(Number(BigInt(block.timestamp) / BigInt(1e6)))).toDate(),
+      block_time: moment(new Date(this.nanoToMiliSeconds(block.timestamp))).toDate(),
       tx_id: tx.transaction.hash,
     }
   }

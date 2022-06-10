@@ -8,6 +8,7 @@ import { ListingTransactionService } from './providers/listing-transaction.servi
 import { TxProcessResult } from 'src/common/interfaces/tx-process-result.interface';
 import { SmartContractService } from 'src/common/services/smart-contract/smart-contract.service';
 import { UnlistTransactionService } from './providers/unlist-transaction.service';
+import * as moment from 'moment';
 import { TxHelperService } from './providers/tx-helper.service';
 
 @Injectable()
@@ -20,7 +21,8 @@ export class NearIndexerService {
     private buyTransaction: BuyTransactionService,
     private smartContractService: SmartContractService,
     private listingTransaction: ListingTransactionService,
-    private unlistTransaction: UnlistTransactionService
+    private unlistTransaction: UnlistTransactionService,
+    private txHelper: TxHelperService
   ) { }
 
   async runIndexer() {
@@ -44,7 +46,8 @@ export class NearIndexerService {
         }
       },
       { $unwind: { path: '$block' }},
-      { $limit: 1 },
+      { $sort: { 'block.block_height': 1 }},
+      { $limit: 1 }
     ]);
 
     this.logger.debug('Processing transactions');
@@ -53,7 +56,9 @@ export class NearIndexerService {
       const block = <Block>doc.block;
       const transaction: Transaction = <Transaction>doc;
       const method_name = transaction.transaction.actions[0].FunctionCall.method_name;
-      const notify = false;
+
+      const notify = moment(new Date(this.txHelper.nanoToMiliSeconds(block.timestamp))).utc() >
+        moment().subtract(1, 'days').utc() ? true : false;
 
       const finder = {
         where: { contract_key: transaction.transaction.receiver_id },

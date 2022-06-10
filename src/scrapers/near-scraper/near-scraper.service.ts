@@ -35,7 +35,7 @@ export class NearScraperService {
   ) {}
 
   async scrape(data) {
-    this.logger.debug('start scrape');
+    this.logger.log('start scrape');
     const { contract_key } = data
 
     const { tokenMetas, nftContractMetadata, collectionSize } = await this.getContractAndTokenMetaData(contract_key);
@@ -52,25 +52,25 @@ export class NearScraperService {
       await this.updateRarities(smartContract, contract_key);
       await this.loadCollectionAttributes(collection.id, contract_key);
     }
-    this.logger.debug('SCRAPING COMPLETE');
+    this.logger.log('SCRAPING COMPLETE');
     return "Success"
   }
 
   async pin(tokenMetas, nftContractMetadata, contract_key) {
-    this.logger.debug('pin');
+    this.logger.log('pin');
     const firstTokenMeta = tokenMetas[0]
     const firstTokenIpfsImageUrl = this.getTokenIpfsMediaUrl(nftContractMetadata.base_uri, firstTokenMeta.metadata.media)
 
     const pinImagesResult = await this.ipfsHelperService.pinIpfsFolder(firstTokenIpfsImageUrl, `${contract_key}`);
     if (pinImagesResult.pin_status === 'pinning') {
-      this.logger.debug('IPFS pinning in progress');
+      this.logger.log('IPFS pinning in progress');
     } else {
-      this.logger.debug('Pinning complete');
+      this.logger.log('Pinning complete');
     }
   };
 
   async loadSmartContract(nftContractMetadata, contract_key) {
-    this.logger.debug('loadSmartContract');
+    this.logger.log('loadSmartContract');
     const smartContract = await this.prismaService.smartContract.upsert({
       where: {
         contract_key: contract_key
@@ -99,7 +99,7 @@ export class NearScraperService {
   }
 
   async loadCollection(tokenMetas, nftContractMetadata, contract_key, collectionSize) {
-    this.logger.debug('loadCollection');
+    this.logger.log('loadCollection');
 
     // get first token data for the collection record data
     const firstTokenMeta = tokenMetas[0]
@@ -162,20 +162,20 @@ export class NearScraperService {
         })
         nftMetaPromises.push(nftMeta)
       }
-      if (i % 100 === 0) this.logger.debug(`[scraping ${contract_key}] Metas processed: ${i} of ${collection.collection_size}`);
+      if (i % 100 === 0) this.logger.log(`[scraping ${contract_key}] Metas processed: ${i} of ${collection.collection_size}`);
     };
 
     await Promise.all(nftMetaPromises)
-    this.logger.debug(`[scraping ${contract_key}] NftMeta batch inserted`, nftMetaPromises.length);
+    this.logger.log(`[scraping ${contract_key}] NftMeta batch inserted`, nftMetaPromises.length);
     return nftMetaPromises.length
   }
 
   async updateRarities(smartContract, contract_key, override_frozen = false) {
-    this.logger.debug(`[scraping ${contract_key}] Running updateRarity()`);
+    this.logger.log(`[scraping ${contract_key}] Running updateRarity()`);
   
     if (smartContract.frozen && !override_frozen) {
       const msg = `[scraping ${contract_key}] Collection is frozen, rarity update abandoned`;
-      this.logger.debug(msg);
+      this.logger.log(msg);
       return msg;
     }
 
@@ -189,7 +189,7 @@ export class NearScraperService {
       }
     })
   
-    this.logger.debug(`[scraping ${contract_key}] Checking for Trait Count`);
+    this.logger.log(`[scraping ${contract_key}] Checking for Trait Count`);
     for (let nftMeta of nftMetas) {
       let hasTraitCount = false;
       for (let attr of nftMeta.attributes) {
@@ -199,10 +199,10 @@ export class NearScraperService {
       }
 
       if (hasTraitCount) {
-        this.logger.debug(`[scraping ${contract_key}] SKIP - Adding Trait Count`);
+        this.logger.log(`[scraping ${contract_key}] SKIP - Adding Trait Count`);
       }
       else {
-        this.logger.debug(`[scraping ${contract_key}] Adding Trait Count`);
+        this.logger.log(`[scraping ${contract_key}] Adding Trait Count`);
         let attribute_count = 0;
         for (let attr of nftMeta.attributes) {
           if (attr.value != 'None' && attr.value != 'none' && attr.value != null) {
@@ -235,7 +235,7 @@ export class NearScraperService {
       }
     }
 
-    this.logger.debug(`[scraping ${contract_key}] Updating Rarity Scores to %`);
+    this.logger.log(`[scraping ${contract_key}] Updating Rarity Scores to %`);
     for (let nftMeta of nftMetas) {
       for (let attr of nftMeta.attributes) {
         attr.rarity = obj[attr.trait_type][attr.value];
@@ -248,7 +248,7 @@ export class NearScraperService {
       }
     }
 
-    this.logger.debug(`[scraping ${contract_key}] Updating NftMeta Rarity`);
+    this.logger.log(`[scraping ${contract_key}] Updating NftMeta Rarity`);
     for (let nftMeta of nftMetas) {
       let rarity_score = 0;
       for (let attr of nftMeta.attributes) {
@@ -289,11 +289,11 @@ export class NearScraperService {
     }
 
     await Promise.all(updatedNftMetaPromises)
-    this.logger.debug(`[scraping ${contract_key}] Rarity and Ranking saved for ${updatedNftMetaPromises.length} Meta`);
+    this.logger.log(`[scraping ${contract_key}] Rarity and Ranking saved for ${updatedNftMetaPromises.length} Meta`);
   };
 
   async loadCollectionAttributes(collectionId, contract_key) {
-    this.logger.debug(`[scraping ${contract_key}] Running createAttributes()`);
+    this.logger.log(`[scraping ${contract_key}] Running createAttributes()`);
   
     const nftMetas = await this.prismaService.nftMeta.findMany({
       where: {

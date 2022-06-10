@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ActionName, NftMeta, NftState, SmartContract, SmartContractFunction } from '@prisma/client';
-import { Block, Transaction } from '@internal/prisma/client';
+import { Transaction } from '@internal/prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Action, CreateAccount } from 'near-api-js/lib/transaction';
 import * as moment from 'moment';
@@ -37,10 +37,10 @@ export class TxHelperService {
     private readonly prismaService: PrismaService
   ) { }
 
-  isNewNftListOrSale(tx: Transaction, nft_state: NftState, block: Block) {
+  isNewNftListOrSale(tx: Transaction, nft_state: NftState) {
     return !nft_state || !nft_state.list_block_height ||
-      block.block_height > nft_state.list_block_height ||
-      (block.block_height === nft_state.list_block_height && tx.transaction.nonce > nft_state.list_tx_index);
+      tx.block.block_height > nft_state.list_block_height ||
+      (tx.block.block_height === nft_state.list_block_height && tx.transaction.nonce > nft_state.list_tx_index);
   }
 
   nanoToMiliSeconds(nanoseconds: bigint) {
@@ -108,15 +108,15 @@ export class TxHelperService {
     });
   }
 
-  setCommonActionParams(tx: Transaction, block: Block, sc: SmartContract, nftMeta: NftMeta): CreateActionCommonArgs {
+  setCommonActionParams(tx: Transaction, sc: SmartContract, nftMeta: NftMeta): CreateActionCommonArgs {
     return {
       nft_meta_id: nftMeta.id,
       smart_contract_id: sc.id,
       collection_id: nftMeta.collection_id,
       market_name: sc.name,
-      block_height: block.block_height,
+      block_height: tx.block.block_height,
       tx_index: tx.transaction.nonce,
-      block_time: moment(new Date(this.nanoToMiliSeconds(block.timestamp))).toDate(),
+      block_time: moment(new Date(this.nanoToMiliSeconds(tx.block.timestamp))).toDate(),
       tx_id: tx.transaction.hash,
     }
   }

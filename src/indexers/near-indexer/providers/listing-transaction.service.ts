@@ -16,13 +16,7 @@ export class ListingTransactionService {
     private listBotService: ListBotService
   ) { }
 
-  async process(
-    tx: Transaction,
-    block: Block,
-    sc: SmartContract,
-    scf: SmartContractFunction,
-    notify: boolean
-  ) {
+  async process(tx: Transaction, sc: SmartContract, scf: SmartContractFunction, notify: boolean) {
     this.logger.debug(`process() ${tx.transaction.hash}`);
     let txResult: TxProcessResult = { processed: false, missing: false };
 
@@ -34,14 +28,14 @@ export class ListingTransactionService {
     const contract_key = this.txHelper.extractArgumentData(args, scf, 'contract_key');
     const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);    
 
-    if (nftMeta && this.txHelper.isNewNftListOrSale(tx, nftMeta.nft_state, block)) {
+    if (nftMeta && this.txHelper.isNewNftListOrSale(tx, nftMeta.nft_state)) {
       let update = { 
         listed: true,
         list_price: price,
         list_contract_id: sc.id,
         list_tx_index: tx.transaction.nonce,
         list_seller: tx.transaction.signer_id,
-        list_block_height: block.block_height
+        list_block_height: tx.block.block_height
       };
     
       // TODO: Use unified service to update NftMeta and handle NftState changes
@@ -50,7 +44,7 @@ export class ListingTransactionService {
         data: { nft_state: { upsert: { create: update, update: update }}}
       });
       
-      const actionCommonArgs: CreateActionCommonArgs = this.txHelper.setCommonActionParams(tx, block, sc, nftMeta);
+      const actionCommonArgs: CreateActionCommonArgs = this.txHelper.setCommonActionParams(tx, sc, nftMeta);
       const listActionParams: CreateListAction = {
         ...actionCommonArgs,
         action: ActionName.list,

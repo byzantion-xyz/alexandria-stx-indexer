@@ -21,13 +21,7 @@ export class BuyTransactionService {
     private salesBotService: SalesBotService
   ) { }
 
-  async process(
-    tx: Transaction,
-    block: Block,
-    sc: SmartContract,
-    scf: SmartContractFunction,
-    notify: boolean
-  ) {
+  async process(tx: Transaction, sc: SmartContract, scf: SmartContractFunction, notify: boolean) {
     this.logger.debug(`process() ${tx.transaction.hash}`);
     let txResult: TxProcessResult = { processed: false, missing: false };
 
@@ -39,10 +33,10 @@ export class BuyTransactionService {
 
     const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
 
-    if (nftMeta && this.txHelper.isNewNftListOrSale(tx, nftMeta.nft_state, block)) {
-      await this.txHelper.unlistMeta(nftMeta.id, tx.transaction.nonce, block.block_height);
+    if (nftMeta && this.txHelper.isNewNftListOrSale(tx, nftMeta.nft_state)) {
+      await this.txHelper.unlistMeta(nftMeta.id, tx.transaction.nonce, tx.block.block_height);
 
-      const actionCommonArgs: CreateActionCommonArgs = this.txHelper.setCommonActionParams(tx, block, sc, nftMeta);
+      const actionCommonArgs: CreateActionCommonArgs = this.txHelper.setCommonActionParams(tx, sc, nftMeta);
       const buyActionParams: CreateBuyAction = {
         ...actionCommonArgs,
         action: ActionName.buy,

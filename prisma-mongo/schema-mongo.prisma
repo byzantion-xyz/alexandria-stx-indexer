@@ -156,13 +156,10 @@ type TransactionsTransactionActionsFunctionCall {
   method_name String
 }
 
-model Block {
-  id           String @id @default(auto()) @map("_id") @db.ObjectId
-  block_height BigInt @unique(map: "block_height_1")
+type Block {
+  block_height BigInt
   hash         String
   timestamp    BigInt
-
-  @@map("blocks")
 }
 
 model Receipt {
@@ -179,6 +176,7 @@ model Transaction {
   id          String                  @id @default(auto()) @map("_id") @db.ObjectId
   outcome     TransactionsOutcome
   transaction TransactionsTransaction
+  block       Block
   missing     Boolean @default(false)
   processed   Boolean @default(false)
 

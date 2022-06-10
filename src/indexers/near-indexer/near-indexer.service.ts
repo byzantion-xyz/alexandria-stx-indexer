@@ -41,37 +41,27 @@ export class NearIndexerService {
           ]
         }
       },
-      {
-        $lookup: {
-          from: 'blocks',
-          localField: 'outcome.execution_outcome.block_hash',
-          foreignField: 'hash',
-          as: 'block'
-        }
-      },
-      { $unwind: { path: '$block' } },
       { $sort: { 'block.block_height': 1 } },
       { $limit: 1 }
     ]);
     this.logger.debug('Processing transactions');
 
     for await (const doc of cursor) {
-      const block = <Block>doc.block;
       const transaction: Transaction = <Transaction>doc;
-      const txResult: TxProcessResult = await this.processTransaction(transaction, block);
+      const txResult: TxProcessResult = await this.processTransaction(transaction);
       await this.setTransactionResult(doc._id, txResult);
     }
 
     this.logger.debug('Completed');
   }
 
-  async processTransaction(transaction: Transaction, block: Block): Promise<TxProcessResult> {
+  async processTransaction(transaction: Transaction): Promise<TxProcessResult> {
     let result: TxProcessResult = { processed: transaction.processed, missing: transaction.missing };
 
     try {
       const method_name = transaction.transaction.actions[0].FunctionCall.method_name;
 
-      const notify = moment(new Date(this.txHelper.nanoToMiliSeconds(block.timestamp))).utc() >
+      const notify = moment(new Date(this.txHelper.nanoToMiliSeconds(transaction.block.timestamp))).utc() >
         moment().subtract(2, 'hours').utc() ? true : false;
 
       const finder = {
@@ -84,7 +74,7 @@ export class NearIndexerService {
       let smart_contract_function = smart_contract.smart_contract_functions.find(f => f.function_name === method_name);
       if (smart_contract && smart_contract_function) {
         const txHandler = this.getTxHandler(smart_contract_function.name)
-        result = await txHandler.process(transaction, block, smart_contract, smart_contract_function, notify);
+        result = await txHandler.process(transaction, smart_contract, smart_contract_function, notify);
       } else {
         this.logger.log(`function_name: ${method_name} not found in ${transaction.transaction.receiver_id}`);
         result.missing = true;

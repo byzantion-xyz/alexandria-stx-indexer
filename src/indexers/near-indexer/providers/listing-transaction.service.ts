@@ -20,7 +20,8 @@ export class ListingTransactionService {
     tx: Transaction,
     block: Block,
     sc: SmartContract,
-    scf: SmartContractFunction
+    scf: SmartContractFunction,
+    notify: boolean
   ) {
     this.logger.debug(`process() ${tx.transaction.hash}`);
     let txResult: TxProcessResult = { processed: false, missing: false };
@@ -58,7 +59,7 @@ export class ListingTransactionService {
       };
 
       const newAction = await this.createAction(listActionParams); 
-      if (newAction) {
+      if (newAction && notify) {
         this.listBotService.createAndSend(nftMeta.id, tx.transaction.hash);
       }
 

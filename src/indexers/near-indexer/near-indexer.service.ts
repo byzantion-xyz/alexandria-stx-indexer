@@ -53,6 +53,7 @@ export class NearIndexerService {
       const block = <Block>doc.block;
       const transaction: Transaction = <Transaction>doc;
       const method_name = transaction.transaction.actions[0].FunctionCall.method_name;
+      const notify = false;
 
       const finder = {
         where: { contract_key: transaction.transaction.receiver_id },
@@ -64,7 +65,7 @@ export class NearIndexerService {
       let smart_contract_function = smart_contract.smart_contract_functions.find(f => f.function_name === method_name);
       if (smart_contract && smart_contract_function) {
         const txHandler = this.getTxHandler(smart_contract_function.name)
-        result = await txHandler.process(transaction, block, smart_contract, smart_contract_function);
+        result = await txHandler.process(transaction, block, smart_contract, smart_contract_function, notify);
       } else {
         this.logger.log(`function_name: ${method_name} not found in ${transaction.transaction.receiver_id}`);
         result.missing = true;

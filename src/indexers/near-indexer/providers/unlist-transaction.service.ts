@@ -18,7 +18,8 @@ export class UnlistTransactionService {
         tx: Transaction,
         block: Block,
         sc: SmartContract,
-        scf: SmartContractFunction
+        scf: SmartContractFunction,
+        notify: boolean
     ) {
         this.logger.debug(`process() ${tx.transaction.hash}`);
         let txResult: TxProcessResult = { processed: false, missing: false };

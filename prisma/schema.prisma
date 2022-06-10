@@ -165,17 +165,15 @@ model NftMeta {
 }
 
 model NftMetaAttribute {
-  id          String   @id @default(uuid()) @db.Uuid
-  trait_type  String
-  trait_group String?
-  value       String
-  rarity      Float    @default(0)
-  sequence    String?
-  score       Float    @default(0)
-  meta_id     String   @db.Uuid
-  created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt
-  meta        NftMeta  @relation(fields: [meta_id], references: [id])
+  id         String   @id @default(uuid()) @db.Uuid
+  trait_type String
+  value      String
+  rarity     Float    @default(0)
+  score      Float    @default(0)
+  meta_id    String   @db.Uuid
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  meta       NftMeta  @relation(fields: [meta_id], references: [id])
 
   @@map("nft_meta_attribute")
 }

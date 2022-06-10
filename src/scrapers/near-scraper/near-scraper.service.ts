@@ -135,7 +135,16 @@ export class NearScraperService {
 
       if (!nftMeta) {
         const tokenIpfsUrl = this.getTokenIpfsUrl(nftContractMetadata.base_uri, tokenMetas[i].metadata.reference);
-        const { data: tokenIpfsMeta } = await axios.get(tokenIpfsUrl);
+        let tokenIpfsMeta
+        try {
+          const { data } = await axios.get(tokenIpfsUrl);
+          tokenIpfsMeta = data
+        } catch(err) {
+          this.logger.error(err)
+          this.logger.log(`Error failed with IPFS URL:f ${tokenIpfsUrl}`)
+          this.logger.log("")
+          this.logger.log(`and token meta data: ${tokenMetas[i].metadata}`)
+        }
         const mediaUrl = this.getTokenIpfsMediaUrl(nftContractMetadata.base_uri, tokenMetas[i].metadata.media)
         const attributes = await this.getNftMetaAttributes(nftContractMetadata, tokenMetas[i], contract_key);
         const nftMeta = this.prismaService.nftMeta.create({
@@ -416,7 +425,16 @@ export class NearScraperService {
     } 
     else {
       const tokenIpfsUrl = this.getTokenIpfsUrl(nftContractMetadata.base_uri, tokenMeta.metadata.reference);
-      let { data: tokenIpfsMeta } = await axios.get(tokenIpfsUrl);
+      let tokenIpfsMeta
+      try {
+        let { data } = await axios.get(tokenIpfsUrl);
+        tokenIpfsMeta = data
+      } catch(err) {
+        this.logger.error(err)
+        this.logger.log(`Error failed with IPFS URL:f ${tokenIpfsUrl}`)
+        this.logger.log("")
+        this.logger.log(`and token meta data: ${tokenMeta.metadata}`)
+      }
       attributes = tokenIpfsMeta.attributes;
     }
 

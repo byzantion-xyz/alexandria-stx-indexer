@@ -1,10 +1,12 @@
 import { InjectDiscordClient } from '@discord-nestjs/core';
 import { Injectable, Logger } from '@nestjs/common';
-import { Action, NftMeta, NftState, SmartContract } from '@prisma/client';
+import { Action, DiscordChannelType, NftMeta, NftState, SmartContract } from '@prisma/client';
 import { Client, ColorResolvable } from 'discord.js';
 import { DiscordBotDto } from 'src/discord-bot/dto/discord-bot.dto';
 import { PrismaService } from 'src/prisma.service';
 import { BotHelperService } from './bot-helper.service';
+import { DiscordServerService } from 'src/discord-server/providers/discord-server.service';
+
 
 @Injectable()
 export class SalesBotService {
@@ -12,19 +14,20 @@ export class SalesBotService {
 
   constructor(
     private botHelper: BotHelperService,
-    private readonly prismaService: PrismaService
+    private readonly prismaService: PrismaService,
+    private discordServerService: DiscordServerService
   ) { }
 
   async send(data: DiscordBotDto) {
     try {
-      // TODO: Use provider to fetch channel and server data from contract_key
-      const server = { channel_id: '948998237040283709', server_name: 'Byzantion test' };
-
+      const channels = await this.discordServerService.fetchChannelsByContractKey(data.contract_key, DiscordChannelType.listings);
       const subTitle = 'has been sold';
       const color: ColorResolvable = 'BLUE';
-      let messageContent = await this.botHelper.buildMessage(data, server, color, subTitle);
 
-      await this.botHelper.sendMessage(messageContent, server);
+      if (!channels || !channels.length) return;
+
+      let messageContent = await this.botHelper.buildMessage(data, channels[0].discord_server.server_id, color, subTitle);
+      await this.botHelper.sendMessage(messageContent, channels[0].channel_id);
     } catch (err) {
       this.logger.warn('Discord error', err);
     }

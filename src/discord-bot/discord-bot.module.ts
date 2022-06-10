@@ -4,10 +4,12 @@ import { DiscordModule } from '@discord-nestjs/core';
 import { ListBotService } from './providers/list-bot.service';
 import { BotHelperService } from './providers/bot-helper.service';
 import { SalesBotService } from './providers/sales-bot.service';
+import { DiscordServerModule } from 'src/discord-server/discord-server.module';
 
 @Module({
   imports: [
-    DiscordModule.forFeature()
+    DiscordModule.forFeature(),
+    DiscordServerModule
   ],
   controllers: [DiscordBotController],
   providers: [ListBotService, BotHelperService, SalesBotService],

@@ -9,6 +9,7 @@ import { ScrapersModule } from './scrapers/scrapers.module';
 import { DiscordModule } from '@discord-nestjs/core';
 import { Intents } from 'discord.js';
 import { DiscordBotModule } from './discord-bot/discord-bot.module';
+import { DiscordServerModule } from './discord-server/discord-server.module';
 
 @Module({
   imports: [
@@ -33,7 +34,8 @@ import { DiscordBotModule } from './discord-bot/discord-bot.module';
     }),
     IndexersModule,
     CommonModule,
-    DiscordBotModule
+    DiscordBotModule,
+    DiscordServerModule
   ],
   controllers: [
     AppController

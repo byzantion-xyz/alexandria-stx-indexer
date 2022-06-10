@@ -160,6 +160,7 @@ model Block {
   id           String @id @default(auto()) @map("_id") @db.ObjectId
   block_height BigInt @unique(map: "block_height_1")
   hash         String
+  timestamp    BigInt
 
   @@map("blocks")
 }

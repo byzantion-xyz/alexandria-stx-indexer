@@ -112,7 +112,7 @@ export class TxHelperService {
       market_name: sc.name,
       block_height: block.block_height,
       tx_index: tx.transaction.nonce,
-      block_time: moment().toDate(), // TODO: Use block timestamp
+      block_time: moment(new Date(Number(BigInt(block.timestamp) / BigInt(1e6)))).toDate(),
       tx_id: tx.transaction.hash,
     }
   }

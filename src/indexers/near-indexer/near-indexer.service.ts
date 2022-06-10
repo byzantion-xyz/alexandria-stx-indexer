@@ -27,10 +27,14 @@ export class NearIndexerService {
 
   async runIndexer() {
     this.logger.debug('Initialize');
+    let smartContractFunctions = await this.prismaService.smartContractFunction.findMany();
+
+    const whitelistedActions = smartContractFunctions.map(func => func.function_name);
 
     const cursor = this.connection.db.collection('transactions').aggregate([
       {
         $match: {
+          'transaction.actions.FunctionCall.method_name': { $in: whitelistedActions },
           $and: [
             { $or: [{ processed: { $exists: false } }, { processed: false }] },
             { $or: [{ missing: { $exists: false } }, { missing: false }] },
@@ -45,8 +49,8 @@ export class NearIndexerService {
           as: 'block'
         }
       },
-      { $unwind: { path: '$block' }},
-      { $sort: { 'block.block_height': 1 }},
+      { $unwind: { path: '$block' } },
+      { $sort: { 'block.block_height': 1 } },
       { $limit: 1 }
     ]);
 
@@ -64,7 +68,7 @@ export class NearIndexerService {
 
   async processTransaction(transaction: Transaction, block: Block): Promise<TxProcessResult> {
     let result: TxProcessResult = { processed: transaction.processed, missing: transaction.missing };
-    
+
     try {
       const method_name = transaction.transaction.actions[0].FunctionCall.method_name;
 
@@ -77,7 +81,7 @@ export class NearIndexerService {
       };
 
       const smart_contract = await this.prismaService.smartContract.findUnique(finder);
-    
+
       let smart_contract_function = smart_contract.smart_contract_functions.find(f => f.function_name === method_name);
       if (smart_contract && smart_contract_function) {
         const txHandler = this.getTxHandler(smart_contract_function.name)
@@ -86,7 +90,6 @@ export class NearIndexerService {
         this.logger.log(`function_name: ${method_name} not found in ${transaction.transaction.receiver_id}`);
         result.missing = true;
       }
-
     } catch (err) {
       this.logger.error(`Error processing transaction with hash: ${transaction.transaction.hash}`);
       this.logger.error(err);

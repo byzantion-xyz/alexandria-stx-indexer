@@ -31,8 +31,9 @@ export class NearIndexerService {
         $match: {
           $and: [
             { $or: [{ processed: { $exists: false } }, { processed: false }] },
-            { $or: [{ processed: { $exists: false } }, { processed: false }] },
-          ]        }
+            { $or: [{ missing: { $exists: false } }, { missing: false }] },
+          ]
+        }
       },
       {
         $lookup: {

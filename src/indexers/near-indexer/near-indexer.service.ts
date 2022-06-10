@@ -109,7 +109,7 @@ export class NearIndexerService {
 
   async setTransactionResult(id: string, result: TxProcessResult) {
     if (result.processed || result.missing) {
-      this.connection.db.collection('transactions').findOneAndUpdate({ id: id }, {
+      await this.connection.db.collection('transactions').findOneAndUpdate({ id: id }, {
         $set: {
           processed: result.processed,
           missing: result.missing

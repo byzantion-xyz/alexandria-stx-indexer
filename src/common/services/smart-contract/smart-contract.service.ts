@@ -2,13 +2,13 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma.service';
 import { SmartContractType } from '@prisma/client';
 
-class createSmartContractFunctionArgs {
+interface createSmartContractFunctionArgs {
   name: string
   function_name: string
   args: object
 }
 
-class createSmartContractArgs {
+interface createSmartContractArgs {
   contract_key: string 
   name: string
   type: SmartContractType

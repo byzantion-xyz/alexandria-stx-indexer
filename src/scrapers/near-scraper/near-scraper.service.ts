@@ -359,7 +359,7 @@ export class NearScraperService {
     const contract = await this.getContract(contract_key, account)
     const collectionSize = await contract.nft_total_supply();
 
-    let nftTokensBatchSize = 100 // batch size limit for nft_tokens() to avoid exceeded gas limit per call
+    let nftTokensBatchSize = 5 // batch size limit for nft_tokens() to avoid exceeded gas limit per call
 
     let tokenMetas = []
     for (let i = 0; i < collectionSize; i += nftTokensBatchSize) {

@@ -363,7 +363,7 @@ export class NearScraperService {
 
     let tokenMetas = []
     for (let i = 0; i < collectionSize; i += nftTokensBatchSize) {
-    const currentTokenMetasBatch = await contract.nft_tokens({from_index: Number(i).toString(), limit: nftTokensBatchSize}, GAS);
+    const currentTokenMetasBatch = await contract.nft_tokens({from_index: Number(i).toString(), limit: nftTokensBatchSize}, "300000000000000");
       tokenMetas = tokenMetas.concat(currentTokenMetasBatch);
     }
 

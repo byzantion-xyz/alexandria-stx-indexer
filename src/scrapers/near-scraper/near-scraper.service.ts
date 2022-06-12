@@ -3,7 +3,6 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { SmartContractType } from '@prisma/client'
 import { IpfsHelperService } from '../providers/ipfs-helper.service';
 const axios = require('axios').default;
-import Big from 'big.js'
 
 const nearAPI = require("near-api-js");
 const { keyStores, connect } = nearAPI;
@@ -24,8 +23,6 @@ const nearConfig = {
 };
 
 const NEAR_PROTOCOL_DB_ID = "174c3df6-0221-4ca7-b966-79ac8d981bdb"
-
-const GAS = Big(3).times(10 ** 14).toFixed()
 
 
 @Injectable()

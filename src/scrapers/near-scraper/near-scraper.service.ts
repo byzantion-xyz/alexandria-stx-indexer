@@ -24,6 +24,7 @@ const nearConfig = {
 
 const NEAR_PROTOCOL_DB_ID = "174c3df6-0221-4ca7-b966-79ac8d981bdb"
 
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 @Injectable()
 export class NearScraperService {
@@ -39,20 +40,21 @@ export class NearScraperService {
     const { contract_key } = data
 
     const { tokenMetas, nftContractMetadata, collectionSize } = await this.getContractAndTokenMetaData(contract_key);
-
-    if (!tokenMetas)
-      this.logger.error(`No tokens found for contract ${contract_key}`)
-
-    await this.pin(tokenMetas, nftContractMetadata, contract_key);
-    const smartContract = await this.loadSmartContract(nftContractMetadata, contract_key);
-    const collection = await this.loadCollection(tokenMetas, nftContractMetadata, contract_key, collectionSize);
-    const numNftMetasLoaded = await this.loadNftMetasAndTheirAttributes(tokenMetas, nftContractMetadata, smartContract.id, contract_key, collection);
-    if (numNftMetasLoaded > 0) {
-      await this.updateRarities(smartContract, contract_key);
-      await this.loadCollectionAttributes(collection.id, contract_key);
-    }
     this.logger.log('SCRAPING COMPLETE');
-    return "Success"
+
+    // if (!tokenMetas)
+    //   this.logger.error(`No tokens found for contract ${contract_key}`)
+
+    // await this.pin(tokenMetas, nftContractMetadata, contract_key);
+    // const smartContract = await this.loadSmartContract(nftContractMetadata, contract_key);
+    // const collection = await this.loadCollection(tokenMetas, nftContractMetadata, contract_key, collectionSize);
+    // const numNftMetasLoaded = await this.loadNftMetasAndTheirAttributes(tokenMetas, nftContractMetadata, smartContract.id, contract_key, collection);
+    // if (numNftMetasLoaded > 0) {
+    //   await this.updateRarities(smartContract, contract_key);
+    //   await this.loadCollectionAttributes(collection.id, contract_key);
+    // }
+    // this.logger.log('SCRAPING COMPLETE');
+    // return "Success"
   }
 
   async pin(tokenMetas, nftContractMetadata, contract_key) {
@@ -363,8 +365,15 @@ export class NearScraperService {
 
     let tokenMetas = []
     for (let i = 0; i < collectionSize; i += nftTokensBatchSize) {
-    const currentTokenMetasBatch = await contract.nft_tokens({from_index: Number(i).toString(), limit: nftTokensBatchSize}, "300000000000000");
+      const currentTokenMetasBatch = await contract.nft_tokens({
+        from_index: Number(i).toString(),
+        limit: nftTokensBatchSize,
+      });
       tokenMetas = tokenMetas.concat(currentTokenMetasBatch);
+      // await delay(20000);
+      // if (i % 5 === 0) {
+      //   this.logger.log(i);
+      // } 
     }
 
     const nftContractMetadata = await contract.nft_metadata();

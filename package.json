@@ -33,6 +33,7 @@
     "@prisma/client": "^3.14.0",
     "@types/sharp": "^0.30.4",
     "axios": "^0.27.2",
+    "big.js": "^6.2.0",
     "class-validator": "^0.13.2",
     "discord-api-types": "^0.33.5",
     "discord.js": "^13.8.0",

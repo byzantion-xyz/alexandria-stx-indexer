@@ -3,6 +3,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { SmartContractType } from '@prisma/client'
 import { IpfsHelperService } from '../providers/ipfs-helper.service';
 const axios = require('axios').default;
+import Big from 'big.js'
 
 const nearAPI = require("near-api-js");
 const { keyStores, connect } = nearAPI;
@@ -11,7 +12,6 @@ const homedir = require("os").homedir();
 const CREDENTIALS_DIR = ".near-credentials";
 const credentialsPath = require("path").join(homedir, CREDENTIALS_DIR);
 const keyStore = new keyStores.UnencryptedFileSystemKeyStore(credentialsPath);
-
 const nearAccountId = "9936890d36d4dc77414e685f7ac667fc7b67d16a0cf8dae8a9c46f0976635ecf"
 
 const nearConfig = {
@@ -24,6 +24,9 @@ const nearConfig = {
 };
 
 const NEAR_PROTOCOL_DB_ID = "174c3df6-0221-4ca7-b966-79ac8d981bdb"
+
+const GAS = Big(3).times(10 ** 14).toFixed()
+
 
 @Injectable()
 export class NearScraperService {
@@ -363,7 +366,7 @@ export class NearScraperService {
 
     let tokenMetas = []
     for (let i = 0; i < collectionSize; i += nftTokensBatchSize) {
-    const currentTokenMetasBatch = await contract.nft_tokens({from_index: Number(i).toString(), limit: nftTokensBatchSize});
+    const currentTokenMetasBatch = await contract.nft_tokens({from_index: Number(i).toString(), limit: nftTokensBatchSize}, GAS);
       tokenMetas = tokenMetas.concat(currentTokenMetasBatch);
     }
 

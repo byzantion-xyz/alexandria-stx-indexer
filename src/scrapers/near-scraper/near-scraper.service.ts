@@ -49,11 +49,11 @@ export class NearScraperService {
     await this.pin(tokenMetas, nftContractMetadata, contract_key);
     const smartContract = await this.loadSmartContract(nftContractMetadata, contract_key);
     const collection = await this.loadCollection(tokenMetas, nftContractMetadata, contract_key, collectionSize);
-    // const numNftMetasLoaded = await this.loadNftMetasAndTheirAttributes(tokenMetas, nftContractMetadata, smartContract.id, contract_key, collection);
-    // if (numNftMetasLoaded > 0) {
+    const numNftMetasLoaded = await this.loadNftMetasAndTheirAttributes(tokenMetas, nftContractMetadata, smartContract.id, contract_key, collection);
+    if (numNftMetasLoaded > 0) {
       await this.updateRarities(smartContract, contract_key);
       await this.loadCollectionAttributes(collection.id, contract_key);
-    // }
+    }
     this.logger.log(`[scraping ${contract_key}] SCRAPING COMPLETE`);
     return "Success"
   }

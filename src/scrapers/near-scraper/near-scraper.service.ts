@@ -134,6 +134,9 @@ export class NearScraperService {
 
     let nftMetaPromises = []
     for (let i = 0; i < tokenMetas.length; i++) {
+
+      console.log(tokenMetas[i])
+
       const nftMeta = await this.prismaService.nftMeta.findUnique({
         where: {
           smart_contract_id_token_id: {
@@ -418,7 +421,7 @@ export class NearScraperService {
     let tokenMetas = []
     let tokenMetaPromises = []
     if (startingTokenId < Number(collectionSize)) {
-      for (let i = startingTokenId; i < collectionSize + 1; i++) {
+      for (let i = startingTokenId; i < collectionSize; i++) {
         const tokenMetaPromise = contract.nft_token({token_id: Number(i).toString()})
         tokenMetaPromises.push(tokenMetaPromise)
         if (i % 100 === 0) {

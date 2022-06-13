@@ -104,7 +104,7 @@ export class TxHelperService {
 
     return await this.prismaService.nftMeta.update({
       where: { id: nftMetaId },
-      data: { nft_state: { update: update } }
+      data: { nft_state: { upsert: { create: update, update: update } }
     });
   }
 

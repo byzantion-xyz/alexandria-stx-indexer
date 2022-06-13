@@ -44,13 +44,11 @@ export class NearScraperService {
 
     console.log(tokenMetas)
     console.log(tokenMetas.length)
-    
+
     if (!tokenMetas)
       this.logger.error(`[scraping ${contract_key}] No tokens found for contract ${contract_key}`)
 
-    if (tokenMetas.length > 0) {
-      await this.pin(tokenMetas, nftContractMetadata, contract_key);
-    }
+    await this.pin(tokenMetas, nftContractMetadata, contract_key);
     const smartContract = await this.loadSmartContract(nftContractMetadata, contract_key);
     const collection = await this.loadCollection(tokenMetas, nftContractMetadata, contract_key, collectionSize);
     await this.loadNftMetasAndTheirAttributes(tokenMetas, nftContractMetadata, smartContract.id, contract_key, collection);
@@ -105,6 +103,7 @@ export class NearScraperService {
   }
 
   async loadCollection(tokenMetas, nftContractMetadata, contract_key, collectionSize) {
+    if (tokenMetas.length == 0) return
     this.logger.log(`[scraping ${contract_key}] Loading Collection`);
 
     // get first token data for the collection record data

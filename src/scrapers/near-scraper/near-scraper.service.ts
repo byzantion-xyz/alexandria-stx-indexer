@@ -37,12 +37,10 @@ export class NearScraperService {
   ) {}
 
   async scrape(data: runScraperData) {
-    const { contract_key } = data
+    const { contract_key, token_id } = data
     this.logger.log(`[scraping ${contract_key}] START SCRAPE`);
 
-    const { tokenMetas, nftContractMetadata, collectionSize } = await this.getContractAndTokenMetaData(contract_key);
-    console.log(tokenMetas[0])
-    console.log(nftContractMetadata)
+    const { tokenMetas, nftContractMetadata, collectionSize } = await this.getContractAndTokenMetaData(contract_key, token_id);
 
     if (!tokenMetas)
       this.logger.error(`[scraping ${contract_key}] No tokens found for contract ${contract_key}`)
@@ -133,10 +131,12 @@ export class NearScraperService {
 
     let nftMetaPromises = []
     for (let i = 0; i < tokenMetas.length; i++) {
-      const nftMeta = await this.prismaService.nftMeta.findFirst({
+      const nftMeta = await this.prismaService.nftMeta.findUnique({
         where: {
-          smart_contract_id: smartContractId,
-          token_id: tokenMetas[i]?.token_id
+          smart_contract_id_token_id: {
+            smart_contract_id: smartContractId,
+            token_id: tokenMetas[i]?.token_id
+          }
         },
       })
 
@@ -298,7 +298,7 @@ export class NearScraperService {
 
       updatedNftMetaPromises.push(updatedNftMeta)
 
-      if (count % 100 === 0) {
+      if (count % 10 === 0) {
         await Promise.all(updatedNftMetaPromises)
         this.logger.log(`[scraping ${contract_key}] Rarity/Rankings processed for ${updatedNftMetaPromises.length} NftMetas`);
         updatedNftMetaPromises = []
@@ -366,7 +366,7 @@ export class NearScraperService {
     // })
   }
 
-  async getContractAndTokenMetaData(contract_key) {
+  async getContractAndTokenMetaData(contract_key, token_id) {
     this.logger.log(`[scraping ${contract_key}] Getting Token Metas from Chain`);
     const near = await connect(nearConfig);
     const account = await near.account(nearAccountId);
@@ -384,9 +384,12 @@ export class NearScraperService {
     //   // await delay(1000); 
     // }
 
+    let startingTokenId = 1
+    if (token_id) startingTokenId = token_id
+
     let tokenMetas = []
     let tokenMetaPromises = []
-    for (let i = 4400; i < collectionSize + 1; i++) {
+    for (let i = startingTokenId; i < collectionSize + 1; i++) {
       const tokenMetaPromise = contract.nft_token({token_id: Number(i).toString()})
       tokenMetaPromises.push(tokenMetaPromise)
       if (i % 100 === 0) {

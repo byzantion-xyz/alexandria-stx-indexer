@@ -185,7 +185,7 @@ model NftState {
   minted              Boolean        @default(false)
   mint_tx             String?
   listed              Boolean        @default(false)
-  list_price          Decimal        @db.Decimal(32, 0)
+  list_price          Decimal?       @db.Decimal(32, 0)
   list_seller         String?
   list_block_height   BigInt?
   list_tx_index       BigInt?

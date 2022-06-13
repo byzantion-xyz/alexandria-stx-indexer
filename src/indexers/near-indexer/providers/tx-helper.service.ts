@@ -62,7 +62,9 @@ export class TxHelperService {
 
   extractArgumentData(args: JSON, scf: SmartContractFunction, field: string) {
     const index = scf.args[field];
-    if (index.includes('.')) {
+    if (!index) {
+      return undefined;
+    } else if (index.includes('.')) {
       const indexArr = index.split('.');
       return args[indexArr[0]][indexArr[1]];
     } else {

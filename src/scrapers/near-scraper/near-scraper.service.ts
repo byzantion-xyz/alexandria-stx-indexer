@@ -129,13 +129,13 @@ export class NearScraperService {
 
   async loadNftMetasAndTheirAttributes(tokenMetas, nftContractMetadata, smartContractId, contract_key, collection) {
     this.logger.log(`[scraping ${contract_key}] Loading NftMetas and their NftMetaAttributes`);
-    
+
     let nftMetaPromises = []
     for (let i = 0; i < tokenMetas.length; i++) {
       const nftMeta = await this.prismaService.nftMeta.findFirst({
         where: {
           smart_contract_id: smartContractId,
-          token_id: tokenMetas[i].token_id
+          token_id: tokenMetas[i]?.token_id
         },
       })
 

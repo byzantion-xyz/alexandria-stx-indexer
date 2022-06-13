@@ -36,13 +36,13 @@ export class NearScraperService {
   ) {}
 
   async scrape(data) {
-    this.logger.log('start scrape');
     const { contract_key } = data
+    this.logger.log(`[scraping ${contract_key}] START SCRAPE`);
 
     const { tokenMetas, nftContractMetadata, collectionSize } = await this.getContractAndTokenMetaData(contract_key);
 
     if (!tokenMetas)
-      this.logger.error(`No tokens found for contract ${contract_key}`)
+      this.logger.error(`[scraping ${contract_key}] No tokens found for contract ${contract_key}`)
 
     await this.pin(tokenMetas, nftContractMetadata, contract_key);
     const smartContract = await this.loadSmartContract(nftContractMetadata, contract_key);
@@ -52,14 +52,14 @@ export class NearScraperService {
       await this.updateRarities(smartContract, contract_key);
       await this.loadCollectionAttributes(collection.id, contract_key);
     }
-    this.logger.log('SCRAPING COMPLETE');
+    this.logger.log(`[scraping ${contract_key}] SCRAPING COMPLETE`);
     return "Success"
   }
 
   async pin(tokenMetas, nftContractMetadata, contract_key) {
-    this.logger.log('pin');
+    this.logger.log(`[scraping ${contract_key}] pin`);
     const firstTokenMeta = tokenMetas[0]
-    const firstTokenIpfsUrl = this.getTokenIpfsUrl(nftContractMetadata.base_uri, firstTokenMeta.metadata.reference);
+    const firstTokenIpfsUrl = this.getTokenIpfsUrl(nftContractMetadata?.base_uri, firstTokenMeta?.metadata?.reference);
     if (!firstTokenIpfsUrl.includes('ipfs')) return // if the metadata is not stored on ipfs return
 
     const pinDataResult = await this.ipfsHelperService.pinIpfsFolder(firstTokenIpfsUrl, `${contract_key}`);
@@ -71,7 +71,7 @@ export class NearScraperService {
   };
 
   async loadSmartContract(nftContractMetadata, contract_key) {
-    this.logger.log('loadSmartContract');
+    this.logger.log(`[scraping ${contract_key}] Loading Smart Contract`);
     const smartContract = await this.prismaService.smartContract.upsert({
       where: {
         contract_key: contract_key
@@ -101,7 +101,7 @@ export class NearScraperService {
   }
 
   async loadCollection(tokenMetas, nftContractMetadata, contract_key, collectionSize) {
-    this.logger.log('loadCollection');
+    this.logger.log(`[scraping ${contract_key}] Loading Collection`);
 
     // get first token data for the collection record data
     const firstTokenMeta = tokenMetas[0]
@@ -126,6 +126,8 @@ export class NearScraperService {
   }
 
   async loadNftMetasAndTheirAttributes(tokenMetas, nftContractMetadata, smartContractId, contract_key, collection) {
+    this.logger.log(`[scraping ${contract_key}] Loading NftMetas and their NftMetaAttributes`);
+    
     let nftMetaPromises = []
     for (let i = 0; i < tokenMetas.length; i++) {
       const nftMeta = await this.prismaService.nftMeta.findFirst({
@@ -144,7 +146,7 @@ export class NearScraperService {
           mediaUrl = this.ipfsHelperService.getByzIpfsUrl(mediaUrl);
         }
 
-        const attributes = await this.getNftMetaAttributes(nftContractMetadata, tokenMetas[i], contract_key);
+        const attributes = await this.getNftMetaAttributesFromMeta(nftContractMetadata, tokenMetas[i], contract_key);
 
         const nftMeta = this.prismaService.nftMeta.create({
           data: {
@@ -300,7 +302,7 @@ export class NearScraperService {
   };
 
   async loadCollectionAttributes(collectionId, contract_key) {
-    this.logger.log(`[scraping ${contract_key}] Running createAttributes()`);
+    this.logger.log(`[scraping ${contract_key}] Creating Collection Attributes`);
   
     const nftMetas = await this.prismaService.nftMeta.findMany({
       where: {
@@ -355,6 +357,8 @@ export class NearScraperService {
   }
 
   async getContractAndTokenMetaData(contract_key) {
+    this.logger.log(`[scraping ${contract_key}] Getting Token Metas from Chain`);
+
     const near = await connect(nearConfig);
     const account = await near.account(nearAccountId);
     const contract = await this.getContract(contract_key, account);
@@ -373,7 +377,7 @@ export class NearScraperService {
 
     let tokenMetas = []
     let tokenMetaPromises = []
-    for (let i = 0; i < collectionSize; i++) {
+    for (let i = 1; i < collectionSize + 1; i++) {
       const tokenMetaPromise = contract.nft_token({token_id: Number(i).toString()})
       tokenMetaPromises.push(tokenMetaPromise)
       if (i % 100 === 0) {
@@ -436,7 +440,7 @@ export class NearScraperService {
     return tokenIpfsMeta
   }
 
-  async getNftMetaAttributes(nftContractMetadata, tokenMeta, contract_key) {
+  async getNftMetaAttributesFromMeta(nftContractMetadata, tokenMeta, contract_key) {
     let attributes = []
     if (contract_key == "misfits.tenk.near") {
       const tokenIpfsMeta = await this.getTokenIpfsMeta(nftContractMetadata, tokenMeta)

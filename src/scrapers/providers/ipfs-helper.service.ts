@@ -80,6 +80,7 @@ export class IpfsHelperService {
       .replace('ipfs://ipfs/', pinataGatewayUrl)
       .replace('ipfs://', pinataGatewayUrl)
       .replace('https://ipfs.io/ipfs/', pinataGatewayUrl)
+      .replace('https://ipfs.fleek.co/ipfs/', pinataGatewayUrl)
       .replace('dev.nagmi.art/', pinataGatewayUrl)
       .replace('https://cloudflare-ipfs.com/ipfs/', pinataGatewayUrl)
   };

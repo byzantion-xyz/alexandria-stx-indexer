@@ -42,9 +42,6 @@ export class NearScraperService {
 
     const { tokenMetas, nftContractMetadata, collectionSize } = await this.getContractAndTokenMetaData(contract_key, token_id);
 
-    console.log(tokenMetas)
-    console.log(tokenMetas.length)
-
     if (!tokenMetas)
       this.logger.error(`[scraping ${contract_key}] No tokens found for contract ${contract_key}`)
 
@@ -284,10 +281,6 @@ export class NearScraperService {
     nftMetas.sort((a, b) => {
       return b.rarity - a.rarity;
     });
-
-    for (let nftMeta of nftMetas) {
-      console.log(nftMeta)
-    }
 
     let updatedNftMetaPromises = [];
     let count = 0;

@@ -59,6 +59,7 @@ export class NearScraperService {
   }
 
   async pin(tokenMetas, nftContractMetadata, contract_key) {
+    if (tokenMetas.length == 0) return
     this.logger.log(`[scraping ${contract_key}] pin`);
     const firstTokenMeta = tokenMetas[0]
     const firstTokenIpfsUrl = this.getTokenIpfsUrl(nftContractMetadata?.base_uri, firstTokenMeta?.metadata?.reference);
@@ -431,11 +432,13 @@ export class NearScraperService {
 
   getTokenIpfsUrl(base_uri, reference) {
     if (reference.includes("https")) return reference
+    if (!base_uri && !reference) return ""
     return `${base_uri}/${reference}`
   };
   
   getTokenIpfsMediaUrl(base_uri, media) {
     if (media.includes("https")) return media
+    if (!base_uri && !media) return ""
     return `${base_uri}/${media}`
   };
 

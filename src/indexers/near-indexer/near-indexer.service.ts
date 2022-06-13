@@ -41,7 +41,7 @@ export class NearIndexerService {
           ]
         }
       },
-      { $sort: { 'block.block_height': 1 } },
+      { $sort: { 'block.block_height': 1, 'transaction.nonce': 1 } },
       { $limit: 1 }
     ]);
     this.logger.debug('Processing transactions');

@@ -340,6 +340,8 @@ export class NearScraperService {
       }
     })
 
+    this.logger.log(`[scraping ${contract_key}] Creating Collection Attributes: Found ${nftMetas.length} NftMetas`);
+
     let collectionAttributePromises = []
     for (let i = 0; i < nftMetas.length; i++) {
       const collectionAndCollectionAttributes = await this.prismaService.collection.update({

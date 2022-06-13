@@ -315,11 +315,11 @@ export class NearScraperService {
 
       updatedNftMetaPromises.push(updatedNftMeta)
 
-      if (count % 100 === 0) {
+      if (count % 10 === 0) {
         await Promise.all(updatedNftMetaPromises)
         this.logger.log(`[scraping ${contract_key}] Rarity/Rankings processed for ${updatedNftMetaPromises.length} NftMetas`);
         updatedNftMetaPromises = []
-      } 
+      }
 
       count++;
     }

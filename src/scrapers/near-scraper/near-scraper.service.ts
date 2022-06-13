@@ -127,6 +127,7 @@ export class NearScraperService {
   }
 
   async loadNftMetasAndTheirAttributes(tokenMetas, nftContractMetadata, smartContractId, contract_key, collection) {
+    if (tokenMetas.length == 0) return
     this.logger.log(`[scraping ${contract_key}] Loading NftMetas and their NftMetaAttributes`);
 
     let nftMetaPromises = []
@@ -383,24 +384,28 @@ export class NearScraperService {
     //   tokenMetas = tokenMetas.concat(currentTokenMetasBatch);
     //   // await delay(1000); 
     // }
-
+   
     let startingTokenId = 1
     if (token_id) startingTokenId = token_id
 
     let tokenMetas = []
     let tokenMetaPromises = []
-    for (let i = startingTokenId; i < collectionSize + 1; i++) {
-      const tokenMetaPromise = contract.nft_token({token_id: Number(i).toString()})
-      tokenMetaPromises.push(tokenMetaPromise)
-      if (i % 100 === 0) {
-        const tokenMetasBatch = await Promise.all(tokenMetaPromises)
-        tokenMetas = tokenMetas.concat(tokenMetasBatch);
-        tokenMetaPromises = []
-      } 
+    if (token_id < collectionSize) {
+      for (let i = startingTokenId; i < collectionSize + 1; i++) {
+        const tokenMetaPromise = contract.nft_token({token_id: Number(i).toString()})
+        tokenMetaPromises.push(tokenMetaPromise)
+        if (i % 100 === 0) {
+          const tokenMetasBatch = await Promise.all(tokenMetaPromises)
+          tokenMetas = tokenMetas.concat(tokenMetasBatch);
+          tokenMetaPromises = []
+        } 
+      }
+  
+      const tokenMetasBatch = await Promise.all(tokenMetaPromises)
+      tokenMetas = tokenMetas.concat(tokenMetasBatch);
     }
 
-    const tokenMetasBatch = await Promise.all(tokenMetaPromises)
-    tokenMetas = tokenMetas.concat(tokenMetasBatch);
+    this.logger.log(`[scraping ${contract_key}] Number of NftMetas to process: ${tokenMetas.length}`);
 
     const nftContractMetadata = await contract.nft_metadata();
 

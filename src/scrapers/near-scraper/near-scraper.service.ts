@@ -313,6 +313,7 @@ export class NearScraperService {
 
       if (count % 100 === 0) {
         this.logger.log(`[scraping ${contract_key}] Rarity and Rankings processed: ${count}`);
+        console.log(`[scraping ${contract_key}] Rarity and Rankings processed: ${count}`);
       } 
 
       count++;
@@ -368,6 +369,7 @@ export class NearScraperService {
 
       if (i % 100 === 0) {
         this.logger.log(`[scraping ${contract_key}] CollectionAttributes batch inserted`, collectionAttributePromises.length);
+        console.log(`[scraping ${contract_key}] CollectionAttributes batch inserted`, collectionAttributePromises.length);
         await Promise.all(collectionAttributePromises)
         collectionAttributePromises = []
       } 

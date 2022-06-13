@@ -40,7 +40,8 @@ export class NearScraperService {
     const { contract_key, token_id, override_frozen = false } = data
     this.logger.log(`[scraping ${contract_key}] START SCRAPE`);
 
-    // const hello = this.prismaService.collection.findUnique({ where: { slug: contract_key } })
+    const checkCollection = await this.prismaService.collection.findUnique({ where: { slug: contract_key } })
+    const loadRecord = await this.prismaService.collectionDataLoad.findUnique({ where: { collection_id: checkCollection.id } })
 
     const { tokenMetas, nftContractMetadata, collectionSize } = await this.getContractAndTokenMetaData(contract_key, token_id);
 
@@ -134,9 +135,6 @@ export class NearScraperService {
 
     let nftMetaPromises = []
     for (let i = 0; i < tokenMetas.length; i++) {
-
-      console.log(tokenMetas[i])
-
       const nftMeta = await this.prismaService.nftMeta.findUnique({
         where: {
           smart_contract_id_token_id: {
@@ -319,7 +317,7 @@ export class NearScraperService {
 
       updatedNftMetasPromises.push(updatedNftMeta);
 
-      if (count % 20 === 0) {
+      if (count % 100 === 0) {
         await Promise.all(updatedNftMetasPromises)
         this.logger.log(`[scraping ${contract_key}] Rarity and Rankings processed: ${count}`);
         console.log(`[scraping ${contract_key}] Rarity and Rankings processed: ${count}`);

@@ -386,7 +386,7 @@ export class NearScraperService {
 
     let tokenMetas = []
     let tokenMetaPromises = []
-    for (let i = 1; i < collectionSize + 1; i++) {
+    for (let i = 4400; i < collectionSize + 1; i++) {
       const tokenMetaPromise = contract.nft_token({token_id: Number(i).toString()})
       tokenMetaPromises.push(tokenMetaPromise)
       if (i % 100 === 0) {

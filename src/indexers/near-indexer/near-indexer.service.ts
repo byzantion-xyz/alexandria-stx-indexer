@@ -11,6 +11,8 @@ import { UnlistTransactionService } from './providers/unlist-transaction.service
 import * as moment from 'moment';
 import { TxHelperService } from './providers/tx-helper.service';
 
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 @Injectable()
 export class NearIndexerService {
   private readonly logger = new Logger(NearIndexerService.name);
@@ -42,8 +44,25 @@ export class NearIndexerService {
         }
       },
       { $sort: { 'block.block_height': 1, 'transaction.nonce': 1 } },
-      { $limit: 1 }
-    ]);
+      {
+          $lookup: {
+               from: "receipts",
+               localField: "outcome.execution_outcome.outcome.status.SuccessReceiptId",
+               foreignField: 'receipt.receipt_id',
+               as: 'receipt'
+            }
+      }, { $unwind: { path: '$receipt'}},
+      {
+        $match: { 
+            $or: [
+                {'receipt.execution_outcome.outcome.status.SuccessValue': { $exists: true }},
+                {'receipt.execution_outcome.outcome.status.SuccessReceiptId': { $exists: true }}
+            ]
+            
+        }    
+      },
+       { $limit: 1000 }
+    ], { allowDiskUse: true });
     this.logger.debug('Processing transactions');
 
     for await (const doc of cursor) {
@@ -51,6 +70,8 @@ export class NearIndexerService {
       const txResult: TxProcessResult = await this.processTransaction(transaction);
       await this.setTransactionResult(doc._id, txResult);
     }
+
+    await delay(5000);
 
     this.logger.debug('Completed');
   }

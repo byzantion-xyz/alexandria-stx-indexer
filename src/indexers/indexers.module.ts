@@ -8,12 +8,14 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { UnlistTransactionService } from './near-indexer/providers/unlist-transaction.service';
 import { DiscordBotModule } from 'src/discord-bot/discord-bot.module';
 import { PrismaModule } from 'src/prisma/prisma.module';
+import { ScrapersModule } from 'src/scrapers/scrapers.module';
 
 @Module({
   imports: [
     MongooseModule.forFeature([], 'near-streamer'),
     DiscordBotModule,
-    PrismaModule
+    PrismaModule,
+    ScrapersModule
   ],
   controllers: [NearIndexerController],
   providers: [

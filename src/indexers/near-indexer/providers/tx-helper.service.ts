@@ -62,7 +62,9 @@ export class TxHelperService {
 
   extractArgumentData(args: JSON, scf: SmartContractFunction, field: string) {
     const index = scf.args[field];
-    if (index.includes('.')) {
+    if (!index) {
+      return undefined;
+    } else if (index.includes('.')) {
       const indexArr = index.split('.');
       return args[indexArr[0]][indexArr[1]];
     } else {
@@ -104,7 +106,7 @@ export class TxHelperService {
 
     return await this.prismaService.nftMeta.update({
       where: { id: nftMetaId },
-      data: { nft_state: { update: update } }
+      data: { nft_state: { upsert: { create: update, update: update } }}
     });
   }
 

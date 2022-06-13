@@ -30,6 +30,7 @@ export class BuyTransactionService {
 
     const token_id = this.txHelper.extractArgumentData(args, scf, 'token_id');
     const contract_key = this.txHelper.extractArgumentData(args, scf, 'contract_key');
+    const price = this.txHelper.extractArgumentData(args, scf, 'price');
 
     const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
 
@@ -40,7 +41,7 @@ export class BuyTransactionService {
       const buyActionParams: CreateBuyAction = {
         ...actionCommonArgs,
         action: ActionName.buy,
-        list_price: nftMeta.nft_state.list_price,
+        list_price: price || nftMeta.nft_state.list_price,
         seller: nftMeta.nft_state.list_seller,
         buyer: tx.transaction.signer_id,
       };

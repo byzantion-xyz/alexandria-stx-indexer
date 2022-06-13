@@ -135,7 +135,7 @@ export class NearScraperService {
       //   },
       // })
 
-      if (!nftMeta) {
+      // if (!nftMeta) {
 
         const tokenIpfsMeta = await this.getTokenIpfsMeta(nftContractMetadata, tokenMetas[i]);
 
@@ -174,7 +174,7 @@ export class NearScraperService {
           nftMetaPromises = []
           this.logger.log(`[scraping ${contract_key}] NftMetas processed: ${i} of ${collection.collection_size}`);
         } 
-      }
+      // }
     };
     await Promise.all(nftMetaPromises)
     this.logger.log(`[scraping ${contract_key}] NftMetas Processing COMPLETE`);

@@ -17,7 +17,7 @@ export class NearScraperController {
     return result;
   }
 
-  @Post('updateRarities')
+  @Post('update-rarities')
   async updateRarities(
     @Body() data: { contract_key, override_frozen }
   ) {
@@ -25,7 +25,7 @@ export class NearScraperController {
     return result;
   }
 
-  @Post('createCollectionAttributes')
+  @Post('create-collection-attributes')
   async createCollectionAttributes(
     @Body() data: { contract_key, slug }
   ) {

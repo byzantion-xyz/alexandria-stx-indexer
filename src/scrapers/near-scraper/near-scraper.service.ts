@@ -136,7 +136,7 @@ export class NearScraperService {
         where: {
           smart_contract_id_token_id: {
             smart_contract_id: smartContractId,
-            token_id: tokenMetas[i]?.token_id
+            token_id: tokenMetas[i]?.token_id ?? ""
           }
         },
       })

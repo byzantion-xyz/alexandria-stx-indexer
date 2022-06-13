@@ -91,6 +91,7 @@ model Collection {
   attributes      CollectionAttribute[]
   metas           NftMeta[]
 
+  CollectionDataLoad CollectionDataLoad[]
   @@map("collection")
 }
 
@@ -134,6 +135,16 @@ model CollectionBid {
   smart_contract     SmartContract       @relation(fields: [smart_contract_id], references: [id])
 
   @@map("collection_bid")
+}
+
+model CollectionDataLoad {
+  id String @id @default(uuid()) @db.Uuid
+
+  stage         CollectionDataLoadStage    @default(pinning)
+  outcome       CollectionDataLoadOutcome?
+  error         Json?
+  collection    Collection                 @relation(fields: [collection_id], references: [id])
+  collection_id String                     @db.Uuid
 }
 
 model NftMeta {
@@ -317,4 +328,19 @@ enum DiscordChannelType {
   sales
   listings
   bids
+}
+
+enum CollectionDataLoadStage {
+  pinning
+  loading_nft_metas
+  updating_rarities
+  creating_collection_attributes
+  done
+}
+
+enum CollectionDataLoadOutcome {
+  succeeded
+  failed
+  skipped
+  blacklisted
 }

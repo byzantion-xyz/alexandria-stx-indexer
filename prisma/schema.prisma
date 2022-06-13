@@ -176,6 +176,7 @@ model NftMetaAttribute {
   updated_at DateTime @updatedAt
   meta       NftMeta  @relation(fields: [meta_id], references: [id])
 
+  @@unique([trait_type, value, meta_id])
   @@map("nft_meta_attribute")
 }
 

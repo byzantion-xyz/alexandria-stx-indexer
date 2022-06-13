@@ -285,6 +285,10 @@ export class NearScraperService {
       return b.rarity - a.rarity;
     });
 
+    for (let nftMeta of nftMetas) {
+      console.log(nftMeta)
+    }
+
     let updatedNftMetaPromises = [];
     let count = 0;
     for (let nftMeta of nftMetas) {

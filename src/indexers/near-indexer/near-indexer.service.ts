@@ -61,7 +61,6 @@ export class NearIndexerService {
             
         }    
       },
-       { $limit: 1000 }
     ], { allowDiskUse: true });
     this.logger.debug('Processing transactions');
 

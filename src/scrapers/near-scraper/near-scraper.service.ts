@@ -205,6 +205,7 @@ export class NearScraperService {
         smart_contract_id: smartContract.id
       },
       select: {
+        id: true,
         rarity: true,
         attributes: {
           select: {

@@ -296,11 +296,18 @@ export class NearScraperService {
       })
 
       updatedNftMetaPromises.push(updatedNftMeta)
+
+      if (count % 100 === 0) {
+        await Promise.all(updatedNftMetaPromises)
+        this.logger.log(`[scraping ${contract_key}] Rarity/Rankings processed for ${updatedNftMetaPromises.length} NftMetas`);
+        updatedNftMetaPromises = []
+      } 
+
       count++;
     }
 
     await Promise.all(updatedNftMetaPromises)
-    this.logger.log(`[scraping ${contract_key}] Rarity and Ranking saved for ${updatedNftMetaPromises.length} Meta`);
+    this.logger.log(`[scraping ${contract_key}] Rarity and Ranking Saved`);
   };
 
   async loadCollectionAttributes(collectionId, contract_key) {

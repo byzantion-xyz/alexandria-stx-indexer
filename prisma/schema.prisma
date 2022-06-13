@@ -140,8 +140,9 @@ model CollectionBid {
 model CollectionDataLoad {
   id String @id @default(uuid()) @db.Uuid
 
-  stage         CollectionDataLoadStage    @default(pinning)
+  stage         CollectionDataLoadStage    @default(getting_tokens_from_chain)
   outcome       CollectionDataLoadOutcome?
+  outcome_msg   String?
   error         Json?
   collection    Collection                 @relation(fields: [collection_id], references: [id])
   collection_id String                     @db.Uuid
@@ -331,6 +332,7 @@ enum DiscordChannelType {
 }
 
 enum CollectionDataLoadStage {
+  getting_tokens_from_chain
   pinning
   loading_nft_metas
   updating_rarities

@@ -145,7 +145,7 @@ model CollectionDataLoad {
   outcome_msg   String?
   error         Json?
   collection    Collection                 @relation(fields: [collection_id], references: [id])
-  collection_id String                     @db.Uuid
+  collection_id String                     @unique @db.Uuid
 }
 
 model NftMeta {

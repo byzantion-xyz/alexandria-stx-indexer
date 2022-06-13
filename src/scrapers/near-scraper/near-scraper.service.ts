@@ -40,6 +40,8 @@ export class NearScraperService {
     this.logger.log(`[scraping ${contract_key}] START SCRAPE`);
 
     const { tokenMetas, nftContractMetadata, collectionSize } = await this.getContractAndTokenMetaData(contract_key);
+    console.log(tokenMetas[0])
+    console.log(nftContractMetadata)
 
     if (!tokenMetas)
       this.logger.error(`[scraping ${contract_key}] No tokens found for contract ${contract_key}`)
@@ -424,7 +426,7 @@ export class NearScraperService {
     let tokenIpfsUrl = this.getTokenIpfsUrl(nftContractMetadata.base_uri, tokenMeta.metadata.reference);
     if (!tokenIpfsUrl || tokenIpfsUrl && tokenIpfsUrl == "") return
 
-    if (tokenIpfsUrl.includes('ipfs')) {
+    if (tokenIpfsUrl.includes('ipfs') && nftContractMetadata.base_uri != "https://ipfs.fleek.co/ipfs") {
       tokenIpfsUrl = this.ipfsHelperService.getByzIpfsUrl(tokenIpfsUrl);
     }
 

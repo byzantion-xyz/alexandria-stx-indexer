@@ -40,21 +40,20 @@ export class NearScraperService {
     const { contract_key } = data
 
     const { tokenMetas, nftContractMetadata, collectionSize } = await this.getContractAndTokenMetaData(contract_key);
+
+    if (!tokenMetas)
+      this.logger.error(`No tokens found for contract ${contract_key}`)
+
+    await this.pin(tokenMetas, nftContractMetadata, contract_key);
+    const smartContract = await this.loadSmartContract(nftContractMetadata, contract_key);
+    const collection = await this.loadCollection(tokenMetas, nftContractMetadata, contract_key, collectionSize);
+    const numNftMetasLoaded = await this.loadNftMetasAndTheirAttributes(tokenMetas, nftContractMetadata, smartContract.id, contract_key, collection);
+    if (numNftMetasLoaded > 0) {
+      await this.updateRarities(smartContract, contract_key);
+      await this.loadCollectionAttributes(collection.id, contract_key);
+    }
     this.logger.log('SCRAPING COMPLETE');
-
-    // if (!tokenMetas)
-    //   this.logger.error(`No tokens found for contract ${contract_key}`)
-
-    // await this.pin(tokenMetas, nftContractMetadata, contract_key);
-    // const smartContract = await this.loadSmartContract(nftContractMetadata, contract_key);
-    // const collection = await this.loadCollection(tokenMetas, nftContractMetadata, contract_key, collectionSize);
-    // const numNftMetasLoaded = await this.loadNftMetasAndTheirAttributes(tokenMetas, nftContractMetadata, smartContract.id, contract_key, collection);
-    // if (numNftMetasLoaded > 0) {
-    //   await this.updateRarities(smartContract, contract_key);
-    //   await this.loadCollectionAttributes(collection.id, contract_key);
-    // }
-    // this.logger.log('SCRAPING COMPLETE');
-    // return "Success"
+    return "Success"
   }
 
   async pin(tokenMetas, nftContractMetadata, contract_key) {

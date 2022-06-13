@@ -40,10 +40,10 @@ export class NearScraperService {
     const { contract_key, token_id, override_frozen = false } = data
     this.logger.log(`[scraping ${contract_key}] START SCRAPE`);
 
-    const checkCollection = await this.prismaService.collection.findUnique({ where: { slug: contract_key } })
-    if (checkCollection) {
-      const loadRecord = await this.prismaService.collectionDataLoad.findUnique({ where: { collection_id: checkCollection.id } })
-    }
+    // const checkCollection = await this.prismaService.collection.findUnique({ where: { slug: contract_key } })
+    // if (checkCollection) {
+    //   const loadRecord = await this.prismaService.collectionDataLoad.findUnique({ where: { collection_id: checkCollection.id } })
+    // }
 
     const { tokenMetas, nftContractMetadata, collectionSize } = await this.getContractAndTokenMetaData(contract_key, token_id);
 

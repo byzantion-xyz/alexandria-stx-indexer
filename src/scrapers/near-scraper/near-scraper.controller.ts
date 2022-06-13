@@ -11,7 +11,7 @@ export class NearScraperController {
 
   @Post('collection')
   async loadCollectionFromChain(
-    @Body() data: { contract_key, token_id }
+    @Body() data: { contract_key, token_id, override_frozen }
   ) {
     const result = this.nearScraper.scrape(data);
     return result;
@@ -21,15 +21,15 @@ export class NearScraperController {
   async updateRarities(
     @Body() data: { contract_key, override_frozen }
   ) {
-    const result = this.nearScraper.updateRarities(data);
+    const result = this.nearScraper.updateRarities(data.contract_key, data.override_frozen);
     return result;
   }
 
   @Post('create-collection-attributes')
   async createCollectionAttributes(
-    @Body() data: { contract_key, slug }
+    @Body() data: { contract_key }
   ) {
-    const result = this.nearScraper.loadCollectionAttributes(data);
+    const result = this.nearScraper.loadCollectionAttributes(data.contract_key);
     return result;
   }
 }

@@ -37,7 +37,7 @@ export class NearScraperService {
   ) {}
 
   async scrape(data: runScraperData) {
-    const { contract_key, token_id } = data
+    const { contract_key, token_id, override_frozen = false } = data
     this.logger.log(`[scraping ${contract_key}] START SCRAPE`);
 
     const { tokenMetas, nftContractMetadata, collectionSize } = await this.getContractAndTokenMetaData(contract_key, token_id);
@@ -49,8 +49,8 @@ export class NearScraperService {
     const smartContract = await this.loadSmartContract(nftContractMetadata, contract_key);
     const collection = await this.loadCollection(tokenMetas, nftContractMetadata, contract_key, collectionSize);
     await this.loadNftMetasAndTheirAttributes(tokenMetas, nftContractMetadata, smartContract.id, contract_key, collection);
-    await this.updateRarities({contract_key: contract_key});
-    await this.loadCollectionAttributes({ contract_key: contract_key, collectionId: collection.id});
+    await this.updateRarities(contract_key, override_frozen);
+    await this.loadCollectionAttributes(contract_key);
     this.logger.log(`[scraping ${contract_key}] SCRAPING COMPLETE`);
     return "Success"
   }
@@ -187,8 +187,7 @@ export class NearScraperService {
     return nftMetaPromises.length
   }
 
-  async updateRarities(data) {
-    const {contract_key, override_frozen = false} = data;
+  async updateRarities(contract_key, override_frozen) {
     this.logger.log(`[scraping ${contract_key}] Running updateRarity()`);
 
     const smartContract = await this.prismaService.smartContract.findUnique({
@@ -319,42 +318,29 @@ export class NearScraperService {
     return "Rarites/Rankings Updated"
   };
 
-  async loadCollectionAttributes(data) {
-    const { contract_key, collectionId, slug } = data
+  async loadCollectionAttributes(contract_key) {
     this.logger.log(`[scraping ${contract_key}] Creating Collection Attributes`);
 
-    let nftMetas
-    if (collectionId) {
-      nftMetas = await this.prismaService.nftMeta.findMany({
-        where: {
-          collection_id: collectionId
-        },
-        include: {
-          attributes: true
-        }
-      })
-    } else {
-      const collection = await this.prismaService.collection.findUnique({
-        where: {
-          slug: slug
-        }
-      })
-  
-      nftMetas = await this.prismaService.nftMeta.findMany({
-        where: {
-          collection_id: collection.id
-        },
-        include: {
-          attributes: true
-        }
-      })
-    }
+    const collection = await this.prismaService.collection.findUnique({
+      where: {
+        slug: contract_key
+      }
+    })
+
+    const nftMetas = await this.prismaService.nftMeta.findMany({
+      where: {
+        collection_id: collection.id
+      },
+      include: {
+        attributes: true
+      }
+    })
 
     let collectionAttributePromises = []
     for (let i = 0; i < nftMetas.length; i++) {
       const collectionAndCollectionAttributes = await this.prismaService.collection.update({
         where: {
-          id: collectionId
+          slug: contract_key
         },
         data: {
           attributes: {

@@ -282,10 +282,9 @@ export class NearScraperService {
       return b.rarity - a.rarity;
     });
 
-    let updatedNftMetaPromises = [];
     let count = 0;
     for (let nftMeta of nftMetas) {
-      const updatedNftMeta = this.prismaService.nftMeta.update({
+      await this.prismaService.nftMeta.update({
         where: {
           id: nftMeta.id
         },
@@ -306,19 +305,10 @@ export class NearScraperService {
         },
       })
 
-      updatedNftMetaPromises.push(updatedNftMeta)
-
-      if (count % 10 === 0) {
-        await Promise.all(updatedNftMetaPromises)
-        this.logger.log(`[scraping ${contract_key}] Rarity/Rankings processed for ${updatedNftMetaPromises.length} NftMetas`);
-        updatedNftMetaPromises = []
-      }
-
       count++;
     }
 
-    await Promise.all(updatedNftMetaPromises)
-    this.logger.log(`[scraping ${contract_key}] Rarity and Ranking Saved`);
+    this.logger.log(`[scraping ${contract_key}] Rarity and Ranking saved`);
   };
 
   async loadCollectionAttributes(collectionId, contract_key) {

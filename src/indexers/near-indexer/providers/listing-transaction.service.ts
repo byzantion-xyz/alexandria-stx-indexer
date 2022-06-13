@@ -5,6 +5,7 @@ import { SmartContract, SmartContractFunction, ActionName } from '@prisma/client
 import { TxProcessResult } from 'src/common/interfaces/tx-process-result.interface';
 import { TxHelperService, CreateListAction, CreateActionCommonArgs } from './tx-helper.service';
 import { ListBotService } from 'src/discord-bot/providers/list-bot.service';
+import { MissingSmartContractService } from 'src/scrapers/near-scraper/providers/missing-smart-contract.service';
 
 @Injectable()
 export class ListingTransactionService {
@@ -13,7 +14,8 @@ export class ListingTransactionService {
   constructor(
     private readonly prismaService: PrismaService,
     private txHelper: TxHelperService,
-    private listBotService: ListBotService
+    private listBotService: ListBotService,
+    private missingSmartContractService: MissingSmartContractService
   ) { }
 
   async process(tx: Transaction, sc: SmartContract, scf: SmartContractFunction, notify: boolean) {
@@ -64,7 +66,8 @@ export class ListingTransactionService {
       txResult.processed = true;
     } else {
       this.logger.log(`NftMeta not found by`, { contract_key, token_id });
-      // TODO: Call Missing Collection handle once built
+      this.missingSmartContractService.scrapeMissing({ contract_key, token_id });
+      
       txResult.missing = true;
     }
 

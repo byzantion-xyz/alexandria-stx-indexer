@@ -3,6 +3,7 @@ import { PrismaModule } from 'src/prisma/prisma.module';
 import { NearScraperController } from './near-scraper/near-scraper.controller';
 import { NearScraperService } from './near-scraper/near-scraper.service';
 import { IpfsHelperService } from './providers/ipfs-helper.service';
+import { MissingSmartContractService } from './near-scraper/providers/missing-smart-contract.service';
 
 @Module({
   imports: [
@@ -11,7 +12,11 @@ import { IpfsHelperService } from './providers/ipfs-helper.service';
   controllers: [NearScraperController],
   providers: [
     NearScraperService,
-    IpfsHelperService
+    IpfsHelperService,
+    MissingSmartContractService
+  ],
+  exports: [
+    MissingSmartContractService
   ]
 })
 export class ScrapersModule {}

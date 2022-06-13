@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { SmartContractType } from '@prisma/client'
 import { IpfsHelperService } from '../providers/ipfs-helper.service';
+import { runScraperData } from './dto/run-scraper-data.dto';
 const axios = require('axios').default;
 
 const nearAPI = require("near-api-js");
@@ -35,7 +36,7 @@ export class NearScraperService {
     private readonly ipfsHelperService: IpfsHelperService
   ) {}
 
-  async scrape(data) {
+  async scrape(data: runScraperData) {
     const { contract_key } = data
     this.logger.log(`[scraping ${contract_key}] START SCRAPE`);
 
@@ -367,7 +368,6 @@ export class NearScraperService {
 
   async getContractAndTokenMetaData(contract_key) {
     this.logger.log(`[scraping ${contract_key}] Getting Token Metas from Chain`);
-
     const near = await connect(nearConfig);
     const account = await near.account(nearAccountId);
     const contract = await this.getContract(contract_key, account);

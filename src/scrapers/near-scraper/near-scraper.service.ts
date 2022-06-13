@@ -49,8 +49,8 @@ export class NearScraperService {
     const smartContract = await this.loadSmartContract(nftContractMetadata, contract_key);
     const collection = await this.loadCollection(tokenMetas, nftContractMetadata, contract_key, collectionSize);
     await this.loadNftMetasAndTheirAttributes(tokenMetas, nftContractMetadata, smartContract.id, contract_key, collection);
-    await this.updateRarities(smartContract, contract_key);
-    await this.loadCollectionAttributes(collection.id, contract_key);
+    await this.updateRarities({contract_key: contract_key});
+    await this.loadCollectionAttributes({ contract_key: contract_key, collectionId: collection.id});
     this.logger.log(`[scraping ${contract_key}] SCRAPING COMPLETE`);
     return "Success"
   }
@@ -187,8 +187,15 @@ export class NearScraperService {
     return nftMetaPromises.length
   }
 
-  async updateRarities(smartContract, contract_key, override_frozen = false) {
+  async updateRarities(data) {
+    const {contract_key, override_frozen = false} = data;
     this.logger.log(`[scraping ${contract_key}] Running updateRarity()`);
+
+    const smartContract = await this.prismaService.smartContract.findUnique({
+      where: {
+        contract_key: contract_key
+      },
+    })
   
     if (smartContract.frozen && !override_frozen) {
       const msg = `[scraping ${contract_key}] Collection is frozen, rarity update abandoned`;
@@ -307,21 +314,41 @@ export class NearScraperService {
 
       count++;
     }
-
-    this.logger.log(`[scraping ${contract_key}] Rarity and Ranking saved`);
+    
+    this.logger.log(`[scraping ${contract_key}] Rarity and Ranking updated`);
+    return "Rarites/Rankings Updated"
   };
 
-  async loadCollectionAttributes(collectionId, contract_key) {
+  async loadCollectionAttributes(data) {
+    const { contract_key, collectionId, slug } = data
     this.logger.log(`[scraping ${contract_key}] Creating Collection Attributes`);
+
+    let nftMetas
+    if (collectionId) {
+      nftMetas = await this.prismaService.nftMeta.findMany({
+        where: {
+          collection_id: collectionId
+        },
+        include: {
+          attributes: true
+        }
+      })
+    } else {
+      const collection = await this.prismaService.collection.findUnique({
+        where: {
+          slug: slug
+        }
+      })
   
-    const nftMetas = await this.prismaService.nftMeta.findMany({
-      where: {
-        collection_id: collectionId
-      },
-      include: {
-        attributes: true
-      }
-    })
+      nftMetas = await this.prismaService.nftMeta.findMany({
+        where: {
+          collection_id: collection.id
+        },
+        include: {
+          attributes: true
+        }
+      })
+    }
 
     let collectionAttributePromises = []
     for (let i = 0; i < nftMetas.length; i++) {

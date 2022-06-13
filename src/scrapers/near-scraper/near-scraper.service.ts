@@ -410,12 +410,12 @@ export class NearScraperService {
     //   // await delay(1000); 
     // }
    
-    let startingTokenId = 1
-    if (token_id) startingTokenId = token_id
+    let startingTokenId = 1;
+    if (token_id) startingTokenId = token_id;
 
     let tokenMetas = []
     let tokenMetaPromises = []
-    if (token_id < collectionSize) {
+    if (startingTokenId < Number(collectionSize)) {
       for (let i = startingTokenId; i < collectionSize + 1; i++) {
         const tokenMetaPromise = contract.nft_token({token_id: Number(i).toString()})
         tokenMetaPromises.push(tokenMetaPromise)

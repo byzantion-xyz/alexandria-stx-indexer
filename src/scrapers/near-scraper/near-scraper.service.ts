@@ -311,6 +311,10 @@ export class NearScraperService {
         },
       })
 
+      if (count % 100 === 0) {
+        this.logger.log(`[scraping ${contract_key}] Rarity and Rankings processed: ${count}`);
+      } 
+
       count++;
     }
     

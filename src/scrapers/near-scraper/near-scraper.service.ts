@@ -45,7 +45,7 @@ export class NearScraperService {
     let collection = await this.prismaService.collection.findUnique({ where: { slug: contract_key } })
     if (collection) {
       const collectionDataLoad = await this.prismaService.collectionDataLoad.findUnique({ where: { collection_id: collection.id } })
-      if (collectionDataLoad.stage == CollectionDataLoadStage.done) {
+      if (collectionDataLoad && collectionDataLoad.stage == CollectionDataLoadStage.done) {
         this.logger.log(`[scraping ${contract_key}] Scrape skipped, already scraped.`);
         return "Collection already loaded"
       }

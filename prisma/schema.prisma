@@ -22,6 +22,7 @@ model SmartContract {
   frozen                   Boolean                 @default(false)
   json_meta                Json?
   chain                    Chain                   @relation(fields: [chain_id], references: [id])
+  collection               Collection?
   actions                  Action[]
   collection_bids          CollectionBid[]
   commission               Commission?
@@ -30,7 +31,6 @@ model SmartContract {
   smart_contract_functions SmartContractFunction[]
 
   discord_server_channels SmartContractOnDiscordServerChannel[]
-  Collection              Collection[]
   @@map("smart_contract")
 }
 
@@ -90,8 +90,8 @@ model Collection {
   actions           Action[]
   attributes        CollectionAttribute[]
   metas             NftMeta[]
+  smart_contract_id String?               @unique @db.Uuid
   smart_contract    SmartContract?        @relation(fields: [smart_contract_id], references: [id])
-  smart_contract_id String?               @db.Uuid
 
   CollectionDataLoad CollectionDataLoad[]
 

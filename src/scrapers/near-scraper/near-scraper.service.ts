@@ -201,6 +201,9 @@ export class NearScraperService {
 
     let nftMetaPromises = []
     for (let i = 0; i < tokenMetas.length; i++) {
+      console.log("")
+      console.log("")
+      console.time("checkIfNftMetaExists");
       const nftMeta = await this.prismaService.nftMeta.findUnique({
         where: {
           smart_contract_id_token_id: {
@@ -209,9 +212,12 @@ export class NearScraperService {
           }
         },
       })
+      console.log("checkIfNftMetaExists: ");
+      console.timeEnd("checkIfNftMetaExists");
 
       if (!nftMeta) {
         try {
+          console.time("getIpfsData");
           const tokenIpfsMeta = await this.getTokenIpfsMeta(nftContractMetadata, tokenMetas[i]);
 
           let mediaUrl = this.getTokenIpfsMediaUrl(nftContractMetadata.base_uri, tokenMetas[i].metadata.media)
@@ -220,7 +226,10 @@ export class NearScraperService {
           }
   
           const attributes = await this.getNftMetaAttributesFromMeta(nftContractMetadata, tokenMetas[i], contract_key);
-  
+          
+          console.log(`${tokenMetas[i].token_id} - getIpfsData: `);
+          console.timeEnd("getIpfsData");
+
           const nftMeta = this.prismaService.nftMeta.create({
             data: {
               smart_contract_id: smartContractId,
@@ -245,7 +254,13 @@ export class NearScraperService {
           nftMetaPromises.push(nftMeta)
   
           if (i % 100 === 0) {
+            console.time("promiseAllNftBatch");
+
             await Promise.all(nftMetaPromises)
+            
+            console.log(`${tokenMetas[i].token_id} - promiseAllNftBatch: `);
+            console.timeEnd("promiseAllNftBatch");
+
             nftMetaPromises = []
             this.logger.log(`[scraping ${contract_key}] NftMetas processed: ${i} of ${tokenMetas.length}`);
           } 
@@ -450,14 +465,13 @@ export class NearScraperService {
       collectionAttributePromises.push(collectionAndCollectionAttributes)
 
       if (i % 100 === 0) {
-        this.logger.log(`[scraping ${contract_key}] CollectionAttributes batch inserted`, collectionAttributePromises.length);
-        console.log(`[scraping ${contract_key}] CollectionAttributes batch inserted`, collectionAttributePromises.length);
+        console.log(`[scraping ${contract_key}] CollectionAttributes batch inserted for ${i} of ${nftMetas.length} NftMetas`);
         await Promise.all(collectionAttributePromises)
         collectionAttributePromises = []
       } 
     }
 
-    this.logger.log(`[scraping ${contract_key}] CollectionAttributes batch inserted`, collectionAttributePromises.length);
+    console.log(`[scraping ${contract_key}] CollectionAttributes batch inserted for ${nftMetas.length} NftMetas`);
     await Promise.all(collectionAttributePromises)
   };
 

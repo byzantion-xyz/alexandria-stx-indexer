@@ -179,6 +179,13 @@ export class NearScraperService {
     const firstTokenIpfsImageUrl = this.getTokenIpfsMediaUrl(nftContractMetadata.base_uri, firstTokenMeta.metadata.media)
     const { data: tokenIpfsMeta } = await axios.get(firstTokenIpfsUrl);
 
+    const hello = await this.prismaService.collection.findUnique({
+      where: {
+        slug: contract_key
+      }
+    })
+    console.log("hello", hello)
+
     const loadedCollection = await this.prismaService.collection.upsert({
       where: {
         slug: contract_key

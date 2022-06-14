@@ -44,7 +44,6 @@ export class NearScraperService {
 
     let collection = await this.prismaService.collection.findUnique({ where: { slug: contract_key } })
     if (collection) {
-      console.log("HSFDS")
       const collectionDataLoad = await this.prismaService.collectionDataLoad.findUnique({ where: { collection_id: collection.id } })
       if (collectionDataLoad.stage == CollectionDataLoadStage.done) {
         this.logger.log(`[scraping ${contract_key}] Scrape skipped, already scraped.`);
@@ -136,12 +135,8 @@ export class NearScraperService {
     const firstTokenIpfsUrl = this.getTokenIpfsUrl(nftContractMetadata?.base_uri, firstTokenMeta?.metadata?.reference);
     if (!firstTokenIpfsUrl.includes('ipfs')) return // if the metadata is not stored on ipfs return
 
-    const pinDataResult = await this.ipfsHelperService.pinIpfsFolder(firstTokenIpfsUrl, `${contract_key}`);
-    if (pinDataResult.pin_status === 'pinning') {
-      this.logger.log('IPFS pinning in progress');
-    } else {
-      this.logger.log('Pinning complete');
-    }
+    await this.ipfsHelperService.pinIpfsFolder(firstTokenIpfsUrl, `${contract_key}`);
+    await delay(2000) // delay 2 seconds to ensure that the pinned byzantion pinata url is ready to query in the next step 
   };
 
   async loadSmartContract(nftContractMetadata, contract_key) {
@@ -252,12 +247,12 @@ export class NearScraperService {
           if (i % 100 === 0) {
             await Promise.all(nftMetaPromises)
             nftMetaPromises = []
-            this.logger.log(`[scraping ${contract_key}] NftMetas processed: ${i} of ${collection.collection_size}`);
+            this.logger.log(`[scraping ${contract_key}] NftMetas processed: ${i} of ${tokenMetas.length}`);
           } 
         } catch(err) {
           this.logger.error(err);
           this.logger.error(`
-            [scraping ${contract_key}] Error processing NftMeta: ${i} of ${collection.collection_size}. 
+            [scraping ${contract_key}] Error processing NftMeta: ${i} of ${tokenMetas.length}. 
             Token Meta: ${tokenMetas[i]}
           `);
         }

@@ -184,7 +184,6 @@ export class NearScraperService {
         slug: contract_key
       }
     })
-    console.log("hello", hello)
 
     const loadedCollection = await this.prismaService.collection.upsert({
       where: {
@@ -196,6 +195,7 @@ export class NearScraperService {
         description: firstTokenMeta?.metadata?.description || tokenIpfsMeta?.description || "",
         cover_image: this.ipfsHelperService.getByzIpfsUrl(firstTokenIpfsImageUrl),
         title: nftContractMetadata.name,
+        slug: contract_key
       }
     });
     return loadedCollection

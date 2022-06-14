@@ -75,25 +75,25 @@ model Chain {
 }
 
 model Collection {
-  id                String                @id @default(uuid()) @db.Uuid
-  collection_size   Int?
-  description       String?
-  external_url      String?
-  volume            Int                   @default(0)
-  floor             Int                   @default(0)
-  cover_image       String?
-  trending          Boolean               @default(false)
-  title             String?
-  created_at        DateTime              @default(now())
-  updated_at        DateTime              @updatedAt
-  slug              String?               @unique
-  actions           Action[]
-  attributes        CollectionAttribute[]
-  metas             NftMeta[]
-  smart_contract_id String?               @unique @db.Uuid
-  smart_contract    SmartContract?        @relation(fields: [smart_contract_id], references: [id])
-
-  CollectionDataLoad CollectionDataLoad[]
+  id                      String                @id @default(uuid()) @db.Uuid
+  collection_size         Int?
+  description             String?
+  external_url            String?
+  volume                  Int                   @default(0)
+  floor                   Int                   @default(0)
+  cover_image             String?
+  trending                Boolean               @default(false)
+  title                   String?
+  created_at              DateTime              @default(now())
+  updated_at              DateTime              @updatedAt
+  slug                    String?               @unique
+  actions                 Action[]
+  attributes              CollectionAttribute[]
+  metas                   NftMeta[]
+  smart_contract_id       String?               @unique @db.Uuid
+  smart_contract          SmartContract?        @relation(fields: [smart_contract_id], references: [id])
+  collection_data_load_id String?               @unique @db.Uuid
+  collection_data_load    CollectionDataLoad?   @relation(fields: [collection_data_load_id], references: [id])
 
   @@map("collection")
 }
@@ -137,8 +137,6 @@ model CollectionBid {
   bid_price          BigInt
   smart_contract     SmartContract       @relation(fields: [smart_contract_id], references: [id])
 
-  CollectionDataLoad   CollectionDataLoad? @relation(fields: [collectionDataLoadId], references: [id])
-  collectionDataLoadId String?             @db.Uuid
   @@map("collection_bid")
 }
 
@@ -149,9 +147,8 @@ model CollectionDataLoad {
   outcome       CollectionDataLoadOutcome?
   outcome_msg   String?
   error         Json?
-  collection    Collection                 @relation(fields: [collection_id], references: [id])
+  collection    Collection?
   collection_id String                     @unique @db.Uuid
-  CollectionBid CollectionBid[]
 
   @@map("collection_data_load")
 }

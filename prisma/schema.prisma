@@ -150,6 +150,8 @@ model CollectionDataLoad {
   collection    Collection                 @relation(fields: [collection_id], references: [id])
   collection_id String                     @unique @db.Uuid
   CollectionBid CollectionBid[]
+
+  @@map("collection_data_load")
 }
 
 model NftMeta {

@@ -44,19 +44,23 @@ export class NearScraperService {
 
     let collection = await this.prismaService.collection.findUnique({ where: { slug: contract_key } })
     if (collection) {
+      console.log("HSFDS")
       const collectionDataLoad = await this.prismaService.collectionDataLoad.findUnique({ where: { collection_id: collection.id } })
       if (collectionDataLoad.stage == CollectionDataLoadStage.done) {
         this.logger.log(`[scraping ${contract_key}] Scrape skipped, already scraped.`);
         return "Collection already loaded"
       }
     } else {
-      await this.prismaService.collection.create({
+      const collectionDataLoad = await this.prismaService.collection.create({
         data: {
+          slug: contract_key,
           CollectionDataLoad: {
             create: {}
           }
         }
       })
+
+      console.log("collectionDataLoad", collectionDataLoad)
     }
 
     const {tokenMetas, nftContractMetadata, collectionSize, error } = await this.getContractAndTokenMetaData(contract_key, token_id);

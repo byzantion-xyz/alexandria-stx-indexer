@@ -391,7 +391,7 @@ export class NearScraperService {
 
       updatedNftMetasPromises.push(updatedNftMeta);
 
-      if (count % 20 === 0) {
+      if (count % 5 === 0) {
         await Promise.all(updatedNftMetasPromises)
 
       } 

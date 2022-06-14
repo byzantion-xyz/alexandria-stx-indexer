@@ -326,12 +326,14 @@ export class NearScraperService {
 
       updatedNftMetasPromises.push(updatedNftMeta);
 
-      if (count % 100 === 0) {
+      if (count % 20 === 0) {
         await Promise.all(updatedNftMetasPromises)
+
+      } 
+      if (count % 100 === 0) {
         this.logger.log(`[scraping ${contract_key}] Rarity and Rankings processed: ${count}`);
         console.log(`[scraping ${contract_key}] Rarity and Rankings processed: ${count}`);
       } 
-
       count++;
     }
 
@@ -428,7 +430,7 @@ export class NearScraperService {
     let tokenMetas = []
     let tokenMetaPromises = []
     if (startingTokenId < Number(collectionSize)) {
-      for (let i = startingTokenId; i < 3000; i++) {
+      for (let i = startingTokenId; i < collectionSize; i++) {
         const tokenMetaPromise = contract.nft_token({token_id: Number(i + 1).toString()})
         tokenMetaPromises.push(tokenMetaPromise)
         if (i % 100 === 0) {

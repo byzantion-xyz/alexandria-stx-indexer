@@ -29,8 +29,8 @@ model SmartContract {
   nft_state                NftState[]
   smart_contract_functions SmartContractFunction[]
 
-
   discord_server_channels SmartContractOnDiscordServerChannel[]
+  Collection              Collection[]
   @@map("smart_contract")
 }
 
@@ -75,21 +75,23 @@ model Chain {
 }
 
 model Collection {
-  id              String                @id @default(uuid()) @db.Uuid
-  collection_size Int?
-  description     String?
-  external_url    String?
-  volume          Int                   @default(0)
-  floor           Int                   @default(0)
-  cover_image     String?
-  trending        Boolean               @default(false)
-  title           String?
-  created_at      DateTime              @default(now())
-  updated_at      DateTime              @updatedAt
-  slug            String?               @unique
-  actions         Action[]
-  attributes      CollectionAttribute[]
-  metas           NftMeta[]
+  id                String                @id @default(uuid()) @db.Uuid
+  collection_size   Int?
+  description       String?
+  external_url      String?
+  volume            Int                   @default(0)
+  floor             Int                   @default(0)
+  cover_image       String?
+  trending          Boolean               @default(false)
+  title             String?
+  created_at        DateTime              @default(now())
+  updated_at        DateTime              @updatedAt
+  slug              String?               @unique
+  actions           Action[]
+  attributes        CollectionAttribute[]
+  metas             NftMeta[]
+  smart_contract    SmartContract?        @relation(fields: [smart_contract_id], references: [id])
+  smart_contract_id String?               @db.Uuid
 
   CollectionDataLoad CollectionDataLoad[]
 
@@ -135,9 +137,9 @@ model CollectionBid {
   bid_price          BigInt
   smart_contract     SmartContract       @relation(fields: [smart_contract_id], references: [id])
 
-  @@map("collection_bid")
   CollectionDataLoad   CollectionDataLoad? @relation(fields: [collectionDataLoadId], references: [id])
   collectionDataLoadId String?             @db.Uuid
+  @@map("collection_bid")
 }
 
 model CollectionDataLoad {

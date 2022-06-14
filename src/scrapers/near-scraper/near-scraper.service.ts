@@ -196,7 +196,6 @@ export class NearScraperService {
         description: firstTokenMeta?.metadata?.description || tokenIpfsMeta?.description || "",
         cover_image: this.ipfsHelperService.getByzIpfsUrl(firstTokenIpfsImageUrl),
         title: nftContractMetadata.name,
-        slug: contract_key
       }
     });
     return loadedCollection

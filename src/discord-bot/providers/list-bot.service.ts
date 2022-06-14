@@ -34,12 +34,20 @@ export class ListBotService {
     }
   }
 
-  async createAndSend(nftMetaId: string, txHash: string) {
-    const nftMeta = await this.prismaService.nftMeta.findUnique({ 
-      where: { id: nftMetaId },
-      include: { nft_state: true, smart_contract: true }
+  async createAndSend(actionId: string) {
+    const action = await this.prismaService.action.findUnique({ 
+      where: { id: actionId },
+      include: { 
+        nft_meta: {
+          include: {
+            nft_state: true,
+            smart_contract: true
+          }
+        },
+        smart_contract: true 
+      }
     });
-    const data: DiscordBotDto = this.botHelper.createDiscordBotDto(nftMeta, nftMeta.nft_state, nftMeta.smart_contract, txHash);
+    const data: DiscordBotDto = this.botHelper.createDiscordBotDto(action.nft_meta, action.smart_contract, action);
     await this.send(data);
   }
 }

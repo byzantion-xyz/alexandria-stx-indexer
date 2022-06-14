@@ -147,7 +147,7 @@ export class NearScraperService {
       })
 
       if (!nftMeta) {
-
+        console.log("here")
         const tokenIpfsMeta = await this.getTokenIpfsMeta(nftContractMetadata, tokenMetas[i]);
 
         let mediaUrl = this.getTokenIpfsMediaUrl(nftContractMetadata.base_uri, tokenMetas[i].metadata.media)
@@ -519,6 +519,15 @@ export class NearScraperService {
     else {
       const tokenIpfsMeta = await this.getTokenIpfsMeta(nftContractMetadata, tokenMeta)
       attributes = tokenIpfsMeta.attributes;
+    }
+
+    if (attributes && attributes.length > 0) {
+      attributes = attributes.map((attr) => {
+        return {
+          trait_type: attr.trait_type,
+          value: attr.value.toString()
+        }
+      })
     }
 
     if (!attributes) {

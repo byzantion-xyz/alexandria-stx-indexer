@@ -50,16 +50,16 @@ export class NearScraperService {
         return "Collection already loaded"
       }
     } else {
-      const collectionDataLoad = await this.prismaService.collection.create({
-        data: {
-          slug: contract_key,
-          CollectionDataLoad: {
-            create: {}
-          }
-        }
-      })
+      // const collectionDataLoad = await this.prismaService.collection.create({
+      //   data: {
+      //     slug: contract_key,
+      //     collection_data_load: {
+      //       }
+      //     }
+      //   }
+      // })
 
-      console.log("collectionDataLoad", collectionDataLoad)
+      // console.log("collectionDataLoad", collectionDataLoad)
     }
 
     const {tokenMetas, nftContractMetadata, collectionSize, error } = await this.getContractAndTokenMetaData(contract_key, token_id);

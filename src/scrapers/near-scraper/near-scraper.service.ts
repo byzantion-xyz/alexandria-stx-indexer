@@ -465,7 +465,7 @@ export class NearScraperService {
       collectionAttributePromises.push(collectionAndCollectionAttributes)
 
       if (i % 100 === 0) {
-        console.log(`[scraping ${contract_key}] CollectionAttributes batch inserted for ${i} of ${nftMetas.length} NftMetas`);
+        this.logger.log(`[scraping ${contract_key}] CollectionAttributes batch inserted for ${i} of ${nftMetas.length} NftMetas`);
         await Promise.all(collectionAttributePromises)
         collectionAttributePromises = []
       } 

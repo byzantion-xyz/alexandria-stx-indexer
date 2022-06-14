@@ -400,14 +400,13 @@ export class NearScraperService {
 
       } 
       if (count % 100 === 0) {
-        this.logger.log(`[scraping ${contract_key}] Rarity and Rankings processed: ${count}`);
-        console.log(`[scraping ${contract_key}] Rarity and Rankings processed: ${count}`);
+        this.logger.log(`[scraping ${contract_key}] Rarity and Rankings processed: ${count} of ${nftMetas.length}`);
       } 
       count++;
     }
 
     await Promise.all(updatedNftMetasPromises)
-    this.logger.log(`[scraping ${contract_key}] Rarity and Ranking updated`);
+    this.logger.log(`[scraping ${contract_key}] All Rarity and Rankings updated`);
     return "Rarites/Rankings Updated"
   };
 

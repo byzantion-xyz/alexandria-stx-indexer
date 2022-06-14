@@ -92,6 +92,7 @@ model Collection {
   metas           NftMeta[]
 
   CollectionDataLoad CollectionDataLoad[]
+
   @@map("collection")
 }
 
@@ -135,17 +136,20 @@ model CollectionBid {
   smart_contract     SmartContract       @relation(fields: [smart_contract_id], references: [id])
 
   @@map("collection_bid")
+  CollectionDataLoad   CollectionDataLoad? @relation(fields: [collectionDataLoadId], references: [id])
+  collectionDataLoadId String?             @db.Uuid
 }
 
 model CollectionDataLoad {
   id String @id @default(uuid()) @db.Uuid
 
-  stage         CollectionDataLoadStage    @default(getting_tokens_from_chain)
+  stage         CollectionDataLoadStage?   @default(getting_tokens_from_chain)
   outcome       CollectionDataLoadOutcome?
   outcome_msg   String?
   error         Json?
   collection    Collection                 @relation(fields: [collection_id], references: [id])
   collection_id String                     @unique @db.Uuid
+  CollectionBid CollectionBid[]
 }
 
 model NftMeta {

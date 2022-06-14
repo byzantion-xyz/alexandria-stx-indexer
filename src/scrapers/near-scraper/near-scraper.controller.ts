@@ -13,7 +13,7 @@ export class NearScraperController {
   async loadCollectionFromChain(
     @Body() data: { contract_key, token_id, override_frozen }
   ) {
-    const result = this.nearScraper.scrape(data);
+    const result = await this.nearScraper.scrape(data);
     return result;
   }
 
@@ -21,7 +21,7 @@ export class NearScraperController {
   async updateRarities(
     @Body() data: { contract_key, override_frozen }
   ) {
-    const result = this.nearScraper.updateRarities(data.contract_key, data.override_frozen);
+    const result = await this.nearScraper.updateRarities(data.contract_key, data.override_frozen);
     return result;
   }
 
@@ -29,7 +29,7 @@ export class NearScraperController {
   async createCollectionAttributes(
     @Body() data: { contract_key }
   ) {
-    const result = this.nearScraper.loadCollectionAttributes(data.contract_key);
+    const result = await this.nearScraper.loadCollectionAttributes(data.contract_key);
     return result;
   }
 }

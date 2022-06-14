@@ -18,15 +18,15 @@ export class BotHelperService {
     return encodeURI(`${byzLink}?utm_source=byzantion_bot&utm_medium=${server_name}`);
   };
 
-  createDiscordBotDto(nftMeta: NftMeta, nftState: NftState, sc: SmartContract, txHash: string): DiscordBotDto {
+  createDiscordBotDto(nftMeta: NftMeta, sc: SmartContract, action: Action): DiscordBotDto {
     const byzantionLink = `https://byzantion.xyz/collections`; // TODO: Add link to chain collection
-    const transactionLink = `https://explorer.near.org/transactions/${txHash}`;
+    const transactionLink = `https://explorer.near.org/transactions/${action.tx_id}`;
 
     return {
       contract_key: sc.contract_key,
       title: nftMeta.name,
       rarity: nftMeta.rarity,
-      price: `${ Number(Number(nftState.list_price) / 1e24).toFixed(2)} NEAR`, // TODO: Round to USD also
+      price: `${ Number(Number(action.list_price) / 1e24).toFixed(2)} NEAR`, // TODO: Round to USD also
       byzantionLink,
       transactionLink,
       image: nftMeta.image
@@ -35,7 +35,6 @@ export class BotHelperService {
 
   async sendMessage(message, channel_id: string) {
     const channel = await this.client.channels.fetch(channel_id);
-
     if (channel.type === 'GUILD_TEXT' && process.env.NODE_ENV === 'production') {
       await channel.send(message);
     } else {

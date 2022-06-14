@@ -35,20 +35,21 @@ export class BuyTransactionService {
     const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
 
     if (nftMeta && this.txHelper.isNewNftListOrSale(tx, nftMeta.nft_state)) {
+
       await this.txHelper.unlistMeta(nftMeta.id, tx.transaction.nonce, tx.block.block_height);
 
       const actionCommonArgs: CreateActionCommonArgs = this.txHelper.setCommonActionParams(tx, sc, nftMeta);
       const buyActionParams: CreateBuyAction = {
         ...actionCommonArgs,
         action: ActionName.buy,
-        list_price: price || nftMeta.nft_state.list_price,
-        seller: nftMeta.nft_state.list_seller,
+        list_price: nftMeta.nft_state && nftMeta.nft_state.listed ? nftMeta.nft_state.list_price : price,
+        seller: nftMeta.nft_state && nftMeta.nft_state.listed ? nftMeta.nft_state.list_seller : undefined,
         buyer: tx.transaction.signer_id,
       };
 
       const newAction = await this.createAction(buyActionParams);
       if (newAction && notify) {
-        this.salesBotService.createAndSend(nftMeta.id, tx.transaction.hash);
+        this.salesBotService.createAndSend(newAction.id);
       }
 
       txResult.processed = true;

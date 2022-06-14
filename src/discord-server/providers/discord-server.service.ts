@@ -38,7 +38,7 @@ export class DiscordServerService {
 
     let channels;
     if (smart_contract) {
-      channels = this.prisma.discordServerChannel.findFirst({
+      channels = this.prisma.discordServerChannel.findMany({
         where: { 
           smart_contracts: {
             some: { smart_contract_id: smart_contract.id }

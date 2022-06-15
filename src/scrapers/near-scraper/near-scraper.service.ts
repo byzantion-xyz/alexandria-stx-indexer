@@ -223,7 +223,7 @@ export class NearScraperService {
         tokenIpfsMetaPromises.push(tokenIpfsMeta)
       // }
 
-      if (i % 50 === 0) {
+      if (i % 15 === 0) {
         const ipfsMetasBatch = await Promise.all(tokenIpfsMetaPromises)
         tokenIpfsMetas = tokenIpfsMetas.concat(ipfsMetasBatch);
         tokenIpfsMetaPromises = []
@@ -241,16 +241,16 @@ export class NearScraperService {
 
     // let nftMetaPromises = []
     // for (let i = 0; i < tokenMetas.length; i++) {
-    //   const nftMeta = await this.prismaService.nftMeta.findUnique({
-    //     where: {
-    //       smart_contract_id_token_id: {
-    //         smart_contract_id: smartContractId,
-    //         token_id: tokenMetas[i]?.token_id ?? ""
-    //       }
-    //     },
-    //   })
+    //   // const nftMeta = await this.prismaService.nftMeta.findUnique({
+    //   //   where: {
+    //   //     smart_contract_id_token_id: {
+    //   //       smart_contract_id: smartContractId,
+    //   //       token_id: tokenMetas[i]?.token_id ?? ""
+    //   //     }
+    //   //   },
+    //   // })
 
-    //   if (!nftMeta) {
+    //   // if (!nftMeta) {
 
     //     try {
 
@@ -261,9 +261,18 @@ export class NearScraperService {
     //       if (mediaUrl && mediaUrl != "" && mediaUrl.includes('ipfs')) {
     //         mediaUrl = this.ipfsHelperService.getByzIpfsUrl(mediaUrl);
     //       }
+          
          
+    //       const nftMeta = this.prismaService.nftMeta.upsert({
+    //         where: {
+    //           smart_contract_id_token_id: {
+    //             smart_contract_id: smartContractId,
+    //             token_id: tokenMetas[i]?.token_id
+    //           }
+    //         }
+    //         update: {
 
-    //       const nftMeta = this.prismaService.nftMeta.create({
+    //         }
     //         data: {
     //           smart_contract_id: smartContractId,
     //           chain_id: NEAR_PROTOCOL_DB_ID,
@@ -299,8 +308,8 @@ export class NearScraperService {
     //         Token Meta: ${tokenMetas[i]}
     //       `);
     //     }
-    //   }
-    // };
+    // }
+    // // };
     // await Promise.all(nftMetaPromises)
     // this.logger.log(`[scraping ${contract_key}] NftMetas Processing COMPLETE`);
     // return nftMetaPromises.length

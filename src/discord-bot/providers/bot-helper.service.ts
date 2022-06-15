@@ -5,6 +5,7 @@ import axios from 'axios';
 import { Client, ColorResolvable, MessageAttachment, MessageEmbed } from 'discord.js';
 import * as sharp from 'sharp';
 import { DiscordBotDto } from 'src/discord-bot/dto/discord-bot.dto';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class BotHelperService {
@@ -12,6 +13,7 @@ export class BotHelperService {
 
   constructor(
     @InjectDiscordClient() private client: Client,
+    private readonly prismaService: PrismaService,
   ) { }
 
   createDiscordBotDto(nftMeta: NftMeta, sc: SmartContract, msc: SmartContract, action: Action): DiscordBotDto {
@@ -72,6 +74,30 @@ export class BotHelperService {
     embed.setTimestamp();
 
     return { embeds: [embed], files: attachments };
+  }
+
+  async fetchActionData(actionId: string): Promise<DiscordBotDto> {
+    const action = await this.prismaService.action.findUnique({ 
+      where: { id: actionId },
+      include: { 
+        nft_meta: {
+          include: {
+            nft_state: true,
+            smart_contract: true
+          }
+        },
+        smart_contract: true,
+        marketplace_smart_contract: true
+      }
+    });
+    const data: DiscordBotDto = this.createDiscordBotDto(
+      action.nft_meta, 
+      action.nft_meta.smart_contract,
+      action.marketplace_smart_contract, 
+      action
+    );
+
+    return data;
   }
  
 }

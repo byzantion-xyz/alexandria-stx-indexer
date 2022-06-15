@@ -15,7 +15,6 @@ export class ListBotService {
   constructor(
     @InjectDiscordClient() private client: Client,
     private botHelper: BotHelperService,
-    private readonly prismaService: PrismaService,
     private discordServerService: DiscordServerService
   ) { }
 
@@ -35,25 +34,7 @@ export class ListBotService {
   }
 
   async createAndSend(actionId: string) {
-    const action = await this.prismaService.action.findUnique({ 
-      where: { id: actionId },
-      include: { 
-        nft_meta: {
-          include: {
-            nft_state: true,
-            smart_contract: true
-          }
-        },
-        smart_contract: true,
-        marketplace_smart_contract: true
-      }
-    });
-    const data: DiscordBotDto = this.botHelper.createDiscordBotDto(
-      action.nft_meta, 
-      action.nft_meta.smart_contract,
-      action.marketplace_smart_contract, 
-      action
-    );
+    const data: DiscordBotDto = await this.botHelper.fetchActionData(actionId);
     await this.send(data);
   }
 }

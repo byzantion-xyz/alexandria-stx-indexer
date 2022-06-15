@@ -38,7 +38,7 @@ export class BuyTransactionService {
 
       await this.txHelper.unlistMeta(nftMeta.id, tx.transaction.nonce, tx.block.block_height);
 
-      const actionCommonArgs: CreateActionCommonArgs = this.txHelper.setCommonActionParams(tx, sc, nftMeta);
+      const actionCommonArgs: CreateActionCommonArgs = this.txHelper.setCommonActionParams(tx, sc, nftMeta, sc);
       const buyActionParams: CreateBuyAction = {
         ...actionCommonArgs,
         action: ActionName.buy,

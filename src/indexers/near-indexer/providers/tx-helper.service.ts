@@ -115,11 +115,14 @@ export class TxHelperService {
       nft_meta_id: nftMeta.id,
       smart_contract_id: sc.id,
       collection_id: nftMeta.collection_id,
-      market_name: msc?.name || sc.name,
       block_height: tx.block.block_height,
       tx_index: tx.transaction.nonce,
       block_time: moment(new Date(this.nanoToMiliSeconds(tx.block.timestamp))).toDate(),
       tx_id: tx.transaction.hash,
+      ... (msc && {
+        market_name: msc.name,
+        marketplace_smart_contract_id: msc.id,
+      })
     }
   }
 }

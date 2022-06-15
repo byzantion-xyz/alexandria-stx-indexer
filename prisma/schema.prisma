@@ -30,6 +30,7 @@ model SmartContract {
   nft_state                NftState[]
   smart_contract_functions SmartContractFunction[]
   discord_server_channels  SmartContractOnDiscordServerChannel[]
+  marketplace_actions      Action[]                              @relation("marketplace_actions")
 
   smart_contract_scrape_id String?              @unique @db.Uuid
   smart_contract_scrape    SmartContractScrape? @relation(fields: [smart_contract_scrape_id], references: [id])
@@ -244,27 +245,29 @@ model NftMetaBns {
 }
 
 model Action {
-  id                String         @id @default(uuid()) @db.Uuid
-  action            ActionName
-  bid_attribute     Json?
-  list_price        Decimal?       @db.Decimal(32, 0)
-  seller            String?
-  buyer             String?
-  bid_price         BigInt?
-  block_height      BigInt
-  tx_index          BigInt
-  block_time        DateTime
-  tx_id             String
-  segment           Boolean        @default(false)
-  market_name       String?
-  nonce             BigInt?
-  units             Int?
-  smart_contract_id String?        @db.Uuid
-  nft_meta_id       String?        @db.Uuid
-  collection_id     String?        @db.Uuid
-  collection        Collection?    @relation(fields: [collection_id], references: [id])
-  nft_meta          NftMeta?       @relation(fields: [nft_meta_id], references: [id])
-  smart_contract    SmartContract? @relation(fields: [smart_contract_id], references: [id])
+  id                            String         @id @default(uuid()) @db.Uuid
+  action                        ActionName
+  bid_attribute                 Json?
+  list_price                    Decimal?       @db.Decimal(32, 0)
+  seller                        String?
+  buyer                         String?
+  bid_price                     BigInt?
+  block_height                  BigInt
+  tx_index                      BigInt
+  block_time                    DateTime
+  tx_id                         String
+  segment                       Boolean        @default(false)
+  market_name                   String?
+  nonce                         BigInt?
+  units                         Int?
+  smart_contract_id             String?        @db.Uuid
+  marketplace_smart_contract_id String?        @db.Uuid
+  nft_meta_id                   String?        @db.Uuid
+  collection_id                 String?        @db.Uuid
+  collection                    Collection?    @relation(fields: [collection_id], references: [id])
+  nft_meta                      NftMeta?       @relation(fields: [nft_meta_id], references: [id])
+  smart_contract                SmartContract? @relation(fields: [smart_contract_id], references: [id])
+  marketplace_smart_contract    SmartContract? @relation(fields: [marketplace_smart_contract_id], references: [id], name: "marketplace_actions")
 
   @@map("action")
 }

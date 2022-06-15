@@ -6,6 +6,7 @@ import { SmartContractScrapeOutcome } from '@prisma/client'
 import { IpfsHelperService } from '../providers/ipfs-helper.service';
 import { runScraperData } from './dto/run-scraper-data.dto';
 const axios = require('axios').default;
+const https = require('https')
 
 const nearAPI = require("near-api-js");
 const { keyStores, connect } = nearAPI;
@@ -28,6 +29,12 @@ const nearConfig = {
 const NEAR_PROTOCOL_DB_ID = "174c3df6-0221-4ca7-b966-79ac8d981bdb"
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const ipfsAxios = axios.create({
+  baseURL: 'https://byzantion.mypinata.cloud',
+  timeout: 10000,
+  httpAgent: new https.Agent({ keepAlive: true }),
+});
 
 @Injectable()
 export class NearScraperService {
@@ -605,7 +612,7 @@ export class NearScraperService {
 
     let tokenIpfsMeta
     try {
-      const { data } = await axios.get(tokenIpfsUrl);
+      const { data } = await ipfsAxios.get(tokenIpfsUrl);
       tokenIpfsMeta = data
     } catch(err) {
       this.logger.error(err)

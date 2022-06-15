@@ -33,7 +33,6 @@ export class DiscordServerService {
   }
 
   async fetchChannelsByContractKey(contract_key: string, purpose: DiscordChannelType) {
-    this.logger.debug('fetchChannelsByContractKey()', { contract_key, purpose });
     let smart_contract = await this.prisma.smartContract.findUnique({ where: { contract_key } });
 
     let channels;

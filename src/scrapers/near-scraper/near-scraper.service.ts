@@ -32,7 +32,6 @@ const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const ipfsAxios = axios.create({
   baseURL: 'https://byzantion.mypinata.cloud',
-  timeout: 10000,
   httpAgent: new https.Agent({ keepAlive: true }),
 });
 

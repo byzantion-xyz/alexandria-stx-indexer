@@ -194,11 +194,10 @@ export class NearScraperService {
     if (tokenMetas.length == 0) return
     this.logger.log(`[scraping ${contract_key}] Loading NftMetas and their NftMetaAttributes`);
 
-    let nftMetaPromises = []
+    console.time("getIpfsData");
+
+    let tokenIpfsMetaPromises = []
     for (let i = 0; i < tokenMetas.length; i++) {
-      console.log("")
-      console.log("")
-      console.time("checkIfNftMetaExists");
       const nftMeta = await this.prismaService.nftMeta.findUnique({
         where: {
           smart_contract_id_token_id: {
@@ -207,23 +206,44 @@ export class NearScraperService {
           }
         },
       })
-      console.log("checkIfNftMetaExists: ");
-      console.timeEnd("checkIfNftMetaExists");
 
       if (!nftMeta) {
+        const tokenIpfsMeta = this.getTokenIpfsMeta(nftContractMetadata, tokenMetas[i]);
+        tokenIpfsMetaPromises.push(tokenIpfsMeta)
+      }
+
+      if (i % 100 == 0) {
+        this.logger.log(`[scraping ${contract_key}] Retrieved ${i} of ${tokenMetas.length} tokens' IPFS metadata`);
+      }
+    }
+    const ipfsMetas = await Promise.all(tokenIpfsMetaPromises)
+
+    console.timeEnd("getIpfsData");
+
+
+    let nftMetaPromises = []
+    for (let i = 0; i < tokenMetas.length; i++) {
+      const nftMeta = await this.prismaService.nftMeta.findUnique({
+        where: {
+          smart_contract_id_token_id: {
+            smart_contract_id: smartContractId,
+            token_id: tokenMetas[i]?.token_id ?? ""
+          }
+        },
+      })
+
+      if (!nftMeta) {
+
         try {
-          console.time("getIpfsData");
-          const tokenIpfsMeta = await this.getTokenIpfsMeta(nftContractMetadata, tokenMetas[i]);
+
+          const tokenIpfsMeta = ipfsMetas[i]
+          const attributes = this.getNftMetaAttributesFromMeta(tokenIpfsMeta, nftContractMetadata, tokenMetas[i], contract_key);
 
           let mediaUrl = this.getTokenIpfsMediaUrl(nftContractMetadata.base_uri, tokenMetas[i].metadata.media)
           if (mediaUrl && mediaUrl != "" && mediaUrl.includes('ipfs')) {
             mediaUrl = this.ipfsHelperService.getByzIpfsUrl(mediaUrl);
           }
-  
-          const attributes = await this.getNftMetaAttributesFromMeta(nftContractMetadata, tokenMetas[i], contract_key);
-          
-          console.log(`${tokenMetas[i].token_id} - getIpfsData: `);
-          console.timeEnd("getIpfsData");
+         
 
           const nftMeta = this.prismaService.nftMeta.create({
             data: {
@@ -249,13 +269,8 @@ export class NearScraperService {
           nftMetaPromises.push(nftMeta)
   
           if (i % 100 === 0) {
-            console.time("promiseAllNftBatch");
-
             await Promise.all(nftMetaPromises)
             
-            console.log(`${tokenMetas[i].token_id} - promiseAllNftBatch: `);
-            console.timeEnd("promiseAllNftBatch");
-
             nftMetaPromises = []
             this.logger.log(`[scraping ${contract_key}] NftMetas processed: ${i} of ${tokenMetas.length}`);
           } 
@@ -564,7 +579,7 @@ export class NearScraperService {
     let tokenIpfsUrl = this.getTokenIpfsUrl(nftContractMetadata.base_uri, tokenMeta.metadata.reference);
     if (!tokenIpfsUrl || tokenIpfsUrl && tokenIpfsUrl == "") return
 
-    if (tokenIpfsUrl.includes('ipfs') && nftContractMetadata.base_uri != "https://ipfs.fleek.co/ipfs") {
+    if (tokenIpfsUrl.includes('ipfs')) {
       tokenIpfsUrl = this.ipfsHelperService.getByzIpfsUrl(tokenIpfsUrl);
     }
 
@@ -587,38 +602,44 @@ export class NearScraperService {
     })
   }
 
-  async getNftMetaAttributesFromMeta(nftContractMetadata, tokenMeta, contract_key) {
+  getNftMetaAttributesFromMeta(tokenIpfsMeta, nftContractMetadata, tokenMeta, contract_key) {
     let attributes = []
-    if (contract_key == "misfits.tenk.near") {
-      const tokenIpfsMeta = await this.getTokenIpfsMeta(nftContractMetadata, tokenMeta)
-      for (const property in tokenIpfsMeta) {
-        const newAttribute = {
-          trait_type: property,
-          value: tokenIpfsMeta[property]
+    switch(contract_key) {
+      case "misfits.tenk.near":
+        if (!tokenIpfsMeta) return;
+        for (const property in tokenIpfsMeta) {
+          const newAttribute = {
+            trait_type: property,
+            value: tokenIpfsMeta[property]
+          }
+          attributes.push(newAttribute)
         }
-        attributes.push(newAttribute)
-      }
-    } 
-    else if (contract_key == "nearnautnft.near") {
-      let attributesObject = JSON.parse(tokenMeta.metadata.extra)
-      for (const property in attributesObject) {
-        const splitProperty = property.split('_')
-        if (splitProperty[0] != "attributes") continue
-        const newAttribute = {
-          trait_type: splitProperty[1].charAt(0).toUpperCase() + splitProperty[1].slice(1),
-          value: attributesObject[property]
+        break;
+
+      case "nearnautnft.near":
+        let attributesObject = JSON.parse(tokenMeta.metadata.extra)
+        for (const property in attributesObject) {
+          const splitProperty = property.split('_')
+          if (splitProperty[0] != "attributes") continue
+          const newAttribute = {
+            trait_type: splitProperty[1].charAt(0).toUpperCase() + splitProperty[1].slice(1),
+            value: attributesObject[property]
+          }
+          attributes.push(newAttribute)
         }
-        attributes.push(newAttribute)
-      }
-    } 
-    else if (contract_key == "engineart.near") {
-      attributes = JSON.parse(tokenMeta.metadata.extra)
-    } 
-    else {
-      const tokenIpfsMeta = await this.getTokenIpfsMeta(nftContractMetadata, tokenMeta)
-      attributes = tokenIpfsMeta.attributes;
+        break;
+
+      case "engineart.near":
+        attributes = JSON.parse(tokenMeta.metadata.extra)
+        break;
+
+      default:
+        if (!tokenIpfsMeta) return;
+        attributes = tokenIpfsMeta.attributes;
+        break;
     }
 
+    // make sure attribute values are strings
     if (attributes && attributes.length > 0) {
       attributes = attributes.map((attr) => {
         return {
@@ -628,6 +649,7 @@ export class NearScraperService {
       })
     }
 
+    // set default attribute if no attributes found
     if (!attributes) {
       attributes = [
         {
@@ -636,6 +658,7 @@ export class NearScraperService {
         }
       ]
     }
+    
     return attributes
   }
 }

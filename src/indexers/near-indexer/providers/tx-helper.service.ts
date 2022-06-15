@@ -110,12 +110,12 @@ export class TxHelperService {
     });
   }
 
-  setCommonActionParams(tx: Transaction, sc: SmartContract, nftMeta: NftMeta): CreateActionCommonArgs {
+  setCommonActionParams(tx: Transaction, sc: SmartContract, nftMeta: NftMeta, msc?: SmartContract): CreateActionCommonArgs {
     return {
       nft_meta_id: nftMeta.id,
       smart_contract_id: sc.id,
       collection_id: nftMeta.collection_id,
-      market_name: sc.name,
+      market_name: msc?.name || sc.name,
       block_height: tx.block.block_height,
       tx_index: tx.transaction.nonce,
       block_time: moment(new Date(this.nanoToMiliSeconds(tx.block.timestamp))).toDate(),

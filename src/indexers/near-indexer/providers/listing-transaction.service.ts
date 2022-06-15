@@ -21,6 +21,7 @@ export class ListingTransactionService {
   async process(tx: Transaction, sc: SmartContract, scf: SmartContractFunction, notify: boolean) {
     this.logger.debug(`process() ${tx.transaction.hash}`);
     let txResult: TxProcessResult = { processed: false, missing: false };
+    let market_smart_contract;
 
     // TODO: Arguments will come parsed once near-streamer is updated
     const args = this.txHelper.parseBase64Arguments(tx);
@@ -31,6 +32,7 @@ export class ListingTransactionService {
 
     // Check if custodial
     if (sc.type === SmartContractType.non_fungible_tokens) {
+      market_smart_contract = await this.prismaService.smartContract.findUnique({ where: { contract_key}})
       contract_key = sc.contract_key;
     }
 
@@ -52,7 +54,7 @@ export class ListingTransactionService {
         data: { nft_state: { upsert: { create: update, update: update }}}
       });
       
-      const actionCommonArgs: CreateActionCommonArgs = this.txHelper.setCommonActionParams(tx, sc, nftMeta);
+      const actionCommonArgs: CreateActionCommonArgs = this.txHelper.setCommonActionParams(tx, sc, nftMeta, market_smart_contract);
       const listActionParams: CreateListAction = {
         ...actionCommonArgs,
         action: ActionName.list,

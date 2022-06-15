@@ -47,7 +47,7 @@ export class ListBotService {
         smart_contract: true 
       }
     });
-    const data: DiscordBotDto = this.botHelper.createDiscordBotDto(action.nft_meta, action.smart_contract, action);
+    const data: DiscordBotDto = this.botHelper.createDiscordBotDto(action.nft_meta, action.nft_meta.smart_contract, action);
     await this.send(data);
   }
 }

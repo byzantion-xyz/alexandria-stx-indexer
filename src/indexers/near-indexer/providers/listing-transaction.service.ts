@@ -1,7 +1,7 @@
 import { Logger, Injectable } from '@nestjs/common';
 import { Transaction, Block } from '@internal/prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { SmartContract, SmartContractFunction, ActionName } from '@prisma/client';
+import { SmartContract, SmartContractFunction, ActionName, SmartContractType } from '@prisma/client';
 import { TxProcessResult } from 'src/common/interfaces/tx-process-result.interface';
 import { TxHelperService, CreateListAction, CreateActionCommonArgs } from './tx-helper.service';
 import { ListBotService } from 'src/discord-bot/providers/list-bot.service';
@@ -27,7 +27,13 @@ export class ListingTransactionService {
 
     const token_id = this.txHelper.extractArgumentData(args, scf, 'token_id');
     const price = this.txHelper.extractArgumentData(args, scf, 'price');
-    const contract_key = this.txHelper.extractArgumentData(args, scf, 'contract_key');
+    let contract_key = this.txHelper.extractArgumentData(args, scf, 'contract_key');
+
+    // Check if custodial
+    if (sc.type === SmartContractType.non_fungible_tokens) {
+      contract_key = sc.contract_key;
+    }
+
     const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);    
 
     if (nftMeta && this.txHelper.isNewNftListOrSale(tx, nftMeta.nft_state)) {

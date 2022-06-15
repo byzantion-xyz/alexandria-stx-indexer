@@ -91,20 +91,20 @@ export class NearScraperService {
       await this.setSmartContractScrapeStage(smartContract.id, SmartContractScrapeStage.loading_nft_metas);
       await this.loadNftMetasAndTheirAttributes(tokenMetas, nftContractMetadata, smartContract.id, contract_key, loadedCollection);
       
-      await this.setSmartContractScrapeStage(smartContract.id, SmartContractScrapeStage.updating_rarities);
-      await this.updateRarities(contract_key, override_frozen);
+      // await this.setSmartContractScrapeStage(smartContract.id, SmartContractScrapeStage.updating_rarities);
+      // await this.updateRarities(contract_key, override_frozen);
 
-      await this.setSmartContractScrapeStage(smartContract.id, SmartContractScrapeStage.creating_collection_attributes);
-      await this.loadCollectionAttributes(contract_key);
+      // await this.setSmartContractScrapeStage(smartContract.id, SmartContractScrapeStage.creating_collection_attributes);
+      // await this.loadCollectionAttributes(contract_key);
 
-      await this.prismaService.smartContractScrape.update({ 
-        where: { smart_contract_id: smartContract.id },
-        data: {
-          stage: SmartContractScrapeStage.done,
-          outcome: SmartContractScrapeOutcome.succeeded,
-          outcome_msg: `[scraping ${contract_key}] Successfully scraped contract!`
-        }
-      })
+      // await this.prismaService.smartContractScrape.update({ 
+      //   where: { smart_contract_id: smartContract.id },
+      //   data: {
+      //     stage: SmartContractScrapeStage.done,
+      //     outcome: SmartContractScrapeOutcome.succeeded,
+      //     outcome_msg: `[scraping ${contract_key}] Successfully scraped contract!`
+      //   }
+      // })
       this.logger.log(`[scraping ${contract_key}] SCRAPING COMPLETE`);
 
     } catch(err) {
@@ -224,7 +224,7 @@ export class NearScraperService {
         tokenIpfsMetaPromises.push(tokenIpfsMeta)
       // }
 
-      if (i % 20 === 0) {
+      if (i % 50 === 0) {
         const ipfsMetasBatch = await Promise.all(tokenIpfsMetaPromises)
         tokenIpfsMetas = tokenIpfsMetas.concat(ipfsMetasBatch);
         tokenIpfsMetaPromises = []
@@ -235,7 +235,6 @@ export class NearScraperService {
     const ipfsMetasBatch = await Promise.all(tokenIpfsMetaPromises)
     tokenIpfsMetas = tokenIpfsMetas.concat(ipfsMetasBatch);
 
-    console.log(tokenIpfsMetas)
     console.log("tokenIpfsMetas.length")
     console.log(tokenIpfsMetas.length)
 

@@ -201,6 +201,7 @@ export class NearScraperService {
     // get all tokens IPFS meta data
     console.time("getIpfsData");
     let tokenIpfsMetaPromises = []
+    let tokenIpfsMetas = []
     for (let i = 0; i < tokenMetas.length; i++) {
       const nftMeta = await this.prismaService.nftMeta.findUnique({
         where: {
@@ -216,11 +217,21 @@ export class NearScraperService {
         tokenIpfsMetaPromises.push(tokenIpfsMeta)
       }
 
-      if (i % 100 == 0) {
+      if (i % 100 === 0) {
+        const ipfsMetasBatch = await Promise.all(tokenIpfsMetaPromises)
+        tokenIpfsMetas = tokenIpfsMetas.concat(ipfsMetasBatch);
+        tokenIpfsMetaPromises = []
         this.logger.log(`[scraping ${contract_key}] Retrieved ${i} of ${tokenMetas.length} tokens' IPFS metadata`);
-      }
+      } 
     }
-    const ipfsMetas = await Promise.all(tokenIpfsMetaPromises)
+
+    const ipfsMetasBatch = await Promise.all(tokenIpfsMetaPromises)
+    tokenIpfsMetas = tokenIpfsMetas.concat(ipfsMetasBatch);
+
+    console.log(tokenIpfsMetas)
+    console.log("tokenIpfsMetas.length")
+    console.log(tokenIpfsMetas.length)
+
     console.timeEnd("getIpfsData");
 
 
@@ -239,7 +250,7 @@ export class NearScraperService {
 
         try {
 
-          const tokenIpfsMeta = ipfsMetas[i]
+          const tokenIpfsMeta = tokenIpfsMetas[i]
           const attributes = this.getNftMetaAttributesFromMeta(tokenIpfsMeta, nftContractMetadata, tokenMetas[i], contract_key);
 
           let mediaUrl = this.getTokenIpfsMediaUrl(nftContractMetadata.base_uri, tokenMetas[i].metadata.media)
@@ -502,7 +513,7 @@ export class NearScraperService {
       const near = await connect(nearConfig);
       const account = await near.account(nearAccountId);
       const contract = await this.getContract(contract_key, account);
-      const collectionSize = await contract.nft_total_supply();
+      let collectionSize = await contract.nft_total_supply();
   
       // let nftTokensBatchSize = 100
       // let tokenMetas = []
@@ -514,15 +525,21 @@ export class NearScraperService {
       //   tokenMetas = tokenMetas.concat(currentTokenMetasBatch);
       //   // await delay(1000); 
       // }
-     
+
       let startingTokenId = 0;
+      const token = contract.nft_token({token_id: Number(0).toString()})
+      if (!token) {
+        startingTokenId = 1
+        collectionSize++
+      }
+
       if (token_id) startingTokenId = Number(token_id) - 1;
   
       let tokenMetas = []
       let tokenMetaPromises = []
       if (startingTokenId < Number(collectionSize)) {
         for (let i = startingTokenId; i < collectionSize; i++) {
-          const tokenMetaPromise = contract.nft_token({token_id: Number(i + 1).toString()})
+          const tokenMetaPromise = contract.nft_token({token_id: Number(i).toString()})
           tokenMetaPromises.push(tokenMetaPromise)
           if (i % 100 === 0) {
             const tokenMetasBatch = await Promise.all(tokenMetaPromises)

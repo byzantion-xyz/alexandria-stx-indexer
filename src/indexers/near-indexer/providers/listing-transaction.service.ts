@@ -3,9 +3,10 @@ import { Transaction, Block } from '@internal/prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { SmartContract, SmartContractFunction, ActionName, SmartContractType } from '@prisma/client';
 import { TxProcessResult } from 'src/common/interfaces/tx-process-result.interface';
-import { TxHelperService, CreateListAction, CreateActionCommonArgs } from './tx-helper.service';
+import { TxHelperService } from './tx-helper.service';
 import { ListBotService } from 'src/discord-bot/providers/list-bot.service';
 import { MissingSmartContractService } from 'src/scrapers/near-scraper/providers/missing-smart-contract.service';
+import { CreateActionCommonArgs, CreateListAction } from '../dto/create-action-common.dto';
 
 @Injectable()
 export class ListingTransactionService {

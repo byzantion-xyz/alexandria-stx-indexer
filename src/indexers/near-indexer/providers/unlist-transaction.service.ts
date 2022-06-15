@@ -33,7 +33,7 @@ export class UnlistTransactionService {
             const listActionParams: CreateUnlistAction = {
                 ...actionCommonArgs,
                 action: ActionName.unlist,
-                list_price: nftMeta.nft_state.list_price,
+                list_price: nftMeta.nft_state?.list_price || undefined,
                 seller: nftMeta.nft_state.list_seller
             };
 

@@ -580,9 +580,9 @@ export class NearScraperService {
     return tokenIpfsMeta
   }
 
-  async setSmartContractScrapeStage(collectionId, stage) {
+  async setSmartContractScrapeStage(smartContractId, stage) {
     await this.prismaService.smartContractScrape.update({ 
-      where: { collection_id: collectionId },
+      where: { smart_contract_id: smartContractId },
       data: { stage: stage }
     })
   }

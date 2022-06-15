@@ -1,8 +1,8 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { ConsoleLogger, Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { SmartContractType } from '@prisma/client'
-import { CollectionDataLoadStage } from '@prisma/client'
-import { CollectionDataLoadOutcome } from '@prisma/client'
+import { SmartContractScrapeStage } from '@prisma/client'
+import { SmartContractScrapeOutcome } from '@prisma/client'
 import { IpfsHelperService } from '../providers/ipfs-helper.service';
 import { runScraperData } from './dto/run-scraper-data.dto';
 const axios = require('axios').default;
@@ -42,32 +42,29 @@ export class NearScraperService {
     const { contract_key, token_id, override_frozen = false } = data
     this.logger.log(`[scraping ${contract_key}] START SCRAPE`);
 
-    let collection = await this.prismaService.collection.findUnique({ where: { slug: contract_key } })
-    if (collection) {
-      const collectionDataLoad = await this.prismaService.collectionDataLoad.findUnique({ where: { collection_id: collection.id } })
-      if (collectionDataLoad && collectionDataLoad.stage == CollectionDataLoadStage.done) {
-        this.logger.log(`[scraping ${contract_key}] Scrape skipped, already scraped.`);
-        return "Collection already loaded"
-      }
-    } else {
-      // const collectionDataLoad = await this.prismaService.collection.create({
-      //   data: {
-      //     slug: contract_key,
-      //     collection_data_load: {
-      //       }
-      //     }
-      //   }
-      // })
+    const smartContract = await this.prismaService.smartContract.findUnique({
+      where: { contract_key: contract_key }, select: { id: true }
+    })
 
-      // console.log("collectionDataLoad", collectionDataLoad)
+    if (smartContract) {
+      const smartContractScrape = await this.prismaService.smartContractScrape.findUnique({ where: { smart_contract_id: smartContract.id } })
+      if (!smartContractScrape) {
+        await this.prismaService.smartContractScrape.create({ 
+          data: { smart_contract_id: smartContract.id } 
+        })
+      }
+      if (smartContractScrape && smartContractScrape.stage == SmartContractScrapeStage.done) {
+        this.logger.log(`[scraping ${contract_key}] Scrape skipped, already scraped.`);
+        return "Contract already scraped"
+      }
     }
 
     const {tokenMetas, nftContractMetadata, collectionSize, error } = await this.getContractAndTokenMetaData(contract_key, token_id);
     if (error) {
-      await this.prismaService.collectionDataLoad.update({ 
-        where: { collection_id: collection.id },
+      await this.prismaService.smartContractScrape.update({ 
+        where: { smart_contract_id: smartContract.id },
         data: { 
-          outcome: CollectionDataLoadOutcome.failed,
+          outcome: SmartContractScrapeOutcome.failed,
           outcome_msg: `[scraping ${contract_key}] SCRAPE FAILED
                       - first token meta: \`${tokenMetas[0]}\`
                       - nftContractMetadata: \`${nftContractMetadata}\`
@@ -81,17 +78,27 @@ export class NearScraperService {
       const smartContract = await this.loadSmartContract(nftContractMetadata, contract_key);
       const loadedCollection = await this.loadCollection(tokenMetas, nftContractMetadata, contract_key, collectionSize);
 
-      await this.setCollectionDataLoadStage(loadedCollection.id, CollectionDataLoadStage.pinning);
+      await this.setSmartContractScrapeStage(smartContract.id, SmartContractScrapeStage.pinning);
       await this.pin(tokenMetas, nftContractMetadata, contract_key);
       
-      await this.setCollectionDataLoadStage(loadedCollection.id, CollectionDataLoadStage.loading_nft_metas);
+      await this.setSmartContractScrapeStage(smartContract.id, SmartContractScrapeStage.loading_nft_metas);
       await this.loadNftMetasAndTheirAttributes(tokenMetas, nftContractMetadata, smartContract.id, contract_key, loadedCollection);
       
-      await this.setCollectionDataLoadStage(loadedCollection.id, CollectionDataLoadStage.updating_rarities);
+      await this.setSmartContractScrapeStage(smartContract.id, SmartContractScrapeStage.updating_rarities);
       await this.updateRarities(contract_key, override_frozen);
 
-      await this.setCollectionDataLoadStage(loadedCollection.id, CollectionDataLoadStage.creating_collection_attributes);
+      await this.setSmartContractScrapeStage(smartContract.id, SmartContractScrapeStage.creating_collection_attributes);
       await this.loadCollectionAttributes(contract_key);
+
+      await this.prismaService.smartContractScrape.update({ 
+        where: { smart_contract_id: smartContract.id },
+        data: {
+          stage: SmartContractScrapeStage.done,
+          outcome: SmartContractScrapeOutcome.succeeded,
+          outcome_msg: `[scraping ${contract_key}] Successfully scraped contract!`
+        }
+      })
+      this.logger.log(`[scraping ${contract_key}] SCRAPING COMPLETE`);
 
     } catch(err) {
       let error = err.stack;
@@ -100,11 +107,10 @@ export class NearScraperService {
         error.innerException = err.response.data;
       }
 
-      let collection = await this.prismaService.collection.findUnique({ where: { slug: contract_key } })
-      await this.prismaService.collectionDataLoad.update({ 
-        where: { collection_id: collection.id },
+      await this.prismaService.smartContractScrape.update({ 
+        where: { smart_contract_id: smartContract.id },
         data: { 
-          outcome: CollectionDataLoadOutcome.failed,
+          outcome: SmartContractScrapeOutcome.failed,
           outcome_msg: `[scraping ${contract_key}] SCRAPE FAILED
                       - first token meta: \`${tokenMetas[0]}\`
                       - nftContractMetadata: \`${nftContractMetadata}\`
@@ -114,17 +120,6 @@ export class NearScraperService {
       })
     }
 
-
-    collection = await this.prismaService.collection.findUnique({ where: { slug: contract_key } })
-    await this.prismaService.collectionDataLoad.update({ 
-      where: { collection_id: collection.id },
-      data: {
-        stage: CollectionDataLoadStage.done,
-        outcome: CollectionDataLoadOutcome.succeeded,
-        outcome_msg: `[scraping ${contract_key}] Successfully scraped collection!`
-      }
-    })
-    this.logger.log(`[scraping ${contract_key}] SCRAPING COMPLETE`);
     return "Finished"
   }
 
@@ -178,12 +173,6 @@ export class NearScraperService {
     const firstTokenIpfsUrl = this.getTokenIpfsUrl(nftContractMetadata.base_uri, firstTokenMeta.metadata.reference);
     const firstTokenIpfsImageUrl = this.getTokenIpfsMediaUrl(nftContractMetadata.base_uri, firstTokenMeta.metadata.media)
     const { data: tokenIpfsMeta } = await axios.get(firstTokenIpfsUrl);
-
-    const hello = await this.prismaService.collection.findUnique({
-      where: {
-        slug: contract_key
-      }
-    })
 
     const loadedCollection = await this.prismaService.collection.upsert({
       where: {
@@ -591,8 +580,8 @@ export class NearScraperService {
     return tokenIpfsMeta
   }
 
-  async setCollectionDataLoadStage(collectionId, stage) {
-    await this.prismaService.collectionDataLoad.update({ 
+  async setSmartContractScrapeStage(collectionId, stage) {
+    await this.prismaService.smartContractScrape.update({ 
       where: { collection_id: collectionId },
       data: { stage: stage }
     })

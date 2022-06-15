@@ -9,19 +9,19 @@ datasource db {
 }
 
 model SmartContract {
-  id                       String                  @id @default(uuid()) @db.Uuid
-  contract_key             String                  @unique
+  id                       String                                @id @default(uuid()) @db.Uuid
+  contract_key             String                                @unique
   spec                     String?
   name                     String
-  scanned_transactions     Int                     @default(0)
+  scanned_transactions     Int                                   @default(0)
   type                     SmartContractType
-  chain_id                 String                  @db.Uuid
-  created_at               DateTime                @default(now())
-  updated_at               DateTime                @updatedAt
+  chain_id                 String                                @db.Uuid
+  created_at               DateTime                              @default(now())
+  updated_at               DateTime                              @updatedAt
   asset_name               String?
-  frozen                   Boolean                 @default(false)
+  frozen                   Boolean                               @default(false)
   json_meta                Json?
-  chain                    Chain                   @relation(fields: [chain_id], references: [id])
+  chain                    Chain                                 @relation(fields: [chain_id], references: [id])
   collection               Collection?
   actions                  Action[]
   collection_bids          CollectionBid[]
@@ -29,8 +29,11 @@ model SmartContract {
   nft_metas                NftMeta[]
   nft_state                NftState[]
   smart_contract_functions SmartContractFunction[]
+  discord_server_channels  SmartContractOnDiscordServerChannel[]
 
-  discord_server_channels SmartContractOnDiscordServerChannel[]
+  smart_contract_scrape_id String?              @unique @db.Uuid
+  smart_contract_scrape    SmartContractScrape? @relation(fields: [smart_contract_scrape_id], references: [id])
+
   @@map("smart_contract")
 }
 
@@ -46,6 +49,19 @@ model SmartContractFunction {
 
   @@unique([function_name, smart_contract_id])
   @@map("smart_contract_function")
+}
+
+model SmartContractScrape {
+  id String @id @default(uuid()) @db.Uuid
+
+  stage             SmartContractScrapeStage?   @default(getting_tokens_from_chain)
+  outcome           SmartContractScrapeOutcome?
+  outcome_msg       String?
+  error             Json?
+  smart_contract    SmartContract?
+  smart_contract_id String                      @unique @db.Uuid
+
+  @@map("smart_contract_scrape")
 }
 
 model Commission {
@@ -75,25 +91,23 @@ model Chain {
 }
 
 model Collection {
-  id                      String                @id @default(uuid()) @db.Uuid
-  collection_size         Int?
-  description             String?
-  external_url            String?
-  volume                  Int                   @default(0)
-  floor                   Int                   @default(0)
-  cover_image             String?
-  trending                Boolean               @default(false)
-  title                   String?
-  created_at              DateTime              @default(now())
-  updated_at              DateTime              @updatedAt
-  slug                    String?               @unique
-  actions                 Action[]
-  attributes              CollectionAttribute[]
-  metas                   NftMeta[]
-  smart_contract_id       String?               @unique @db.Uuid
-  smart_contract          SmartContract?        @relation(fields: [smart_contract_id], references: [id])
-  collection_data_load_id String?               @unique @db.Uuid
-  collection_data_load    CollectionDataLoad?   @relation(fields: [collection_data_load_id], references: [id])
+  id                String                @id @default(uuid()) @db.Uuid
+  collection_size   Int?
+  description       String?
+  external_url      String?
+  volume            Int                   @default(0)
+  floor             Int                   @default(0)
+  cover_image       String?
+  trending          Boolean               @default(false)
+  title             String?
+  created_at        DateTime              @default(now())
+  updated_at        DateTime              @updatedAt
+  slug              String?               @unique
+  actions           Action[]
+  attributes        CollectionAttribute[]
+  metas             NftMeta[]
+  smart_contract_id String?               @unique @db.Uuid
+  smart_contract    SmartContract?        @relation(fields: [smart_contract_id], references: [id])
 
   @@map("collection")
 }
@@ -138,19 +152,6 @@ model CollectionBid {
   smart_contract     SmartContract       @relation(fields: [smart_contract_id], references: [id])
 
   @@map("collection_bid")
-}
-
-model CollectionDataLoad {
-  id String @id @default(uuid()) @db.Uuid
-
-  stage         CollectionDataLoadStage?   @default(getting_tokens_from_chain)
-  outcome       CollectionDataLoadOutcome?
-  outcome_msg   String?
-  error         Json?
-  collection    Collection?
-  collection_id String                     @unique @db.Uuid
-
-  @@map("collection_data_load")
 }
 
 model NftMeta {
@@ -336,7 +337,7 @@ enum DiscordChannelType {
   bids
 }
 
-enum CollectionDataLoadStage {
+enum SmartContractScrapeStage {
   getting_tokens_from_chain
   pinning
   loading_nft_metas
@@ -345,7 +346,7 @@ enum CollectionDataLoadStage {
   done
 }
 
-enum CollectionDataLoadOutcome {
+enum SmartContractScrapeOutcome {
   succeeded
   failed
   skipped

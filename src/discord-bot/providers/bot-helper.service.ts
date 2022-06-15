@@ -54,7 +54,7 @@ export class BotHelperService {
     embed.setTitle(`${title} ${subTitle}`);
     embed.setURL(byzFinalLink);
     embed.setDescription(`**Rarity**: ${roundedRarity}\n**Price**: ${price}`);
-    embed.addField('Attributes', `[View](${byzFinalLink})`, true);
+    //embed.addField('Attributes', `[View](${byzFinalLink})`, true);
     embed.addField('Transaction', `[View](${transactionLink})`, true);
 
     if (image) {

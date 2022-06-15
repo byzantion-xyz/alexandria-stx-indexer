@@ -3,7 +3,7 @@ export interface DiscordBotDto {
   title: string;
   rarity: number;
   price: string;
-  byzantionLink: string;
+  marketplaceLink: string;
   transactionLink: string;
   image: string;
 }

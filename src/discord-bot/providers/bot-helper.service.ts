@@ -14,12 +14,8 @@ export class BotHelperService {
     @InjectDiscordClient() private client: Client,
   ) { }
 
-  enrichByzLink(byzLink: string, server_name: string): string {
-    return encodeURI(`${byzLink}?utm_source=byzantion_bot&utm_medium=${server_name}`);
-  };
-
   createDiscordBotDto(nftMeta: NftMeta, sc: SmartContract, action: Action): DiscordBotDto {
-    const byzantionLink = `https://byzantion.xyz/collections`; // TODO: Add link to chain collection
+    const marketplaceLink = sc.base_marketplace_uri + '/'+ sc.contract_key; 
     const transactionLink = `https://explorer.near.org/transactions/${action.tx_id}`;
 
     return {
@@ -27,7 +23,7 @@ export class BotHelperService {
       title: nftMeta.name,
       rarity: nftMeta.rarity,
       price: `${ Number(Number(action.list_price) / 1e24).toFixed(2)} NEAR`, // TODO: Round to USD also
-      byzantionLink,
+      marketplaceLink,
       transactionLink,
       image: nftMeta.image
     };
@@ -35,7 +31,7 @@ export class BotHelperService {
 
   async sendMessage(message, channel_id: string) {
     const channel = await this.client.channels.fetch(channel_id);
-    if (channel.type === 'GUILD_TEXT' && process.env.NODE_ENV === 'production') {
+    if (channel.type === 'GUILD_TEXT' && process.env.NODE_ENV !== 'production') {
       await channel.send(message);
     } else {
       this.logger.warn('Not a valid text channel');
@@ -43,16 +39,15 @@ export class BotHelperService {
   }
 
   async buildMessage(data: DiscordBotDto, server_name: string, color: ColorResolvable, subTitle: string) {
-    const { title, rarity, price, byzantionLink, transactionLink, image } = data;
+    const { title, rarity, price, marketplaceLink, transactionLink, image } = data;
     
-    const byzFinalLink = this.enrichByzLink(byzantionLink, server_name);
     const embed = new MessageEmbed().setColor(color);
     let attachments = [];
 
     const roundedRarity: number = rarity ? Math.round(rarity * 100) / 100 : 0;
 
     embed.setTitle(`${title} ${subTitle}`);
-    embed.setURL(byzFinalLink);
+    embed.setURL(marketplaceLink);
     embed.setDescription(`**Rarity**: ${roundedRarity}\n**Price**: ${price}`);
     //embed.addField('Attributes', `[View](${byzFinalLink})`, true);
     embed.addField('Transaction', `[View](${transactionLink})`, true);

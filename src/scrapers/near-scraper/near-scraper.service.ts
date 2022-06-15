@@ -107,6 +107,9 @@ export class NearScraperService {
         error.innerException = err.response.data;
       }
 
+      const smartContract = await this.prismaService.smartContract.findUnique({
+        where: { contract_key: contract_key }, select: { id: true }
+      })
       await this.prismaService.smartContractScrape.update({ 
         where: { smart_contract_id: smartContract.id },
         data: { 
@@ -194,8 +197,9 @@ export class NearScraperService {
     if (tokenMetas.length == 0) return
     this.logger.log(`[scraping ${contract_key}] Loading NftMetas and their NftMetaAttributes`);
 
-    console.time("getIpfsData");
 
+    // get all tokens IPFS meta data
+    console.time("getIpfsData");
     let tokenIpfsMetaPromises = []
     for (let i = 0; i < tokenMetas.length; i++) {
       const nftMeta = await this.prismaService.nftMeta.findUnique({
@@ -217,7 +221,6 @@ export class NearScraperService {
       }
     }
     const ipfsMetas = await Promise.all(tokenIpfsMetaPromises)
-
     console.timeEnd("getIpfsData");
 
 

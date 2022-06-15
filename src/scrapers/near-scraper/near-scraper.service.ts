@@ -558,7 +558,7 @@ export class NearScraperService {
       const tokenIpfsMeta = this.getTokenIpfsMeta(nftContractMetadata, tokenMetas[i], contract_key);
       tokenIpfsMetaPromises.push(tokenIpfsMeta)
 
-      if (i % 20 === 0) {
+      if (i % 15 === 0) {
         const ipfsMetasBatch = await Promise.all(tokenIpfsMetaPromises)
         tokenIpfsMetas = tokenIpfsMetas.concat(ipfsMetasBatch);
         tokenIpfsMetaPromises = []

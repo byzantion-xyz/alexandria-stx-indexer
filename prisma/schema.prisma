@@ -21,6 +21,7 @@ model SmartContract {
   asset_name               String?
   frozen                   Boolean                               @default(false)
   json_meta                Json?
+  base_marketplace_uri     String?
   chain                    Chain                                 @relation(fields: [chain_id], references: [id])
   collection               Collection?
   actions                  Action[]

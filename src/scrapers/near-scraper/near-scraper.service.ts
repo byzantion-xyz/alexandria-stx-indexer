@@ -527,8 +527,9 @@ export class NearScraperService {
       // }
 
       let startingTokenId = 0;
-      const token = contract.nft_token({token_id: Number(0).toString()})
-      if (!token) {
+      const tokenZero = contract.nft_token({token_id: Number(0).toString()})
+      console.log("tokenZero", tokenZero)
+      if (!tokenZero) {
         startingTokenId = 1
         collectionSize++
       }

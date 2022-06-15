@@ -3,7 +3,8 @@ import { Transaction, Block } from '@internal/prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Prisma, NftMeta, SmartContract, SmartContractFunction, ActionName, SmartContractType } from '@prisma/client';
 import { TxProcessResult } from 'src/common/interfaces/tx-process-result.interface';
-import { TxHelperService, CreateUnlistAction, CreateActionCommonArgs } from './tx-helper.service';
+import { TxHelperService } from './tx-helper.service';
+import { CreateActionCommonArgs, CreateUnlistAction } from '../dto/create-action-common.dto';
 
 @Injectable()
 export class UnlistTransactionService {
@@ -33,7 +34,6 @@ export class UnlistTransactionService {
 
     const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
 
-    // TODO: Use handle to check when meta is newly updated
     if (nftMeta && this.txHelper.isNewNftListOrSale(tx, nftMeta.nft_state)) {
       await this.txHelper.unlistMeta(nftMeta.id, tx.transaction.nonce, tx.block.block_height);
 

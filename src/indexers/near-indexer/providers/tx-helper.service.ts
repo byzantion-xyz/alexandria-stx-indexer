@@ -1,33 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ActionName, NftMeta, NftState, SmartContract, SmartContractFunction } from '@prisma/client';
+import { NftMeta, NftState, SmartContract, SmartContractFunction } from '@prisma/client';
 import { Transaction } from '@internal/prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { Action, CreateAccount } from 'near-api-js/lib/transaction';
 import * as moment from 'moment';
-import { DiscordBotDto } from 'src/discord-bot/dto/discord-bot.dto';
-import { Decimal } from '@prisma/client/runtime';
-
-export interface CreateActionCommonArgs {
-  nft_meta_id: string
-  collection_id: string
-  smart_contract_id: string
-  market_name: string
-
-  block_height: bigint
-  tx_index: bigint
-  block_time: Date
-  tx_id: string
-}
-
-export interface CreateListAction extends CreateActionCommonArgs {
-  list_price: Decimal
-  action: ActionName
-  seller: string
-}
-export interface CreateUnlistAction extends CreateListAction { }
-export interface CreateBuyAction extends CreateListAction {
-  buyer: string
-}
+import { CreateActionCommonArgs } from '../dto/create-action-common.dto';
 
 @Injectable()
 export class TxHelperService {

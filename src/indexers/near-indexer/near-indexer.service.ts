@@ -6,7 +6,6 @@ import { Connection } from 'mongoose';
 import { BuyTransactionService } from './providers/buy-transaction.service';
 import { ListingTransactionService } from './providers/listing-transaction.service';
 import { TxProcessResult } from 'src/common/interfaces/tx-process-result.interface';
-import { SmartContractService } from 'src/common/services/smart-contract/smart-contract.service';
 import { UnlistTransactionService } from './providers/unlist-transaction.service';
 import * as moment from 'moment';
 import { TxHelperService } from './providers/tx-helper.service';
@@ -21,7 +20,6 @@ export class NearIndexerService {
     private readonly prismaService: PrismaService,
     @InjectConnection('near-streamer') private readonly connection: Connection,
     private buyTransaction: BuyTransactionService,
-    private smartContractService: SmartContractService,
     private listingTransaction: ListingTransactionService,
     private unlistTransaction: UnlistTransactionService,
     private txHelper: TxHelperService

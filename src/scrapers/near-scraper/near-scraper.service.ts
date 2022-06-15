@@ -1,4 +1,4 @@
-import { ConsoleLogger, Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { SmartContractType } from '@prisma/client'
 import { SmartContractScrapeStage } from '@prisma/client'
@@ -195,6 +195,7 @@ export class NearScraperService {
           rarity: 0,
           ranking: 0,
           attributes: {
+            deleteMany: {},
             createMany: {
               data: attributes
             },
@@ -645,9 +646,9 @@ export class NearScraperService {
       where: { smart_contract_id: smartContract.id },
       data: { 
         outcome: SmartContractScrapeOutcome.failed,
-        outcome_msg: `[scraping ${contract_key}] SCRAPE FAILED
-                    - first token meta: \`${firstTokenMeta}\`
-                    - nftContractMetadata: \`${nftContractMetadata}\`
+        outcome_msg: `[${contract_key}] SCRAPE FAILED
+                    - first token meta: \`${JSON.stringify(firstTokenMeta)}\`
+                    - nftContractMetadata: \`${JSON.stringify(nftContractMetadata)}\`
                     - error: \`${error}\`
                     `
       }

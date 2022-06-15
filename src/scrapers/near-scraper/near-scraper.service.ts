@@ -217,7 +217,7 @@ export class NearScraperService {
         tokenIpfsMetaPromises.push(tokenIpfsMeta)
       // }
 
-      if (i % 100 === 0) {
+      if (i % 20 === 0) {
         const ipfsMetasBatch = await Promise.all(tokenIpfsMetaPromises)
         tokenIpfsMetas = tokenIpfsMetas.concat(ipfsMetasBatch);
         tokenIpfsMetaPromises = []

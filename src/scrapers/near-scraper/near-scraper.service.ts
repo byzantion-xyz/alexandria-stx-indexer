@@ -6,7 +6,6 @@ import { SmartContractScrapeOutcome } from '@prisma/client'
 import { IpfsHelperService } from '../providers/ipfs-helper.service';
 import { runScraperData } from './dto/run-scraper-data.dto';
 const axios = require('axios').default;
-const https = require('https')
 
 const nearAPI = require("near-api-js");
 const { keyStores, connect } = nearAPI;
@@ -29,11 +28,6 @@ const nearConfig = {
 const NEAR_PROTOCOL_DB_ID = "174c3df6-0221-4ca7-b966-79ac8d981bdb"
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
-const ipfsAxios = axios.create({
-  baseURL: 'https://byzantion.mypinata.cloud',
-  httpAgent: new https.Agent({ keepAlive: true }),
-});
 
 @Injectable()
 export class NearScraperService {
@@ -66,19 +60,8 @@ export class NearScraperService {
     }
 
     const {tokenMetas, nftContractMetadata, collectionSize, error } = await this.getContractAndTokenMetaData(contract_key, token_id);
-    if (error) {
-      await this.prismaService.smartContractScrape.update({ 
-        where: { smart_contract_id: smartContract.id },
-        data: { 
-          outcome: SmartContractScrapeOutcome.failed,
-          outcome_msg: `[scraping ${contract_key}] SCRAPE FAILED
-                      - first token meta: \`${tokenMetas[0]}\`
-                      - nftContractMetadata: \`${nftContractMetadata}\`
-                      - error: \`${error}\`
-                      `
-        }
-      })
-    }
+    if (error)
+      await this.createSmartContractScrapeError(error, nftContractMetadata, tokenMetas[0], contract_key);
 
     try {
       const smartContract = await this.loadSmartContract(nftContractMetadata, contract_key);
@@ -90,43 +73,30 @@ export class NearScraperService {
       await this.setSmartContractScrapeStage(smartContract.id, SmartContractScrapeStage.loading_nft_metas);
       await this.loadNftMetasAndTheirAttributes(tokenMetas, nftContractMetadata, smartContract.id, contract_key, loadedCollection);
       
-      // await this.setSmartContractScrapeStage(smartContract.id, SmartContractScrapeStage.updating_rarities);
-      // await this.updateRarities(contract_key, override_frozen);
+      await this.setSmartContractScrapeStage(smartContract.id, SmartContractScrapeStage.updating_rarities);
+      await this.updateRarities(contract_key, override_frozen);
 
-      // await this.setSmartContractScrapeStage(smartContract.id, SmartContractScrapeStage.creating_collection_attributes);
-      // await this.loadCollectionAttributes(contract_key);
+      await this.setSmartContractScrapeStage(smartContract.id, SmartContractScrapeStage.creating_collection_attributes);
+      await this.loadCollectionAttributes(contract_key);
 
-      // await this.prismaService.smartContractScrape.update({ 
-      //   where: { smart_contract_id: smartContract.id },
-      //   data: {
-      //     stage: SmartContractScrapeStage.done,
-      //     outcome: SmartContractScrapeOutcome.succeeded,
-      //     outcome_msg: `[scraping ${contract_key}] Successfully scraped contract!`
-      //   }
-      // })
+      await this.prismaService.smartContractScrape.update({ 
+        where: { smart_contract_id: smartContract.id },
+        data: {
+          stage: SmartContractScrapeStage.done,
+          outcome: SmartContractScrapeOutcome.succeeded,
+          outcome_msg: `[scraping ${contract_key}] Successfully scraped contract!`
+        }
+      })
       this.logger.log(`[scraping ${contract_key}] SCRAPING COMPLETE`);
 
     } catch(err) {
+      this.logger.error(`[scraping ${contract_key}] Error while scraping: ${err}`);
       let error = err.stack;
       if (err.isAxiosError) {
         error = JSON.stringify(err.toJSON(), null, 2);
         error.innerException = err.response.data;
       }
-
-      const smartContract = await this.prismaService.smartContract.findUnique({
-        where: { contract_key: contract_key }, select: { id: true }
-      })
-      await this.prismaService.smartContractScrape.update({ 
-        where: { smart_contract_id: smartContract.id },
-        data: { 
-          outcome: SmartContractScrapeOutcome.failed,
-          outcome_msg: `[scraping ${contract_key}] SCRAPE FAILED
-                      - first token meta: \`${tokenMetas[0]}\`
-                      - nftContractMetadata: \`${nftContractMetadata}\`
-                      - error: \`${error}\`
-                      `
-        }
-      })
+      await this.createSmartContractScrapeError(error, nftContractMetadata, tokenMetas[0], contract_key);
     }
 
     return "Finished"
@@ -140,7 +110,7 @@ export class NearScraperService {
     if (!firstTokenIpfsUrl.includes('ipfs')) return // if the metadata is not stored on ipfs return
 
     await this.ipfsHelperService.pinIpfsFolder(firstTokenIpfsUrl, `${contract_key}`);
-    await delay(2000) // delay 2 seconds to ensure that the pinned byzantion pinata url is ready to query in the next step 
+    await delay(5000) // delay 5 seconds to ensure that the pinned byzantion pinata url is ready to query in the next step 
   };
 
   async loadSmartContract(nftContractMetadata, contract_key) {
@@ -203,116 +173,67 @@ export class NearScraperService {
     if (tokenMetas.length == 0) return
     this.logger.log(`[scraping ${contract_key}] Loading NftMetas and their NftMetaAttributes`);
 
+    const tokenIpfsMetas = await this.getAllTokenIpfsMetas(tokenMetas, nftContractMetadata, contract_key);
 
-    // get all tokens IPFS meta data
-    console.time("getIpfsData");
-    let tokenIpfsMetaPromises = []
-    let tokenIpfsMetas = []
+    let nftMetaPromises = []
     for (let i = 0; i < tokenMetas.length; i++) {
-      // const nftMeta = await this.prismaService.nftMeta.findUnique({
-      //   where: {
-      //     smart_contract_id_token_id: {
-      //       smart_contract_id: smartContractId,
-      //       token_id: tokenMetas[i]?.token_id ?? ""
-      //     }
-      //   },
-      // })
+      try {
+        const attributes = this.getNftMetaAttributesFromMeta(tokenIpfsMetas[i], nftContractMetadata, tokenMetas[i], contract_key);
 
-      // if (!nftMeta) {
-        const tokenIpfsMeta = this.getTokenIpfsMeta(nftContractMetadata, tokenMetas[i]);
-        tokenIpfsMetaPromises.push(tokenIpfsMeta)
-      // }
+        let mediaUrl = this.getTokenIpfsMediaUrl(nftContractMetadata.base_uri, tokenMetas[i].metadata.media)
+        if (mediaUrl && mediaUrl != "" && mediaUrl.includes('ipfs')) {
+          mediaUrl = this.ipfsHelperService.getByzIpfsUrl(mediaUrl);
+        }
 
-      if (i % 15 === 0) {
-        const ipfsMetasBatch = await Promise.all(tokenIpfsMetaPromises)
-        tokenIpfsMetas = tokenIpfsMetas.concat(ipfsMetasBatch);
-        tokenIpfsMetaPromises = []
-        this.logger.log(`[scraping ${contract_key}] Retrieved ${i} of ${tokenMetas.length} tokens' IPFS metadata`);
-      } 
-    }
+        const data = {
+          smart_contract_id: smartContractId,
+          chain_id: NEAR_PROTOCOL_DB_ID,
+          collection_id: collection.id,
+          name: tokenMetas[i].metadata.title,
+          image: mediaUrl,
+          token_id: tokenMetas[i].token_id,
+          rarity: 0,
+          ranking: 0,
+          attributes: {
+            createMany: {
+              data: attributes
+            },
+          },
+          json_meta: {
+            "chain_meta": tokenMetas[i],
+            "ipfs_meta": tokenIpfsMetas[i]
+          }
+        }
+        
+        const nftMeta = this.prismaService.nftMeta.upsert({
+          where: {
+            smart_contract_id_token_id: {
+              smart_contract_id: smartContractId,
+              token_id: tokenMetas[i]?.token_id
+            }
+          },
+          update: data,
+          create: data
+        })
+        nftMetaPromises.push(nftMeta)
 
-    const ipfsMetasBatch = await Promise.all(tokenIpfsMetaPromises)
-    tokenIpfsMetas = tokenIpfsMetas.concat(ipfsMetasBatch);
-
-    console.log("tokenIpfsMetas.length")
-    console.log(tokenIpfsMetas.length)
-
-    console.timeEnd("getIpfsData");
-
-    // let nftMetaPromises = []
-    // for (let i = 0; i < tokenMetas.length; i++) {
-    //   // const nftMeta = await this.prismaService.nftMeta.findUnique({
-    //   //   where: {
-    //   //     smart_contract_id_token_id: {
-    //   //       smart_contract_id: smartContractId,
-    //   //       token_id: tokenMetas[i]?.token_id ?? ""
-    //   //     }
-    //   //   },
-    //   // })
-
-    //   // if (!nftMeta) {
-
-    //     try {
-
-    //       const tokenIpfsMeta = tokenIpfsMetas[i]
-    //       const attributes = this.getNftMetaAttributesFromMeta(tokenIpfsMeta, nftContractMetadata, tokenMetas[i], contract_key);
-
-    //       let mediaUrl = this.getTokenIpfsMediaUrl(nftContractMetadata.base_uri, tokenMetas[i].metadata.media)
-    //       if (mediaUrl && mediaUrl != "" && mediaUrl.includes('ipfs')) {
-    //         mediaUrl = this.ipfsHelperService.getByzIpfsUrl(mediaUrl);
-    //       }
+        if (i % 100 === 0) {
+          await Promise.all(nftMetaPromises)
           
-         
-    //       const nftMeta = this.prismaService.nftMeta.upsert({
-    //         where: {
-    //           smart_contract_id_token_id: {
-    //             smart_contract_id: smartContractId,
-    //             token_id: tokenMetas[i]?.token_id
-    //           }
-    //         }
-    //         update: {
-
-    //         }
-    //         data: {
-    //           smart_contract_id: smartContractId,
-    //           chain_id: NEAR_PROTOCOL_DB_ID,
-    //           collection_id: collection.id,
-    //           name: tokenMetas[i].metadata.title,
-    //           image: mediaUrl,
-    //           token_id: tokenMetas[i].token_id,
-    //           rarity: 0,
-    //           ranking: 0,
-    //           attributes: {
-    //             createMany: {
-    //               data: attributes
-    //             },
-    //           },
-    //           json_meta: {
-    //             "chain_meta": tokenMetas[i],
-    //             "ipfs_meta": tokenIpfsMeta
-    //           }
-    //         },
-    //       })
-    //       nftMetaPromises.push(nftMeta)
-  
-    //       if (i % 100 === 0) {
-    //         await Promise.all(nftMetaPromises)
-            
-    //         nftMetaPromises = []
-    //         this.logger.log(`[scraping ${contract_key}] NftMetas processed: ${i} of ${tokenMetas.length}`);
-    //       } 
-    //     } catch(err) {
-    //       this.logger.error(err);
-    //       this.logger.error(`
-    //         [scraping ${contract_key}] Error processing NftMeta: ${i} of ${tokenMetas.length}. 
-    //         Token Meta: ${tokenMetas[i]}
-    //       `);
-    //     }
-    // }
-    // // };
-    // await Promise.all(nftMetaPromises)
-    // this.logger.log(`[scraping ${contract_key}] NftMetas Processing COMPLETE`);
-    // return nftMetaPromises.length
+          nftMetaPromises = []
+          this.logger.log(`[scraping ${contract_key}] NftMetas processed: ${i} of ${tokenMetas.length}`);
+        } 
+      } catch(err) {
+        this.logger.error(err);
+        this.logger.error(`
+          [scraping ${contract_key}] Error processing NftMeta: ${i} of ${tokenMetas.length}. 
+          Token Meta: ${tokenMetas[i]}
+        `);
+      }
+    }
+    await Promise.all(nftMetaPromises)
+    this.logger.log(`[scraping ${contract_key}] NftMetas Processing COMPLETE`);
+    return nftMetaPromises.length
   }
 
   async updateRarities(contract_key, override_frozen) {
@@ -609,7 +530,7 @@ export class NearScraperService {
     return `${base_uri}/${media}`
   };
 
-  async getTokenIpfsMeta(nftContractMetadata, tokenMeta) {
+  async getTokenIpfsMeta(nftContractMetadata, tokenMeta, contract_key) {
     let tokenIpfsUrl = this.getTokenIpfsUrl(nftContractMetadata.base_uri, tokenMeta.metadata.reference);
     if (!tokenIpfsUrl || tokenIpfsUrl && tokenIpfsUrl == "") return
 
@@ -619,14 +540,34 @@ export class NearScraperService {
 
     let tokenIpfsMeta
     try {
-      const { data } = await ipfsAxios.get(tokenIpfsUrl);
+      const { data } = await axios.get(tokenIpfsUrl);
       tokenIpfsMeta = data
     } catch(err) {
       this.logger.error(err)
-      this.logger.log(`Error failed with IPFS URL: ${tokenIpfsUrl}`)
-      this.logger.log(`and token meta data: ${JSON.stringify(tokenMeta.metadata, null, 4)}`)
+      const message = `Error failed with fetching IPFS URL: ${tokenIpfsUrl}. Token Meta Data: ${JSON.stringify(tokenMeta.metadata)}`
+      await this.createSmartContractScrapeError(message, nftContractMetadata, tokenMeta, contract_key);
     }
     return tokenIpfsMeta
+  }
+
+  async getAllTokenIpfsMetas(tokenMetas, nftContractMetadata, contract_key) {
+    let tokenIpfsMetaPromises = []
+    let tokenIpfsMetas = []
+    for (let i = 0; i < tokenMetas.length; i++) {
+      const tokenIpfsMeta = this.getTokenIpfsMeta(nftContractMetadata, tokenMetas[i], contract_key);
+      tokenIpfsMetaPromises.push(tokenIpfsMeta)
+
+      if (i % 20 === 0) {
+        const ipfsMetasBatch = await Promise.all(tokenIpfsMetaPromises)
+        tokenIpfsMetas = tokenIpfsMetas.concat(ipfsMetasBatch);
+        tokenIpfsMetaPromises = []
+        this.logger.log(`[scraping ${contract_key}] Retrieved ${i} of ${tokenMetas.length} tokens' IPFS metadata`);
+      } 
+    }
+
+    const ipfsMetasBatch = await Promise.all(tokenIpfsMetaPromises)
+    tokenIpfsMetas = tokenIpfsMetas.concat(ipfsMetasBatch);
+    return tokenIpfsMetas
   }
 
   async setSmartContractScrapeStage(smartContractId, stage) {
@@ -694,5 +635,22 @@ export class NearScraperService {
     }
     
     return attributes
+  }
+
+  async createSmartContractScrapeError(error, nftContractMetadata, firstTokenMeta, contract_key) {
+    const smartContract = await this.prismaService.smartContract.findUnique({
+      where: { contract_key: contract_key }, select: { id: true }
+    })
+    await this.prismaService.smartContractScrape.update({ 
+      where: { smart_contract_id: smartContract.id },
+      data: { 
+        outcome: SmartContractScrapeOutcome.failed,
+        outcome_msg: `[scraping ${contract_key}] SCRAPE FAILED
+                    - first token meta: \`${firstTokenMeta}\`
+                    - nftContractMetadata: \`${nftContractMetadata}\`
+                    - error: \`${error}\`
+                    `
+      }
+    })
   }
 }

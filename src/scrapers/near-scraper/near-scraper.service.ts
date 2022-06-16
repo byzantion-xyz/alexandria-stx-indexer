@@ -568,12 +568,12 @@ export class NearScraperService {
         tokenIpfsUrl = this.ipfsHelperService.getByzIpfsUrl(tokenIpfsUrl);
       }
   
-      tokenIpfsMetaPromises.push(tokenIpfsUrl)
+      tokenIpfsMetaPromises.push(this.fetchIpfsMeta(tokenIpfsUrl))
 
       if (i % 10 === 0) {
         let ipfsMetasBatch;
         try {
-          ipfsMetasBatch = await axios.all(tokenIpfsMetaPromises)
+          ipfsMetasBatch = await Promise.all(tokenIpfsMetaPromises)
         } catch(err) {
           this.logger.error(err);
           await this.createSmartContractScrapeError(err, nftContractMetadata, tokenMetas[i], contract_key);
@@ -587,7 +587,7 @@ export class NearScraperService {
     }
 
     // process the last batch
-    const ipfsMetasBatch = await axios.all(tokenIpfsMetaPromises)
+    const ipfsMetasBatch = await Promise.all(tokenIpfsMetaPromises)
     tokenIpfsMetas = tokenIpfsMetas.concat(ipfsMetasBatch);
 
     return tokenIpfsMetas

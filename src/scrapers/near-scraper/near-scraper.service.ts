@@ -45,13 +45,14 @@ export class NearScraperService {
   ) {}
 
   async scrape(data: runScraperData) {
-    const { contract_key, starting_token_id, ending_token_id, override_frozen = false } = data
+    const { contract_key, starting_token_id, ending_token_id, override_frozen = false, force_scrape = false } = data
     this.logger.log(`[scraping ${contract_key}] START SCRAPE`);
 
-    const smartContract = await this.prismaService.smartContract.findUnique({ where: { contract_key: contract_key } })
-
-    if (!smartContract) {
-      const smartContract = await this.prismaService.smartContract.create({
+    let smartContract;
+    let smartContractInDB = await this.prismaService.smartContract.findUnique({ where: { contract_key: contract_key } })
+    if (smartContractInDB) smartContract = smartContractInDB
+    if (!smartContractInDB) {
+      smartContract = await this.prismaService.smartContract.create({
         data: {
           contract_key: contract_key,
           type: SmartContractType.non_fungible_tokens,
@@ -72,10 +73,24 @@ export class NearScraperService {
         update: {},
         create: { smart_contract_id: smartContract.id }
       })
-
-      this.logger.log(`[scraping ${contract_key}] Scrape skipped, already scraped.`);
-      return "Contract already scraped"
     }
+
+    const smartContractScrape = await this.prismaService.smartContractScrape.findUnique({
+      where: { smart_contract_id: smartContract.id }
+    })
+    if (smartContractScrape.outcome == SmartContractScrapeOutcome.succeeded && !force_scrape) {
+      this.logger.log(`[scraping ${contract_key}] Scrape skipped, already scraped successfully.`);
+      return "Contract already scraped succesfully"
+    }
+    if (smartContractScrape.attempts >= 2 && !force_scrape) {
+      this.logger.log(`[scraping ${contract_key}] Contract scrape attempted twice already and failed. Check for errors in SmartContractScrape id: ${smartContractScrape.id}.`);
+      return "Contract scrape attempted twice already"
+    }
+
+    await this.prismaService.smartContractScrape.update({ 
+      where: { smart_contract_id: smartContract.id },
+      data: { attempts: { increment: 1} }
+    })
 
     const {tokenMetas, nftContractMetadata, collectionSize, error } = await this.getContractAndTokenMetaData(contract_key, starting_token_id, ending_token_id);
     if (error)

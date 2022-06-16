@@ -82,10 +82,10 @@ export class NearScraperService {
       this.logger.log(`[scraping ${contract_key}] Scrape skipped, already scraped successfully.`);
       return "Contract already scraped succesfully"
     }
-    // if (smartContractScrape.attempts >= 2 && !force_scrape) {
-    //   this.logger.log(`[scraping ${contract_key}] Contract scrape attempted twice already and failed. Check for errors in SmartContractScrape id: ${smartContractScrape.id}.`);
-    //   return "Contract scrape attempted twice already"
-    // }
+    if (smartContractScrape.attempts >= 2 && !force_scrape) {
+      this.logger.log(`[scraping ${contract_key}] Contract scrape attempted twice already and failed. Check for errors in SmartContractScrape id: ${smartContractScrape.id}.`);
+      return "Contract scrape attempted twice already"
+    }
 
     await this.prismaService.smartContractScrape.update({ 
       where: { smart_contract_id: smartContract.id },
@@ -110,7 +110,7 @@ export class NearScraperService {
       await this.updateRarities(contract_key, override_frozen);
 
       await this.setSmartContractScrapeStage(smartContract.id, SmartContractScrapeStage.creating_collection_attributes);
-      await this.loadCollectionAttributes(contract_key);
+      await this.createCollectionAttributes(contract_key);
 
       await this.prismaService.smartContractScrape.update({ 
         where: { smart_contract_id: smartContract.id },
@@ -426,9 +426,10 @@ export class NearScraperService {
   };
 
 
-  async loadCollectionAttributes(contract_key) {
+  async createCollectionAttributes(contract_key) {
     this.logger.log(`[scraping ${contract_key}] Creating Collection Attributes`);
 
+    this.logger.log(`[scraping ${contract_key}] Fetching all NftMetas + their NftMetaAttributes...`);
     const smartContract = await this.prismaService.smartContract.findUnique({
       where: { contract_key: contract_key }
     })
@@ -540,6 +541,14 @@ export class NearScraperService {
       tokenMetas = tokenMetas.filter(token => !!token)
   
       this.logger.log(`[scraping ${contract_key}] Number of NftMetas to process: ${tokenMetas.length}`);
+
+      if (tokenMetas.length < Number(collectionSize)) {
+        const errorMsg = `[scraping ${contract_key}] # of tokens scraped: ${tokenMetas.length} is less than # of tokens in contract ${Number(collectionSize)}. This probably means that you need to re-scrape and pass in a end_token_id that is at least ${Number(collectionSize)}`
+        this.logger.error(errorMsg);
+        return {
+          error: errorMsg
+        }
+      }
   
       const nftContractMetadata = await contract.nft_metadata();
   

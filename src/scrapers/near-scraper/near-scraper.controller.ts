@@ -29,7 +29,7 @@ export class NearScraperController {
   async createCollectionAttributes(
     @Body() data: { contract_key }
   ) {
-    const result = await this.nearScraper.loadCollectionAttributes(data.contract_key);
+    const result = await this.nearScraper.createCollectionAttributes(data.contract_key);
     return result;
   }
 }

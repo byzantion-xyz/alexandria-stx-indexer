@@ -6,6 +6,7 @@ import { SmartContractScrapeOutcome } from '@prisma/client'
 import { IpfsHelperService } from '../providers/ipfs-helper.service';
 import { runScraperData } from './dto/run-scraper-data.dto';
 const axios = require('axios').default;
+const https = require('https');
 
 const nearAPI = require("near-api-js");
 const { keyStores, connect } = nearAPI;
@@ -28,6 +29,11 @@ const nearConfig = {
 const NEAR_PROTOCOL_DB_ID = "174c3df6-0221-4ca7-b966-79ac8d981bdb"
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const ipfsAxios = axios.create({
+  timeout: 60000,
+  httpsAgent: new https.Agent({ keepAlive: true }),
+})
 
 @Injectable()
 export class NearScraperService {
@@ -567,7 +573,7 @@ export class NearScraperService {
       if (i % 10 === 0) {
         let ipfsMetasBatch;
         try {
-          ipfsMetasBatch = await Promise.all(tokenIpfsMetaPromises)
+          ipfsMetasBatch = await axios.all(tokenIpfsMetaPromises)
         } catch(err) {
           this.logger.error(err);
           await this.createSmartContractScrapeError(err, nftContractMetadata, tokenMetas[i], contract_key);
@@ -581,7 +587,7 @@ export class NearScraperService {
     }
 
     // process the last batch
-    const ipfsMetasBatch = await Promise.all(tokenIpfsMetaPromises)
+    const ipfsMetasBatch = await axios.all(tokenIpfsMetaPromises)
     tokenIpfsMetas = tokenIpfsMetas.concat(ipfsMetasBatch);
 
     return tokenIpfsMetas
@@ -589,7 +595,7 @@ export class NearScraperService {
 
 
   fetchIpfsMeta(url) {
-    return axios.get(url, {
+    return ipfsAxios.get(url, {
       validateStatus: function (status) {
         return status >= 200 && status < 500;
       }

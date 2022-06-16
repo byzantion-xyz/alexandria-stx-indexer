@@ -257,7 +257,7 @@ export class NearScraperService {
 
 
   async updateRarities(contract_key, override_frozen) {
-    this.logger.log(`[scraping ${contract_key}] Running updateRarity()`);
+    this.logger.log(`[scraping ${contract_key}] Running updateRarities()`);
 
     const smartContract = await this.prismaService.smartContract.findUnique({
       where: {
@@ -383,9 +383,9 @@ export class NearScraperService {
 
       updatedNftMetasPromises.push(updatedNftMeta);
 
-      if (count % 5 === 0) {
+      if (count % 10 === 0) {
         await Promise.all(updatedNftMetasPromises)
-
+        updatedNftMetasPromises = []
       } 
       if (count % 100 === 0) {
         this.logger.log(`[scraping ${contract_key}] Rarity and Rankings processed: ${count} of ${nftMetas.length}`);

@@ -24,6 +24,9 @@ import { ScrapersModule } from 'src/scrapers/scrapers.module';
     ListingTransactionService,
     TxHelperService,
     UnlistTransactionService,
+  ],
+  exports: [
+    NearIndexerService
   ]
 })
 export class IndexersModule {}

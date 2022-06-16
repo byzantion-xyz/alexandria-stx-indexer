@@ -27,13 +27,16 @@ export class NearIndexerService {
 
   async runIndexer() {
     this.logger.debug('Initialize');
-    let smartContractFunctions = await this.prismaService.smartContractFunction.findMany();
-
+    const smartContractFunctions = await this.prismaService.smartContractFunction.findMany();
+    const smartContracts = await this.prismaService.smartContract.findMany();
     const whitelistedActions = smartContractFunctions.map(func => func.function_name);
+    const accounts = smartContracts.map(sc => sc.contract_key);
 
     const cursor = this.connection.db.collection('transactions').aggregate([
       {
         $match: {
+          'block.block_height': { $gte: 65000000 },
+          'transaction.receiver_id': { $in: accounts },
           'transaction.actions.FunctionCall.method_name': { $in: whitelistedActions },
           $and: [
             { $or: [{ processed: { $exists: false } }, { processed: false }] },

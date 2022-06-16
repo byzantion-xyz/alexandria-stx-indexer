@@ -39,7 +39,7 @@ export class BuyTransactionService {
       const buyActionParams: CreateBuyAction = {
         ...actionCommonArgs,
         action: ActionName.buy,
-        list_price: nftMeta.nft_state && nftMeta.nft_state.listed ? nftMeta.nft_state.list_price : price,
+        list_price: price || (nftMeta.nft_state?.listed ? nftMeta.nft_state.list_price : undefined),
         seller: nftMeta.nft_state && nftMeta.nft_state.listed ? nftMeta.nft_state.list_seller : undefined,
         buyer: tx.transaction.signer_id,
       };

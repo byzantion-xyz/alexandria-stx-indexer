@@ -610,6 +610,7 @@ export class NearScraperService {
         if (ipfsMetasBatch) {
           tokenIpfsMetas.push(...ipfsMetasBatch.filter((r) => r.status == 200).map((r) => r.data));
           this.logger.log(`[scraping ${contract_key}] Retrieved ${i} of ${tokenMetas.length} tokens' IPFS metadata`);
+          await delay(300);
         }
         tokenIpfsMetaPromises = []
       } 

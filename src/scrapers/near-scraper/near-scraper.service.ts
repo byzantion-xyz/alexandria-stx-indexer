@@ -48,21 +48,33 @@ export class NearScraperService {
     const { contract_key, token_id, override_frozen = false } = data
     this.logger.log(`[scraping ${contract_key}] START SCRAPE`);
 
-    const smartContract = await this.prismaService.smartContract.findUnique({
-      where: { contract_key: contract_key }, select: { id: true }
-    })
+    const smartContract = await this.prismaService.smartContract.findUnique({ where: { contract_key: contract_key } })
 
-    if (smartContract) {
-      const smartContractScrape = await this.prismaService.smartContractScrape.findUnique({ where: { smart_contract_id: smartContract.id } })
-      if (!smartContractScrape) {
-        await this.prismaService.smartContractScrape.create({ 
-          data: { smart_contract_id: smartContract.id } 
-        })
-      }
-      if (smartContractScrape && smartContractScrape.stage == SmartContractScrapeStage.done) {
-        this.logger.log(`[scraping ${contract_key}] Scrape skipped, already scraped.`);
-        return "Contract already scraped"
-      }
+    if (!smartContract) {
+      const smartContract = await this.prismaService.smartContract.create({
+        data: {
+          contract_key: contract_key,
+          type: SmartContractType.non_fungible_tokens,
+          chain: {
+            connect: {
+              id: NEAR_PROTOCOL_DB_ID,
+            },
+          },
+        },
+        select: {
+          id: true,
+          frozen: true
+        }
+      })
+
+      await this.prismaService.smartContractScrape.upsert({ 
+        where: { smart_contract_id: smartContract.id },
+        update: {},
+        create: { smart_contract_id: smartContract.id }
+      })
+
+      this.logger.log(`[scraping ${contract_key}] Scrape skipped, already scraped.`);
+      return "Contract already scraped"
     }
 
     const {tokenMetas, nftContractMetadata, collectionSize, error } = await this.getContractAndTokenMetaData(contract_key, token_id);
@@ -123,30 +135,28 @@ export class NearScraperService {
 
   async loadSmartContract(nftContractMetadata, contract_key) {
     this.logger.log(`[scraping ${contract_key}] Loading Smart Contract`);
-    const smartContract = await this.prismaService.smartContract.upsert({
-      where: {
-        contract_key: contract_key
-      },
-      update: {},
-      create: {
-        contract_key: contract_key,
-        spec: nftContractMetadata.spec,
-        name: nftContractMetadata.name,
-        type: SmartContractType.non_fungible_tokens,
-        asset_name: contract_key,
-        chain: {
-          connect: {
-            id: NEAR_PROTOCOL_DB_ID,
-          },
+
+    const data = {
+      contract_key: contract_key,
+      spec: nftContractMetadata.spec,
+      name: nftContractMetadata.name,
+      type: SmartContractType.non_fungible_tokens,
+      asset_name: contract_key,
+      chain: {
+        connect: {
+          id: NEAR_PROTOCOL_DB_ID,
         },
-        json_meta: {
-          "chain_meta": nftContractMetadata
-        }
       },
-      select: {
-        id: true,
-        frozen: true
+      json_meta: {
+        "chain_meta": nftContractMetadata
       }
+    }
+
+    const smartContract = await this.prismaService.smartContract.upsert({
+      where: { contract_key: contract_key },
+      update: data,
+      create: data,
+      select: { id: true, frozen: true }
     })
     return smartContract
   }

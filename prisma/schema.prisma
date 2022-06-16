@@ -12,7 +12,7 @@ model SmartContract {
   id                       String                                @id @default(uuid()) @db.Uuid
   contract_key             String                                @unique
   spec                     String?
-  name                     String
+  name                     String?
   scanned_transactions     Int                                   @default(0)
   type                     SmartContractType
   chain_id                 String                                @db.Uuid
@@ -353,6 +353,4 @@ enum SmartContractScrapeStage {
 enum SmartContractScrapeOutcome {
   succeeded
   failed
-  skipped
-  blacklisted
 }

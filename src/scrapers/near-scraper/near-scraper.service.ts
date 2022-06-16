@@ -568,7 +568,7 @@ export class NearScraperService {
         tokenIpfsUrl = this.ipfsHelperService.getByzIpfsUrl(tokenIpfsUrl);
       }
   
-      tokenIpfsMetaPromises.push(tokenIpfsUrl)
+      tokenIpfsMetaPromises.push(this.fetchIpfsMeta(tokenIpfsUrl))
 
       if (i % 10 === 0) {
         let ipfsMetasBatch;

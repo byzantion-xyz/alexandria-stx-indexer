@@ -500,13 +500,13 @@ export class NearScraperService {
           tokenMetaPromises.push(tokenMetaPromise)
           if (i % 100 === 0) {
             const tokenMetasBatch = await Promise.all(tokenMetaPromises)
-            tokenMetas = tokenMetas.concat(tokenMetasBatch);
+            tokenMetas.push(...tokenMetasBatch);
             tokenMetaPromises = []
           } 
         }
     
         const tokenMetasBatch = await Promise.all(tokenMetaPromises)
-        tokenMetas = tokenMetas.concat(tokenMetasBatch);
+        tokenMetas.push(...tokenMetasBatch);
       }
   
       // get rid of null tokens
@@ -579,7 +579,7 @@ export class NearScraperService {
           await this.createSmartContractScrapeError(err, nftContractMetadata, tokenMetas[i], contract_key);
         }
         if (ipfsMetasBatch) {
-          tokenIpfsMetas = tokenIpfsMetas.concat(ipfsMetasBatch.filter((r) => r.status == 200).map((r) => r.data));
+          tokenIpfsMetas.push(...ipfsMetasBatch.filter((r) => r.status == 200).map((r) => r.data));
           this.logger.log(`[scraping ${contract_key}] Retrieved ${i} of ${tokenMetas.length} tokens' IPFS metadata`);
         }
         tokenIpfsMetaPromises = []
@@ -588,7 +588,7 @@ export class NearScraperService {
 
     // process the last batch
     const ipfsMetasBatch = await Promise.all(tokenIpfsMetaPromises)
-    tokenIpfsMetas = tokenIpfsMetas.concat(ipfsMetasBatch.filter((r) => r.status == 200).map((r) => r.data));
+    tokenIpfsMetas.push(...ipfsMetasBatch.filter((r) => r.status == 200).map((r) => r.data));
 
     return tokenIpfsMetas
   }

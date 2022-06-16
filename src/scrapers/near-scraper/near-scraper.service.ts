@@ -412,6 +412,7 @@ export class NearScraperService {
       if (count % 5 === 0) {
         await Promise.all(updatedNftMetasPromises)
         updatedNftMetasPromises = []
+        await delay(300)
       } 
       if (count % 100 === 0) {
         this.logger.log(`[scraping ${contract_key}] Rarity and Rankings processed: ${count} of ${nftMetas.length}`);

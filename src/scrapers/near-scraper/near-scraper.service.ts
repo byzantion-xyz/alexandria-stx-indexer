@@ -380,87 +380,74 @@ export class NearScraperService {
     });
 
     let updatedNftMetasPromises = []
-    let count = 0;
-    for (let nftMeta of nftMetas) {
+    for (let i = 0; i < nftMetas.length; i++) {
       const updatedNftMeta = this.prismaService.nftMeta.update({
-        where: {
-          id: nftMeta.id
-        },
+        where: { id: nftMetas[i].id },
         data: {
-          rarity: nftMeta.rarity,
-          ranking: (Number(count) + 1),
-          attributes: {
-            createMany: {
-              data: nftMeta.attributes.map((attr) => {
-                return {
-                  trait_type: attr.trait_type,
-                  value: attr.value,
-                  rarity: attr.rarity,
-                  score: attr.score
-                }
-              }),
-              skipDuplicates: true
-            }
-          }
+          rarity: nftMetas[i].rarity,
+          ranking: (Number(i) + 1),
+          // attributes: {
+          //   createMany: {
+          //     data: nftMeta.attributes.map((attr) => {
+          //       return {
+          //         trait_type: attr.trait_type,
+          //         value: attr.value,
+          //         rarity: attr.rarity,
+          //         score: attr.score
+          //       }
+          //     }),
+          //     skipDuplicates: true
+          //   }
+          // }
         },
       })
 
       updatedNftMetasPromises.push(updatedNftMeta);
 
-      if (count % 10 === 0) {
+      if (i % 50 === 0) {
         await Promise.all(updatedNftMetasPromises)
         updatedNftMetasPromises = []
-        await delay(300);
+        this.logger.log(`[scraping ${contract_key}] Rarity and Rankings processed: ${i} of ${nftMetas.length}`);
       } 
-      if (count % 100 === 0) {
-        this.logger.log(`[scraping ${contract_key}] Rarity and Rankings processed: ${count} of ${nftMetas.length}`);
-      } 
-      count++;
     }
 
     await Promise.all(updatedNftMetasPromises)
-    this.logger.log(`[scraping ${contract_key}] All Rarity and Rankings updated`);
+    this.logger.log(`[scraping ${contract_key}] NftMetas Rarity and Rankings updated`);
+
+    
+    let updatedNftMetaAttributePromises = []
+    let count = 0;
+    for (let nftMeta of nftMetas) {
+      for (let attr of nftMeta.attributes) {
+        const updatedNftMetaAttribute = this.prismaService.nftMetaAttribute.update({
+          where: {
+            trait_type_value_meta_id: {
+              meta_id: nftMeta.id,
+              trait_type: attr.trait_type,
+              value: attr.value
+            }
+          },
+          data: {
+            rarity: attr.rarity,
+            score: attr.score
+          }
+        })
+
+        updatedNftMetaAttributePromises.push(updatedNftMetaAttribute);
+
+        if (count % 50) {
+          await Promise.all(updatedNftMetaAttributePromises)
+          updatedNftMetaAttributePromises = []
+          this.logger.log(`[scraping ${contract_key}] Attribute Rarity and Rankings processed for ${count} of ${nftMetas.length} NftMetas`);
+        }
+
+        count ++;
+      }
+    }
+
+    await Promise.all(updatedNftMetasPromises)
+    this.logger.log(`[scraping ${contract_key}] All NftMeta and Attributes Rarity and Rankings updated`);
     return "Rarites/Rankings Updated"
-
-    // let updatedNftMetaAttributePromises = []
-    // let count = 0;
-    // for (let nftMeta of nftMetas) {
-    //   const updatedNftMeta = this.prismaService.nftMetaAttribute.update({
-    //     where: { meta_id: nftMeta.id },
-    //     data: {
-    //       rarity: nftMeta.rarity,
-    //       ranking: (Number(count) + 1),
-    //       attributes: {
-    //         createMany: {
-    //           data: nftMeta.attributes.map((attr) => {
-    //             return {
-    //               trait_type: attr.trait_type,
-    //               value: attr.value,
-    //               rarity: attr.rarity,
-    //               score: attr.score
-    //             }
-    //           }),
-    //           skipDuplicates: true
-    //         }
-    //       }
-    //     },
-    //   })
-
-    //   updatedNftMetasPromises.push(updatedNftMeta);
-
-    //   if (count % 10 === 0) {
-    //     await Promise.all(updatedNftMetasPromises)
-    //     updatedNftMetasPromises = []
-    //   } 
-    //   if (count % 100 === 0) {
-    //     this.logger.log(`[scraping ${contract_key}] Rarity and Rankings processed: ${count} of ${nftMetas.length}`);
-    //   } 
-    //   count++;
-    // }
-
-    // await Promise.all(updatedNftMetasPromises)
-    // this.logger.log(`[scraping ${contract_key}] All Rarity and Rankings updated`);
-    // return "Rarites/Rankings Updated"
   };
 
 

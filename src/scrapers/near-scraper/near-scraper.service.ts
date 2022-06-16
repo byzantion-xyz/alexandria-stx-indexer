@@ -237,6 +237,7 @@ export class NearScraperService {
     return nftMetaPromises.length
   }
 
+
   async updateRarities(contract_key, override_frozen) {
     this.logger.log(`[scraping ${contract_key}] Running updateRarity()`);
 
@@ -379,6 +380,7 @@ export class NearScraperService {
     return "Rarites/Rankings Updated"
   };
 
+
   async loadCollectionAttributes(contract_key) {
     this.logger.log(`[scraping ${contract_key}] Creating Collection Attributes`);
 
@@ -434,6 +436,7 @@ export class NearScraperService {
     await Promise.all(collectionAttributePromises)
   };
 
+
   async getTokensFromParas() {
     // const res = await axios.get("https://api-v2-mainnet.paras.id/token", {
     //   params: {
@@ -441,6 +444,7 @@ export class NearScraperService {
     //   }
     // })
   }
+
 
   async getContractAndTokenMetaData(contract_key, token_id) {
     try {
@@ -508,6 +512,7 @@ export class NearScraperService {
     }
   }
 
+
   async getContract(contract_key, account) {
     return new nearAPI.Contract(
       account, // the account object that is connecting
@@ -519,46 +524,36 @@ export class NearScraperService {
     );
   }
 
+
   getTokenIpfsUrl(base_uri, reference) {
     if (reference.includes("https")) return reference
     if (!base_uri && !reference) return ""
     return `${base_uri}/${reference}`
   };
   
+
   getTokenIpfsMediaUrl(base_uri, media) {
     if (media.includes("https")) return media
     if (!base_uri && !media) return ""
     return `${base_uri}/${media}`
   };
 
-  async getTokenIpfsMeta(nftContractMetadata, tokenMeta, contract_key) {
-    let tokenIpfsUrl = this.getTokenIpfsUrl(nftContractMetadata.base_uri, tokenMeta.metadata.reference);
-    if (!tokenIpfsUrl || tokenIpfsUrl && tokenIpfsUrl == "") return
-
-    if (tokenIpfsUrl.includes('ipfs')) {
-      tokenIpfsUrl = this.ipfsHelperService.getByzIpfsUrl(tokenIpfsUrl);
-    }
-
-    let tokenIpfsMeta
-    try {
-      const { data } = await axios.get(tokenIpfsUrl);
-      tokenIpfsMeta = data
-    } catch(err) {
-      this.logger.error(err)
-      const message = `Error failed with fetching IPFS URL: ${tokenIpfsUrl}. Token Meta Data: ${JSON.stringify(tokenMeta.metadata)}`
-      await this.createSmartContractScrapeError(message, nftContractMetadata, tokenMeta, contract_key);
-    }
-    return tokenIpfsMeta
-  }
 
   async getAllTokenIpfsMetas(tokenMetas, nftContractMetadata, contract_key) {
     let tokenIpfsMetaPromises = []
     let tokenIpfsMetas = []
     for (let i = 0; i < tokenMetas.length; i++) {
-      const tokenIpfsMeta = this.getTokenIpfsMeta(nftContractMetadata, tokenMetas[i], contract_key);
+      let tokenIpfsUrl = this.getTokenIpfsUrl(nftContractMetadata.base_uri, tokenMetas[i].metadata.reference);
+      if (tokenIpfsUrl && tokenIpfsUrl != "") continue 
+  
+      if (tokenIpfsUrl.includes('ipfs')) {
+        tokenIpfsUrl = this.ipfsHelperService.getByzIpfsUrl(tokenIpfsUrl);
+      }
+  
+      const tokenIpfsMeta = axios.get(tokenIpfsUrl);
       tokenIpfsMetaPromises.push(tokenIpfsMeta)
 
-      if (i % 15 === 0) {
+      if (i % 20 === 0) {
         const ipfsMetasBatch = await Promise.all(tokenIpfsMetaPromises)
         tokenIpfsMetas = tokenIpfsMetas.concat(ipfsMetasBatch);
         tokenIpfsMetaPromises = []
@@ -571,12 +566,14 @@ export class NearScraperService {
     return tokenIpfsMetas
   }
 
+
   async setSmartContractScrapeStage(smartContractId, stage) {
     await this.prismaService.smartContractScrape.update({ 
       where: { smart_contract_id: smartContractId },
       data: { stage: stage }
     })
   }
+
 
   getNftMetaAttributesFromMeta(tokenIpfsMeta, nftContractMetadata, tokenMeta, contract_key) {
     let attributes = []
@@ -638,6 +635,7 @@ export class NearScraperService {
     return attributes
   }
 
+  
   async createSmartContractScrapeError(error, nftContractMetadata, firstTokenMeta, contract_key) {
     const smartContract = await this.prismaService.smartContract.findUnique({
       where: { contract_key: contract_key }, select: { id: true }

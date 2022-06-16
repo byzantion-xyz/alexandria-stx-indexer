@@ -45,7 +45,7 @@ export class NearScraperService {
   ) {}
 
   async scrape(data: runScraperData) {
-    const { contract_key, token_id, override_frozen = false } = data
+    const { contract_key, starting_token_id, ending_token_id, override_frozen = false } = data
     this.logger.log(`[scraping ${contract_key}] START SCRAPE`);
 
     const smartContract = await this.prismaService.smartContract.findUnique({ where: { contract_key: contract_key } })
@@ -77,7 +77,7 @@ export class NearScraperService {
       return "Contract already scraped"
     }
 
-    const {tokenMetas, nftContractMetadata, collectionSize, error } = await this.getContractAndTokenMetaData(contract_key, token_id);
+    const {tokenMetas, nftContractMetadata, collectionSize, error } = await this.getContractAndTokenMetaData(contract_key, starting_token_id, ending_token_id);
     if (error)
       await this.createSmartContractScrapeError(error, nftContractMetadata, tokenMetas[0], contract_key);
 
@@ -475,7 +475,7 @@ export class NearScraperService {
   }
 
 
-  async getContractAndTokenMetaData(contract_key, token_id) {
+  async getContractAndTokenMetaData(contract_key, starting_token_id, ending_token_id) {
     try {
       this.logger.log(`[scraping ${contract_key}] Getting Token Metas from Chain`);
       const near = await connect(nearConfig);
@@ -495,18 +495,21 @@ export class NearScraperService {
       // }
 
       let startingTokenId = 0;
+      let endingTokenId = Number(collectionSize)
+
       const tokenZero = contract.nft_token({token_id: Number(0).toString()})
       if (!tokenZero) {
         startingTokenId = 1
-        collectionSize++
+        endingTokenId++
       }
 
-      if (token_id) startingTokenId = Number(token_id) - 1;
+      if (starting_token_id) startingTokenId = Number(starting_token_id) - 1;
+      if (ending_token_id) endingTokenId = Number(ending_token_id);
   
       let tokenMetas = []
       let tokenMetaPromises = []
       if (startingTokenId < Number(collectionSize)) {
-        for (let i = startingTokenId; i < 2000; i++) {
+        for (let i = startingTokenId; i < ending_token_id; i++) {
           const tokenMetaPromise = contract.nft_token({token_id: Number(i).toString()})
           tokenMetaPromises.push(tokenMetaPromise)
           if (i % 100 === 0) {

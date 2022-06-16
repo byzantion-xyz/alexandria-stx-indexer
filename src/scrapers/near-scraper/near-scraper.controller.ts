@@ -11,7 +11,7 @@ export class NearScraperController {
 
   @Post('collection')
   async loadCollectionFromChain(
-    @Body() data: { contract_key, token_id, override_frozen }
+    @Body() data: { contract_key, starting_token_id, ending_token_id, override_frozen }
   ) {
     const result = await this.nearScraper.scrape(data);
     return result;

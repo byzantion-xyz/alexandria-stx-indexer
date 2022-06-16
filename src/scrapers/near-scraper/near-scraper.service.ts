@@ -73,6 +73,12 @@ export class NearScraperService {
         update: {},
         create: { smart_contract_id: smartContract.id }
       })
+
+      await this.prismaService.collection.upsert({
+        where: { smart_contract_id: smartContract.id },
+        update: {},
+        create: { smart_contract_id: smartContract.id }
+      })
     }
 
     const smartContractScrape = await this.prismaService.smartContractScrape.findUnique({

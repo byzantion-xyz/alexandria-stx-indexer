@@ -179,6 +179,8 @@ export class NearScraperService {
 
     const tokenIpfsMetas = await this.getAllTokenIpfsMetas(tokenMetas, nftContractMetadata, contract_key);
 
+    console.log("tokenIpfsMetas.length", tokenIpfsMetas.length)
+
     if (tokenIpfsMetas.length != tokenMetas.length) {
       const error = `[scraping ${contract_key}] # of token ipfs metas does not equal # of tokens scraped from contract`
       throw new Error(error)
@@ -477,7 +479,6 @@ export class NearScraperService {
 
       let startingTokenId = 0;
       const tokenZero = contract.nft_token({token_id: Number(0).toString()})
-      console.log("tokenZero", tokenZero)
       if (!tokenZero) {
         startingTokenId = 1
         collectionSize++
@@ -554,7 +555,7 @@ export class NearScraperService {
     let tokenIpfsMetas = []
     for (let i = 0; i < tokenMetas.length; i++) {
       let tokenIpfsUrl = this.getTokenIpfsUrl(nftContractMetadata.base_uri, tokenMetas[i].metadata.reference);
-      if (tokenIpfsUrl && tokenIpfsUrl != "") continue 
+      if (!tokenIpfsUrl || tokenIpfsUrl && tokenIpfsUrl == "") continue 
   
       if (tokenIpfsUrl.includes('ipfs')) {
         tokenIpfsUrl = this.ipfsHelperService.getByzIpfsUrl(tokenIpfsUrl);

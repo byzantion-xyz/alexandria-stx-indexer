@@ -89,7 +89,7 @@ export class NearScraperService {
       return "Contract already scraped succesfully"
     }
     if (smartContractScrape.attempts >= 2 && !force_scrape) {
-      this.logger.log(`[scraping ${contract_key}] Contract scrape attempted twice already and failed. Check for errors in SmartContractScrape id: ${smartContractScrape.id}.`);
+      this.logger.error(`[scraping ${contract_key}] Contract scrape attempted twice already and failed. Check for errors in SmartContractScrape id: ${smartContractScrape.id}. To re-scrape, pass in force_scrape: true, or set the SmartContractScrape.attempts back to 0.`);
       return "Contract scrape attempted twice already"
     }
 
@@ -548,15 +548,18 @@ export class NearScraperService {
   
       this.logger.log(`[scraping ${contract_key}] Number of NftMetas to process: ${tokenMetas.length}`);
 
+      const nftContractMetadata = await contract.nft_metadata();
+
       if (tokenMetas.length < Number(collectionSize)) {
-        const errorMsg = `[scraping ${contract_key}] # of tokens scraped: ${tokenMetas.length} is less than # of tokens in contract ${Number(collectionSize)}. This probably means that you need to re-scrape and pass in a end_token_id that is at least ${Number(collectionSize)}`
+        const errorMsg = `[scraping ${contract_key}] # of tokens scraped: ${tokenMetas.length} is less than # of tokens in contract ${Number(collectionSize)}. This means you need to re-scrape and pass in an end_token_id that is at least ${Number(collectionSize)}. (So the iterator has a chance to scrape token_ids up to that number). This issue exists because the supply has changed from the original supply.`
         this.logger.error(errorMsg);
         return {
+          tokenMetas,
+          nftContractMetadata,
+          collectionSize,
           error: errorMsg
         }
       }
-  
-      const nftContractMetadata = await contract.nft_metadata();
   
       return {
         tokenMetas,

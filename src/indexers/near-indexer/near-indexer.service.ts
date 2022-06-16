@@ -34,6 +34,7 @@ export class NearIndexerService {
     const cursor = this.connection.db.collection('transactions').aggregate([
       {
         $match: {
+          'block.block_height': { $gte: 65000000 },
           'transaction.actions.FunctionCall.method_name': { $in: whitelistedActions },
           $and: [
             { $or: [{ processed: { $exists: false } }, { processed: false }] },

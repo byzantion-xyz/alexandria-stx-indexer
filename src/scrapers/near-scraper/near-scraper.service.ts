@@ -175,8 +175,25 @@ export class NearScraperService {
 
     const tokenIpfsMetas = await this.getAllTokenIpfsMetas(tokenMetas, nftContractMetadata, contract_key);
 
+    if (tokenIpfsMetas.length != tokenMetas.length) {
+      const error = `[scraping ${contract_key}] # of token ipfs metas does not equal # of tokens scraped from contract`
+      throw new Error(error)
+    }
+
     let nftMetaPromises = []
     for (let i = 0; i < tokenMetas.length; i++) {
+
+      const nftMeta = await this.prismaService.nftMeta.findUnique({
+        where: {
+          smart_contract_id_token_id: {
+            smart_contract_id: smartContractId,
+            token_id: tokenMetas[i]?.token_id ?? ""
+          }
+        },
+      })
+
+      if (nftMeta) continue
+      
       try {
         const attributes = this.getNftMetaAttributesFromMeta(tokenIpfsMetas[i], nftContractMetadata, tokenMetas[i], contract_key);
 
@@ -185,36 +202,26 @@ export class NearScraperService {
           mediaUrl = this.ipfsHelperService.getByzIpfsUrl(mediaUrl);
         }
 
-        const data = {
-          smart_contract_id: smartContractId,
-          chain_id: NEAR_PROTOCOL_DB_ID,
-          collection_id: collection.id,
-          name: tokenMetas[i].metadata.title,
-          image: mediaUrl,
-          token_id: tokenMetas[i].token_id,
-          rarity: 0,
-          ranking: 0,
-          attributes: {
-            deleteMany: {},
-            createMany: {
-              data: attributes
+        const nftMeta = this.prismaService.nftMeta.create({
+          data: {
+            smart_contract_id: smartContractId,
+            chain_id: NEAR_PROTOCOL_DB_ID,
+            collection_id: collection.id,
+            name: tokenMetas[i].metadata.title,
+            image: mediaUrl,
+            token_id: tokenMetas[i].token_id,
+            rarity: 0,
+            ranking: 0,
+            attributes: {
+              createMany: {
+                data: attributes
+              },
             },
-          },
-          json_meta: {
-            "chain_meta": tokenMetas[i],
-            "ipfs_meta": tokenIpfsMetas[i]
-          }
-        }
-        
-        const nftMeta = this.prismaService.nftMeta.upsert({
-          where: {
-            smart_contract_id_token_id: {
-              smart_contract_id: smartContractId,
-              token_id: tokenMetas[i]?.token_id
+            json_meta: {
+              "chain_meta": tokenMetas[i],
+              "ipfs_meta": tokenIpfsMetas[i]
             }
-          },
-          update: data,
-          create: data
+          }
         })
         nftMetaPromises.push(nftMeta)
 
@@ -635,7 +642,7 @@ export class NearScraperService {
     return attributes
   }
 
-  
+
   async createSmartContractScrapeError(error, nftContractMetadata, firstTokenMeta, contract_key) {
     const smartContract = await this.prismaService.smartContract.findUnique({
       where: { contract_key: contract_key }, select: { id: true }

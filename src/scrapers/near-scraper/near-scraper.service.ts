@@ -564,7 +564,7 @@ export class NearScraperService {
       const tokenIpfsMeta = axios.get(tokenIpfsUrl);
       tokenIpfsMetaPromises.push(tokenIpfsMeta)
 
-      if (i % 20 === 0) {
+      if (i % 5 === 0) {
         const ipfsMetasBatch = await Promise.all(tokenIpfsMetaPromises)
         tokenIpfsMetas = tokenIpfsMetas.concat(ipfsMetasBatch);
         tokenIpfsMetaPromises = []

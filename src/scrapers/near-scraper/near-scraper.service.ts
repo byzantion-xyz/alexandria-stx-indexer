@@ -103,6 +103,7 @@ export class NearScraperService {
         error.innerException = err.response.data;
       }
       await this.createSmartContractScrapeError(error, nftContractMetadata, tokenMetas[0], contract_key);
+      return "Failure"
     }
 
     return "Finished"
@@ -495,7 +496,7 @@ export class NearScraperService {
       let tokenMetas = []
       let tokenMetaPromises = []
       if (startingTokenId < Number(collectionSize)) {
-        for (let i = startingTokenId; i < collectionSize; i++) {
+        for (let i = startingTokenId; i < 1000; i++) {
           const tokenMetaPromise = contract.nft_token({token_id: Number(i).toString()})
           tokenMetaPromises.push(tokenMetaPromise)
           if (i % 100 === 0) {

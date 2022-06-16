@@ -11,11 +11,14 @@ import { Intents } from 'discord.js';
 import { DiscordBotModule } from './discord-bot/discord-bot.module';
 import { DiscordServerModule } from './discord-server/discord-server.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { ScheduleModule } from '@nestjs/schedule';
+import { TasksModule } from './tasks/tasks.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ envFilePath: ['config.env', '.env'], isGlobal: true }),
     ScrapersModule,
+    ScheduleModule.forRoot(),
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: async (config: ConfigService) => ({
@@ -37,7 +40,8 @@ import { PrismaModule } from './prisma/prisma.module';
     CommonModule,
     DiscordBotModule,
     DiscordServerModule,
-    PrismaModule
+    PrismaModule,
+    TasksModule
   ],
   controllers: [
     AppController

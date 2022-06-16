@@ -410,6 +410,7 @@ export class NearScraperService {
       if (count % 10 === 0) {
         await Promise.all(updatedNftMetasPromises)
         updatedNftMetasPromises = []
+        await delay(300);
       } 
       if (count % 100 === 0) {
         this.logger.log(`[scraping ${contract_key}] Rarity and Rankings processed: ${count} of ${nftMetas.length}`);
@@ -420,6 +421,46 @@ export class NearScraperService {
     await Promise.all(updatedNftMetasPromises)
     this.logger.log(`[scraping ${contract_key}] All Rarity and Rankings updated`);
     return "Rarites/Rankings Updated"
+
+    // let updatedNftMetaAttributePromises = []
+    // let count = 0;
+    // for (let nftMeta of nftMetas) {
+    //   const updatedNftMeta = this.prismaService.nftMetaAttribute.update({
+    //     where: { meta_id: nftMeta.id },
+    //     data: {
+    //       rarity: nftMeta.rarity,
+    //       ranking: (Number(count) + 1),
+    //       attributes: {
+    //         createMany: {
+    //           data: nftMeta.attributes.map((attr) => {
+    //             return {
+    //               trait_type: attr.trait_type,
+    //               value: attr.value,
+    //               rarity: attr.rarity,
+    //               score: attr.score
+    //             }
+    //           }),
+    //           skipDuplicates: true
+    //         }
+    //       }
+    //     },
+    //   })
+
+    //   updatedNftMetasPromises.push(updatedNftMeta);
+
+    //   if (count % 10 === 0) {
+    //     await Promise.all(updatedNftMetasPromises)
+    //     updatedNftMetasPromises = []
+    //   } 
+    //   if (count % 100 === 0) {
+    //     this.logger.log(`[scraping ${contract_key}] Rarity and Rankings processed: ${count} of ${nftMetas.length}`);
+    //   } 
+    //   count++;
+    // }
+
+    // await Promise.all(updatedNftMetasPromises)
+    // this.logger.log(`[scraping ${contract_key}] All Rarity and Rankings updated`);
+    // return "Rarites/Rankings Updated"
   };
 
 

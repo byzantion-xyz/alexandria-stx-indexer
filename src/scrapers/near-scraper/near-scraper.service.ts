@@ -409,7 +409,7 @@ export class NearScraperService {
 
       updatedNftMetasPromises.push(updatedNftMeta);
 
-      if (count % 5 === 0) {
+      if (count % 10 === 0) {
         await Promise.all(updatedNftMetasPromises)
         updatedNftMetasPromises = []
         await delay(300)
@@ -433,13 +433,9 @@ export class NearScraperService {
       where: { contract_key: contract_key }
     })
 
-    const collection = await this.prismaService.collection.findUnique({
-      where: { smart_contract_id: smartContract.id },
-    })
-
     const nftMetas = await this.prismaService.nftMeta.findMany({
       where: {
-        collection_id: collection.id
+        smart_contract_id: smartContract.id
       },
       include: {
         attributes: true

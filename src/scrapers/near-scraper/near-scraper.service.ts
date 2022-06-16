@@ -98,7 +98,7 @@ export class NearScraperService {
 
     try {
       const smartContract = await this.loadSmartContract(nftContractMetadata, contract_key);
-      const loadedCollection = await this.loadCollection(tokenMetas, nftContractMetadata, contract_key, collectionSize);
+      const loadedCollection = await this.loadCollection(tokenMetas, nftContractMetadata, contract_key, collectionSize, smartContract);
 
       await this.setSmartContractScrapeStage(smartContract.id, SmartContractScrapeStage.pinning);
       await this.pin(tokenMetas, nftContractMetadata, contract_key);
@@ -178,20 +178,18 @@ export class NearScraperService {
   }
 
 
-  async loadCollection(tokenMetas, nftContractMetadata, contract_key, collectionSize) {
+  async loadCollection(tokenMetas, nftContractMetadata, contract_key, collectionSize, smartContract) {
     if (tokenMetas.length == 0) return
     this.logger.log(`[scraping ${contract_key}] Loading Collection`);
 
     // get first token data for the collection record data
     const firstTokenMeta = tokenMetas[0]
     const firstTokenIpfsUrl = this.getTokenIpfsUrl(nftContractMetadata.base_uri, firstTokenMeta.metadata.reference);
-    const firstTokenIpfsImageUrl = this.getTokenIpfsMediaUrl(nftContractMetadata.base_uri, firstTokenMeta.metadata.media)
+    const firstTokenIpfsImageUrl = this.getTokenIpfsMediaUrl(nftContractMetadata.base_uri, firstTokenMeta.metadata.media);
     const { data: tokenIpfsMeta } = await axios.get(firstTokenIpfsUrl);
 
     const loadedCollection = await this.prismaService.collection.upsert({
-      where: {
-        slug: contract_key
-      },
+      where: { smart_contract_id: smartContract.id },
       update: {},
       create: {
         collection_size: Number(collectionSize),
@@ -395,7 +393,7 @@ export class NearScraperService {
           ranking: (Number(count) + 1),
           attributes: {
             deleteMany: {},
-            create: nftMeta.attributes.map((attr) => {
+            createMany: nftMeta.attributes.map((attr) => {
               return {
                 trait_type: attr.trait_type,
                 value: attr.value,
@@ -428,10 +426,12 @@ export class NearScraperService {
   async loadCollectionAttributes(contract_key) {
     this.logger.log(`[scraping ${contract_key}] Creating Collection Attributes`);
 
+    const smartContract = await this.prismaService.smartContract.findUnique({
+      where: { contract_key: contract_key }
+    })
+
     const collection = await this.prismaService.collection.findUnique({
-      where: {
-        slug: contract_key
-      }
+      where: { smart_contract_id: smartContract.id },
     })
 
     const nftMetas = await this.prismaService.nftMeta.findMany({
@@ -448,9 +448,7 @@ export class NearScraperService {
     let collectionAttributePromises = []
     for (let i = 0; i < nftMetas.length; i++) {
       const collectionAndCollectionAttributes = await this.prismaService.collection.update({
-        where: {
-          slug: contract_key
-        },
+        where: { smart_contract_id: smartContract.id },
         data: {
           attributes: {
             createMany: {

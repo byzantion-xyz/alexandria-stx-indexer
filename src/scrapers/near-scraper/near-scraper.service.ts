@@ -553,6 +553,7 @@ export class NearScraperService {
   async getAllTokenIpfsMetas(tokenMetas, nftContractMetadata, contract_key) {
     let tokenIpfsMetaPromises = []
     let tokenIpfsMetas = []
+
     for (let i = 0; i < tokenMetas.length; i++) {
       let tokenIpfsUrl = this.getTokenIpfsUrl(nftContractMetadata.base_uri, tokenMetas[i].metadata.reference);
       if (!tokenIpfsUrl || tokenIpfsUrl && tokenIpfsUrl == "") continue 
@@ -561,21 +562,39 @@ export class NearScraperService {
         tokenIpfsUrl = this.ipfsHelperService.getByzIpfsUrl(tokenIpfsUrl);
       }
   
-      const tokenIpfsMeta = axios.get(tokenIpfsUrl);
-      tokenIpfsMetaPromises.push(tokenIpfsMeta)
+      tokenIpfsMetaPromises.push(this.fetchIpfsMeta(tokenIpfsUrl))
 
-      if (i % 5 === 0) {
-        const ipfsMetasBatch = await Promise.all(tokenIpfsMetaPromises)
-        tokenIpfsMetas = tokenIpfsMetas.concat(ipfsMetasBatch);
+      if (i % 10 === 0) {
+        let ipfsMetasBatch;
+        try {
+          ipfsMetasBatch = await Promise.all(tokenIpfsMetaPromises)
+        } catch(err) {
+          this.logger.error(err);
+          await this.createSmartContractScrapeError(err, nftContractMetadata, tokenMetas[i], contract_key);
+        }
+        if (ipfsMetasBatch) {
+          tokenIpfsMetas = tokenIpfsMetas.concat(ipfsMetasBatch);
+          this.logger.log(`[scraping ${contract_key}] Retrieved ${i} of ${tokenMetas.length} tokens' IPFS metadata`);
+        }
         tokenIpfsMetaPromises = []
-        this.logger.log(`[scraping ${contract_key}] Retrieved ${i} of ${tokenMetas.length} tokens' IPFS metadata`);
       } 
     }
 
+    // process the last batch
     const ipfsMetasBatch = await Promise.all(tokenIpfsMetaPromises)
     tokenIpfsMetas = tokenIpfsMetas.concat(ipfsMetasBatch);
+
     return tokenIpfsMetas
   }
+
+
+  fetchIpfsMeta(url) {
+    return axios.get(url, {
+      validateStatus: function (status) {
+        return status >= 200 && status < 500;
+      }
+    });
+  };
 
 
   async setSmartContractScrapeStage(smartContractId, stage) {

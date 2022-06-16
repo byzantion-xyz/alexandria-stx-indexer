@@ -102,6 +102,7 @@ export class NearScraperService {
     return "Finished"
   }
 
+
   async pin(tokenMetas, nftContractMetadata, contract_key) {
     if (tokenMetas.length == 0) return
     this.logger.log(`[scraping ${contract_key}] pin`);
@@ -112,6 +113,7 @@ export class NearScraperService {
     await this.ipfsHelperService.pinIpfsFolder(firstTokenIpfsUrl, `${contract_key}`);
     await delay(5000) // delay 5 seconds to ensure that the pinned byzantion pinata url is ready to query in the next step 
   };
+
 
   async loadSmartContract(nftContractMetadata, contract_key) {
     this.logger.log(`[scraping ${contract_key}] Loading Smart Contract`);
@@ -143,6 +145,7 @@ export class NearScraperService {
     return smartContract
   }
 
+
   async loadCollection(tokenMetas, nftContractMetadata, contract_key, collectionSize) {
     if (tokenMetas.length == 0) return
     this.logger.log(`[scraping ${contract_key}] Loading Collection`);
@@ -169,6 +172,7 @@ export class NearScraperService {
     return loadedCollection
   }
 
+
   async loadNftMetasAndTheirAttributes(tokenMetas, nftContractMetadata, smartContractId, contract_key, collection) {
     if (tokenMetas.length == 0) return
     this.logger.log(`[scraping ${contract_key}] Loading NftMetas and their NftMetaAttributes`);
@@ -191,9 +195,8 @@ export class NearScraperService {
           }
         },
       })
+      if (nftMeta) continue // if nftMeta already exists, skip loading it
 
-      if (nftMeta) continue
-      
       try {
         const attributes = this.getNftMetaAttributesFromMeta(tokenIpfsMetas[i], nftContractMetadata, tokenMetas[i], contract_key);
 
@@ -658,5 +661,8 @@ export class NearScraperService {
                     `
       }
     })
+  }
+
+  async deleteAllNftMetasAndNftMetaAttributes() {
   }
 }

@@ -10,7 +10,7 @@ export class TasksService {
         private nearIndexer: NearIndexerService
     ) {}
 
-    @Cron(CronExpression.EVERY_MINUTE)
+    @Cron(CronExpression.EVERY_5_MINUTES)
     handleCron() {
       if (process.env.NODE_ENV === 'production') {
         this.logger.log('Trigger near indexer');

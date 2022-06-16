@@ -38,14 +38,14 @@ export class UnlistTransactionService {
       await this.txHelper.unlistMeta(nftMeta.id, tx.transaction.nonce, tx.block.block_height);
 
       const actionCommonArgs: CreateActionCommonArgs = this.txHelper.setCommonActionParams(tx, sc, nftMeta, market_sc);
-      const listActionParams: CreateUnlistAction = {
+      const unlistActionParams: CreateUnlistAction = {
         ...actionCommonArgs,
         action: ActionName.unlist,
-        list_price: nftMeta.nft_state?.list_price || undefined,
+        list_price: nftMeta.nft_state && nftMeta.nft_state.list_price ? nftMeta.nft_state.list_price : undefined,
         seller: nftMeta.nft_state?.list_seller || undefined
       };
 
-      await this.createAction(listActionParams);
+      await this.createAction(unlistActionParams);
 
       txResult.processed = true;
     } else if (nftMeta) {

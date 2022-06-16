@@ -297,9 +297,7 @@ export class NearScraperService {
 
     let nftMetas = []
     nftMetas = await this.prismaService.nftMeta.findMany({
-      where: {
-        smart_contract_id: smartContract.id
-      },
+      where: { smart_contract_id: smartContract.id },
       select: {
         id: true,
         rarity: true,
@@ -392,15 +390,17 @@ export class NearScraperService {
           rarity: nftMeta.rarity,
           ranking: (Number(count) + 1),
           attributes: {
-            deleteMany: {},
-            createMany: nftMeta.attributes.map((attr) => {
-              return {
-                trait_type: attr.trait_type,
-                value: attr.value,
-                rarity: attr.rarity,
-                score: attr.score
-              }
-            }),
+            createMany: {
+              data: nftMeta.attributes.map((attr) => {
+                return {
+                  trait_type: attr.trait_type,
+                  value: attr.value,
+                  rarity: attr.rarity,
+                  score: attr.score
+                }
+              }),
+              skipDuplicates: true
+            }
           }
         },
       })

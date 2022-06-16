@@ -12,8 +12,12 @@ export class TasksService {
 
     @Cron(CronExpression.EVERY_MINUTE)
     handleCron() {
-      this.logger.debug('Trigger near indexer');
-      this.nearIndexer.runIndexer();
+      if (process.env.NODE_ENV === 'production') {
+        this.logger.log('Trigger near indexer');
+        this.nearIndexer.runIndexer();
+      } else {
+        this.logger.debug('Not in production environment. Skip near indexer trigger')
+      }
     }
 
 }

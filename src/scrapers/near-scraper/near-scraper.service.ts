@@ -295,6 +295,7 @@ export class NearScraperService {
       return msg;
     }
 
+    this.logger.log(`[scraping ${contract_key}] Fetching all NftMetas + their NftMetaAttributes`);
     let nftMetas = []
     nftMetas = await this.prismaService.nftMeta.findMany({
       where: { smart_contract_id: smartContract.id },
@@ -336,7 +337,7 @@ export class NearScraperService {
       }
     }
 
-    this.logger.log(`[scraping ${contract_key}] Updating NftMetaAttribute Rarity Scores...`);
+    this.logger.log(`[scraping ${contract_key}] Calculating NftMetaAttribute Rarity Scores...`);
     let obj = {};
     for (let nftMeta of nftMetas) {
       for (let attr of nftMeta.attributes) {
@@ -354,7 +355,7 @@ export class NearScraperService {
       }
     }
 
-    this.logger.log(`[scraping ${contract_key}] Updating NftMetaAttribute Rarity Scores to %`);
+    this.logger.log(`[scraping ${contract_key}] Calculating NftMetaAttribute Rarity Scores to %`);
     for (let nftMeta of nftMetas) {
       for (let attr of nftMeta.attributes) {
         attr.rarity = obj[attr.trait_type][attr.value];
@@ -367,7 +368,7 @@ export class NearScraperService {
       }
     }
 
-    this.logger.log(`[scraping ${contract_key}] Updating NftMeta Rarities`);
+    this.logger.log(`[scraping ${contract_key}] Calculating NftMeta Rarities`);
     for (let nftMeta of nftMetas) {
       let rarity_score = 0;
       for (let attr of nftMeta.attributes) {
@@ -379,6 +380,8 @@ export class NearScraperService {
       return b.rarity - a.rarity;
     });
 
+
+    this.logger.log(`[scraping ${contract_key}] Updating NftMeta Rarities and Rankings`);
     let updatedNftMetasPromises = []
     for (let i = 0; i < nftMetas.length; i++) {
       const updatedNftMeta = this.prismaService.nftMeta.update({
@@ -404,17 +407,18 @@ export class NearScraperService {
 
       updatedNftMetasPromises.push(updatedNftMeta);
 
-      if (i % 50 === 0) {
+      if (i % 100 === 0) {
         await Promise.all(updatedNftMetasPromises)
         updatedNftMetasPromises = []
-        this.logger.log(`[scraping ${contract_key}] Rarity and Rankings processed: ${i} of ${nftMetas.length}`);
+        this.logger.log(`[scraping ${contract_key}] NftMeta Rarity and Rankings processed: ${i} of ${nftMetas.length}`);
       } 
     }
 
     await Promise.all(updatedNftMetasPromises)
     this.logger.log(`[scraping ${contract_key}] NftMetas Rarity and Rankings updated`);
 
-    
+
+    this.logger.log(`[scraping ${contract_key}] Updating NftMetaAttriute Rarities and Scores`);
     let updatedNftMetaAttributePromises = []
     let count = 0;
     for (let nftMeta of nftMetas) {
@@ -435,7 +439,7 @@ export class NearScraperService {
 
         updatedNftMetaAttributePromises.push(updatedNftMetaAttribute);
 
-        if (count % 50) {
+        if (count % 100 === 0) {
           await Promise.all(updatedNftMetaAttributePromises)
           updatedNftMetaAttributePromises = []
           this.logger.log(`[scraping ${contract_key}] Attribute Rarity and Rankings processed for ${count} of ${nftMetas.length} NftMetas`);

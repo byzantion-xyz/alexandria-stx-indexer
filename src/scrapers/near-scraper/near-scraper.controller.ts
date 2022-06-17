@@ -9,9 +9,9 @@ export class NearScraperController {
     private nearScraper: NearScraperService
   ) { }
 
-  @Post('collection')
-  async loadCollectionFromChain(
-    @Body() data: { contract_key, starting_token_id, ending_token_id, override_frozen, force_scrape}
+  @Post('nft-contract')
+  async scrape(
+    @Body() data: { contract_key, token_id, starting_token_id, ending_token_id, override_frozen, force_scrape}
   ) {
     const result = await this.nearScraper.scrape(data);
     return result;

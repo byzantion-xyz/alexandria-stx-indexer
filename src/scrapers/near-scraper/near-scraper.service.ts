@@ -44,42 +44,13 @@ export class NearScraperService {
   ) {}
 
   async scrape(data: runScraperData) {
-    const { contract_key, starting_token_id, ending_token_id, override_frozen = false, force_scrape = false } = data
+    const { contract_key, token_id, starting_token_id, ending_token_id, override_frozen = false, force_scrape = false } = data
     this.logger.log(`[scraping ${contract_key}] START SCRAPE`);
 
-    let smartContract;
-    let smartContractInDB = await this.prismaService.smartContract.findUnique({ where: { contract_key: contract_key } })
-    if (smartContractInDB) smartContract = smartContractInDB
-    if (!smartContractInDB) {
-      smartContract = await this.prismaService.smartContract.create({
-        data: {
-          contract_key: contract_key,
-          type: SmartContractType.non_fungible_tokens,
-          chain: {
-            connect: {
-              id: NEAR_PROTOCOL_DB_ID,
-            },
-          },
-        },
-        select: {
-          id: true,
-          frozen: true
-        }
-      })
+    // create SmartContract, SmartContractScrape, and Collection tables if not exist
+    const smartContract = await this.createInitialTables(contract_key);
 
-      await this.prismaService.smartContractScrape.upsert({ 
-        where: { smart_contract_id: smartContract.id },
-        update: {},
-        create: { smart_contract_id: smartContract.id }
-      })
-
-      await this.prismaService.collection.upsert({
-        where: { smart_contract_id: smartContract.id },
-        update: {},
-        create: { smart_contract_id: smartContract.id }
-      })
-    }
-
+    // Check if contract should be scraped and return if not
     const smartContractScrape = await this.prismaService.smartContractScrape.findUnique({
       where: { smart_contract_id: smartContract.id }
     })
@@ -93,6 +64,7 @@ export class NearScraperService {
       return errorMsg
     }
 
+    // increment scrape attempt, and reset scrape stage to beginning
     await this.prismaService.smartContractScrape.update({ 
       where: { smart_contract_id: smartContract.id },
       data: { 
@@ -101,10 +73,22 @@ export class NearScraperService {
       }
     })
 
-    const {tokenMetas, nftContractMetadata, collectionSize, error } = await this.getContractAndTokenMetaData(contract_key, starting_token_id, ending_token_id);
-    if (error) {
-      await this.createSmartContractScrapeError(error, nftContractMetadata, tokenMetas[0], contract_key);
-      return
+    // Get contract and tokens metadata from chain
+    const contract = await this.connectNftContract(contract_key);
+    const nftContractMetadata = await contract.nft_metadata();
+    const collectionSize = await contract.nft_total_supply();
+
+    let tokenMetas = []
+    if (token_id != null || token_id != undefined) {
+      const token = await this.getTokenMeta(contract, token_id, contract_key);
+      tokenMetas.push(token);
+    } else {
+      const { tokenMetas: tokens, error } = await this.getMultipleTokenMetas(contract, collectionSize, starting_token_id, ending_token_id, contract_key);
+      tokenMetas = tokens;
+      if (error) {
+        await this.createSmartContractScrapeError(error, nftContractMetadata, tokenMetas[0], contract_key);
+        return
+      }
     }
 
     try {
@@ -500,26 +484,23 @@ export class NearScraperService {
   }
 
 
-  async getContractAndTokenMetaData(contract_key, starting_token_id, ending_token_id) {
+  async connectNftContract(contract_key) {
+    const near = await connect(nearConfig);
+    const account = await near.account(nearAccountId);
+    const contract = await this.getContract(contract_key, account);
+    return contract
+  }
+
+
+  async getTokenMeta(contract, token_id, contract_key) {
+    this.logger.log(`[scraping ${contract_key}] Getting 1 Token Meta from The Chain`);
+    return await contract.nft_token({token_id: Number(token_id).toString()})
+  }
+
+
+  async getMultipleTokenMetas(contract, collectionSize, starting_token_id, ending_token_id, contract_key) {
     try {
-      this.logger.log(`[scraping ${contract_key}] Getting Token Metas from Chain`);
-      const near = await connect(nearConfig);
-      const account = await near.account(nearAccountId);
-      const contract = await this.getContract(contract_key, account);
-      let collectionSize = await contract.nft_total_supply();
-  
-      // let nftTokensBatchSize = 100
-      // let tokenMetaPromises = []
-      // for (let i = 0; i < collectionSize; i += nftTokensBatchSize) {
-      //   const currentTokenMetasBatch = this.fetchTokensFromContract(contract, i, nftTokensBatchSize);
-      //   tokenMetaPromises.push(...currentTokenMetasBatch);
-      // }
-
-      // const tokenMetas = await Promise.all(tokenMetaPromises)
-
-      // console.log(tokenMetas)
-      // console.log(tokenMetas.length)
-
+      this.logger.log(`[scraping ${contract_key}] Getting Multiple Token Metas from The Chain`);
       let startingTokenId = 0;
       let endingTokenId = Number(collectionSize)
 
@@ -552,25 +533,19 @@ export class NearScraperService {
       // get rid of null tokens
       tokenMetas = tokenMetas.filter(token => !!token)
   
-      this.logger.log(`[scraping ${contract_key}] Number of NftMetas to process: ${tokenMetas.length}`);
-
-      const nftContractMetadata = await contract.nft_metadata();
-
       if (tokenMetas.length < Number(collectionSize)) {
         const errorMsg = `[scraping ${contract_key}] # of tokens scraped: ${tokenMetas.length} is less than # of tokens in contract ${Number(collectionSize)}. This means you need to re-scrape and pass in an ending_token_id that is at least ${Number(collectionSize)}. (So the iterator has a chance to scrape token_ids up to that number). This issue exists because the token supply has changed from the original supply.`
         this.logger.error(errorMsg);
         return {
           tokenMetas,
-          nftContractMetadata,
-          collectionSize,
           error: errorMsg
         }
       }
+
+      this.logger.log(`[scraping ${contract_key}] Number of NftMetas to process: ${tokenMetas.length}`);
   
       return {
-        tokenMetas,
-        nftContractMetadata,
-        collectionSize
+        tokenMetas
       }
     } catch(err) {
       this.logger.error(`[scraping ${contract_key}] Error: ${err}`);
@@ -723,6 +698,43 @@ export class NearScraperService {
     }
     
     return attributes
+  }
+
+
+  async createInitialTables(contract_key) {
+    let smartContract;
+    let smartContractInDB = await this.prismaService.smartContract.findUnique({ where: { contract_key: contract_key } })
+    if (smartContractInDB) smartContract = smartContractInDB
+    if (!smartContractInDB) {
+      smartContract = await this.prismaService.smartContract.create({
+        data: {
+          contract_key: contract_key,
+          type: SmartContractType.non_fungible_tokens,
+          chain: {
+            connect: {
+              id: NEAR_PROTOCOL_DB_ID,
+            },
+          },
+        },
+        select: {
+          id: true,
+          frozen: true
+        }
+      })
+
+      await this.prismaService.smartContractScrape.upsert({ 
+        where: { smart_contract_id: smartContract.id },
+        update: {},
+        create: { smart_contract_id: smartContract.id }
+      })
+
+      await this.prismaService.collection.upsert({
+        where: { smart_contract_id: smartContract.id },
+        update: {},
+        create: { smart_contract_id: smartContract.id }
+      })
+    }
+    return smartContract
   }
 
 

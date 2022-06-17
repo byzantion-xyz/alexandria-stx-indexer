@@ -83,8 +83,12 @@ export class NearScraperService {
     // Get tokens data
     let tokenMetas = []
     if (scrape_from_paras) {
-      const tokens = await this.getTokensFromParas(contract_key, collectionSize);
+      const {tokens, error} = await this.getTokensFromParas(contract_key, collectionSize);
       tokenMetas = tokens;
+      if (error) {
+        await this.createSmartContractScrapeError(error, nftContractMetadata, tokenMetas[0], contract_key);
+        return
+      }
     } else {
       if (token_id != null || token_id != undefined) {
         const token = await this.getTokenMetaFromContract(contract, token_id, contract_key);
@@ -554,22 +558,31 @@ export class NearScraperService {
 
 
   async getTokensFromParas(contract_key, collectionSize) {
-    const MAX_BATCH_LIMIT = 100;
-    let tokenMetas = [];
-    for (let i = 0; i < collectionSize; i += MAX_BATCH_LIMIT) {
-      const res = await axios.get("https://api-v2-mainnet.paras.id/token", {
-        params: {
-          collection_id: contract_key,
-          __skip: i,
-          __limit: MAX_BATCH_LIMIT
-        }
-      })
-      tokenMetas.push(...res.data.data.results);
-      if (i % 200 === 0) {
-        this.logger.log(`[scraping ${contract_key}] Retrieved ${i} of ${collectionSize} tokens' from PARAS API`);
-      } 
+    try {
+      const MAX_BATCH_LIMIT = 100;
+      let tokenMetas = [];
+      for (let i = 0; i < collectionSize; i += MAX_BATCH_LIMIT) {
+        const res = await axios.get("https://api-v2-mainnet.paras.id/token", {
+          params: {
+            collection_id: contract_key,
+            __skip: i,
+            __limit: MAX_BATCH_LIMIT
+          }
+        })
+        tokenMetas.push(...res.data.data.results);
+        if (i % 200 === 0) {
+          this.logger.log(`[scraping ${contract_key}] Retrieved ${i} of ${collectionSize} tokens' from PARAS API`);
+        } 
+      }
+      return {
+        tokens: tokenMetas
+      }
+    } catch(err) {
+      this.logger.error(`[scraping ${contract_key}] Error: ${err}`);
+      return {
+        error: err
+      }
     }
-    return tokenMetas
   }
 
 

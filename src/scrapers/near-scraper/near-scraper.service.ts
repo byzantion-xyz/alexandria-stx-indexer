@@ -600,7 +600,7 @@ export class NearScraperService {
       let tokenIpfsUrl = this.getTokenIpfsUrl(nftContractMetadata.base_uri, tokenMetas[i].metadata.reference);
       if (!tokenIpfsUrl || tokenIpfsUrl && tokenIpfsUrl == "") continue 
   
-      if (tokenIpfsUrl.includes('ipfs')) {
+      if (tokenIpfsUrl.includes('ipfs') && contract_key != "tinkerunion_nft.enleap.near") {
         tokenIpfsUrl = this.ipfsHelperService.getByzIpfsUrl(tokenIpfsUrl);
       }
   

@@ -30,8 +30,7 @@ const NEAR_PROTOCOL_DB_ID = "174c3df6-0221-4ca7-b966-79ac8d981bdb"
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-const ipfsAxios = axios.create({
-  timeout: 60000,
+const keepAliveAxios = axios.create({
   httpsAgent: new https.Agent({ keepAlive: true }),
 })
 
@@ -558,7 +557,7 @@ export class NearScraperService {
       const nftContractMetadata = await contract.nft_metadata();
 
       if (tokenMetas.length < Number(collectionSize)) {
-        const errorMsg = `[scraping ${contract_key}] # of tokens scraped: ${tokenMetas.length} is less than # of tokens in contract ${Number(collectionSize)}. This means you need to re-scrape and pass in an end_token_id that is at least ${Number(collectionSize)}. (So the iterator has a chance to scrape token_ids up to that number). This issue exists because the token supply has changed from the original supply.`
+        const errorMsg = `[scraping ${contract_key}] # of tokens scraped: ${tokenMetas.length} is less than # of tokens in contract ${Number(collectionSize)}. This means you need to re-scrape and pass in an ending_token_id that is at least ${Number(collectionSize)}. (So the iterator has a chance to scrape token_ids up to that number). This issue exists because the token supply has changed from the original supply.`
         this.logger.error(errorMsg);
         return {
           tokenMetas,
@@ -581,12 +580,14 @@ export class NearScraperService {
     }
   }
 
+
   fetchTokensFromContract(contract, offset, limit) {
     return contract.nft_tokens({
       from_index: Number(offset).toString(),
       limit: limit
     });
   }
+
 
   async getContract(contract_key, account) {
     return new nearAPI.Contract(
@@ -611,6 +612,15 @@ export class NearScraperService {
     if (media.includes("https")) return media
     if (!base_uri && !media) return ""
     return `${base_uri}/${media}`
+  };
+
+
+  fetchIpfsMeta(url) {
+    return keepAliveAxios.get(url, {
+      validateStatus: function (status) {
+        return status >= 200 && status < 500;
+      }
+    });
   };
 
 
@@ -652,23 +662,6 @@ export class NearScraperService {
     tokenIpfsMetas.push(...ipfsMetasBatch.filter((r) => r.status == 200).map((r) => r.data));
 
     return tokenIpfsMetas
-  }
-
-
-  fetchIpfsMeta(url) {
-    return ipfsAxios.get(url, {
-      validateStatus: function (status) {
-        return status >= 200 && status < 500;
-      }
-    });
-  };
-
-
-  async setSmartContractScrapeStage(smartContractId, stage) {
-    await this.prismaService.smartContractScrape.update({ 
-      where: { smart_contract_id: smartContractId },
-      data: { stage: stage }
-    })
   }
 
 
@@ -733,6 +726,14 @@ export class NearScraperService {
   }
 
 
+  async setSmartContractScrapeStage(smartContractId, stage) {
+    await this.prismaService.smartContractScrape.update({ 
+      where: { smart_contract_id: smartContractId },
+      data: { stage: stage }
+    })
+  }
+
+
   async createSmartContractScrapeError(error, nftContractMetadata, firstTokenMeta, contract_key) {
     const smartContract = await this.prismaService.smartContract.findUnique({
       where: { contract_key: contract_key }, select: { id: true }
@@ -748,8 +749,5 @@ export class NearScraperService {
                     `
       }
     })
-  }
-
-  async deleteAllNftMetasAndNftMetaAttributes() {
   }
 }

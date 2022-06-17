@@ -272,8 +272,9 @@ export class NearScraperService {
 
         if (i % 100 === 0) {
           await Promise.all(nftMetaPromises)
-          
           nftMetaPromises = []
+        } 
+        if (i % 200 === 0) {
           this.logger.log(`[scraping ${contract_key}] NftMetas processed: ${i} of ${tokenMetas.length}`);
         } 
       } catch(err) {
@@ -285,7 +286,7 @@ export class NearScraperService {
       }
     }
     await Promise.all(nftMetaPromises)
-    this.logger.log(`[scraping ${contract_key}] NftMetas Processing COMPLETE`);
+    this.logger.log(`[scraping ${contract_key}] NftMetas processed: ${tokenMetas.length} of ${tokenMetas.length}`);
     return nftMetaPromises.length
   }
 
@@ -478,14 +479,16 @@ export class NearScraperService {
       collectionAttributePromises.push(collectionAndCollectionAttributes)
 
       if (i % 100 === 0) {
-        this.logger.log(`[scraping ${contract_key}] CollectionAttributes batch inserted for ${i} of ${nftMetas.length} NftMetas`);
         await Promise.all(collectionAttributePromises)
         collectionAttributePromises = []
       } 
+      if (i % 200 === 0) {
+        this.logger.log(`[scraping ${contract_key}] CollectionAttributes batch inserted for ${i} of ${nftMetas.length} NftMetas`);
+      } 
     }
 
-    console.log(`[scraping ${contract_key}] CollectionAttributes batch inserted for ${nftMetas.length} NftMetas`);
     await Promise.all(collectionAttributePromises)
+    this.logger.log(`[scraping ${contract_key}] CollectionAttributes batch inserted for ${nftMetas.length} NftMetas`);
   };
 
 
@@ -635,10 +638,12 @@ export class NearScraperService {
         }
         if (ipfsMetasBatch) {
           tokenIpfsMetas.push(...ipfsMetasBatch.filter((r) => r.status == 200).map((r) => r.data));
-          this.logger.log(`[scraping ${contract_key}] Retrieved ${i} of ${tokenMetas.length} tokens' IPFS metadata`);
           await delay(300);
         }
         tokenIpfsMetaPromises = []
+      } 
+      if (i % 200 === 0) {
+        this.logger.log(`[scraping ${contract_key}] Retrieved ${i} of ${tokenMetas.length} tokens' IPFS metadata`);
       } 
     }
 

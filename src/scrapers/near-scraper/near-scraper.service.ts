@@ -189,7 +189,11 @@ export class NearScraperService {
     const firstTokenMeta = tokenMetas[0]
     const firstTokenIpfsUrl = this.getTokenIpfsUrl(nftContractMetadata.base_uri, firstTokenMeta.metadata.reference);
     const firstTokenIpfsImageUrl = this.getTokenIpfsMediaUrl(nftContractMetadata.base_uri, firstTokenMeta.metadata.media);
-    const { data: tokenIpfsMeta } = await axios.get(firstTokenIpfsUrl);
+    let tokenIpfsMeta;
+    if (firstTokenIpfsUrl) {
+      const res = await axios.get(firstTokenIpfsUrl);
+      tokenIpfsMeta = res.data
+    }
 
     const loadedCollection = await this.prismaService.collection.upsert({
       where: { smart_contract_id: smartContract.id },
@@ -593,6 +597,7 @@ export class NearScraperService {
 
 
   getTokenIpfsUrl(base_uri, reference) {
+    if (base_uri == 'https://nearnaut.mypinata.cloud/ipfs') return null
     if (reference.includes("https")) return reference
     if (!base_uri && !reference) return ""
     return `${base_uri}/${reference}`

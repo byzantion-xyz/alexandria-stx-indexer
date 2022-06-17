@@ -42,13 +42,15 @@ export class DiscordServerService {
           smart_contracts: {
             some: { smart_contract_id: smart_contract.id }
           },
-          purpose: purpose
+          purpose: purpose,
+          discord_server: {
+            active: true
+          }
         },
         include: { 
           discord_server: true
         }
-        }
-      );
+      });
     }
     
     return channels;

@@ -20,4 +20,11 @@ export class NearIndexerController {
     return 'Ok';
   }
 
+  @Post('run-missing')
+  async indexMissingTransactions() {
+    this.nearIndexer.runIndexerForMissing();
+    
+    return 'Ok';
+  }
+
 }

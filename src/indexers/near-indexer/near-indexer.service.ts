@@ -24,24 +24,25 @@ export class NearIndexerService {
     private unlistTransaction: UnlistTransactionService,
     private txHelper: TxHelperService
   ) { }
-
-  async runIndexer() {
-    this.logger.debug('Initialize');
+  
+  async fetchTransactions(missing: boolean = false) {
     const smartContractFunctions = await this.prismaService.smartContractFunction.findMany();
     const smartContracts = await this.prismaService.smartContract.findMany();
     const whitelistedActions = smartContractFunctions.map(func => func.function_name);
     const accounts = smartContracts.map(sc => sc.contract_key);
-
     const cursor = this.connection.db.collection('transactions').aggregate([
       {
         $match: {
           'block.block_height': { $gte: 65000000 },
           'transaction.receiver_id': { $in: accounts },
           'transaction.actions.FunctionCall.method_name': { $in: whitelistedActions },
-          $and: [
-            { $or: [{ processed: { $exists: false } }, { processed: false }] },
-            { $or: [{ missing: { $exists: false } }, { missing: false }] },
-          ]
+          ... (missing && { missing: true }),
+          ... (!missing && {
+            $and: [
+              { $or: [{ processed: { $exists: false } }, { processed: false }] },
+              { $or: [{ missing: { $exists: false } }, { missing: false }] },
+            ] 
+          })
         }
       },
       { $sort: { 'block.block_height': 1, 'transaction.nonce': 1 } },
@@ -63,6 +64,14 @@ export class NearIndexerService {
         }    
       },
     ], { allowDiskUse: true });
+
+    return cursor;
+  }
+
+  async runIndexer() {
+    this.logger.debug('runIndexer() Initialize');
+
+    const cursor = await this.fetchTransactions(false);
     this.logger.debug('Processing transactions');
 
     for await (const doc of cursor) {
@@ -73,7 +82,24 @@ export class NearIndexerService {
 
     await delay(5000);
 
-    this.logger.debug('Completed');
+    this.logger.debug('runIndexer() Completed');
+  }
+
+  async runIndexerForMissing() {
+    this.logger.debug('runIndexerForMissing() Initialize');
+
+    const cursor = await this.fetchTransactions(true);
+    this.logger.debug('Processing missing transactions');
+
+    for await (const doc of cursor) {
+      const transaction: Transaction = <Transaction>doc;
+      const txResult: TxProcessResult = await this.processTransaction(transaction);
+      await this.setTransactionResult(doc._id, txResult);
+    }
+
+    await delay(5000);
+
+    this.logger.debug('runIndexerForMissing() Completed');
   }
 
   async processTransaction(transaction: Transaction): Promise<TxProcessResult> {

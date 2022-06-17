@@ -20,4 +20,14 @@ export class TasksService {
       }
     }
 
+    @Cron(CronExpression.EVERY_MINUTE)
+    handleCronMissingTransactions() {
+      if (process.env.NODE_ENV !== 'production') {
+        this.logger.log('Trigger near indexer for missing transactions');
+        this.nearIndexer.runIndexerForMissing();
+      } else {
+        this.logger.debug('Not in production environment. Skip near indexer trigger')
+      }
+    }
+
 }

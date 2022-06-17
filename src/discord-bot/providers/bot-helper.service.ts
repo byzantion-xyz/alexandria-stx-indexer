@@ -17,7 +17,7 @@ export class BotHelperService {
   ) { }
 
   createDiscordBotDto(nftMeta: NftMeta, sc: SmartContract, msc: SmartContract, action: Action): DiscordBotDto {
-    const marketplaceLink = msc.base_marketplace_uri + '/' + msc.token_uri + '/' + 
+    const marketplaceLink = msc.base_marketplace_uri + msc.token_uri + 
       sc.contract_key + '::' + nftMeta.token_id + '/' + nftMeta.token_id;
     const transactionLink = `https://explorer.near.org/transactions/${action.tx_id}`;
 

@@ -103,8 +103,10 @@ export class NearScraperService {
     })
 
     const {tokenMetas, nftContractMetadata, collectionSize, error } = await this.getContractAndTokenMetaData(contract_key, starting_token_id, ending_token_id);
-    if (error)
+    if (error) {
       await this.createSmartContractScrapeError(error, nftContractMetadata, tokenMetas[0], contract_key);
+      return
+    }
 
     try {
       const smartContract = await this.loadSmartContract(nftContractMetadata, contract_key);
@@ -555,7 +557,7 @@ export class NearScraperService {
       const nftContractMetadata = await contract.nft_metadata();
 
       if (tokenMetas.length < Number(collectionSize)) {
-        const errorMsg = `[scraping ${contract_key}] # of tokens scraped: ${tokenMetas.length} is less than # of tokens in contract ${Number(collectionSize)}. This means you need to re-scrape and pass in an end_token_id that is at least ${Number(collectionSize)}. (So the iterator has a chance to scrape token_ids up to that number). This issue exists because the supply has changed from the original supply.`
+        const errorMsg = `[scraping ${contract_key}] # of tokens scraped: ${tokenMetas.length} is less than # of tokens in contract ${Number(collectionSize)}. This means you need to re-scrape and pass in an end_token_id that is at least ${Number(collectionSize)}. (So the iterator has a chance to scrape token_ids up to that number). This issue exists because the token supply has changed from the original supply.`
         this.logger.error(errorMsg);
         return {
           tokenMetas,

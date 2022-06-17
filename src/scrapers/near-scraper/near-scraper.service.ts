@@ -521,7 +521,7 @@ export class NearScraperService {
       let startingTokenId = 0;
       let endingTokenId = Number(collectionSize)
 
-      const tokenZero = contract.nft_token({token_id: Number(0).toString()})
+      const tokenZero = await contract.nft_token({token_id: Number(0).toString()})
       if (!tokenZero) {
         startingTokenId = 1
         endingTokenId++
@@ -529,7 +529,7 @@ export class NearScraperService {
 
       if (starting_token_id) startingTokenId = Number(starting_token_id) - 1;
       if (ending_token_id) endingTokenId = Number(ending_token_id);
-  
+
       let tokenMetas = []
       let tokenMetaPromises = []
       if (startingTokenId < Number(collectionSize)) {
@@ -546,7 +546,7 @@ export class NearScraperService {
         const tokenMetasBatch = await Promise.all(tokenMetaPromises)
         tokenMetas.push(...tokenMetasBatch);
       }
-  
+
       // get rid of null tokens
       tokenMetas = tokenMetas.filter(token => !!token)
   

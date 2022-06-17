@@ -17,14 +17,15 @@ export class BotHelperService {
   ) { }
 
   createDiscordBotDto(nftMeta: NftMeta, sc: SmartContract, msc: SmartContract, action: Action): DiscordBotDto {
-    const marketplaceLink = msc.base_marketplace_uri + '/'+ sc.contract_key; 
+    const marketplaceLink = msc.base_marketplace_uri + '/' + msc.token_uri + '/' + 
+      sc.contract_key + '::' + nftMeta.token_id + '/' + nftMeta.token_id;
     const transactionLink = `https://explorer.near.org/transactions/${action.tx_id}`;
 
     return {
       contract_key: sc.contract_key,
       title: nftMeta.name,
       rarity: nftMeta.rarity,
-      price: `${ Number(Number(action.list_price) / 1e24).toFixed(2)} NEAR`, // TODO: Round to USD also
+      price: `${Number(Number(action.list_price) / 1e24).toFixed(2)} NEAR`, // TODO: Round to USD also
       marketplaceLink,
       transactionLink,
       image: nftMeta.image
@@ -42,7 +43,7 @@ export class BotHelperService {
 
   async buildMessage(data: DiscordBotDto, server_name: string, color: ColorResolvable, subTitle: string) {
     const { title, rarity, price, marketplaceLink, transactionLink, image } = data;
-    
+
     const embed = new MessageEmbed().setColor(color);
     let attachments = [];
 
@@ -77,9 +78,9 @@ export class BotHelperService {
   }
 
   async fetchActionData(actionId: string): Promise<DiscordBotDto> {
-    const action = await this.prismaService.action.findUnique({ 
+    const action = await this.prismaService.action.findUnique({
       where: { id: actionId },
-      include: { 
+      include: {
         nft_meta: {
           include: {
             nft_state: true,
@@ -91,13 +92,13 @@ export class BotHelperService {
       }
     });
     const data: DiscordBotDto = this.createDiscordBotDto(
-      action.nft_meta, 
+      action.nft_meta,
       action.nft_meta.smart_contract,
-      action.marketplace_smart_contract, 
+      action.marketplace_smart_contract,
       action
     );
 
     return data;
   }
- 
+
 }

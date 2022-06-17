@@ -89,13 +89,17 @@ export class NearScraperService {
       return "Contract already scraped succesfully"
     }
     if (smartContractScrape.attempts >= 2 && !force_scrape) {
-      this.logger.error(`[scraping ${contract_key}] Contract scrape attempted twice already and failed. Check for errors in SmartContractScrape id: ${smartContractScrape.id}. To re-scrape, pass in force_scrape: true, or set the SmartContractScrape.attempts back to 0.`);
-      return "Contract scrape attempted twice already"
+      const errorMsg = `[scraping ${contract_key}] Contract scrape attempted twice already and failed. Check for errors in SmartContractScrape id: ${smartContractScrape.id}. To re-scrape, pass in force_scrape: true, or set the SmartContractScrape.attempts back to 0.`;
+      this.logger.error(errorMsg);
+      return errorMsg
     }
 
     await this.prismaService.smartContractScrape.update({ 
       where: { smart_contract_id: smartContract.id },
-      data: { attempts: { increment: 1} }
+      data: { 
+        attempts: { increment: 1},
+        stage: SmartContractScrapeStage.getting_tokens_from_chain
+      }
     })
 
     const {tokenMetas, nftContractMetadata, collectionSize, error } = await this.getContractAndTokenMetaData(contract_key, starting_token_id, ending_token_id);
@@ -415,12 +419,12 @@ export class NearScraperService {
 
       updatedNftMetasPromises.push(updatedNftMeta);
 
-      if (count % 10 === 0) {
+      if (count % 50 === 0) {
         await Promise.all(updatedNftMetasPromises)
         updatedNftMetasPromises = []
         await delay(300)
       } 
-      if (count % 100 === 0) {
+      if (count % 200 === 0) {
         this.logger.log(`[scraping ${contract_key}] Rarity and Rankings processed: ${count} of ${nftMetas.length}`);
       } 
       count++;

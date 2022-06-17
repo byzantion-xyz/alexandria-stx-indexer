@@ -9,7 +9,7 @@ export class NearScraperController {
     private nearScraper: NearScraperService
   ) { }
 
-  @Post('nft-contract')
+  @Post('scrape')
   async scrape(
     @Body() data: { contract_key, token_id, starting_token_id, ending_token_id, override_frozen, force_scrape}
   ) {

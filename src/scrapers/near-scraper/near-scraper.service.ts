@@ -43,12 +43,13 @@ export class NearScraperService {
     private readonly ipfsHelperService: IpfsHelperService
   ) {}
 
+
   async scrape(data: runScraperData) {
     const { contract_key, token_id, starting_token_id, ending_token_id, override_frozen = false, force_scrape = false } = data
     this.logger.log(`[scraping ${contract_key}] START SCRAPE`);
 
     // create SmartContract, SmartContractScrape, and Collection tables if not exist
-    const smartContract = await this.createInitialTables(contract_key);
+    const smartContract = await this.createInitialTablesIfNotExist(contract_key);
 
     // Check if contract should be scraped and return if not
     const smartContractScrape = await this.prismaService.smartContractScrape.findUnique({
@@ -556,14 +557,6 @@ export class NearScraperService {
   }
 
 
-  fetchTokensFromContract(contract, offset, limit) {
-    return contract.nft_tokens({
-      from_index: Number(offset).toString(),
-      limit: limit
-    });
-  }
-
-
   async getContract(contract_key, account) {
     return new nearAPI.Contract(
       account, // the account object that is connecting
@@ -701,7 +694,7 @@ export class NearScraperService {
   }
 
 
-  async createInitialTables(contract_key) {
+  async createInitialTablesIfNotExist(contract_key) {
     let smartContract;
     let smartContractInDB = await this.prismaService.smartContract.findUnique({ where: { contract_key: contract_key } })
     if (smartContractInDB) smartContract = smartContractInDB

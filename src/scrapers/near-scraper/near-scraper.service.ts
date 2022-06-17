@@ -220,7 +220,7 @@ export class NearScraperService {
 
     const tokenIpfsMetas = await this.getAllTokenIpfsMetas(tokenMetas, nftContractMetadata, contract_key);
 
-    if (tokenIpfsMetas.length != tokenMetas.length) {
+    if (tokenIpfsMetas.length != 0 && tokenIpfsMetas.length != tokenMetas.length) {
       const error = `[scraping ${contract_key}] # of token ipfs metas (${tokenIpfsMetas.length}) does not equal # of tokens scraped from contract (${tokenMetas.length})`
       throw new Error(error)
     }

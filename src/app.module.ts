@@ -30,7 +30,7 @@ import { TasksModule } from './tasks/tasks.module';
     }),
     DiscordModule.forRootAsync({
       useFactory: () => ({
-        token: 'OTQ1Njk0ODExMTI4NzU0MjA2.YhT47Q.YjzYBqiAa5SlSjJu5Tj6NjTIN68',
+        token: 'OTE2ODQ2OTkyMDUzODk1MjQ5.YawGTQ.fhbb-QbnNJZk6TYOF4YmkPZvMOU',
         discordClientOptions: {
           intents: [Intents.FLAGS.GUILDS],
         },

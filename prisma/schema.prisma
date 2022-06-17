@@ -22,6 +22,8 @@ model SmartContract {
   frozen                   Boolean                               @default(false)
   json_meta                Json?
   base_marketplace_uri     String?
+  token_uri                String?
+  collection_uri           String?
   chain                    Chain                                 @relation(fields: [chain_id], references: [id])
   collection               Collection?
   actions                  Action[]
@@ -276,17 +278,18 @@ model Action {
 
 model DiscordServer {
   id                      String                 @id @default(uuid()) @db.Uuid
-  server_id               BigInt
+  server_id               String
   server_name             String
   active                  Boolean                @default(false)
   discord_server_channels DiscordServerChannel[]
 
+  @@unique([server_id])
   @@map("discord_server")
 }
 
 model DiscordServerChannel {
   id                String                                @id @default(uuid()) @db.Uuid
-  channel_id        BigInt
+  channel_id        String
   name              String
   purpose           DiscordChannelType
   discord_server    DiscordServer                         @relation(fields: [discord_server_id], references: [id])

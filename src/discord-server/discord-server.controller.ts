@@ -13,25 +13,24 @@ export class DiscordServerController {
   ) { }
 
   @Post()
-  async loadServer(@Body() params: createDiscordServer) {
-
-    /* Body example */
+  async loadServer(@Body() body: createDiscordServer) {
+     /* Body example */
     /*let params: createDiscordServer = {
-      server_id: BigInt(927712532276314122),
-      server_name: 'Byzantion test server',
-      active: true,
+      server_id: "933254508878901319",
+      server_name: 'NEAR Ocean',
+      active: false,
       discord_server_channels: [{
-        channel_id: BigInt(948998237040283709),
-        name: 'Test channel',
+        channel_id: "987048128542814288",
+        name: 'sales-and-listings',
         purpose: DiscordChannelType.listings,
       }, {
-        channel_id: BigInt(940931607165009940),
-        name: 'Some channel',
+        channel_id: "987048128542814288",
+        name: 'sales-and-listings',
         purpose: DiscordChannelType.sales,
       }]
     };*/
-
-    this.discordServerService.create(params);
+   
+    this.discordServerService.create(body);
 
     return 'Ok';
   }

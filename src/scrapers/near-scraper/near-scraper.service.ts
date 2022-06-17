@@ -43,26 +43,27 @@ export class NearScraperService {
     private readonly ipfsHelperService: IpfsHelperService
   ) {}
 
-
   async scrape(data: runScraperData) {
-    const { contract_key, token_id, starting_token_id, ending_token_id, override_frozen = false, force_scrape = false } = data
+    const { contract_key, token_id, starting_token_id, ending_token_id, scrape_from_paras = false, override_frozen = false, force_scrape = false } = data
     this.logger.log(`[scraping ${contract_key}] START SCRAPE`);
 
     // create SmartContract, SmartContractScrape, and Collection tables if not exist
     const smartContract = await this.createInitialTablesIfNotExist(contract_key);
 
-    // Check if contract should be scraped and return if not
-    const smartContractScrape = await this.prismaService.smartContractScrape.findUnique({
-      where: { smart_contract_id: smartContract.id }
-    })
-    if (smartContractScrape.outcome == SmartContractScrapeOutcome.succeeded && !force_scrape) {
-      this.logger.log(`[scraping ${contract_key}] Scrape skipped, already scraped successfully.`);
-      return "Contract already scraped succesfully"
-    }
-    if (smartContractScrape.attempts >= 2 && !force_scrape) {
-      const errorMsg = `[scraping ${contract_key}] Contract scrape attempted twice already and failed. Check for errors in SmartContractScrape id: ${smartContractScrape.id}. To re-scrape, pass in force_scrape: true, or set the SmartContractScrape.attempts back to 0.`;
-      this.logger.error(errorMsg);
-      return errorMsg
+    if (!scrape_from_paras) {
+      // Check if contract should be scraped and return if not
+      const smartContractScrape = await this.prismaService.smartContractScrape.findUnique({
+        where: { smart_contract_id: smartContract.id }
+      })
+      if (smartContractScrape.outcome == SmartContractScrapeOutcome.succeeded && !force_scrape) {
+        this.logger.log(`[scraping ${contract_key}] Scrape skipped, already scraped successfully.`);
+        return "Contract already scraped succesfully"
+      }
+      if (smartContractScrape.attempts >= 2 && !force_scrape) {
+        const errorMsg = `[scraping ${contract_key}] Contract scrape attempted twice already and failed. Check for errors in SmartContractScrape id: ${smartContractScrape.id}. To re-scrape, pass in force_scrape: true, or set the SmartContractScrape.attempts back to 0.`;
+        this.logger.error(errorMsg);
+        return errorMsg
+      }
     }
 
     // increment scrape attempt, and reset scrape stage to beginning
@@ -70,25 +71,31 @@ export class NearScraperService {
       where: { smart_contract_id: smartContract.id },
       data: { 
         attempts: { increment: 1},
-        stage: SmartContractScrapeStage.getting_tokens_from_chain
+        stage: SmartContractScrapeStage.getting_tokens
       }
     })
 
-    // Get contract and tokens metadata from chain
+    // Get contract data from chain
     const contract = await this.connectNftContract(contract_key);
     const nftContractMetadata = await contract.nft_metadata();
     const collectionSize = await contract.nft_total_supply();
 
+    // Get tokens data
     let tokenMetas = []
-    if (token_id != null || token_id != undefined) {
-      const token = await this.getTokenMeta(contract, token_id, contract_key);
-      tokenMetas.push(token);
-    } else {
-      const { tokenMetas: tokens, error } = await this.getMultipleTokenMetas(contract, collectionSize, starting_token_id, ending_token_id, contract_key);
+    if (scrape_from_paras) {
+      const tokens = await this.getTokensFromParas(contract_key, collectionSize);
       tokenMetas = tokens;
-      if (error) {
-        await this.createSmartContractScrapeError(error, nftContractMetadata, tokenMetas[0], contract_key);
-        return
+    } else {
+      if (token_id != null || token_id != undefined) {
+        const token = await this.getTokenMetaFromContract(contract, token_id, contract_key);
+        tokenMetas.push(token);
+      } else {
+        const { tokenMetas: tokens, error } = await this.getMultipleTokenMetasFromContract(contract, collectionSize, starting_token_id, ending_token_id, contract_key);
+        tokenMetas = tokens;
+        if (error) {
+          await this.createSmartContractScrapeError(error, nftContractMetadata, tokenMetas[0], contract_key);
+          return
+        }
       }
     }
 
@@ -199,7 +206,7 @@ export class NearScraperService {
   }
 
 
-  async loadNftMetasAndTheirAttributes(tokenMetas, nftContractMetadata, smartContractId, contract_key, collection) {
+  async loadNftMetasAndTheirAttributes(tokenMetas, nftContractMetadata, smartContractId, contract_key, collection, scrape_from_paras) {
     if (tokenMetas.length == 0) return
     this.logger.log(`[scraping ${contract_key}] Loading NftMetas and their NftMetaAttributes`);
 
@@ -224,7 +231,12 @@ export class NearScraperService {
       if (nftMeta) continue // if nftMeta already exists, skip loading it
 
       try {
-        const attributes = this.getNftMetaAttributesFromMeta(tokenIpfsMetas[i], nftContractMetadata, tokenMetas[i], contract_key);
+        let attributes = []
+        if (scrape_from_paras) {
+          attributes = tokenMetas[i].attributes;
+        } else {
+          attributes = this.getNftMetaAttributesFromMeta(tokenIpfsMetas[i], nftContractMetadata, tokenMetas[i], contract_key);
+        }
 
         let mediaUrl = this.getTokenIpfsMediaUrl(nftContractMetadata.base_uri, tokenMetas[i].metadata.media)
         if (mediaUrl && mediaUrl != "" && mediaUrl.includes('ipfs')) {
@@ -476,12 +488,23 @@ export class NearScraperService {
   };
 
 
-  async getTokensFromParas() {
-    // const res = await axios.get("https://api-v2-mainnet.paras.id/token", {
-    //   params: {
-    //     collection_id: "blissedkong.near"
-    //   }
-    // })
+  async getTokensFromParas(contract_key, collectionSize) {
+    const MAX_BATCH_LIMIT = 100;
+    let tokenMetas = [];
+    for (let i = 0; i < collectionSize; i += MAX_BATCH_LIMIT) {
+      const res = await axios.get("https://api-v2-mainnet.paras.id/token", {
+        params: {
+          collection_id: contract_key,
+          __skip: i,
+          __limit: MAX_BATCH_LIMIT
+        }
+      })
+      tokenMetas.push(...res.data.data.results);
+      if (i % 200 === 0) {
+        this.logger.log(`[scraping ${contract_key}] Retrieved ${i} of ${collectionSize} tokens' from PARAS API`);
+      } 
+    }
+    return tokenMetas
   }
 
 
@@ -493,13 +516,13 @@ export class NearScraperService {
   }
 
 
-  async getTokenMeta(contract, token_id, contract_key) {
+  async getTokenMetaFromContract(contract, token_id, contract_key) {
     this.logger.log(`[scraping ${contract_key}] Getting 1 Token Meta from The Chain`);
     return await contract.nft_token({token_id: Number(token_id).toString()})
   }
 
 
-  async getMultipleTokenMetas(contract, collectionSize, starting_token_id, ending_token_id, contract_key) {
+  async getMultipleTokenMetasFromContract(contract, collectionSize, starting_token_id, ending_token_id, contract_key) {
     try {
       this.logger.log(`[scraping ${contract_key}] Getting Multiple Token Metas from The Chain`);
       let startingTokenId = 0;

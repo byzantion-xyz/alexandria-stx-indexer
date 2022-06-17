@@ -58,7 +58,7 @@ model SmartContractFunction {
 model SmartContractScrape {
   id String @id @default(uuid()) @db.Uuid
 
-  stage             SmartContractScrapeStage?   @default(getting_tokens_from_chain)
+  stage             SmartContractScrapeStage?   @default(getting_tokens)
   outcome           SmartContractScrapeOutcome?
   outcome_msg       String?
   error             Json?
@@ -346,7 +346,7 @@ enum DiscordChannelType {
 }
 
 enum SmartContractScrapeStage {
-  getting_tokens_from_chain
+  getting_tokens
   pinning
   loading_nft_metas
   updating_rarities

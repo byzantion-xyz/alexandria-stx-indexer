@@ -83,6 +83,7 @@ export class IpfsHelperService {
       .replace('https://ipfs.fleek.co/ipfs/', pinataGatewayUrl)
       .replace('dev.nagmi.art/', pinataGatewayUrl)
       .replace('https://cloudflare-ipfs.com/ipfs/', pinataGatewayUrl)
+      .replace('https://nearnaut.mypinata.cloud/ipfs/', pinataGatewayUrl)
   };
   
   async checkIfPinning(pinHash) {

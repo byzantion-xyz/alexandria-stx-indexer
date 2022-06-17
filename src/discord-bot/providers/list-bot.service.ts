@@ -26,8 +26,10 @@ export class ListBotService {
       const color: ColorResolvable = 'YELLOW';
       if (!channels || !channels.length) return;
 
-      let messageContent = await this.botHelper.buildMessage(data, channels[0].discord_server.server_id, color, subTitle);
-      await this.botHelper.sendMessage(messageContent, channels[0].channel_id);
+      for (let channel of channels) {
+        let messageContent = await this.botHelper.buildMessage(data, channel.discord_server.server_id, color, subTitle);
+        await this.botHelper.sendMessage(messageContent, channel.channel_id);
+      }
     } catch (err) {
       this.logger.warn('Discord error', err);
     }

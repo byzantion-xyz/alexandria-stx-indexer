@@ -107,7 +107,7 @@ export class NearScraperService {
       await this.pin(tokenMetas, nftContractMetadata, contract_key);
       
       await this.setSmartContractScrapeStage(smartContract.id, SmartContractScrapeStage.loading_nft_metas);
-      await this.loadNftMetasAndTheirAttributes(tokenMetas, nftContractMetadata, smartContract.id, contract_key, loadedCollection);
+      await this.loadNftMetasAndTheirAttributes(tokenMetas, nftContractMetadata, smartContract.id, contract_key, loadedCollection, scrape_from_paras);
       
       await this.setSmartContractScrapeStage(smartContract.id, SmartContractScrapeStage.updating_rarities);
       await this.updateRarities(contract_key, override_frozen);

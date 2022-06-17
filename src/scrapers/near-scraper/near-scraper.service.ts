@@ -145,7 +145,7 @@ export class NearScraperService {
     this.logger.log(`[scraping ${contract_key}] pin`);
     const firstTokenMeta = tokenMetas[0]
     const firstTokenIpfsUrl = this.getTokenIpfsUrl(nftContractMetadata?.base_uri, firstTokenMeta?.metadata?.reference);
-    if (!firstTokenIpfsUrl.includes('ipfs')) return // if the metadata is not stored on ipfs return
+    if (!firstTokenIpfsUrl || !firstTokenIpfsUrl.includes('ipfs')) return // if the metadata is not stored on ipfs return
 
     await this.ipfsHelperService.pinIpfsFolder(firstTokenIpfsUrl, `${contract_key}`);
     await delay(5000) // delay 5 seconds to ensure that the pinned byzantion pinata url is ready to query in the next step 
@@ -492,6 +492,67 @@ export class NearScraperService {
   };
 
 
+  getNftMetaAttributesFromMeta(tokenIpfsMeta, nftContractMetadata, tokenMeta, contract_key) {
+    let attributes = []
+    switch(contract_key) {
+      case "misfits.tenk.near":
+        if (!tokenIpfsMeta) return;
+        for (const property in tokenIpfsMeta) {
+          const newAttribute = {
+            trait_type: property,
+            value: tokenIpfsMeta[property]
+          }
+          attributes.push(newAttribute)
+        }
+        break;
+
+      case "nearnautnft.near":
+        let attributesObject = JSON.parse(tokenMeta.metadata.extra)
+        for (const property in attributesObject) {
+          const splitProperty = property.split('_')
+          if (splitProperty[0] != "attributes") continue
+          const newAttribute = {
+            trait_type: splitProperty[1].charAt(0).toUpperCase() + splitProperty[1].slice(1),
+            value: attributesObject[property]
+          }
+          attributes.push(newAttribute)
+        }
+        break;
+
+      case "engineart.near":
+        attributes = JSON.parse(tokenMeta.metadata.extra)
+        break;
+
+      default:
+        if (!tokenIpfsMeta) return;
+        attributes = tokenIpfsMeta.attributes;
+        break;
+    }
+
+    // make sure attribute values are strings
+    if (attributes && attributes.length > 0) {
+      attributes = attributes.map((attr) => {
+        return {
+          trait_type: attr.trait_type,
+          value: attr.value.toString()
+        }
+      })
+    }
+
+    // set default attribute if no attributes found
+    if (!attributes) {
+      attributes = [
+        {
+          trait_type: contract_key,
+          value: nftContractMetadata.name
+        }
+      ]
+    }
+    
+    return attributes
+  }
+
+
   async getTokensFromParas(contract_key, collectionSize) {
     const MAX_BATCH_LIMIT = 100;
     let tokenMetas = [];
@@ -509,14 +570,6 @@ export class NearScraperService {
       } 
     }
     return tokenMetas
-  }
-
-
-  async connectNftContract(contract_key) {
-    const near = await connect(nearConfig);
-    const account = await near.account(nearAccountId);
-    const contract = await this.getContract(contract_key, account);
-    return contract
   }
 
 
@@ -596,6 +649,14 @@ export class NearScraperService {
   }
 
 
+  async connectNftContract(contract_key) {
+    const near = await connect(nearConfig);
+    const account = await near.account(nearAccountId);
+    const contract = await this.getContract(contract_key, account);
+    return contract
+  }
+
+
   getTokenIpfsUrl(base_uri, reference) {
     if (base_uri == 'https://nearnaut.mypinata.cloud/ipfs') return null
     if (reference.includes("https")) return reference
@@ -658,67 +719,6 @@ export class NearScraperService {
     tokenIpfsMetas.push(...ipfsMetasBatch.filter((r) => r.status == 200).map((r) => r.data));
 
     return tokenIpfsMetas
-  }
-
-
-  getNftMetaAttributesFromMeta(tokenIpfsMeta, nftContractMetadata, tokenMeta, contract_key) {
-    let attributes = []
-    switch(contract_key) {
-      case "misfits.tenk.near":
-        if (!tokenIpfsMeta) return;
-        for (const property in tokenIpfsMeta) {
-          const newAttribute = {
-            trait_type: property,
-            value: tokenIpfsMeta[property]
-          }
-          attributes.push(newAttribute)
-        }
-        break;
-
-      case "nearnautnft.near":
-        let attributesObject = JSON.parse(tokenMeta.metadata.extra)
-        for (const property in attributesObject) {
-          const splitProperty = property.split('_')
-          if (splitProperty[0] != "attributes") continue
-          const newAttribute = {
-            trait_type: splitProperty[1].charAt(0).toUpperCase() + splitProperty[1].slice(1),
-            value: attributesObject[property]
-          }
-          attributes.push(newAttribute)
-        }
-        break;
-
-      case "engineart.near":
-        attributes = JSON.parse(tokenMeta.metadata.extra)
-        break;
-
-      default:
-        if (!tokenIpfsMeta) return;
-        attributes = tokenIpfsMeta.attributes;
-        break;
-    }
-
-    // make sure attribute values are strings
-    if (attributes && attributes.length > 0) {
-      attributes = attributes.map((attr) => {
-        return {
-          trait_type: attr.trait_type,
-          value: attr.value.toString()
-        }
-      })
-    }
-
-    // set default attribute if no attributes found
-    if (!attributes) {
-      attributes = [
-        {
-          trait_type: contract_key,
-          value: nftContractMetadata.name
-        }
-      ]
-    }
-    
-    return attributes
   }
 
 

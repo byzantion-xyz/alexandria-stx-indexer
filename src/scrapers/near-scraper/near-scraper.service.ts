@@ -701,14 +701,14 @@ export class NearScraperService {
     for (let i = 0; i < tokenMetas.length; i++) {
       let tokenIpfsUrl = this.getTokenIpfsUrl(nftContractMetadata.base_uri, tokenMetas[i].metadata.reference);
       if (!tokenIpfsUrl || tokenIpfsUrl && tokenIpfsUrl == "") continue 
-  
+
       if (tokenIpfsUrl.includes('ipfs') && contract_key != "tinkerunion_nft.enleap.near") {
         tokenIpfsUrl = this.ipfsHelperService.getByzIpfsUrl(tokenIpfsUrl);
       }
   
       tokenIpfsMetaPromises.push(this.fetchIpfsMeta(tokenIpfsUrl))
 
-      if (i % 1 === 0) {
+      if (i % 10 === 0) {
         let ipfsMetasBatch;
         try {
           ipfsMetasBatch = await Promise.all(tokenIpfsMetaPromises)

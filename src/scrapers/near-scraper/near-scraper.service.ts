@@ -241,7 +241,7 @@ export class NearScraperService {
       try {
         let attributes = []
         if (scrape_from_paras) {
-          attributes = tokenMetas[i].attributes;
+          attributes = tokenMetas[i].metadata.attributes;
         } else {
           attributes = this.getNftMetaAttributesFromMeta(tokenIpfsMetas[i], nftContractMetadata, tokenMetas[i], contract_key);
         }

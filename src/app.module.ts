@@ -14,9 +14,16 @@ import { PrismaModule } from './prisma/prisma.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { TasksModule } from './tasks/tasks.module';
 
+import discordConfig from './config/discord.config';
+import appConfig from './config/app.config';
+
 @Module({
   imports: [
-    ConfigModule.forRoot({ envFilePath: ['config.env', '.env'], isGlobal: true }),
+    ConfigModule.forRoot({ 
+      envFilePath: ['config.env', '.env'], 
+      load: [discordConfig, appConfig],
+      isGlobal: true
+    }),
     ScrapersModule,
     ScheduleModule.forRoot(),
     MongooseModule.forRootAsync({

@@ -55,6 +55,27 @@ export class NearScraperService {
       const smartContractScrape = await this.prismaService.smartContractScrape.findUnique({
         where: { smart_contract_id: smartContract.id }
       })
+
+      const numOfCurrentSrapes = await this.prismaService.smartContractScrape.count({
+        where: {
+          stage: { notIn: [SmartContractScrapeStage.getting_tokens, SmartContractScrapeStage.done] }
+        },
+      })
+
+      if (numOfCurrentSrapes > 3) {
+        const errorMsg = `[scraping ${contract_key}] Scrape skipped, 3 scrapes already in progress.`;
+        this.logger.log(errorMsg);
+        await this.prismaService.smartContractScrape.update({ 
+          where: { smart_contract_id: smartContract.id },
+          data: { 
+            outcome: SmartContractScrapeOutcome.failed,
+            outcome_msg: `[${contract_key}] SCRAPE FAILED
+                        - error: \`${errorMsg}\`
+                          `
+          }
+        })
+        return "Contract already scraped succesfully"
+      }
       if (smartContractScrape.outcome == SmartContractScrapeOutcome.succeeded && !force_scrape) {
         this.logger.log(`[scraping ${contract_key}] Scrape skipped, already scraped successfully.`);
         return "Contract already scraped succesfully"
@@ -796,4 +817,22 @@ export class NearScraperService {
       }
     })
   }
+
+  // for edge cases like tinkerunion_nft.enleap.near that have a distinct pin hash for every meta or image
+  // async pinMultiple(tokenMetas, nftContractMetadata, contract_key) {
+  //   if (tokenMetas.length == 0) return
+  //   this.logger.log(`[scraping ${contract_key}] pin multiple`);
+
+  //   let pinPromises = []
+  //   for (let tokenMeta of tokenMetas) {
+  //     const tokenIpfsUrl = this.getTokenIpfsUrl(nftContractMetadata?.base_uri, tokenMeta?.metadata?.reference);
+  //     if (!tokenIpfsUrl || !tokenIpfsUrl.includes('ipfs')) continue // if the metadata is not stored on ipfs continue loop
+
+  //     const pinHash = this.ipfsHelperService.getPinHashFromUrl(tokenIpfsUrl);
+  //     const byzPinataPromise = this.ipfsHelperService.pinByHash(pinHash, `${contract_key} ${tokenMeta?.token_id}`);
+  //     pinPromises.push(byzPinataPromise);
+  //   }
+
+  //   await Promise.all(pinPromises);
+  // };
 }

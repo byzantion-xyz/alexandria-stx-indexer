@@ -30,9 +30,7 @@ const NEAR_PROTOCOL_DB_ID = "174c3df6-0221-4ca7-b966-79ac8d981bdb"
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-const keepAliveAxios = axios.create({
-  httpsAgent: new https.Agent({ keepAlive: true }),
-})
+const keepAliveAxios = axios.create({httpsAgent: new https.Agent({ keepAlive: true })})
 
 @Injectable()
 export class NearScraperService {
@@ -44,14 +42,16 @@ export class NearScraperService {
   ) {}
 
   async scrape(data: runScraperData) {
-    const { contract_key, token_id, starting_token_id, ending_token_id, scrape_from_paras = false, override_frozen = false, force_scrape = false } = data
+    const { contract_key, token_id, starting_token_id, ending_token_id } = data
+    const { scrape_from_paras = false, override_frozen = false, force_scrape = false } = data
     this.logger.log(`[scraping ${contract_key}] START SCRAPE`);
 
-    // create SmartContract, SmartContractScrape, and Collection tables if not exist
+    // create SmartContract, SmartContractScrape, and Collection tables if they don't exist
+    // returns the SmartContract
     const smartContract = await this.createInitialTablesIfNotExist(contract_key);
 
+    // Check if contract should be scraped and return (quit scrape process) if not
     if (!scrape_from_paras) {
-      // Check if contract should be scraped and return (quit scrape process) if not
       const numOfCurrentSrapes = await this.prismaService.smartContractScrape.count({
         where: { stage: { notIn: [SmartContractScrapeStage.getting_tokens, SmartContractScrapeStage.done] } }
       })
@@ -122,21 +122,27 @@ export class NearScraperService {
     }
 
     try {
+      // load SmartContract and Collection
       const smartContract = await this.loadSmartContract(nftContractMetadata, contract_key);
       const loadedCollection = await this.loadCollection(tokenMetas, nftContractMetadata, contract_key, collectionSize, smartContract);
 
+      // pin IPFS to our pinata
       await this.setSmartContractScrapeStage(smartContract.id, SmartContractScrapeStage.pinning);
       await this.pin(tokenMetas, nftContractMetadata, contract_key);
       
+      // load NftMetas + NftMetaAttributes
       await this.setSmartContractScrapeStage(smartContract.id, SmartContractScrapeStage.loading_nft_metas);
       await this.loadNftMetasAndTheirAttributes(tokenMetas, nftContractMetadata, smartContract.id, contract_key, loadedCollection, scrape_from_paras);
       
+      // update NftMeta + NftMetaAttributes rarities
       await this.setSmartContractScrapeStage(smartContract.id, SmartContractScrapeStage.updating_rarities);
       await this.updateRarities(contract_key, override_frozen);
 
+      // create CollectionAttributes
       await this.setSmartContractScrapeStage(smartContract.id, SmartContractScrapeStage.creating_collection_attributes);
       await this.createCollectionAttributes(contract_key);
 
+      // mark scrape as done and succeeded
       await this.prismaService.smartContractScrape.update({ 
         where: { smart_contract_id: smartContract.id },
         data: {
@@ -157,7 +163,6 @@ export class NearScraperService {
       await this.createSmartContractScrapeError(error, nftContractMetadata, tokenMetas[0], contract_key);
       return "Failure"
     }
-
     return "Finished"
   }
 
@@ -562,7 +567,7 @@ export class NearScraperService {
     }
 
     // set default attribute if no attributes found
-    if (!attributes) {
+    if (!attributes || Object.keys(attributes).length === 0 && attributes.constructor === Object) {
       attributes = [
         {
           trait_type: contract_key,

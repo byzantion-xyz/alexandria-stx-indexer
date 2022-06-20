@@ -355,6 +355,7 @@ enum SmartContractScrapeStage {
 }
 
 enum SmartContractScrapeOutcome {
+  skipped
   succeeded
   failed
 }

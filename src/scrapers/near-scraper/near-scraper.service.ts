@@ -51,31 +51,28 @@ export class NearScraperService {
     const smartContract = await this.createInitialTablesIfNotExist(contract_key);
 
     if (!scrape_from_paras) {
-      // Check if contract should be scraped and return if not
-      const smartContractScrape = await this.prismaService.smartContractScrape.findUnique({
-        where: { smart_contract_id: smartContract.id }
-      })
-
+      // Check if contract should be scraped and return (quit scrape process) if not
       const numOfCurrentSrapes = await this.prismaService.smartContractScrape.count({
-        where: {
-          stage: { notIn: [SmartContractScrapeStage.getting_tokens, SmartContractScrapeStage.done] }
-        },
+        where: { stage: { notIn: [SmartContractScrapeStage.getting_tokens, SmartContractScrapeStage.done] } }
       })
 
       if (numOfCurrentSrapes > 3) {
-        const errorMsg = `[scraping ${contract_key}] Scrape skipped, 3 scrapes already in progress.`;
-        this.logger.log(errorMsg);
+        const skipMsg = `[scraping ${contract_key}] Scrape skipped, 3 scrapes already in progress.`;
+        this.logger.log(skipMsg);
         await this.prismaService.smartContractScrape.update({ 
           where: { smart_contract_id: smartContract.id },
           data: { 
-            outcome: SmartContractScrapeOutcome.failed,
-            outcome_msg: `[${contract_key}] SCRAPE FAILED
-                        - error: \`${errorMsg}\`
-                          `
+            outcome: SmartContractScrapeOutcome.skipped,
+            outcome_msg: `[${contract_key}] Scrape skipped
+                          \`${skipMsg}\``
           }
         })
-        return "Contract already scraped succesfully"
+        return "Contract scrape skipped--too many scrapes currenlty in progress."
       }
+
+      const smartContractScrape = await this.prismaService.smartContractScrape.findUnique({
+        where: { smart_contract_id: smartContract.id }
+      })
       if (smartContractScrape.outcome == SmartContractScrapeOutcome.succeeded && !force_scrape) {
         this.logger.log(`[scraping ${contract_key}] Scrape skipped, already scraped successfully.`);
         return "Contract already scraped succesfully"

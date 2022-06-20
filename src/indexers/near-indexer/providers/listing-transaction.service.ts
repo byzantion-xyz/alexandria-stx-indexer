@@ -29,6 +29,7 @@ export class ListingTransactionService {
 
     const token_id = this.txHelper.extractArgumentData(args, scf, 'token_id');
     let contract_key = this.txHelper.extractArgumentData(args, scf, 'contract_key');
+    const list_action = this.txHelper.extractArgumentData(args, scf, 'list_action');
 
     // Check if custodial
     if (sc.type === SmartContractType.non_fungible_tokens) {
@@ -36,9 +37,9 @@ export class ListingTransactionService {
       contract_key = sc.contract_key;
     }
 
-    const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);    
+    const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
 
-    if (nftMeta && this.txHelper.isNewNftListOrSale(tx, nftMeta.nft_state)) {
+    if (nftMeta && this.txHelper.isNewNftListOrSale(tx, nftMeta.nft_state) && list_action === 'sale') {
       const price = this.txHelper.extractArgumentData(args, scf, 'price');
 
       let update = { 
@@ -71,8 +72,12 @@ export class ListingTransactionService {
 
       txResult.processed = true;
     } else if (nftMeta) {
-      this.logger.log(`Too Late`);
-      // TODO: Create possible missing action
+      if (list_action === 'sale') {
+        this.logger.log(`Too Late`);
+        // TODO: Create possible missing action
+      } else {
+        this.logger.log(`Msg market_type is: ${list_action}. No action required`);        
+      }
       txResult.processed = true;
     } else {
       this.logger.log(`NftMeta not found by`, { contract_key, token_id });

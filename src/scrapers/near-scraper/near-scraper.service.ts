@@ -95,8 +95,8 @@ export class NearScraperService {
 
     // Get contract data from chain
     let contract_id = contract_key
-    const isTokenSeries = contract_key.includes(':');
-    if (isTokenSeries) contract_id = contract_key.split(':')[0]
+    const isParasCustodialCollection = contract_key.includes(':');
+    if (isParasCustodialCollection) contract_id = contract_key.split(':')[0]
     const contract = await this.connectNftContract(contract_id);
     const nftContractMetadata = await contract.nft_metadata();
     const collectionSize = await contract.nft_total_supply();
@@ -113,8 +113,8 @@ export class NearScraperService {
         const token = await this.getTokenMetaFromContract(contract, token_id, contract_key);
         tokenMetas.push(token);
       } 
-      if (isTokenSeries) {
-        const { tokenMetas: tokens, error } = await this.getAllTokensFromParasCustodialContract(contract_key);
+      if (isParasCustodialCollection) {
+        const { tokenMetas: tokens, error } = await this.getAllTokensFromParasCustodialCollection(contract_key);
         tokenMetas = tokens;
         if (error) gettingTokensError = error
       } else {
@@ -132,7 +132,7 @@ export class NearScraperService {
       // load SmartContract and Collection
       const smartContract = await this.loadSmartContract(nftContractMetadata, contract_key);
       let title = nftContractMetadata.name
-      if (isTokenSeries) title = tokenMetas[0].metadata.title.split('#')[0]?.trim();
+      if (isParasCustodialCollection) title = tokenMetas[0].metadata.title.split('#')[0]?.trim();
       const loadedCollection = await this.loadCollection(tokenMetas, nftContractMetadata.base_uri, title, contract_key, collectionSize, smartContract);
 
       // pin IPFS to our pinata
@@ -250,11 +250,15 @@ export class NearScraperService {
     if (tokenMetas.length == 0) return
     this.logger.log(`[scraping ${contract_key}] Loading NftMetas and their NftMetaAttributes`);
 
-    const tokenIpfsMetas = await this.getAllTokenIpfsMetas(tokenMetas, nftContractMetadataBaseUri, contract_key);
+    let tokenIpfsMetas = []
+    const isParasCustodialCollection = contract_key.includes(':');
+    if (!isParasCustodialCollection) {
+      tokenIpfsMetas = await this.getAllTokenIpfsMetas(tokenMetas, nftContractMetadataBaseUri, contract_key);
 
-    if (tokenIpfsMetas.length != 0 && tokenIpfsMetas.length != tokenMetas.length) {
-      const error = `[scraping ${contract_key}] # of token ipfs metas (${tokenIpfsMetas.length}) does not equal # of tokens scraped from contract (${tokenMetas.length})`
-      throw new Error(error)
+      if (tokenIpfsMetas.length != 0 && tokenIpfsMetas.length != tokenMetas.length) {
+        const error = `[scraping ${contract_key}] # of token ipfs metas (${tokenIpfsMetas.length}) does not equal # of tokens scraped from contract (${tokenMetas.length})`
+        throw new Error(error)
+      }
     }
 
     let nftMetaPromises = []
@@ -272,7 +276,7 @@ export class NearScraperService {
 
       try {
         let attributes = []
-        if (scrape_from_paras_api) {
+        if (scrape_from_paras_api || isParasCustodialCollection) {
           attributes = tokenMetas[i].metadata.attributes;
         } else {
           attributes = this.getNftMetaAttributesFromMeta(tokenIpfsMetas[i], collection.title, tokenMetas[i], contract_key);
@@ -589,7 +593,7 @@ export class NearScraperService {
   }
 
 
-  async getAllTokensFromParasCustodialContract(contract_key) {
+  async getAllTokensFromParasCustodialCollection(contract_key) {
     try {
       // get collection_id from Paras API
       const res = await axios.get(`https://api-v2-mainnet.paras.id/token/${contract_key}`);
@@ -761,10 +765,6 @@ export class NearScraperService {
 
 
   async getAllTokenIpfsMetas(tokenMetas, nftContractMetadataBaseUri, contract_key) {
-    const isTokenSeries = contract_key.includes(':');
-    let ipfsMetaBatchSize = 10
-    if (isTokenSeries) ipfsMetaBatchSize = 5
-
     let tokenIpfsMetaPromises = []
     let tokenIpfsMetas = []
 
@@ -772,19 +772,13 @@ export class NearScraperService {
       let tokenIpfsUrl = this.getTokenIpfsUrl(nftContractMetadataBaseUri, tokenMetas[i].metadata.reference);
       if (!tokenIpfsUrl || tokenIpfsUrl && tokenIpfsUrl == "") continue 
 
-      if (tokenIpfsUrl.includes('ipfs') && contract_key != "tinkerunion_nft.enleap.near" && contract_key != "x.paras.near::390877") {
+      if (tokenIpfsUrl.includes('ipfs') && contract_key != "tinkerunion_nft.enleap.near") {
         tokenIpfsUrl = this.ipfsHelperService.getByzIpfsUrl(tokenIpfsUrl);
       }
   
       tokenIpfsMetaPromises.push(this.fetchIpfsMeta(tokenIpfsUrl))
 
-      console.log(tokenIpfsUrl);
-
-      if (i % 20 === 0) {
-        console.log(i);
-      }
-
-      if (i % 1 === 0) {
+      if (i % 10 === 0) {
         let ipfsMetasBatch;
         try {
           ipfsMetasBatch = await Promise.all(tokenIpfsMetaPromises)

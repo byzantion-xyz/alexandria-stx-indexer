@@ -784,7 +784,7 @@ export class NearScraperService {
         console.log(i);
       }
 
-      if (i % ipfsMetaBatchSize === 0) {
+      if (i % 1 === 0) {
         let ipfsMetasBatch;
         try {
           ipfsMetasBatch = await Promise.all(tokenIpfsMetaPromises)
@@ -873,21 +873,21 @@ export class NearScraperService {
     })
   }
 
-  // // for cases like tinkerunion_nft.enleap.near that have a distinct pin hash for every meta or image
-  // async pinMultiple(tokenMetas, nftContractMetadataBaseUri, contract_key) {
-  //   if (tokenMetas.length == 0) return
-  //   this.logger.log(`[scraping ${contract_key}] pin multiple`);
+  // for cases like tinkerunion_nft.enleap.near that have a distinct pin hash for every meta or image
+  async pinMultiple(tokenMetas, nftContractMetadataBaseUri, contract_key) {
+    if (tokenMetas.length == 0) return
+    this.logger.log(`[scraping ${contract_key}] pin multiple`);
 
-  //   let pinPromises = []
-  //   for (let tokenMeta of tokenMetas) {
-  //     const tokenIpfsUrl = this.getTokenIpfsUrl(nftContractMetadataBaseUri, tokenMeta?.metadata?.reference);
-  //     if (!tokenIpfsUrl || !tokenIpfsUrl.includes('ipfs')) continue // if the metadata is not stored on ipfs continue loop
+    let pinPromises = []
+    for (let tokenMeta of tokenMetas) {
+      const tokenIpfsUrl = this.getTokenIpfsUrl(nftContractMetadataBaseUri, tokenMeta?.metadata?.reference);
+      if (!tokenIpfsUrl || !tokenIpfsUrl.includes('ipfs')) continue // if the metadata is not stored on ipfs continue loop
 
-  //     const pinHash = this.ipfsHelperService.getPinHashFromUrl(tokenIpfsUrl);
-  //     const byzPinataPromise = this.ipfsHelperService.pinByHash(pinHash, `${contract_key} ${tokenMeta?.token_id} Meta`);
-  //     pinPromises.push(byzPinataPromise);
-  //   }
+      const pinHash = this.ipfsHelperService.getPinHashFromUrl(tokenIpfsUrl);
+      const byzPinataPromise = this.ipfsHelperService.pinByHash(pinHash, `${contract_key} ${tokenMeta?.token_id} Meta`);
+      pinPromises.push(byzPinataPromise);
+    }
 
-  //   await Promise.all(pinPromises);
-  // };
+    await Promise.all(pinPromises);
+  };
 }

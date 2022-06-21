@@ -134,9 +134,9 @@ export class NearScraperService {
     try {
       // load SmartContract and Collection
       const smartContract = await this.loadSmartContract(nftContractMetadata, contract_key);
-      let title = nftContractMetadata.name
-      if (isParasCustodialCollection) title = tokenMetas[0].metadata.title.split('#')[0]?.trim();
-      const loadedCollection = await this.loadCollection(tokenMetas, nftContractMetadata.base_uri, title, contract_key, collectionSize, smartContract);
+      let collectionTitle = nftContractMetadata.name
+      if (isParasCustodialCollection) collectionTitle = tokenMetas[0].metadata.collection.trim();
+      const loadedCollection = await this.loadCollection(tokenMetas, nftContractMetadata.base_uri, collectionTitle, contract_key, smartContract);
 
       // pin IPFS to our pinata
       await this.setSmartContractScrapeStage(smartContract.id, SmartContractScrapeStage.pinning);
@@ -220,7 +220,7 @@ export class NearScraperService {
   }
 
 
-  async loadCollection(tokenMetas, nftContractMetadataBaseUri, title, contract_key, collectionSize, smartContract) {
+  async loadCollection(tokenMetas, nftContractMetadataBaseUri, collectionTitle, contract_key, smartContract) {
     if (tokenMetas.length == 0) return
     this.logger.log(`[scraping ${contract_key}] Loading Collection`);
 
@@ -238,16 +238,18 @@ export class NearScraperService {
     const isParasCustodialCollection = contract_key.includes(':');
     if (isParasCustodialCollection) slug = firstTokenMeta.metadata.collection_id
 
+    const data = {
+      collection_size: Number(tokenMetas.length),
+      description: firstTokenMeta?.metadata?.description || tokenIpfsMeta?.description || "",
+      cover_image: this.ipfsHelperService.getByzIpfsUrl(firstTokenIpfsImageUrl),
+      title: collectionTitle,
+      slug: slug
+    }
+
     const loadedCollection = await this.prismaService.collection.upsert({
       where: { smart_contract_id: smartContract.id },
-      update: {},
-      create: {
-        collection_size: Number(collectionSize),
-        description: firstTokenMeta?.metadata?.description || tokenIpfsMeta?.description || "",
-        cover_image: this.ipfsHelperService.getByzIpfsUrl(firstTokenIpfsImageUrl),
-        title: title,
-        slug: slug
-      }
+      update: data,
+      create: data
     });
     return loadedCollection
   }

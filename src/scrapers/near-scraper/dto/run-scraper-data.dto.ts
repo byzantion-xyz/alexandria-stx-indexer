@@ -1,5 +1,6 @@
 export interface runScraperData {
-    contract_key: string,
+    contract_key?: string,
+    token_series_id?: string,
     token_id?: number,
     starting_token_id?: number,
     ending_token_id?: number,

@@ -778,6 +778,12 @@ export class NearScraperService {
   
       tokenIpfsMetaPromises.push(this.fetchIpfsMeta(tokenIpfsUrl))
 
+      console.log(tokenIpfsUrl);
+
+      if (i % 20 === 0) {
+        console.log(i);
+      }
+
       if (i % ipfsMetaBatchSize === 0) {
         let ipfsMetasBatch;
         try {

@@ -612,7 +612,7 @@ export class NearScraperService {
       let currentSkip = 0;
       let tokenMetas = [];
       while (true) {
-        const res = await axios.get("https://api-v2-mainnet.paras.id/token-series", {
+        const res = await axios.get("https://api-v2-mainnet.paras.id/token", {
           params: {
             collection_id: collection_id,
             __skip: currentSkip,

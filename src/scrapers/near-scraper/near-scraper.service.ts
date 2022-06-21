@@ -53,7 +53,10 @@ export class NearScraperService {
     // Check if contract should be scraped and return (quit scrape process) if not
     if (!scrape_from_paras_api) {
       const numOfCurrentSrapes = await this.prismaService.smartContractScrape.count({
-        where: { stage: { notIn: [SmartContractScrapeStage.getting_tokens, SmartContractScrapeStage.done] } }
+        where: { 
+          stage: { notIn: [SmartContractScrapeStage.getting_tokens, SmartContractScrapeStage.done] },
+          outcome: { not: SmartContractScrapeOutcome.failed }
+        }
       })
 
       if (numOfCurrentSrapes > 3) {
@@ -101,7 +104,7 @@ export class NearScraperService {
     const nftContractMetadata = await contract.nft_metadata();
     const collectionSize = await contract.nft_total_supply();
 
-    // Get tokens data
+    // Get tokens
     let tokenMetas = []
     let gettingTokensError;
     if (scrape_from_paras_api) {
@@ -231,6 +234,10 @@ export class NearScraperService {
       tokenIpfsMeta = res.data
     }
 
+    let slug = contract_key;
+    const isParasCustodialCollection = contract_key.includes(':');
+    if (isParasCustodialCollection) slug = firstTokenMeta.metadata.collection_id
+
     const loadedCollection = await this.prismaService.collection.upsert({
       where: { smart_contract_id: smartContract.id },
       update: {},
@@ -239,7 +246,7 @@ export class NearScraperService {
         description: firstTokenMeta?.metadata?.description || tokenIpfsMeta?.description || "",
         cover_image: this.ipfsHelperService.getByzIpfsUrl(firstTokenIpfsImageUrl),
         title: title,
-        slug: contract_key
+        slug: slug
       }
     });
     return loadedCollection
@@ -303,8 +310,9 @@ export class NearScraperService {
               },
             },
             json_meta: {
-              "chain_meta": tokenMetas[i],
-              "ipfs_meta": tokenIpfsMetas[i]
+              "chain_meta": isParasCustodialCollection ? {} : tokenMetas[i],
+              "ipfs_meta": tokenIpfsMetas[i] ? tokenIpfsMetas[i] : {},
+              "paras_api_meta": isParasCustodialCollection ? tokenMetas[i] : {}
             }
           }
         })

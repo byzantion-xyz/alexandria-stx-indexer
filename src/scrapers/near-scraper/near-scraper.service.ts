@@ -133,7 +133,7 @@ export class NearScraperService {
       }
     }
     if (gettingTokensError) {
-      await this.createSmartContractScrapeError(gettingTokensError, nftContractMetadata.base_uri, tokenMetas[0], contract_key);
+      //await this.createSmartContractScrapeError(gettingTokensError, nftContractMetadata.base_uri, tokenMetas[0], contract_key);
       return
     }
 
@@ -142,15 +142,15 @@ export class NearScraperService {
       const smartContract = await this.loadSmartContract(nftContractMetadata, contract_key);
       let collectionTitle = nftContractMetadata.name
       if (isParasCustodialCollection) collectionTitle = tokenMetas[0].metadata.collection.trim();
-      const loadedCollection = await this.loadCollection(tokenMetas, nftContractMetadata.base_uri, collectionTitle, contract_key, smartContract);
+      const loadedCollection = await this.loadCollection(tokenMetas, nftContractMetadata.base_uri, collectionTitle, slug, smartContract);
 
       // pin IPFS to our pinata
       await this.setSmartContractScrapeStage(smartContract.id, SmartContractScrapeStage.pinning);
-      await this.pin(tokenMetas, nftContractMetadata.base_uri, contract_key);
+      await this.pin(tokenMetas, nftContractMetadata.base_uri, slug);
       
       // load NftMetas + NftMetaAttributes
       await this.setSmartContractScrapeStage(smartContract.id, SmartContractScrapeStage.loading_nft_metas);
-      await this.loadNftMetasAndTheirAttributes(tokenMetas, nftContractMetadata.base_uri, smartContract.id, contract_key, loadedCollection, scrape_from_paras_api);
+      await this.loadNftMetasAndTheirAttributes(tokenMetas, nftContractMetadata.base_uri, smartContract.id, slug, loadedCollection, scrape_from_paras_api, isParasCustodialCollection);
       
       // update NftMeta + NftMetaAttributes rarities
       await this.setSmartContractScrapeStage(smartContract.id, SmartContractScrapeStage.updating_rarities);
@@ -166,33 +166,33 @@ export class NearScraperService {
         data: {
           stage: SmartContractScrapeStage.done,
           outcome: SmartContractScrapeOutcome.succeeded,
-          outcome_msg: `[scraping ${contract_key}] Successfully scraped contract!`
+          outcome_msg: `[scraping ${slug}] Successfully scraped contract!`
         }
       })
-      this.logger.log(`[scraping ${contract_key}] SCRAPING COMPLETE`);
+      this.logger.log(`[scraping ${slug}] SCRAPING COMPLETE`);
 
     } catch(err) {
-      this.logger.error(`[scraping ${contract_key}] Error while scraping: ${err}`);
+      this.logger.error(`[scraping ${slug}] Error while scraping: ${err}`);
       let error = err.stack;
       if (err.isAxiosError) {
         error = JSON.stringify(err.toJSON(), null, 2);
         error.innerException = err.response.data;
       }
-      await this.createSmartContractScrapeError(error, nftContractMetadata.base_uri, tokenMetas[0], contract_key);
+      //await this.createSmartContractScrapeError(error, nftContractMetadata.base_uri, tokenMetas[0], contract_key);
       return "Failure"
     }
     return "Finished"
   }
 
 
-  async pin(tokenMetas, nftContractMetadataBaseUri, contract_key) {
+  async pin(tokenMetas, nftContractMetadataBaseUri, slug) {
     if (tokenMetas.length == 0) return
-    this.logger.log(`[scraping ${contract_key}] pin`);
+    this.logger.log(`[scraping ${slug}] pin`);
     const firstTokenMeta = tokenMetas[0]
     const firstTokenIpfsUrl = this.getTokenIpfsUrl(nftContractMetadataBaseUri, firstTokenMeta?.metadata?.reference);
     if (!firstTokenIpfsUrl || !firstTokenIpfsUrl.includes('ipfs')) return // if the metadata is not stored on ipfs return
 
-    await this.ipfsHelperService.pinIpfsFolder(firstTokenIpfsUrl, `${contract_key}`);
+    await this.ipfsHelperService.pinIpfsFolder(firstTokenIpfsUrl, `${slug}`);
     await delay(5000) // delay 5 seconds to ensure that the pinned byzantion pinata url is ready to query in the next step 
   };
 
@@ -226,9 +226,9 @@ export class NearScraperService {
   }
 
 
-  async loadCollection(tokenMetas, nftContractMetadataBaseUri, collectionTitle, contract_key, smartContract) {
+  async loadCollection(tokenMetas, nftContractMetadataBaseUri, collectionTitle, slug, smartContract) {
     if (tokenMetas.length == 0) return
-    this.logger.log(`[scraping ${contract_key}] Loading Collection`);
+    this.logger.log(`[scraping ${slug}] Loading Collection`);
 
     // get first token data for the collection record data
     const firstTokenMeta = tokenMetas[0]
@@ -239,10 +239,6 @@ export class NearScraperService {
       const res = await axios.get(firstTokenIpfsUrl);
       tokenIpfsMeta = res.data
     }
-
-    let slug = contract_key;
-    const isParasCustodialCollection = contract_key.includes(':');
-    if (isParasCustodialCollection) slug = firstTokenMeta.metadata.collection_id
 
     const data = {
       collection_size: Number(tokenMetas.length),
@@ -261,17 +257,16 @@ export class NearScraperService {
   }
 
 
-  async loadNftMetasAndTheirAttributes(tokenMetas, nftContractMetadataBaseUri, smartContractId, contract_key, collection, scrape_from_paras_api) {
+  async loadNftMetasAndTheirAttributes(tokenMetas, nftContractMetadataBaseUri, smartContractId, slug, collection, scrape_from_paras_api, isParasCustodialCollection) {
     if (tokenMetas.length == 0) return
-    this.logger.log(`[scraping ${contract_key}] Loading NftMetas and their NftMetaAttributes`);
+    this.logger.log(`[scraping ${slug}] Loading NftMetas and their NftMetaAttributes`);
 
     let tokenIpfsMetas = []
-    const isParasCustodialCollection = contract_key.includes(':');
     if (!isParasCustodialCollection) {
-      tokenIpfsMetas = await this.getAllTokenIpfsMetas(tokenMetas, nftContractMetadataBaseUri, contract_key);
+      tokenIpfsMetas = await this.getAllTokenIpfsMetas(tokenMetas, nftContractMetadataBaseUri, slug);
 
       if (tokenIpfsMetas.length != 0 && tokenIpfsMetas.length != tokenMetas.length) {
-        const error = `[scraping ${contract_key}] # of token ipfs metas (${tokenIpfsMetas.length}) does not equal # of tokens scraped from contract (${tokenMetas.length})`
+        const error = `[scraping ${slug}] # of token ipfs metas (${tokenIpfsMetas.length}) does not equal # of tokens scraped from contract (${tokenMetas.length})`
         throw new Error(error)
       }
     }
@@ -294,7 +289,7 @@ export class NearScraperService {
         if (scrape_from_paras_api || isParasCustodialCollection) {
           attributes = tokenMetas[i].metadata.attributes;
         } else {
-          attributes = this.getNftMetaAttributesFromMeta(tokenIpfsMetas[i], collection.title, tokenMetas[i], contract_key);
+          attributes = this.getNftMetaAttributesFromMeta(tokenIpfsMetas[i], collection.title, tokenMetas[i], slug);
         }
 
         let mediaUrl = this.getTokenIpfsMediaUrl(nftContractMetadataBaseUri, tokenMetas[i].metadata.media)
@@ -331,18 +326,18 @@ export class NearScraperService {
           nftMetaPromises = []
         } 
         if (i % 200 === 0) {
-          this.logger.log(`[scraping ${contract_key}] NftMetas processed: ${i} of ${tokenMetas.length}`);
+          this.logger.log(`[scraping ${slug}] NftMetas processed: ${i} of ${tokenMetas.length}`);
         } 
       } catch(err) {
         this.logger.error(err);
         this.logger.error(`
-          [scraping ${contract_key}] Error processing NftMeta: ${i} of ${tokenMetas.length}. 
+          [scraping ${slug}] Error processing NftMeta: ${i} of ${tokenMetas.length}. 
           Token Meta: ${tokenMetas[i]}
         `);
       }
     }
     await Promise.all(nftMetaPromises)
-    this.logger.log(`[scraping ${contract_key}] NftMetas processed: ${tokenMetas.length} of ${tokenMetas.length}`);
+    this.logger.log(`[scraping ${slug}] NftMetas processed: ${tokenMetas.length} of ${tokenMetas.length}`);
     return nftMetaPromises.length
   }
 
@@ -548,9 +543,9 @@ export class NearScraperService {
   };
 
 
-  getNftMetaAttributesFromMeta(tokenIpfsMeta, collectionTitle, tokenMeta, contract_key) {
+  getNftMetaAttributesFromMeta(tokenIpfsMeta, collectionTitle, tokenMeta, slug) {
     let attributes = []
-    switch(contract_key) {
+    switch(slug) {
       case "misfits.tenk.near":
         if (!tokenIpfsMeta) return;
         for (const property in tokenIpfsMeta) {
@@ -599,7 +594,7 @@ export class NearScraperService {
     if (!attributes || Object.keys(attributes).length === 0 && attributes.constructor === Object) {
       attributes = [
         {
-          trait_type: contract_key,
+          trait_type: slug,
           value: collectionTitle
         }
       ]
@@ -780,7 +775,7 @@ export class NearScraperService {
   };
 
 
-  async getAllTokenIpfsMetas(tokenMetas, nftContractMetadataBaseUri, contract_key) {
+  async getAllTokenIpfsMetas(tokenMetas, nftContractMetadataBaseUri, slug) {
     let tokenIpfsMetaPromises = []
     let tokenIpfsMetas = []
 
@@ -788,7 +783,7 @@ export class NearScraperService {
       let tokenIpfsUrl = this.getTokenIpfsUrl(nftContractMetadataBaseUri, tokenMetas[i].metadata.reference);
       if (!tokenIpfsUrl || tokenIpfsUrl && tokenIpfsUrl == "") continue 
 
-      if (tokenIpfsUrl.includes('ipfs') && contract_key != "tinkerunion_nft.enleap.near") {
+      if (tokenIpfsUrl.includes('ipfs') && slug != "tinkerunion_nft.enleap.near") {
         tokenIpfsUrl = this.ipfsHelperService.getByzIpfsUrl(tokenIpfsUrl);
       }
   
@@ -800,7 +795,7 @@ export class NearScraperService {
           ipfsMetasBatch = await Promise.all(tokenIpfsMetaPromises)
         } catch(err) {
           this.logger.error(err);
-          await this.createSmartContractScrapeError(err, nftContractMetadataBaseUri, tokenMetas[i], contract_key);
+          //await this.createSmartContractScrapeError(err, nftContractMetadataBaseUri, tokenMetas[i], slug);
         }
         if (ipfsMetasBatch) {
           tokenIpfsMetas.push(...ipfsMetasBatch.filter((r) => r.status == 200).map((r) => r.data));
@@ -809,7 +804,7 @@ export class NearScraperService {
         tokenIpfsMetaPromises = []
       } 
       if (i % 200 === 0) {
-        this.logger.log(`[scraping ${contract_key}] Retrieved ${i} of ${tokenMetas.length} tokens' IPFS metadata`);
+        this.logger.log(`[scraping ${slug}] Retrieved ${i} of ${tokenMetas.length} tokens' IPFS metadata`);
       } 
     }
 
@@ -883,21 +878,21 @@ export class NearScraperService {
     })
   }
 
-  // for cases like tinkerunion_nft.enleap.near that have a distinct pin hash for every meta or image
-  async pinMultiple(tokenMetas, nftContractMetadataBaseUri, contract_key) {
-    if (tokenMetas.length == 0) return
-    this.logger.log(`[scraping ${contract_key}] pin multiple`);
+  // for cases like tinkerunion_nft.enleap.near that have a distinct pin hash for every image
+  // async pinMultipleImages(tokenMetas, nftContractMetadataBaseUri, contract_key) {
+  //   if (tokenMetas.length == 0) return
+  //   this.logger.log(`[scraping ${contract_key}] pin multiple`);
 
-    let pinPromises = []
-    for (let tokenMeta of tokenMetas) {
-      const tokenIpfsUrl = this.getTokenIpfsUrl(nftContractMetadataBaseUri, tokenMeta?.metadata?.reference);
-      if (!tokenIpfsUrl || !tokenIpfsUrl.includes('ipfs')) continue // if the metadata is not stored on ipfs continue loop
+  //   let pinPromises = []
+  //   for (let tokenMeta of tokenMetas) {
+  //     const tokenIpfsUrl = this.getTokenIpfsUrl(nftContractMetadataBaseUri, tokenMeta?.metadata?.media);
+  //     if (!tokenIpfsUrl || !tokenIpfsUrl.includes('ipfs')) continue // if the metadata is not stored on ipfs continue loop
 
-      const pinHash = this.ipfsHelperService.getPinHashFromUrl(tokenIpfsUrl);
-      const byzPinataPromise = this.ipfsHelperService.pinByHash(pinHash, `${contract_key} ${tokenMeta?.token_id} Meta`);
-      pinPromises.push(byzPinataPromise);
-    }
+  //     const pinHash = this.ipfsHelperService.getPinHashFromUrl(tokenIpfsUrl);
+  //     const byzPinataPromise = this.ipfsHelperService.pinByHash(pinHash, `${contract_key} ${tokenMeta?.token_id} Meta`);
+  //     pinPromises.push(byzPinataPromise);
+  //   }
 
-    await Promise.all(pinPromises);
-  };
+  //   await Promise.all(pinPromises);
+  // };
 }

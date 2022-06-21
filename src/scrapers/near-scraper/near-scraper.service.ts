@@ -132,7 +132,7 @@ export class NearScraperService {
       // load SmartContract and Collection
       const smartContract = await this.loadSmartContract(nftContractMetadata, contract_key);
       let title = nftContractMetadata.name
-      if (isTokenSeries) title = tokenMetas[0].metadata.title.split('#')[0]
+      if (isTokenSeries) title = tokenMetas[0].metadata.title.split('#')[0]?.trim();
       const loadedCollection = await this.loadCollection(tokenMetas, nftContractMetadata.base_uri, title, contract_key, collectionSize, smartContract);
 
       // pin IPFS to our pinata
@@ -588,7 +588,7 @@ export class NearScraperService {
     return attributes
   }
 
-  
+
   async getAllTokensFromParasCustodialContract(contract_key) {
     try {
       // get collection_id from Paras API
@@ -761,6 +761,10 @@ export class NearScraperService {
 
 
   async getAllTokenIpfsMetas(tokenMetas, nftContractMetadataBaseUri, contract_key) {
+    const isTokenSeries = contract_key.includes(':');
+    let ipfsMetaBatchSize = 10
+    if (isTokenSeries) ipfsMetaBatchSize = 5
+
     let tokenIpfsMetaPromises = []
     let tokenIpfsMetas = []
 
@@ -774,7 +778,7 @@ export class NearScraperService {
   
       tokenIpfsMetaPromises.push(this.fetchIpfsMeta(tokenIpfsUrl))
 
-      if (i % 10 === 0) {
+      if (i % ipfsMetaBatchSize === 0) {
         let ipfsMetasBatch;
         try {
           ipfsMetasBatch = await Promise.all(tokenIpfsMetaPromises)
@@ -863,18 +867,18 @@ export class NearScraperService {
     })
   }
 
-  // for edge cases like tinkerunion_nft.enleap.near that have a distinct pin hash for every meta or image
-  // async pinMultiple(tokenMetas, nftContractMetadata, contract_key) {
+  // // for cases like tinkerunion_nft.enleap.near that have a distinct pin hash for every meta or image
+  // async pinMultiple(tokenMetas, nftContractMetadataBaseUri, contract_key) {
   //   if (tokenMetas.length == 0) return
   //   this.logger.log(`[scraping ${contract_key}] pin multiple`);
 
   //   let pinPromises = []
   //   for (let tokenMeta of tokenMetas) {
-  //     const tokenIpfsUrl = this.getTokenIpfsUrl(nftContractMetadata?.base_uri, tokenMeta?.metadata?.reference);
+  //     const tokenIpfsUrl = this.getTokenIpfsUrl(nftContractMetadataBaseUri, tokenMeta?.metadata?.reference);
   //     if (!tokenIpfsUrl || !tokenIpfsUrl.includes('ipfs')) continue // if the metadata is not stored on ipfs continue loop
 
   //     const pinHash = this.ipfsHelperService.getPinHashFromUrl(tokenIpfsUrl);
-  //     const byzPinataPromise = this.ipfsHelperService.pinByHash(pinHash, `${contract_key} ${tokenMeta?.token_id}`);
+  //     const byzPinataPromise = this.ipfsHelperService.pinByHash(pinHash, `${contract_key} ${tokenMeta?.token_id} Meta`);
   //     pinPromises.push(byzPinataPromise);
   //   }
 

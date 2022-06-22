@@ -59,7 +59,7 @@ export class NearScraperService {
     // create SmartContract, Collection, and CollectionScrape tables if they don't exist
     const smartContract = await this.createSmartContract(contract_key);
     const collection = await this.createCollection(smartContract.id, slug);
-    await this.createCollectionScrape(collection.id);
+    const collectionScrape = await this.createCollectionScrape(collection.id);
 
     // Check if contract should be scraped and return (quit scrape process) if not
     if (!scrape_non_custodial_from_paras) {
@@ -130,7 +130,7 @@ export class NearScraperService {
       const smartContract = await this.loadSmartContract(nftContractMetadata, contract_key);
       let collectionTitle = nftContractMetadata.name
       if (isParasCustodialCollection) collectionTitle = tokenMetas[0].metadata.collection.trim();
-      const loadedCollection = await this.loadCollection(tokenMetas, nftContractMetadata.base_uri, collectionTitle, slug);
+      const loadedCollection = await this.loadCollection(tokenMetas, nftContractMetadata.base_uri, collectionTitle, collectionScrape.id, smartContract.id, slug);
 
       // pin IPFS to our pinata
       await this.setCollectionScrapeStage(collection.id, CollectionScrapeStage.pinning);
@@ -207,7 +207,7 @@ export class NearScraperService {
   }
 
 
-  async loadCollection(tokenMetas, nftContractMetadataBaseUri, collectionTitle, slug) {
+  async loadCollection(tokenMetas, nftContractMetadataBaseUri, collectionTitle, collectionScrape, smartContractId, slug) {
     if (tokenMetas.length == 0) return
     this.logger.log(`[scraping ${slug}] Loading Collection`);
 
@@ -222,6 +222,8 @@ export class NearScraperService {
     }
 
     const data = {
+      smart_contract_id: smartContractId,
+      collection_scrape_id: collectionScrape,
       collection_size: Number(tokenMetas.length),
       description: firstTokenMeta?.metadata?.description || tokenIpfsMeta?.description || "",
       cover_image: this.ipfsHelperService.getByzIpfsUrl(firstTokenIpfsImageUrl),
@@ -786,7 +788,8 @@ export class NearScraperService {
     return await this.prismaService.collectionScrape.upsert({ 
       where: { collection_id: collectionId },
       update: {},
-      create: { collection_id: collectionId }
+      create: { collection_id: collectionId },
+      select: { id: true }
     })
   }
 

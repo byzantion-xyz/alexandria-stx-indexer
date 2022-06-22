@@ -11,7 +11,7 @@ export class NearScraperController {
 
   @Post('scrape')
   async scrape(
-    @Body() data: { contract_key, token_id, starting_token_id, ending_token_id, scrape_non_custodial_from_paras, force_scrape}
+    @Body() data: { contract_key, token_series_id, token_id, starting_token_id, ending_token_id, scrape_non_custodial_from_paras, force_scrape}
   ) {
     const result = await this.nearScraper.scrape(data);
     return result;

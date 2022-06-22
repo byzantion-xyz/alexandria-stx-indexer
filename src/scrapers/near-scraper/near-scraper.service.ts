@@ -43,7 +43,7 @@ export class NearScraperService {
 
   async scrape(data: runScraperData) {
     const { contract_key, token_series_id, token_id, starting_token_id, ending_token_id } = data
-    const { scrape_from_paras_api = false, override_frozen = false, force_scrape = false } = data
+    const { scrape_non_custodial_from_paras = false, override_frozen = false, force_scrape = false } = data
 
     let isParasCustodialCollection = false
     let slug = contract_key
@@ -60,7 +60,7 @@ export class NearScraperService {
     const smartContract = await this.createInitialTablesIfNotExist(contract_key);
 
     // Check if contract should be scraped and return (quit scrape process) if not
-    if (!scrape_from_paras_api) {
+    if (!scrape_non_custodial_from_paras) {
       const numOfCurrentSrapes = await this.prismaService.smartContractScrape.count({
         where: { 
           stage: { notIn: [SmartContractScrapeStage.getting_tokens, SmartContractScrapeStage.done] },
@@ -113,7 +113,7 @@ export class NearScraperService {
     // Get tokens
     let tokenMetas = []
     let gettingTokensError;
-    if (scrape_from_paras_api) {
+    if (scrape_non_custodial_from_paras) {
       const {tokens, error} = await this.getTokensFromParas(slug, collectionSize);
       tokenMetas = tokens;
       if (error) gettingTokensError = error
@@ -123,7 +123,7 @@ export class NearScraperService {
         tokenMetas.push(token);
       } 
       if (isParasCustodialCollection) {
-        const { tokenMetas: tokens, error } = await this.getAllTokensFromParasCustodialCollection(slug);
+        const { tokenMetas: tokens, error } = await this.getTokensFromParasCustodialCollection(slug);
         tokenMetas = tokens;
         if (error) gettingTokensError = error
       } else {
@@ -150,7 +150,7 @@ export class NearScraperService {
       
       // load NftMetas + NftMetaAttributes
       await this.setSmartContractScrapeStage(smartContract.id, SmartContractScrapeStage.loading_nft_metas);
-      await this.loadNftMetasAndTheirAttributes(tokenMetas, nftContractMetadata.base_uri, smartContract.id, slug, loadedCollection, scrape_from_paras_api, isParasCustodialCollection);
+      await this.loadNftMetasAndTheirAttributes(tokenMetas, nftContractMetadata.base_uri, smartContract.id, slug, loadedCollection, scrape_non_custodial_from_paras, isParasCustodialCollection);
       
       // update NftMeta + NftMetaAttributes rarities
       await this.setSmartContractScrapeStage(smartContract.id, SmartContractScrapeStage.updating_rarities);
@@ -257,7 +257,7 @@ export class NearScraperService {
   }
 
 
-  async loadNftMetasAndTheirAttributes(tokenMetas, nftContractMetadataBaseUri, smartContractId, slug, collection, scrape_from_paras_api, isParasCustodialCollection) {
+  async loadNftMetasAndTheirAttributes(tokenMetas, nftContractMetadataBaseUri, smartContractId, slug, collection, scrape_non_custodial_from_paras, isParasCustodialCollection) {
     if (tokenMetas.length == 0) return
     this.logger.log(`[scraping ${slug}] Loading NftMetas and their NftMetaAttributes`);
 
@@ -286,7 +286,7 @@ export class NearScraperService {
 
       try {
         let attributes = []
-        if (scrape_from_paras_api || isParasCustodialCollection) {
+        if (scrape_non_custodial_from_paras || isParasCustodialCollection) {
           attributes = tokenMetas[i].metadata.attributes;
         } else {
           attributes = this.getNftMetaAttributesFromMeta(tokenIpfsMetas[i], collection.title, tokenMetas[i], slug);
@@ -319,11 +319,11 @@ export class NearScraperService {
             }
           }
         })
-        nftMetaPromises.push(nftMeta)
+        nftMetaPromises.push(nftMeta);
 
         if (i % 100 === 0) {
-          await Promise.all(nftMetaPromises)
-          nftMetaPromises = []
+          await Promise.all(nftMetaPromises);
+          nftMetaPromises = [];
         } 
         if (i % 200 === 0) {
           this.logger.log(`[scraping ${slug}] NftMetas processed: ${i} of ${tokenMetas.length}`);
@@ -604,14 +604,14 @@ export class NearScraperService {
   }
 
 
-  async getAllTokensFromParasCustodialCollection(slug) {
+  async getTokensFromParasCustodialCollection(slug) {
     try {
       // get collection_id from Paras API
       const res = await axios.get(`https://api-v2-mainnet.paras.id/token/${slug}`);
       const collection_id = res.data.metadata.collection_id;
 
       // get tokens from collection_id from Paras API
-      const MAX_BATCH_LIMIT = 30;
+      const MAX_BATCH_LIMIT = 100;
       let currentSkip = 0;
       let tokenMetas = [];
       while (true) {

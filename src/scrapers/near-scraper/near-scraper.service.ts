@@ -118,7 +118,7 @@ export class NearScraperService {
           tokenMetas.push(token);
         } 
         if (isParasCustodialCollection) {
-          const tokens = await this.getTokensFromParasCustodialCollection(slug);
+          const tokens = await this.getTokensFromParasCustodialCollection(contract_key, token_series_id);
           tokenMetas = tokens;
         } else {
           const tokens = await this.getMultipleTokenMetasFromContract(contract, collectionSize, starting_token_id, ending_token_id, slug);
@@ -572,9 +572,9 @@ export class NearScraperService {
   }
 
 
-  async getTokensFromParasCustodialCollection(slug) {
+  async getTokensFromParasCustodialCollection(contract_key, token_series_id) {
     // get collection_id from Paras API
-    const res = await axios.get(`https://api-v2-mainnet.paras.id/token/${slug}`);
+    const res = await axios.get(`https://api-v2-mainnet.paras.id/token/${contract_key}::${token_series_id}`);
     const collection_id = res.data.metadata.collection_id;
 
     // get tokens from collection_id from Paras API

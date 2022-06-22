@@ -45,7 +45,7 @@ export class NearScraperService {
     const { contract_key, token_series_id, token_id, starting_token_id, ending_token_id } = data
     const { scrape_non_custodial_from_paras = false, force_scrape = false } = data
 
-    // get slug and set isParasCustodialCollection
+    // get collection slug
     let isParasCustodialCollection = false
     let slug = contract_key
     if (token_series_id) {
@@ -98,6 +98,7 @@ export class NearScraperService {
       }
     }
 
+    // Should scrape, so increment scrape attempt 
     await this.incrementScrapeAttemptByOne(collection.id)
 
     // Get contract data from chain
@@ -105,9 +106,9 @@ export class NearScraperService {
     const nftContractMetadata = await contract.nft_metadata();
     const collectionSize = await contract.nft_total_supply();
 
-    // Get tokens
-    let tokenMetas = []
     try {
+      // Get tokens
+      let tokenMetas = []
       if (scrape_non_custodial_from_paras) {
         const tokens = await this.getTokensFromParas(slug, collectionSize);
         tokenMetas = tokens;
@@ -124,13 +125,7 @@ export class NearScraperService {
           tokenMetas = tokens;
         }
       }
-    } catch (err) {
-      this.logger.error(`[scraping ${slug}] Error: ${err}`);
-      await this.createCollectionScrapeError(err, nftContractMetadata.base_uri, tokenMetas[0], slug);
-      return err
-    }
-
-    try {
+    
       // load SmartContract and Collection
       const smartContract = await this.loadSmartContract(nftContractMetadata, contract_key);
       let collectionTitle = nftContractMetadata.name
@@ -756,6 +751,7 @@ export class NearScraperService {
     return tokenIpfsMetas
   }
 
+
   async createSmartContract(contract_key) {
     const smartContractData = {
       contract_key: contract_key,
@@ -775,6 +771,7 @@ export class NearScraperService {
     })
   }
 
+
   async createCollection(smartContractId, slug) {
     return await this.prismaService.collection.upsert({ 
       where:  { slug: slug },
@@ -784,6 +781,7 @@ export class NearScraperService {
     })
   }
 
+
   async createCollectionScrape(collectionId) {
     return await this.prismaService.collectionScrape.upsert({ 
       where: { collection_id: collectionId },
@@ -792,12 +790,14 @@ export class NearScraperService {
     })
   }
 
+
   async setCollectionScrapeStage(collectionId, stage) {
     await this.prismaService.collectionScrape.update({ 
       where: { collection_id: collectionId },
       data: { stage: stage }
     })
   }
+
 
   async incrementScrapeAttemptByOne(collectionId) {
     await this.prismaService.collectionScrape.update({ 
@@ -809,6 +809,7 @@ export class NearScraperService {
     })
   }
 
+
   async markScrapeSuccess(collectionId, slug) {
     await this.prismaService.collectionScrape.update({ 
       where: { collection_id: collectionId },
@@ -819,6 +820,7 @@ export class NearScraperService {
       }
     })
   }
+
 
   async createCollectionScrapeError(error, nftContractMetadataBaseUri, firstTokenMeta, slug) {
     const collection = await this.prismaService.collection.findUnique({

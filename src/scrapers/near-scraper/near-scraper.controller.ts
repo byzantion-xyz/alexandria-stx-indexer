@@ -11,7 +11,7 @@ export class NearScraperController {
 
   @Post('scrape')
   async scrape(
-    @Body() data: { contract_key, token_id, starting_token_id, ending_token_id, scrape_non_custodial_from_paras, override_frozen, force_scrape}
+    @Body() data: { contract_key, token_id, starting_token_id, ending_token_id, scrape_non_custodial_from_paras, force_scrape}
   ) {
     const result = await this.nearScraper.scrape(data);
     return result;
@@ -19,9 +19,9 @@ export class NearScraperController {
 
   @Post('update-rarities')
   async updateRarities(
-    @Body() data: { contract_key, override_frozen }
+    @Body() data: { slug }
   ) {
-    const result = await this.nearScraper.updateRarities(data.contract_key, data.override_frozen);
+    const result = await this.nearScraper.updateRarities(data.slug);
     return result;
   }
 

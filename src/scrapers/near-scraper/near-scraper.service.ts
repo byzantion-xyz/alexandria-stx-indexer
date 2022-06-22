@@ -1,8 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { SmartContractType } from '@prisma/client'
-import { SmartContractScrapeStage } from '@prisma/client'
-import { SmartContractScrapeOutcome } from '@prisma/client'
+import { CollectionScrapeStage } from '@prisma/client'
+import { CollectionScrapeOutcome } from '@prisma/client'
 import { IpfsHelperService } from '../providers/ipfs-helper.service';
 import { runScraperData } from './dto/run-scraper-data.dto';
 const axios = require('axios').default;
@@ -43,8 +43,9 @@ export class NearScraperService {
 
   async scrape(data: runScraperData) {
     const { contract_key, token_series_id, token_id, starting_token_id, ending_token_id } = data
-    const { scrape_non_custodial_from_paras = false, override_frozen = false, force_scrape = false } = data
+    const { scrape_non_custodial_from_paras = false, force_scrape = false } = data
 
+    // get slug and set isParasCustodialCollection
     let isParasCustodialCollection = false
     let slug = contract_key
     if (token_series_id) {
@@ -55,26 +56,27 @@ export class NearScraperService {
 
     this.logger.log(`[scraping ${slug}] START SCRAPE`);
 
-    // create SmartContract, SmartContractScrape, and Collection tables if they don't exist
-    // returns the SmartContract
-    const smartContract = await this.createInitialTablesIfNotExist(contract_key);
+    // create SmartContract, Collection, and CollectionScrape tables if they don't exist
+    const smartContract = await this.createSmartContract(contract_key);
+    const collection = await this.createCollection(smartContract.id, slug);
+    await this.createCollectionScrape(collection.id);
 
     // Check if contract should be scraped and return (quit scrape process) if not
     if (!scrape_non_custodial_from_paras) {
-      const numOfCurrentSrapes = await this.prismaService.smartContractScrape.count({
+      const numOfCurrentSrapes = await this.prismaService.collectionScrape.count({
         where: { 
-          stage: { notIn: [SmartContractScrapeStage.getting_tokens, SmartContractScrapeStage.done] },
-          outcome: { not: SmartContractScrapeOutcome.failed }
+          stage: { notIn: [CollectionScrapeStage.getting_tokens, CollectionScrapeStage.done] },
+          outcome: { not: CollectionScrapeOutcome.failed }
         }
       })
 
       if (numOfCurrentSrapes > 3) {
         const skipMsg = `[scraping ${contract_key}] Scrape skipped, 3 scrapes already in progress.`;
         this.logger.log(skipMsg);
-        await this.prismaService.smartContractScrape.update({ 
-          where: { smart_contract_id: smartContract.id },
+        await this.prismaService.collectionScrape.update({ 
+          where: { collection_id: collection.id },
           data: { 
-            outcome: SmartContractScrapeOutcome.skipped,
+            outcome: CollectionScrapeOutcome.skipped,
             outcome_msg: `[${contract_key}] Scrape skipped
                           \`${skipMsg}\``
           }
@@ -82,14 +84,14 @@ export class NearScraperService {
         return "Contract scrape skipped--too many scrapes currenlty in progress."
       }
 
-      const smartContractScrape = await this.prismaService.smartContractScrape.findUnique({
-        where: { smart_contract_id: smartContract.id }
+      const collectionScrape = await this.prismaService.collectionScrape.findUnique({
+        where: { collection_id: collection.id }
       })
-      if (smartContractScrape.outcome == SmartContractScrapeOutcome.succeeded && !force_scrape) {
+      if (collectionScrape.outcome == CollectionScrapeOutcome.succeeded && !force_scrape) {
         this.logger.log(`[scraping ${contract_key}] Scrape skipped, already scraped successfully.`);
         return "Contract already scraped succesfully"
       }
-      if (smartContractScrape.attempts >= 2 && !force_scrape) {
+      if (collectionScrape.attempts >= 2 && !force_scrape) {
         const errorMsg = `[scraping ${contract_key}] Contract scrape attempted twice already and failed. Check for errors in SmartContractScrape id: ${smartContractScrape.id}. To re-scrape, pass in force_scrape: true, or set the SmartContractScrape.attempts back to 0.`;
         this.logger.error(errorMsg);
         return errorMsg
@@ -97,11 +99,11 @@ export class NearScraperService {
     }
 
     // increment scrape attempt, and reset scrape stage to beginning
-    await this.prismaService.smartContractScrape.update({ 
-      where: { smart_contract_id: smartContract.id },
+    await this.prismaService.collectionScrape.update({ 
+      where: { collection_id: collection.id },
       data: { 
         attempts: { increment: 1 },
-        stage: SmartContractScrapeStage.getting_tokens 
+        stage: CollectionScrapeStage.getting_tokens 
       }
     })
 
@@ -133,7 +135,7 @@ export class NearScraperService {
       }
     }
     if (gettingTokensError) {
-      //await this.createSmartContractScrapeError(gettingTokensError, nftContractMetadata.base_uri, tokenMetas[0], contract_key);
+      await this.createCollectionScrapeError(gettingTokensError, nftContractMetadata.base_uri, tokenMetas[0], slug);
       return
     }
 
@@ -142,30 +144,30 @@ export class NearScraperService {
       const smartContract = await this.loadSmartContract(nftContractMetadata, contract_key);
       let collectionTitle = nftContractMetadata.name
       if (isParasCustodialCollection) collectionTitle = tokenMetas[0].metadata.collection.trim();
-      const loadedCollection = await this.loadCollection(tokenMetas, nftContractMetadata.base_uri, collectionTitle, slug, smartContract);
+      const loadedCollection = await this.loadCollection(tokenMetas, nftContractMetadata.base_uri, collectionTitle, slug);
 
       // pin IPFS to our pinata
-      await this.setSmartContractScrapeStage(smartContract.id, SmartContractScrapeStage.pinning);
+      await this.setCollectionScrapeStage(collection.id, CollectionScrapeStage.pinning);
       await this.pin(tokenMetas, nftContractMetadata.base_uri, slug);
       
       // load NftMetas + NftMetaAttributes
-      await this.setSmartContractScrapeStage(smartContract.id, SmartContractScrapeStage.loading_nft_metas);
+      await this.setCollectionScrapeStage(collection.id, CollectionScrapeStage.loading_nft_metas);
       await this.loadNftMetasAndTheirAttributes(tokenMetas, nftContractMetadata.base_uri, smartContract.id, slug, loadedCollection, scrape_non_custodial_from_paras, isParasCustodialCollection);
       
       // update NftMeta + NftMetaAttributes rarities
-      await this.setSmartContractScrapeStage(smartContract.id, SmartContractScrapeStage.updating_rarities);
-      await this.updateRarities(contract_key, override_frozen);
+      await this.setCollectionScrapeStage(collection.id, CollectionScrapeStage.updating_rarities);
+      await this.updateRarities(slug);
 
       // create CollectionAttributes
-      await this.setSmartContractScrapeStage(smartContract.id, SmartContractScrapeStage.creating_collection_attributes);
-      await this.createCollectionAttributes(contract_key);
+      await this.setCollectionScrapeStage(collection.id, CollectionScrapeStage.creating_collection_attributes);
+      await this.createCollectionAttributes(slug);
 
       // mark scrape as done and succeeded
-      await this.prismaService.smartContractScrape.update({ 
-        where: { smart_contract_id: smartContract.id },
+      await this.prismaService.collectionScrape.update({ 
+        where: { collection_id: collection.id },
         data: {
-          stage: SmartContractScrapeStage.done,
-          outcome: SmartContractScrapeOutcome.succeeded,
+          stage: CollectionScrapeStage.done,
+          outcome: CollectionScrapeOutcome.succeeded,
           outcome_msg: `[scraping ${slug}] Successfully scraped contract!`
         }
       })
@@ -178,7 +180,7 @@ export class NearScraperService {
         error = JSON.stringify(err.toJSON(), null, 2);
         error.innerException = err.response.data;
       }
-      //await this.createSmartContractScrapeError(error, nftContractMetadata.base_uri, tokenMetas[0], contract_key);
+      await this.createCollectionScrapeError(error, nftContractMetadata.base_uri, tokenMetas[0], slug);
       return "Failure"
     }
     return "Finished"
@@ -220,13 +222,13 @@ export class NearScraperService {
       where: { contract_key: contract_key },
       update: data,
       create: data,
-      select: { id: true, frozen: true }
+      select: { id: true }
     })
     return smartContract
   }
 
 
-  async loadCollection(tokenMetas, nftContractMetadataBaseUri, collectionTitle, slug, smartContract) {
+  async loadCollection(tokenMetas, nftContractMetadataBaseUri, collectionTitle, slug) {
     if (tokenMetas.length == 0) return
     this.logger.log(`[scraping ${slug}] Loading Collection`);
 
@@ -249,7 +251,7 @@ export class NearScraperService {
     }
 
     const loadedCollection = await this.prismaService.collection.upsert({
-      where: { smart_contract_id: smartContract.id },
+      where: { slug: slug },
       update: data,
       create: data
     });
@@ -276,8 +278,8 @@ export class NearScraperService {
 
       const nftMeta = await this.prismaService.nftMeta.findUnique({
         where: {
-          smart_contract_id_token_id: {
-            smart_contract_id: smartContractId,
+          collection_id_token_id: {
+            collection_id: collection.id,
             token_id: tokenMetas[i]?.token_id ?? ""
           }
         },
@@ -342,25 +344,15 @@ export class NearScraperService {
   }
 
 
-  async updateRarities(contract_key, override_frozen) {
-    this.logger.log(`[scraping ${contract_key}] Running updateRarities()`);
+  async updateRarities(slug) {
+    this.logger.log(`[scraping ${slug}] Running updateRarities()`);
 
-    const smartContract = await this.prismaService.smartContract.findUnique({
-      where: {
-        contract_key: contract_key
-      },
-    })
+    const collection = await this.prismaService.collection.findUnique({ where: { slug: slug } })
   
-    if (smartContract.frozen && !override_frozen) {
-      const msg = `[scraping ${contract_key}] Collection is frozen, rarity update abandoned`;
-      this.logger.log(msg);
-      return msg;
-    }
-
-    this.logger.log(`[scraping ${contract_key}] Fetching all NftMetas + their NftMetaAttributes`);
+    this.logger.log(`[scraping ${slug}] Fetching all NftMetas + their NftMetaAttributes`);
     let nftMetas = []
     nftMetas = await this.prismaService.nftMeta.findMany({
-      where: { smart_contract_id: smartContract.id },
+      where: { collection_id: collection.id },
       select: {
         id: true,
         rarity: true,
@@ -375,7 +367,7 @@ export class NearScraperService {
       },
     })
   
-    this.logger.log(`[scraping ${contract_key}] Adding Trait Counts`);
+    this.logger.log(`[scraping ${slug}] Adding Trait Counts`);
     for (let nftMeta of nftMetas) {
       let hasTraitCount = false;
       for (let attr of nftMeta.attributes) {
@@ -399,7 +391,7 @@ export class NearScraperService {
       }
     }
 
-    this.logger.log(`[scraping ${contract_key}] Calculating NftMetaAttribute Rarity Scores...`);
+    this.logger.log(`[scraping ${slug}] Calculating NftMetaAttribute Rarity Scores...`);
     let obj = {};
     for (let nftMeta of nftMetas) {
       for (let attr of nftMeta.attributes) {
@@ -417,7 +409,7 @@ export class NearScraperService {
       }
     }
 
-    this.logger.log(`[scraping ${contract_key}] Calculating NftMetaAttribute Rarity Scores to %`);
+    this.logger.log(`[scraping ${slug}] Calculating NftMetaAttribute Rarity Scores to %`);
     for (let nftMeta of nftMetas) {
       for (let attr of nftMeta.attributes) {
         attr.rarity = obj[attr.trait_type][attr.value];
@@ -430,7 +422,7 @@ export class NearScraperService {
       }
     }
 
-    this.logger.log(`[scraping ${contract_key}] Calculating NftMeta Rarities`);
+    this.logger.log(`[scraping ${slug}] Calculating NftMeta Rarities`);
     for (let nftMeta of nftMetas) {
       let rarity_score = 0;
       for (let attr of nftMeta.attributes) {
@@ -477,40 +469,35 @@ export class NearScraperService {
         await delay(300)
       } 
       if (count % 200 === 0) {
-        this.logger.log(`[scraping ${contract_key}] Rarity and Rankings processed: ${count} of ${nftMetas.length}`);
+        this.logger.log(`[scraping ${slug}] Rarity and Rankings processed: ${count} of ${nftMetas.length}`);
       } 
       count++;
     }
 
     await Promise.all(updatedNftMetasPromises)
-    this.logger.log(`[scraping ${contract_key}] All Rarity and Rankings updated`);
+    this.logger.log(`[scraping ${slug}] All Rarity and Rankings updated`);
     return "Rarites/Rankings Updated"
   };
 
 
-  async createCollectionAttributes(contract_key) {
-    this.logger.log(`[scraping ${contract_key}] Creating Collection Attributes`);
-
-    this.logger.log(`[scraping ${contract_key}] Fetching all NftMetas + their NftMetaAttributes...`);
-    const smartContract = await this.prismaService.smartContract.findUnique({
-      where: { contract_key: contract_key }
-    })
+  async createCollectionAttributes(slug) {
+    this.logger.log(`[scraping ${slug}] Creating Collection Attributes`);
+    this.logger.log(`[scraping ${slug}] Fetching all NftMetas + their NftMetaAttributes...`);
+    const collection = await this.prismaService.collection.findUnique({ where: { slug: slug } })
 
     const nftMetas = await this.prismaService.nftMeta.findMany({
-      where: {
-        smart_contract_id: smartContract.id
-      },
+      where: { collection_id: collection.id },
       include: {
         attributes: true
       }
     })
 
-    this.logger.log(`[scraping ${contract_key}] Creating Collection Attributes: Found ${nftMetas.length} NftMetas`);
+    this.logger.log(`[scraping ${slug}] Creating Collection Attributes: Found ${nftMetas.length} NftMetas`);
 
     let collectionAttributePromises = []
     for (let i = 0; i < nftMetas.length; i++) {
       const collectionAndCollectionAttributes = await this.prismaService.collection.update({
-        where: { smart_contract_id: smartContract.id },
+        where: { slug: slug },
         data: {
           attributes: {
             createMany: {
@@ -534,12 +521,12 @@ export class NearScraperService {
         collectionAttributePromises = []
       } 
       if (i % 200 === 0) {
-        this.logger.log(`[scraping ${contract_key}] CollectionAttributes batch inserted for ${i} of ${nftMetas.length} NftMetas`);
+        this.logger.log(`[scraping ${slug}] CollectionAttributes batch inserted for ${i} of ${nftMetas.length} NftMetas`);
       } 
     }
 
     await Promise.all(collectionAttributePromises)
-    this.logger.log(`[scraping ${contract_key}] CollectionAttributes batch inserted for ${nftMetas.length} NftMetas`);
+    this.logger.log(`[scraping ${slug}] CollectionAttributes batch inserted for ${nftMetas.length} NftMetas`);
   };
 
 
@@ -795,7 +782,7 @@ export class NearScraperService {
           ipfsMetasBatch = await Promise.all(tokenIpfsMetaPromises)
         } catch(err) {
           this.logger.error(err);
-          //await this.createSmartContractScrapeError(err, nftContractMetadataBaseUri, tokenMetas[i], slug);
+          await this.createCollectionScrapeError(err, nftContractMetadataBaseUri, tokenMetas[i], slug);
         }
         if (ipfsMetasBatch) {
           tokenIpfsMetas.push(...ipfsMetasBatch.filter((r) => r.status == 200).map((r) => r.data));
@@ -815,61 +802,59 @@ export class NearScraperService {
     return tokenIpfsMetas
   }
 
-
-  async createInitialTablesIfNotExist(contract_key) {
-    let smartContract;
-    let smartContractInDB = await this.prismaService.smartContract.findUnique({ where: { contract_key: contract_key } })
-    if (smartContractInDB) smartContract = smartContractInDB
-    if (!smartContractInDB) {
-      smartContract = await this.prismaService.smartContract.create({
-        data: {
-          contract_key: contract_key,
-          type: SmartContractType.non_fungible_tokens,
-          chain: {
-            connect: {
-              id: NEAR_PROTOCOL_DB_ID,
-            },
-          },
+  async createSmartContract(contract_key) {
+    const smartContractData = {
+      contract_key: contract_key,
+      type: SmartContractType.non_fungible_tokens,
+      chain: {
+        connect: {
+          id: NEAR_PROTOCOL_DB_ID,
         },
-        select: {
-          id: true,
-          frozen: true
-        }
-      })
-
-      await this.prismaService.smartContractScrape.upsert({ 
-        where: { smart_contract_id: smartContract.id },
-        update: {},
-        create: { smart_contract_id: smartContract.id }
-      })
-
-      await this.prismaService.collection.upsert({
-        where: { smart_contract_id: smartContract.id },
-        update: {},
-        create: { smart_contract_id: smartContract.id },
-      })
+      }
     }
-    return smartContract
+    
+    return await this.prismaService.smartContract.upsert({ 
+      where: { contract_key: contract_key },
+      update: smartContractData,
+      create: smartContractData,
+      select: { id: true }
+    })
   }
 
+  async createCollection(smartContractId, slug) {
+    return await this.prismaService.collection.upsert({ 
+      where:  { slug: slug },
+      update: { smart_contract_id: smartContractId },
+      create: { smart_contract_id: smartContractId },
+      select: { id: true }
+    })
+  }
 
-  async setSmartContractScrapeStage(smartContractId, stage) {
-    await this.prismaService.smartContractScrape.update({ 
-      where: { smart_contract_id: smartContractId },
+  async createCollectionScrape(collectionId) {
+    return await this.prismaService.collectionScrape.upsert({ 
+      where: { collection_id: collectionId },
+      update: {},
+      create: { collection_id: collectionId }
+    })
+  }
+
+  async setCollectionScrapeStage(collectionId, stage) {
+    await this.prismaService.collectionScrape.update({ 
+      where: { collection_id: collectionId },
       data: { stage: stage }
     })
   }
 
 
-  async createSmartContractScrapeError(error, nftContractMetadataBaseUri, firstTokenMeta, contract_key) {
-    const smartContract = await this.prismaService.smartContract.findUnique({
-      where: { contract_key: contract_key }, select: { id: true }
+  async createCollectionScrapeError(error, nftContractMetadataBaseUri, firstTokenMeta, slug) {
+    const collection = await this.prismaService.collection.findUnique({
+      where: { slug: slug }, select: { id: true }
     })
-    await this.prismaService.smartContractScrape.update({ 
-      where: { smart_contract_id: smartContract.id },
+    await this.prismaService.collectionScrape.update({ 
+      where: { collection_id: collection.id },
       data: { 
-        outcome: SmartContractScrapeOutcome.failed,
-        outcome_msg: `[${contract_key}] SCRAPE FAILED
+        outcome: CollectionScrapeOutcome.failed,
+        outcome_msg: `[${slug}] SCRAPE FAILED
                     - first token meta: \`${JSON.stringify(firstTokenMeta)}\`
                     - base uri: \`${JSON.stringify(nftContractMetadataBaseUri)}\`
                     - error: \`${error}\`

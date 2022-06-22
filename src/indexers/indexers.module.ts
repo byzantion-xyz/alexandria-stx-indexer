@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { NearIndexerController } from './near-indexer/near-indexer.controller';
 import { NearIndexerService } from './near-indexer/near-indexer.service';
 import { BuyTransactionService } from './near-indexer/providers/buy-transaction.service';
-import { ListingTransactionService } from './near-indexer/providers/listing-transaction.service';
+import { ListTransactionService } from './near-indexer/providers/list-transaction.service';
 import { TxHelperService } from './near-indexer/providers/tx-helper.service';
 import { MongooseModule } from '@nestjs/mongoose';
 import { UnlistTransactionService } from './near-indexer/providers/unlist-transaction.service';
@@ -21,7 +21,7 @@ import { ScrapersModule } from 'src/scrapers/scrapers.module';
   providers: [
     NearIndexerService,
     BuyTransactionService,
-    ListingTransactionService,
+    ListTransactionService,
     TxHelperService,
     UnlistTransactionService,
   ],

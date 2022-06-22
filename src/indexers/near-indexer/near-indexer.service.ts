@@ -4,7 +4,7 @@ import { Transaction, Block } from '@internal/prisma/client';
 import { InjectConnection } from '@nestjs/mongoose';
 import { Connection } from 'mongoose';
 import { BuyTransactionService } from './providers/buy-transaction.service';
-import { ListingTransactionService } from './providers/listing-transaction.service';
+import { ListTransactionService } from './providers/list-transaction.service';
 import { TxProcessResult } from 'src/common/interfaces/tx-process-result.interface';
 import { UnlistTransactionService } from './providers/unlist-transaction.service';
 import * as moment from 'moment';
@@ -20,7 +20,7 @@ export class NearIndexerService {
     private readonly prismaService: PrismaService,
     @InjectConnection('near-streamer') private readonly connection: Connection,
     private buyTransaction: BuyTransactionService,
-    private listingTransaction: ListingTransactionService,
+    private listTransaction: ListTransactionService,
     private unlistTransaction: UnlistTransactionService,
     private txHelper: TxHelperService
   ) { }
@@ -120,7 +120,7 @@ export class NearIndexerService {
 
       let smart_contract_function = smart_contract.smart_contract_functions.find(f => f.function_name === method_name);
       if (smart_contract && smart_contract_function) {
-        const txHandler = this.getTxHandler(smart_contract_function.name)
+        const txHandler = this.getMicroIndexer(smart_contract_function.name)
         result = await txHandler.process(transaction, smart_contract, smart_contract_function, notify);
       } else {
         this.logger.log(`function_name: ${method_name} not found in ${transaction.transaction.receiver_id}`);
@@ -134,13 +134,13 @@ export class NearIndexerService {
     }
   }
 
-  getTxHandler(name: string) {
-    switch (name) {
-      case 'buy': return this.buyTransaction;
-      case 'list': return this.listingTransaction;
-      case 'unlist': return this.unlistTransaction;
-      default: throw new Error(`No service defined for the context: ${name}`);
+  getMicroIndexer(name: string) {
+    const microIndexer = this[name + 'Transaction'];
+    this.logger.log(microIndexer.name);
+    if (!microIndexer) {
+      throw new Error(`No service defined for the context: ${name}`);
     }
+    return microIndexer;
   }
 
   async setTransactionResult(id: string, result: TxProcessResult) {
@@ -153,5 +153,4 @@ export class NearIndexerService {
       });
     }
   }
-
 }

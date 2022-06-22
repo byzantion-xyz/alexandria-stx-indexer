@@ -9,8 +9,8 @@ import { MissingSmartContractService } from 'src/scrapers/near-scraper/providers
 import { CreateActionCommonArgs, CreateListAction } from '../dto/create-action-common.dto';
 
 @Injectable()
-export class ListingTransactionService {
-  private readonly logger = new Logger(ListingTransactionService.name);
+export class ListTransactionService {
+  private readonly logger = new Logger(ListTransactionService.name);
 
   constructor(
     private readonly prismaService: PrismaService,

@@ -136,7 +136,6 @@ export class NearIndexerService {
 
   getMicroIndexer(name: string) {
     const microIndexer = this[name + 'Transaction'];
-    this.logger.log(microIndexer.name);
     if (!microIndexer) {
       throw new Error(`No service defined for the context: ${name}`);
     }

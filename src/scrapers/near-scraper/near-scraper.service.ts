@@ -106,9 +106,9 @@ export class NearScraperService {
     const nftContractMetadata = await contract.nft_metadata();
     const collectionSize = await contract.nft_total_supply();
 
+    let tokenMetas = []
     try {
       // Get tokens
-      let tokenMetas = []
       if (scrape_non_custodial_from_paras) {
         const tokens = await this.getTokensFromParas(slug, collectionSize);
         tokenMetas = tokens;

@@ -25,7 +25,7 @@ model SmartContract {
   token_uri                String?
   collection_uri           String?
   chain                    Chain                                 @relation(fields: [chain_id], references: [id])
-  collection               Collection?
+  collections              Collection[]
   actions                  Action[]
   collection_bids          CollectionBid[]
   commission               Commission?
@@ -94,7 +94,7 @@ model Collection {
   actions              Action[]
   attributes           CollectionAttribute[]
   metas                NftMeta[]
-  smart_contract_id    String?               @db.Uuid @unique
+  smart_contract_id    String?               @db.Uuid
   smart_contract       SmartContract?        @relation(fields: [smart_contract_id], references: [id])
   collection_scrape_id String?               @unique @db.Uuid
   collection_scrape    CollectionScrape?     @relation(fields: [collection_scrape_id], references: [id])

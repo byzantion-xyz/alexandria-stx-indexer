@@ -92,7 +92,7 @@ export class NearScraperService {
         return "Contract already scraped succesfully"
       }
       if (collectionScrape.attempts >= 2 && !force_scrape) {
-        const errorMsg = `[scraping ${slug}] Contract scrape attempted twice already and failed. Check for errors in SmartContractScrape id: ${smartContractScrape.id}. To re-scrape, pass in force_scrape: true, or set the SmartContractScrape.attempts back to 0.`;
+        const errorMsg = `[scraping ${slug}] Contract scrape attempted twice already and failed. Check for errors in collectionScrape id: ${collectionScrape.id}. To re-scrape, pass in force_scrape: true, or set the SmartContractScrape.attempts back to 0.`;
         this.logger.error(errorMsg);
         return errorMsg
       }

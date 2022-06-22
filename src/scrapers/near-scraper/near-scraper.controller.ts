@@ -27,9 +27,9 @@ export class NearScraperController {
 
   @Post('create-collection-attributes')
   async createCollectionAttributes(
-    @Body() data: { contract_key }
+    @Body() data: { slug }
   ) {
-    const result = await this.nearScraper.createCollectionAttributes(data.contract_key);
+    const result = await this.nearScraper.createCollectionAttributes(data.slug);
     return result;
   }
 }

@@ -1,4 +1,4 @@
 export interface TxProcessResult {
-    processed: Boolean 
-    missing: Boolean
+    processed: boolean 
+    missing: boolean
 }

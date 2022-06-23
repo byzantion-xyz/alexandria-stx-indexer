@@ -1,6 +1,5 @@
 import { Logger, Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { TransactionsOutcome, TransactionsTransaction } from '@internal/prisma/client';
 import { BuyTransactionService } from './providers/buy-transaction.service';
 import { ListTransactionService } from './providers/list-transaction.service';
 import { TxProcessResult } from 'src/common/interfaces/tx-process-result.interface';
@@ -8,17 +7,7 @@ import { UnlistTransactionService } from './providers/unlist-transaction.service
 import * as moment from 'moment';
 import { TxHelperService } from './providers/tx-helper.service';
 import { PrismaStreamerService } from 'src/prisma/prisma-streamer.service';
-
-interface Transaction {
-  hash: string;
-  outcome: TransactionsOutcome;
-  transaction: TransactionsTransaction;
-  block_hash: string;
-  block_timestamp: bigint;
-  block_height: bigint;
-  missing: boolean;
-  processed: boolean;
-}
+import { Transaction } from './dto/near-transaction.dto';
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 

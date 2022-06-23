@@ -1,5 +1,4 @@
 import { Logger, Injectable, NotAcceptableException } from '@nestjs/common';
-import { Transaction, Block } from '@internal/prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Prisma, NftMeta, SmartContract, SmartContractFunction, ActionName, Action } from '@prisma/client';
 import { TxProcessResult } from 'src/common/interfaces/tx-process-result.interface';
@@ -7,6 +6,7 @@ import { TxHelperService } from './tx-helper.service';
 
 import { SalesBotService } from 'src/discord-bot/providers/sales-bot.service';
 import { CreateActionCommonArgs, CreateBuyAction } from '../dto/create-action-common.dto';
+import { Transaction } from '../dto/near-transaction.dto';
 
 @Injectable()
 export class BuyTransactionService {
@@ -33,7 +33,7 @@ export class BuyTransactionService {
 
     if (nftMeta && this.txHelper.isNewNftListOrSale(tx, nftMeta.nft_state)) {
 
-      await this.txHelper.unlistMeta(nftMeta.id, tx.transaction.nonce, tx.block.block_height);
+      await this.txHelper.unlistMeta(nftMeta.id, tx.transaction.nonce, tx.block_height);
 
       const actionCommonArgs: CreateActionCommonArgs = this.txHelper.setCommonActionParams(tx, sc, nftMeta, sc);
       const buyActionParams: CreateBuyAction = {

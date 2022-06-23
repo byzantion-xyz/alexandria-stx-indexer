@@ -1,14 +1,24 @@
 import { Logger, Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { Transaction, Block } from '@internal/prisma/client';
-import { InjectConnection } from '@nestjs/mongoose';
-import { Connection } from 'mongoose';
+import { TransactionsOutcome, TransactionsTransaction } from '@internal/prisma/client';
 import { BuyTransactionService } from './providers/buy-transaction.service';
 import { ListingTransactionService } from './providers/listing-transaction.service';
 import { TxProcessResult } from 'src/common/interfaces/tx-process-result.interface';
 import { UnlistTransactionService } from './providers/unlist-transaction.service';
 import * as moment from 'moment';
 import { TxHelperService } from './providers/tx-helper.service';
+import { PrismaStreamerService } from 'src/prisma/prisma-streamer.service';
+
+interface Transaction {
+  hash: string;
+  outcome: TransactionsOutcome;
+  transaction: TransactionsTransaction;
+  block_hash: string;
+  block_timestamp: bigint;
+  block_height: bigint;
+  missing: boolean;
+  processed: boolean;
+}
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -18,66 +28,42 @@ export class NearIndexerService {
 
   constructor(
     private readonly prismaService: PrismaService,
-    @InjectConnection('near-streamer') private readonly connection: Connection,
+    private readonly prismaStreamerService: PrismaStreamerService,
     private buyTransaction: BuyTransactionService,
     private listingTransaction: ListingTransactionService,
     private unlistTransaction: UnlistTransactionService,
     private txHelper: TxHelperService
   ) { }
   
-  async fetchTransactions(missing: boolean = false) {
-    const smartContractFunctions = await this.prismaService.smartContractFunction.findMany();
+  async fetchTransactions(missing: boolean = false): Promise<Transaction[]> {
     const smartContracts = await this.prismaService.smartContract.findMany();
-    const whitelistedActions = smartContractFunctions.map(func => func.function_name);
     const accounts = smartContracts.map(sc => sc.contract_key);
-    const cursor = this.connection.db.collection('transactions').aggregate([
-      {
-        $match: {
-          'block.block_height': { $gte: 65000000 },
-          'transaction.receiver_id': { $in: accounts },
-          'transaction.actions.FunctionCall.method_name': { $in: whitelistedActions },
-          ... (missing && { missing: true }),
-          ... (!missing && {
-            $and: [
-              { $or: [{ processed: { $exists: false } }, { processed: false }] },
-              { $or: [{ missing: { $exists: false } }, { missing: false }] },
-            ] 
-          })
-        }
-      },
-      { $sort: { 'block.block_height': 1, 'transaction.nonce': 1 } },
-      {
-          $lookup: {
-               from: "receipts",
-               localField: "outcome.execution_outcome.outcome.status.SuccessReceiptId",
-               foreignField: 'receipt.receipt_id',
-               as: 'receipt'
-            }
-      }, { $unwind: { path: '$receipt'}},
-      {
-        $match: { 
-            $or: [
-                {'receipt.execution_outcome.outcome.status.SuccessValue': { $exists: true }},
-                {'receipt.execution_outcome.outcome.status.SuccessReceiptId': { $exists: true }}
-            ]
-            
-        }    
-      },
-    ], { allowDiskUse: true });
 
-    return cursor;
+    const result: Transaction[] = await this.prismaStreamerService.$queryRaw`
+      select * from transaction t inner join receipt r on t.success_receipt_id =r.receipt_id
+      where block_height >= 65000000 and
+      receiver_id in ('x.paras.near', 'marketplace.paras.near') AND
+      processed = false AND 
+      missing = false AND
+      (( execution_outcome->'outcome'->'status'->'SuccessValue' is not null)
+      or (execution_outcome->'outcome'->'status'->'SuccessReceiptId' is not null))
+      order by t.block_height limit 1000;
+    `;
+
+    return result;
   }
 
   async runIndexer() {
     this.logger.debug('runIndexer() Initialize');
 
-    const cursor = await this.fetchTransactions(false);
+    const rows: Transaction[] = await this.fetchTransactions(false);
     this.logger.debug('Processing transactions');
 
-    for await (const doc of cursor) {
-      const transaction: Transaction = <Transaction>doc;
+    for await (const doc of rows) {
+      const transaction: Transaction = doc;
+
       const txResult: TxProcessResult = await this.processTransaction(transaction);
-      await this.setTransactionResult(doc._id, txResult);
+      await this.setTransactionResult(doc.hash, txResult);
     }
 
     await delay(5000);
@@ -94,7 +80,7 @@ export class NearIndexerService {
     for await (const doc of cursor) {
       const transaction: Transaction = <Transaction>doc;
       const txResult: TxProcessResult = await this.processTransaction(transaction);
-      await this.setTransactionResult(doc._id, txResult);
+      await this.setTransactionResult(doc.hash, txResult);
     }
 
     await delay(5000);
@@ -108,7 +94,7 @@ export class NearIndexerService {
     try {
       const method_name = transaction.transaction.actions[0].FunctionCall.method_name;
 
-      const notify = moment(new Date(this.txHelper.nanoToMiliSeconds(transaction.block.timestamp))).utc() >
+      const notify = moment(new Date(this.txHelper.nanoToMiliSeconds(transaction.block_timestamp))).utc() >
         moment().subtract(2, 'hours').utc() ? true : false;
 
       const finder = {
@@ -143,14 +129,12 @@ export class NearIndexerService {
     }
   }
 
-  async setTransactionResult(id: string, result: TxProcessResult) {
+  async setTransactionResult(hash: string, result: TxProcessResult) {
     if (result.processed || result.missing) {
-      await this.connection.db.collection('transactions').findOneAndUpdate({ _id: id }, {
-        $set: {
-          processed: result.processed,
-          missing: result.missing
-        }
-      });
+      await this.prismaStreamerService.transaction.update({ where: { hash }, data: { 
+        processed: result.processed,
+        missing: result.missing
+      }});
     }
   }
 

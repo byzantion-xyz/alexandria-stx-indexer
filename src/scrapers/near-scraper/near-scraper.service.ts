@@ -860,7 +860,7 @@ export class NearScraperService {
       const pinHash = this.ipfsHelperService.getPinHashFromUrl(tokenIpfsUrl);
       const alreadyPinned = await this.ipfsHelperService.checkIfAlreadyPinned(pinHash);
       if (!alreadyPinned) {
-        const byzPinataPromise = this.ipfsHelperService.pinByHash(pinHash, `${slug} ${tokenMetas[i]?.token_id} Meta`);
+        const byzPinataPromise = this.ipfsHelperService.pinByHash(pinHash, `${slug} ${tokenMetas[i]?.token_id} Image`);
         pinPromises.push(byzPinataPromise);
       }
       if (i % 5 === 0) {

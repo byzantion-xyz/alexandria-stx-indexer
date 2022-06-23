@@ -134,7 +134,12 @@ export class NearScraperService {
 
       // pin IPFS to our pinata
       await this.setCollectionScrapeStage(collection.id, CollectionScrapeStage.pinning);
-      await this.pin(tokenMetas, nftContractMetadata.base_uri, slug);
+      if (isParasCustodialCollection) {
+        // Pin each custodial nft image to our pinata (each paras custodial nft has a distinct image hash)
+        await this.pinMultipleImages(tokenMetas, nftContractMetadata.base_uri, slug);
+      } else {
+        await this.pin(tokenMetas, nftContractMetadata.base_uri, slug);
+      }
       
       // load NftMetas + NftMetaAttributes
       await this.setCollectionScrapeStage(collection.id, CollectionScrapeStage.loading_nft_metas);
@@ -147,11 +152,6 @@ export class NearScraperService {
       // create CollectionAttributes
       await this.setCollectionScrapeStage(collection.id, CollectionScrapeStage.creating_collection_attributes);
       await this.createCollectionAttributes(slug);
-
-      // Pin each custodial nft image to our pinata (each paras custodial nft has a distinct image hash)
-      if (isParasCustodialCollection) {
-        this.pinMultipleImages(tokenMetas, nftContractMetadata.base_uri, slug);
-      }
 
       // mark scrape as done and succeeded
       await this.markScrapeSuccess(collection.id, slug);
@@ -858,11 +858,11 @@ export class NearScraperService {
       if (!tokenIpfsUrl || !tokenIpfsUrl.includes('ipfs')) continue // if the metadata is not stored on ipfs continue loop
 
       const pinHash = this.ipfsHelperService.getPinHashFromUrl(tokenIpfsUrl);
-      const alreadyPinned = await this.ipfsHelperService.checkIfAlreadyPinned(pinHash);
-      if (!alreadyPinned) {
+      //const alreadyPinned = await this.ipfsHelperService.checkIfAlreadyPinned(pinHash);
+      //if (!alreadyPinned) {
         const byzPinataPromise = this.ipfsHelperService.pinByHash(pinHash, `${slug} ${tokenMetas[i]?.token_id} Image`);
         pinPromises.push(byzPinataPromise);
-      }
+      //}
       if (i % 5 === 0) {
         await Promise.all(pinPromises);
         pinPromises = [];

@@ -81,7 +81,7 @@ export class NearIndexerService {
     let result: TxProcessResult = { processed: transaction.processed, missing: transaction.missing };
 
     try {
-      const method_name = transaction.transaction.actions[0].FunctionCall.method_name;
+      const method_name = transaction.transaction.actions[0].FunctionCall?.method_name;
 
       const notify = moment(new Date(this.txHelper.nanoToMiliSeconds(transaction.block_timestamp))).utc() >
         moment().subtract(2, 'hours').utc() ? true : false;
@@ -93,10 +93,14 @@ export class NearIndexerService {
 
       const smart_contract = await this.prismaService.smartContract.findUnique(finder);
 
-      let smart_contract_function = smart_contract.smart_contract_functions.find(f => f.function_name === method_name);
-      if (smart_contract && smart_contract_function) {
-        const txHandler = this.getMicroIndexer(smart_contract_function.name)
-        result = await txHandler.process(transaction, smart_contract, smart_contract_function, notify);
+      if (smart_contract) {
+        let smart_contract_function = smart_contract.smart_contract_functions.find(f => f.function_name === method_name);
+        if (smart_contract_function) {
+          const txHandler = this.getMicroIndexer(smart_contract_function.name)
+          result = await txHandler.process(transaction, smart_contract, smart_contract_function, notify);
+        } else {
+          result.missing = true;
+        }
       } else {
         this.logger.log(`function_name: ${method_name} not found in ${transaction.transaction.receiver_id}`);
         result.missing = true;

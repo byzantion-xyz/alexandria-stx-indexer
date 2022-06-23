@@ -1,5 +1,4 @@
 import { Logger, Injectable } from '@nestjs/common';
-import { Transaction, Block } from '@internal/prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { SmartContract, SmartContractFunction, ActionName, SmartContractType } from '@prisma/client';
 import { TxProcessResult } from 'src/common/interfaces/tx-process-result.interface';
@@ -8,9 +7,11 @@ import { ListBotService } from 'src/discord-bot/providers/list-bot.service';
 import { MissingSmartContractService } from 'src/scrapers/near-scraper/providers/missing-smart-contract.service';
 import { CreateActionCommonArgs, CreateListAction } from '../dto/create-action-common.dto';
 
+import { Transaction } from '../dto/near-transaction.dto';
+
 @Injectable()
-export class ListingTransactionService {
-  private readonly logger = new Logger(ListingTransactionService.name);
+export class ListTransactionService {
+  private readonly logger = new Logger(ListTransactionService.name);
 
   constructor(
     private readonly prismaService: PrismaService,
@@ -48,7 +49,7 @@ export class ListingTransactionService {
         list_contract_id: sc.id,
         list_tx_index: tx.transaction.nonce,
         list_seller: tx.transaction.signer_id,
-        list_block_height: tx.block.block_height
+        list_block_height: tx.block_height
       };
 
       // TODO: Use unified service to update NftMeta and handle NftState changes

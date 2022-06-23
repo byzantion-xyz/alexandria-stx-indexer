@@ -1,9 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { NftMeta, NftState, SmartContract, SmartContractFunction } from '@prisma/client';
-import { Transaction } from '@internal/prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import * as moment from 'moment';
 import { CreateActionCommonArgs } from '../dto/create-action-common.dto';
+import { Transaction } from '../dto/near-transaction.dto';
 
 @Injectable()
 export class TxHelperService {
@@ -15,8 +15,8 @@ export class TxHelperService {
 
   isNewNftListOrSale(tx: Transaction, nft_state: NftState) {
     return !nft_state || !nft_state.list_block_height ||
-      tx.block.block_height > nft_state.list_block_height ||
-      (tx.block.block_height === nft_state.list_block_height && tx.transaction.nonce > nft_state.list_tx_index);
+      tx.block_height > nft_state.list_block_height ||
+      (tx.block_height === nft_state.list_block_height && tx.transaction.nonce > nft_state.list_tx_index);
   }
 
   nanoToMiliSeconds(nanoseconds: bigint) {
@@ -91,9 +91,9 @@ export class TxHelperService {
       nft_meta_id: nftMeta.id,
       smart_contract_id: sc.id,
       collection_id: nftMeta.collection_id,
-      block_height: tx.block.block_height,
+      block_height: tx.block_height,
       tx_index: tx.transaction.nonce,
-      block_time: moment(new Date(this.nanoToMiliSeconds(tx.block.timestamp))).toDate(),
+      block_time: moment(new Date(this.nanoToMiliSeconds(tx.block_timestamp))).toDate(),
       tx_id: tx.transaction.hash,
       ... (msc && {
         market_name: msc.name,

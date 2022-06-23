@@ -27,17 +27,22 @@ export class NearIndexerService {
   async fetchTransactions(missing: boolean = false): Promise<Transaction[]> {
     const smartContracts = await this.prismaService.smartContract.findMany();
     const accounts = smartContracts.map(sc => sc.contract_key);
+    let accounts_in = "";
+    for (let i in accounts) {
+      accounts_in += `'${accounts[i]}',`;
+    }
+    accounts_in = accounts_in.slice(0, -1);
 
-    const result: Transaction[] = await this.prismaStreamerService.$queryRaw`
+    const result: Transaction[] = await this.prismaStreamerService.$queryRawUnsafe(`
       select * from transaction t inner join receipt r on t.success_receipt_id =r.receipt_id
-      where block_height >= 65000000 and
-      receiver_id in ('x.paras.near', 'marketplace.paras.near') AND
+      where block_height >= 65000000 and 
+      receiver_id in (${accounts_in}) AND 
       processed = false AND 
       missing = false AND
       (( execution_outcome->'outcome'->'status'->'SuccessValue' is not null)
       or (execution_outcome->'outcome'->'status'->'SuccessReceiptId' is not null))
-      order by t.block_height limit 1000;
-    `;
+      order by t.block_height limit 3000;
+    `);
 
     return result;
   }

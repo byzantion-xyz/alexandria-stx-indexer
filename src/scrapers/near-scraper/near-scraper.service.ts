@@ -45,7 +45,10 @@ export class NearScraperService {
     const { contract_key, token_series_id, token_id, starting_token_id, ending_token_id } = data
     const { scrape_non_custodial_from_paras = false, force_scrape = false } = data
 
+    this.logger.log(`[scraping ${contract_key}] START SCRAPE`);
+
     // get collection slug
+    this.logger.log(`[scraping ${contract_key}] Getting Slug...`);
     let isParasCustodialCollection = false
     let slug = contract_key
     if (token_series_id) {
@@ -54,14 +57,14 @@ export class NearScraperService {
       slug = res.data.metadata.collection_id;
     }
 
-    this.logger.log(`[scraping ${slug}] START SCRAPE`);
-
     // create SmartContract, Collection, and CollectionScrape tables if they don't exist
+    this.logger.log(`[scraping ${slug}] Creating Initial Tables...`);
     const smartContract = await this.createSmartContract(contract_key);
     const collection = await this.createCollection(smartContract.id, slug);
     const collectionScrape = await this.createCollectionScrape(collection.id);
 
     // Check if contract should be scraped and return (quit scrape process) if not
+    this.logger.log(`[scraping ${slug}] Checking if should continue to scrape...`);
     if (!scrape_non_custodial_from_paras) {
       const numOfCurrentSrapes = await this.prismaService.collectionScrape.count({
         where: { 
@@ -138,6 +141,7 @@ export class NearScraperService {
         // Pin each custodial nft image to our pinata (each paras custodial nft has a distinct image hash)
         await this.pinMultipleImages(tokenMetas, nftContractMetadata.base_uri, slug);
       } else {
+        // Pin the first item's meta as it's the same hash for the whole folder of metas and images
         await this.pin(tokenMetas, nftContractMetadata.base_uri, slug);
       }
       
@@ -858,11 +862,8 @@ export class NearScraperService {
       if (!tokenIpfsUrl || !tokenIpfsUrl.includes('ipfs')) continue // if the metadata is not stored on ipfs continue loop
 
       const pinHash = this.ipfsHelperService.getPinHashFromUrl(tokenIpfsUrl);
-      //const alreadyPinned = await this.ipfsHelperService.checkIfAlreadyPinned(pinHash);
-      //if (!alreadyPinned) {
-        const byzPinataPromise = this.ipfsHelperService.pinByHash(pinHash, `${slug} ${tokenMetas[i]?.token_id} Image`);
-        pinPromises.push(byzPinataPromise);
-      //}
+      const byzPinataPromise = this.ipfsHelperService.pinByHash(pinHash, `${slug} ${tokenMetas[i]?.token_id} Image`);
+      pinPromises.push(byzPinataPromise);
       if (i % 5 === 0) {
         await Promise.all(pinPromises);
         pinPromises = [];

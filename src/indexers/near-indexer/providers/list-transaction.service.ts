@@ -9,8 +9,8 @@ import { MissingSmartContractService } from 'src/scrapers/near-scraper/providers
 import { CreateActionCommonArgs, CreateListAction } from '../dto/create-action-common.dto';
 
 @Injectable()
-export class ListingTransactionService {
-  private readonly logger = new Logger(ListingTransactionService.name);
+export class ListTransactionService {
+  private readonly logger = new Logger(ListTransactionService.name);
 
   constructor(
     private readonly prismaService: PrismaService,
@@ -81,8 +81,7 @@ export class ListingTransactionService {
       txResult.processed = true;
     } else {
       this.logger.log(`NftMeta not found by`, { contract_key, token_id });
-      //this.missingSmartContractService.scrapeMissing({ contract_key, token_id });
-      
+      this.missingSmartContractService.scrapeMissing({ contract_key, token_id });
       txResult.missing = true;
     }
 

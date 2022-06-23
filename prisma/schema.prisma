@@ -333,6 +333,7 @@ enum ActionName {
 
 enum SmartContractType {
   non_fungible_tokens
+  token_series
   marketplace
   staking
   fungible_tokens
@@ -355,6 +356,7 @@ enum SmartContractScrapeStage {
 }
 
 enum SmartContractScrapeOutcome {
+  skipped
   succeeded
   failed
 }

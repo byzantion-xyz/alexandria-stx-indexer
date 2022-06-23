@@ -24,7 +24,7 @@ export class MissingSmartContractService {
       this.logger.log(`Call scraper for missing smartContract.contract_key= ${data.contract_key}`);
       // Scrape the missing smart contract and NftMetas
       let scrapeParams: runScraperData = {
-        contract_key: data.contract_key
+        contract_key: data.contract_key 
       };
       await this.nearScraperService.scrape(scrapeParams);
     }

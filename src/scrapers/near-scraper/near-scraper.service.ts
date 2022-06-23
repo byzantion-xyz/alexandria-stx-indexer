@@ -148,6 +148,11 @@ export class NearScraperService {
       await this.setCollectionScrapeStage(collection.id, CollectionScrapeStage.creating_collection_attributes);
       await this.createCollectionAttributes(slug);
 
+      // Pin each custodial nft image to our pinata (each paras custodial nft has a distinct image hash)
+      if (isParasCustodialCollection) {
+        this.pinMultipleImages(tokenMetas, nftContractMetadata.base_uri, slug);
+      }
+
       // mark scrape as done and succeeded
       await this.markScrapeSuccess(collection.id, slug);
       this.logger.log(`[scraping ${slug}] SCRAPING COMPLETE`);
@@ -842,21 +847,28 @@ export class NearScraperService {
     })
   }
 
-  // for cases like tinkerunion_nft.enleap.near that have a distinct pin hash for every image
-  // async pinMultipleImages(tokenMetas, nftContractMetadataBaseUri, contract_key) {
-  //   if (tokenMetas.length == 0) return
-  //   this.logger.log(`[scraping ${contract_key}] pin multiple`);
 
-  //   let pinPromises = []
-  //   for (let tokenMeta of tokenMetas) {
-  //     const tokenIpfsUrl = this.getTokenIpfsUrl(nftContractMetadataBaseUri, tokenMeta?.metadata?.media);
-  //     if (!tokenIpfsUrl || !tokenIpfsUrl.includes('ipfs')) continue // if the metadata is not stored on ipfs continue loop
+  async pinMultipleImages(tokenMetas, nftContractMetadataBaseUri, slug) {
+    if (tokenMetas.length == 0) return
+    this.logger.log(`[scraping ${slug}] pin multiple`);
 
-  //     const pinHash = this.ipfsHelperService.getPinHashFromUrl(tokenIpfsUrl);
-  //     const byzPinataPromise = this.ipfsHelperService.pinByHash(pinHash, `${contract_key} ${tokenMeta?.token_id} Meta`);
-  //     pinPromises.push(byzPinataPromise);
-  //   }
+    let pinPromises = []
+    for (let i = 0; i < tokenMetas.length; i++) {
+      const tokenIpfsUrl = this.getTokenIpfsUrl(nftContractMetadataBaseUri, tokenMetas[i]?.metadata?.media);
+      if (!tokenIpfsUrl || !tokenIpfsUrl.includes('ipfs')) continue // if the metadata is not stored on ipfs continue loop
 
-  //   await Promise.all(pinPromises);
-  // };
+      const pinHash = this.ipfsHelperService.getPinHashFromUrl(tokenIpfsUrl);
+      const alreadyPinned = await this.ipfsHelperService.checkIfAlreadyPinned(pinHash);
+      if (!alreadyPinned) {
+        const byzPinataPromise = this.ipfsHelperService.pinByHash(pinHash, `${slug} ${tokenMetas[i]?.token_id} Meta`);
+        pinPromises.push(byzPinataPromise);
+      }
+      if (i % 5 === 0) {
+        await Promise.all(pinPromises);
+        pinPromises = [];
+        await delay(200);
+      }
+    }
+    await Promise.all(pinPromises);
+  };
 }

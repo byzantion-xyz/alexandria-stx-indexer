@@ -4,7 +4,7 @@ import { SmartContract, SmartContractFunction, ActionName, SmartContractType } f
 import { TxProcessResult } from 'src/common/interfaces/tx-process-result.interface';
 import { TxHelperService } from './tx-helper.service';
 import { ListBotService } from 'src/discord-bot/providers/list-bot.service';
-import { MissingSmartContractService } from 'src/scrapers/near-scraper/providers/missing-smart-contract.service';
+import { MissingSmartContractService } from 'src/scrapers/near-scraper/providers/missing-collection.service';
 import { CreateActionCommonArgs, CreateListAction } from '../dto/create-action-common.dto';
 
 import { Transaction } from '../dto/near-transaction.dto';

@@ -41,10 +41,11 @@ export class NearScraperService {
     private readonly ipfsHelperService: IpfsHelperService
   ) {}
 
+
   async scrape(data: runScraperData) {
     this.logger.log(`START SCRAPE`);
-    const { contract_key, token_series_id, token_id, starting_token_id, ending_token_id } = data
-    const { scrape_non_custodial_from_paras = false, force_scrape = false } = data
+    const { contract_key, token_series_id, token_id, starting_token_id, ending_token_id } = data;
+    const { scrape_non_custodial_from_paras = false, force_scrape = false } = data;
     let isParasCustodialCollection = false;
     if (token_series_id) isParasCustodialCollection = true;
 
@@ -69,7 +70,6 @@ export class NearScraperService {
     const collectionSize = await contract.nft_total_supply();
 
     let tokenMetas = []
-    
     try {
       // Get tokens in collection
       if (scrape_non_custodial_from_paras) {
@@ -135,7 +135,7 @@ export class NearScraperService {
     }
   }
 
-  
+
   async getSlug(contract_key, token_series_id) {
     this.logger.log(`[scraping ${contract_key}] Getting Slug...`);
     let slug = contract_key
@@ -149,7 +149,8 @@ export class NearScraperService {
 
   async checkShouldScrape(scrape_non_custodial_from_paras, force_scrape, collectionId, slug) {
     this.logger.log(`[scraping ${slug}] Checking if scrape should continue...`);
-    if (!scrape_non_custodial_from_paras) {
+    if (scrape_non_custodial_from_paras) return true
+    else {
       const numOfCurrentSrapes = await this.prismaService.collectionScrape.count({
         where: { 
           stage: { notIn: [CollectionScrapeStage.getting_tokens, CollectionScrapeStage.done] },

@@ -670,7 +670,7 @@ export class NearScraperService {
     if (tokenMetas.length < Number(collectionSize)) {
       const errorMsg = `[scraping ${slug}] # of tokens scraped: ${tokenMetas.length} is less than # of tokens in contract ${Number(collectionSize)}. This means you need to re-scrape and pass in an ending_token_id that is at least ${Number(collectionSize)}. (So the iterator has a chance to scrape token_ids up to that number). This issue exists because the token supply has changed from the original supply.`
       this.logger.error(errorMsg);
-      throw Error(errorMsg)
+      throw new Error(errorMsg)
     }
     
     this.logger.log(`[scraping ${slug}] Number of NftMetas to process: ${tokenMetas.length}`);

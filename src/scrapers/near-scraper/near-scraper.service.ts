@@ -786,8 +786,8 @@ export class NearScraperService {
   async createCollection(smartContractId, slug) {
     return await this.prismaService.collection.upsert({ 
       where:  { slug: slug },
-      update: { smart_contract_id: smartContractId },
-      create: { smart_contract_id: smartContractId },
+      update: {},
+      create: { slug: slug, smart_contract_id: smartContractId },
       select: { id: true }
     })
   }

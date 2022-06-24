@@ -1,13 +1,25 @@
-/*
-  Warnings:
+-- CreateTable
+CREATE TABLE "receipt" (
+    "receipt_id" TEXT NOT NULL,
+    "receipt" JSONB NOT NULL,
+    "execution_outcome" JSONB NOT NULL,
 
-  - You are about to drop the column `receiver_id` on the `transaction` table. All the data in the column will be lost.
-  - You are about to drop the column `success_receipt_id` on the `transaction` table. All the data in the column will be lost.
+    CONSTRAINT "receipt_pkey" PRIMARY KEY ("receipt_id")
+);
 
-*/
--- AlterTable
-ALTER TABLE "transaction" DROP COLUMN "receiver_id",
-DROP COLUMN "success_receipt_id";
+-- CreateTable
+CREATE TABLE "transaction" (
+    "hash" TEXT NOT NULL,
+    "outcome" JSONB NOT NULL,
+    "transaction" JSONB NOT NULL,
+    "missing" BOOLEAN NOT NULL DEFAULT false,
+    "processed" BOOLEAN NOT NULL DEFAULT false,
+    "block_hash" TEXT NOT NULL,
+    "block_height" BIGINT NOT NULL,
+    "block_timestamp" BIGINT NOT NULL,
+
+    CONSTRAINT "transaction_pkey" PRIMARY KEY ("hash")
+);
 
 /* Add JSONB generated columns */
 ALTER TABLE public."transaction" ADD success_receipt_id text NULL GENERATED ALWAYS AS ((((outcome -> 'execution_outcome'::text) -> 'outcome'::text) -> 'status'::text) ->> 'SuccessReceiptId'::text) STORED;

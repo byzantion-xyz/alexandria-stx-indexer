@@ -109,9 +109,9 @@ export class NearScraperService {
     const nftContractMetadata = await contract.nft_metadata();
     const collectionSize = await contract.nft_total_supply();
 
+    // Get tokens
     let tokenMetas = []
     try {
-      // Get tokens
       if (scrape_non_custodial_from_paras) {
         const tokens = await this.getTokensFromParas(slug, collectionSize);
         tokenMetas = tokens;
@@ -129,17 +129,23 @@ export class NearScraperService {
         }
       }
     
-      // load SmartContract and Collection
-      const smartContract = await this.loadSmartContract(nftContractMetadata, contract_key);
-      let collectionTitle = nftContractMetadata.name
+      // load SmartContract with data from chain
+      const smartContract = await this.loadSmartContract(nftContractMetadata, contract_key, slug);
+
+      // load Collection with data from chain
+      let collectionTitle = nftContractMetadata.name;
       if (isParasCustodialCollection) collectionTitle = tokenMetas[0].metadata.collection.trim();
       const loadedCollection = await this.loadCollection(tokenMetas, nftContractMetadata.base_uri, collectionTitle, collectionScrape.id, smartContract.id, slug);
+
+      // create CollectionCreator if not exists
+      let creatorWalletId = contract_key;
+      if (isParasCustodialCollection) creatorWalletId = tokenMetas[0].metadata.creator_id;
+      await this.createCollectionCreator(loadedCollection.id, creatorWalletId, slug);
 
       // pin IPFS to our pinata
       await this.setCollectionScrapeStage(collection.id, CollectionScrapeStage.pinning);
       if (isParasCustodialCollection) {
         // Pin each custodial nft image to our pinata (each paras custodial nft has a distinct image hash)
-        //await this.pinMultipleImages(tokenMetas, nftContractMetadata.base_uri, slug);
       } else {
         // Pin the first item's meta as it's the same hash for the whole folder of metas and images
         await this.pin(tokenMetas, nftContractMetadata.base_uri, slug);
@@ -187,8 +193,8 @@ export class NearScraperService {
   };
 
 
-  async loadSmartContract(nftContractMetadata, contract_key) {
-    this.logger.log(`[scraping ${contract_key}] Loading Smart Contract`);
+  async loadSmartContract(nftContractMetadata, contract_key, slug) {
+    this.logger.log(`[scraping ${slug}] Loading Smart Contract`);
 
     const data = {
       contract_key: contract_key,
@@ -213,6 +219,19 @@ export class NearScraperService {
       select: { id: true }
     })
     return smartContract
+  }
+
+  
+  async createCollectionCreator(collectionId, creatorWalletId, slug) {
+    this.logger.log(`[scraping ${slug}] Creating CollectionCreator`);
+
+    const collectionCreator = await this.prismaService.collectionCreator.upsert({
+      where: { collection_id: collectionId },
+      update: { wallet_id: creatorWalletId },
+      create: { collection_id: collectionId, wallet_id: creatorWalletId },
+      select: { id: true }
+    })
+    return collectionCreator
   }
 
 

@@ -38,7 +38,7 @@ export class NearIndexerService {
       where block_height >= 65000000 and 
       receiver_id in (${accounts_in}) AND 
       processed = false AND 
-      missing = false AND
+      missing = ${missing} AND
       (( execution_outcome->'outcome'->'status'->'SuccessValue' is not null)
       or (execution_outcome->'outcome'->'status'->'SuccessReceiptId' is not null))
       order by t.block_height limit 3000;

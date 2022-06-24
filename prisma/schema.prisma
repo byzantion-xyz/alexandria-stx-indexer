@@ -147,7 +147,7 @@ model CollectionBid {
 
 model CollectionCreator {
   id        String  @id @default(uuid()) @db.Uuid
-  wallet_id String  @unique
+  wallet_id String
   name      String?
   bio       String?
   twitter   String?

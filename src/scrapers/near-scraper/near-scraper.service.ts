@@ -253,7 +253,7 @@ export class NearScraperService {
     const firstTokenIpfsUrl = this.getTokenIpfsUrl(nftContractMetadataBaseUri, firstTokenMeta.metadata.reference);
     const firstTokenIpfsImageUrl = this.getTokenIpfsMediaUrl(nftContractMetadataBaseUri, firstTokenMeta.metadata.media);
     let tokenIpfsMeta;
-    if (firstTokenIpfsUrl) {
+    if (firstTokenIpfsUrl && !firstTokenIpfsUrl.includes("ipfs.fleek.co")) {
       const res = await axios.get(firstTokenIpfsUrl);
       tokenIpfsMeta = res.data
     }

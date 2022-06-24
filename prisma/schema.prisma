@@ -98,6 +98,7 @@ model Collection {
   smart_contract       SmartContract?        @relation(fields: [smart_contract_id], references: [id])
   collection_scrape_id String?               @unique @db.Uuid
   collection_scrape    CollectionScrape?     @relation(fields: [collection_scrape_id], references: [id])
+  creator              Creator?
 
   @@map("collection")
 }
@@ -142,6 +143,20 @@ model CollectionBid {
   smart_contract     SmartContract       @relation(fields: [smart_contract_id], references: [id])
 
   @@map("collection_bid")
+}
+
+model Creator {
+  id          String  @id @default(uuid()) @db.Uuid
+  name        String
+  description String?
+  twitter     String?
+  discord     String?
+  website     String?
+
+  collection    Collection @relation(fields: [collection_id], references: [id])
+  collection_id String     @db.Uuid @unique
+
+  @@map("creator")
 }
 
 model CollectionScrape {

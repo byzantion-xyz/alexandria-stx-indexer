@@ -139,7 +139,7 @@ export class NearScraperService {
       await this.setCollectionScrapeStage(collection.id, CollectionScrapeStage.pinning);
       if (isParasCustodialCollection) {
         // Pin each custodial nft image to our pinata (each paras custodial nft has a distinct image hash)
-        await this.pinMultipleImages(tokenMetas, nftContractMetadata.base_uri, slug);
+        //await this.pinMultipleImages(tokenMetas, nftContractMetadata.base_uri, slug);
       } else {
         // Pin the first item's meta as it's the same hash for the whole folder of metas and images
         await this.pin(tokenMetas, nftContractMetadata.base_uri, slug);

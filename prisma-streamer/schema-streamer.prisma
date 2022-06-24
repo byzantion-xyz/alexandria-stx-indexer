@@ -19,21 +19,21 @@ model Transaction {
   block_timestamp BigInt
   block_height    BigInt
 
-  receiver_id  String
-  success_receipt_id  String
+  receiver_id         String?
+  success_receipt_id  String?
 
   missing   Boolean @default(false)
   processed Boolean @default(false)
 
+  @@index([receiver_id])
+  @@index([success_receipt_id])
   @@map("transaction")
 }
 
 model Receipt {
-  receipt_id String @id
-
+  receipt_id        String @id
   receipt           Json @db.JsonB
   execution_outcome Json @db.JsonB
-
 
   @@map("receipt")
 }

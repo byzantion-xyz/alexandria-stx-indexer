@@ -104,10 +104,11 @@ export class NearIndexerService {
           const txHandler = this.getMicroIndexer(smart_contract_function.name)
           result = await txHandler.process(transaction, smart_contract, smart_contract_function, notify);
         } else {
+          this.logger.log(`function_name: ${method_name} not found in ${transaction.transaction.receiver_id}`);
           result.missing = true;
         }
       } else {
-        this.logger.log(`function_name: ${method_name} not found in ${transaction.transaction.receiver_id}`);
+        this.logger.log(`smart_contract: ${transaction.transaction.receiver_id} not found`);
         result.missing = true;
       }
     } catch (err) {

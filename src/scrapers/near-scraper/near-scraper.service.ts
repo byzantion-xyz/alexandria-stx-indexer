@@ -41,68 +41,28 @@ export class NearScraperService {
     private readonly ipfsHelperService: IpfsHelperService
   ) {}
 
-  async scrape(data: runScraperData) {
-    const { contract_key, token_series_id, token_id, starting_token_id, ending_token_id } = data
-    const { scrape_non_custodial_from_paras = false, force_scrape = false } = data
 
-    this.logger.log(`[scraping ${contract_key}] START SCRAPE`);
+  async scrape(data: runScraperData) {
+    this.logger.log(`START SCRAPE`);
+    const { contract_key, token_series_id, token_id, starting_token_id, ending_token_id } = data;
+    const { scrape_non_custodial_from_paras = false, force_scrape = false } = data;
+    let isParasCustodialCollection = false;
+    if (token_series_id) isParasCustodialCollection = true;
 
     // get collection slug
-    this.logger.log(`[scraping ${contract_key}] Getting Slug...`);
-    let isParasCustodialCollection = false
-    let slug = contract_key
-    if (token_series_id) {
-      isParasCustodialCollection = true
-      const res = await axios.get(`https://api-v2-mainnet.paras.id/token/${contract_key}::${token_series_id}`);
-      slug = res.data.metadata.collection_id;
-    }
-
+    const slug = await this.getSlug(contract_key, token_series_id);
+    
     // create SmartContract, Collection, and CollectionScrape tables if they don't exist
-    this.logger.log(`[scraping ${slug}] Creating Initial Tables...`);
-    const smartContract = await this.createSmartContract(contract_key);
+    const smartContract = await this.createSmartContract(contract_key, slug);
     const collection = await this.createCollection(smartContract.id, slug);
-    const collectionScrape = await this.createCollectionScrape(collection.id);
+    const collectionScrape = await this.createCollectionScrape(collection.id, slug);
 
     // Check if contract should be scraped and return (quit scrape process) if not
-    this.logger.log(`[scraping ${slug}] Checking if should continue to scrape...`);
-    if (!scrape_non_custodial_from_paras) {
-      const numOfCurrentSrapes = await this.prismaService.collectionScrape.count({
-        where: { 
-          stage: { notIn: [CollectionScrapeStage.getting_tokens, CollectionScrapeStage.done] },
-          outcome: { not: CollectionScrapeOutcome.failed }
-        }
-      })
-
-      if (numOfCurrentSrapes > 3) {
-        const skipMsg = `[scraping ${slug}] Scrape skipped, 3 scrapes already in progress.`;
-        this.logger.log(skipMsg);
-        await this.prismaService.collectionScrape.update({ 
-          where: { collection_id: collection.id },
-          data: { 
-            outcome: CollectionScrapeOutcome.skipped,
-            outcome_msg: `[${slug}] Scrape skipped
-                          \`${skipMsg}\``
-          }
-        })
-        return "Contract scrape skipped--too many scrapes currenlty in progress."
-      }
-
-      const collectionScrape = await this.prismaService.collectionScrape.findUnique({
-        where: { collection_id: collection.id }
-      })
-      if (collectionScrape.outcome == CollectionScrapeOutcome.succeeded && !force_scrape) {
-        this.logger.log(`[scraping ${slug}] Scrape skipped, already scraped successfully.`);
-        return "Contract already scraped succesfully"
-      }
-      if (collectionScrape.attempts >= 2 && !force_scrape) {
-        const errorMsg = `[scraping ${slug}] Contract scrape attempted twice already and failed. Check for errors in collectionScrape id: ${collectionScrape.id}. To re-scrape, pass in force_scrape: true, or set the SmartContractScrape.attempts back to 0.`;
-        this.logger.error(errorMsg);
-        return errorMsg
-      }
-    }
+    const shouldScrape = await this.checkShouldScrape(scrape_non_custodial_from_paras, force_scrape, collection.id, slug);
+    if (!shouldScrape) return -1
 
     // Should scrape, so increment scrape attempt 
-    await this.incrementScrapeAttemptByOne(collection.id)
+    await this.incrementScrapeAttemptByOne(collection.id);
 
     // Get contract data from chain
     const contract = await this.connectNftContract(contract_key);
@@ -111,7 +71,7 @@ export class NearScraperService {
 
     let tokenMetas = []
     try {
-      // Get tokens
+      // Get tokens in collection
       if (scrape_non_custodial_from_paras) {
         const tokens = await this.getTokensFromParas(slug, collectionSize);
         tokenMetas = tokens;
@@ -129,17 +89,23 @@ export class NearScraperService {
         }
       }
     
-      // load SmartContract and Collection
-      const smartContract = await this.loadSmartContract(nftContractMetadata, contract_key);
-      let collectionTitle = nftContractMetadata.name
+      // load SmartContract with data from chain
+      const smartContract = await this.loadSmartContract(nftContractMetadata, contract_key, slug);
+
+      // load Collection with data from chain
+      let collectionTitle = nftContractMetadata.name;
       if (isParasCustodialCollection) collectionTitle = tokenMetas[0].metadata.collection.trim();
       const loadedCollection = await this.loadCollection(tokenMetas, nftContractMetadata.base_uri, collectionTitle, collectionScrape.id, smartContract.id, slug);
+
+      // create CollectionCreator if not exists
+      let creatorWalletId = contract_key;
+      if (isParasCustodialCollection) creatorWalletId = tokenMetas[0].metadata.creator_id;
+      await this.createCollectionCreator(loadedCollection.id, creatorWalletId, slug);
 
       // pin IPFS to our pinata
       await this.setCollectionScrapeStage(collection.id, CollectionScrapeStage.pinning);
       if (isParasCustodialCollection) {
         // Pin each custodial nft image to our pinata (each paras custodial nft has a distinct image hash)
-        await this.pinMultipleImages(tokenMetas, nftContractMetadata.base_uri, slug);
       } else {
         // Pin the first item's meta as it's the same hash for the whole folder of metas and images
         await this.pin(tokenMetas, nftContractMetadata.base_uri, slug);
@@ -164,13 +130,62 @@ export class NearScraperService {
 
     } catch(err) {
       this.logger.error(`[scraping ${slug}] Error while scraping: ${err}`);
-      let error = err.stack;
-      if (err.isAxiosError) {
-        error = JSON.stringify(err.toJSON(), null, 2);
-        error.innerException = err.response.data;
-      }
-      await this.createCollectionScrapeError(error, nftContractMetadata.base_uri, tokenMetas[0], slug);
+      await this.createCollectionScrapeError(err, nftContractMetadata.base_uri, tokenMetas[0], slug);
       return err
+    }
+  }
+
+
+  async getSlug(contract_key, token_series_id) {
+    this.logger.log(`[scraping ${contract_key}] Getting Slug...`);
+    let slug = contract_key
+    if (token_series_id) {
+      const res = await axios.get(`https://api-v2-mainnet.paras.id/token/${contract_key}::${token_series_id}`);
+      slug = res.data.metadata.collection_id;
+    }
+    return slug
+  }
+
+
+  async checkShouldScrape(scrape_non_custodial_from_paras, force_scrape, collectionId, slug) {
+    this.logger.log(`[scraping ${slug}] Checking if scrape should continue...`);
+    if (scrape_non_custodial_from_paras) return true
+    else {
+      const numOfCurrentSrapes = await this.prismaService.collectionScrape.count({
+        where: { 
+          stage: { notIn: [CollectionScrapeStage.getting_tokens, CollectionScrapeStage.done] },
+          outcome: { not: CollectionScrapeOutcome.failed }
+        }
+      })
+
+      if (numOfCurrentSrapes > 3) {
+        const skipMsg = `[scraping ${slug}] Scrape skipped, 3 scrapes already in progress.`;
+        this.logger.log(skipMsg);
+        await this.prismaService.collectionScrape.update({ 
+          where: { collection_id: collectionId },
+          data: { 
+            outcome: CollectionScrapeOutcome.skipped,
+            outcome_msg: `[${slug}] Scrape skipped
+                          \`${skipMsg}\``
+          }
+        })
+        return false
+      }
+
+      const collectionScrape = await this.prismaService.collectionScrape.findUnique({
+        where: { collection_id: collectionId }
+      })
+      if (collectionScrape.outcome == CollectionScrapeOutcome.succeeded && !force_scrape) {
+        this.logger.log(`[scraping ${slug}] Scrape skipped, already scraped successfully.`);
+        return false
+      }
+      if (collectionScrape.attempts >= 2 && !force_scrape) {
+        const errorMsg = `[scraping ${slug}] Contract scrape attempted twice already and failed. Check for errors in collectionScrape id: ${collectionScrape.id}. To re-scrape, pass in force_scrape: true, or set the SmartContractScrape.attempts back to 0.`;
+        this.logger.error(errorMsg);
+        return false
+      }
+
+      return true
     }
   }
 
@@ -187,8 +202,8 @@ export class NearScraperService {
   };
 
 
-  async loadSmartContract(nftContractMetadata, contract_key) {
-    this.logger.log(`[scraping ${contract_key}] Loading Smart Contract`);
+  async loadSmartContract(nftContractMetadata, contract_key, slug) {
+    this.logger.log(`[scraping ${slug}] Loading Smart Contract`);
 
     const data = {
       contract_key: contract_key,
@@ -215,6 +230,19 @@ export class NearScraperService {
     return smartContract
   }
 
+  
+  async createCollectionCreator(collectionId, creatorWalletId, slug) {
+    this.logger.log(`[scraping ${slug}] Creating CollectionCreator`);
+
+    const collectionCreator = await this.prismaService.collectionCreator.upsert({
+      where: { collection_id: collectionId },
+      update: { wallet_id: creatorWalletId },
+      create: { collection_id: collectionId, wallet_id: creatorWalletId },
+      select: { id: true }
+    })
+    return collectionCreator
+  }
+
 
   async loadCollection(tokenMetas, nftContractMetadataBaseUri, collectionTitle, collectionScrape, smartContractId, slug) {
     if (tokenMetas.length == 0) return
@@ -225,7 +253,7 @@ export class NearScraperService {
     const firstTokenIpfsUrl = this.getTokenIpfsUrl(nftContractMetadataBaseUri, firstTokenMeta.metadata.reference);
     const firstTokenIpfsImageUrl = this.getTokenIpfsMediaUrl(nftContractMetadataBaseUri, firstTokenMeta.metadata.media);
     let tokenIpfsMeta;
-    if (firstTokenIpfsUrl) {
+    if (firstTokenIpfsUrl && !firstTokenIpfsUrl.includes("ipfs.fleek.co")) {
       const res = await axios.get(firstTokenIpfsUrl);
       tokenIpfsMeta = res.data
     }
@@ -668,9 +696,9 @@ export class NearScraperService {
     tokenMetas = tokenMetas.filter(token => !!token)
 
     if (tokenMetas.length < Number(collectionSize)) {
-      const errorMsg = `[scraping ${slug}] # of tokens scraped: ${tokenMetas.length} is less than # of tokens in contract ${Number(collectionSize)}. This means you need to re-scrape and pass in an ending_token_id that is at least ${Number(collectionSize)}. (So the iterator has a chance to scrape token_ids up to that number). This issue exists because the token supply has changed from the original supply.`
+      const errorMsg = `[scraping ${slug}] # of tokens scraped: ${tokenMetas.length} is less than # of tokens in contract ${Number(collectionSize)}. This means you need to re-scrape and pass in an ending_token_id that is at least ${Number(collectionSize)}. (So the iterator has a chance to scrape token_ids up to that number). This issue exists because the token supply has changed from the original supply. Check the collection on paras.id to see how high the token ids go.`
       this.logger.error(errorMsg);
-      throw Error(errorMsg)
+      throw new Error(errorMsg)
     }
     
     this.logger.log(`[scraping ${slug}] Number of NftMetas to process: ${tokenMetas.length}`);
@@ -741,8 +769,7 @@ export class NearScraperService {
         try {
           ipfsMetasBatch = await Promise.all(tokenIpfsMetaPromises)
         } catch(err) {
-          this.logger.error(err);
-          await this.createCollectionScrapeError(err, nftContractMetadataBaseUri, tokenMetas[i], slug);
+          throw new Error(err)
         }
         if (ipfsMetasBatch) {
           tokenIpfsMetas.push(...ipfsMetasBatch.filter((r) => r.status == 200).map((r) => r.data));
@@ -763,7 +790,8 @@ export class NearScraperService {
   }
 
 
-  async createSmartContract(contract_key) {
+  async createSmartContract(contract_key, slug) {
+    this.logger.log(`[scraping ${slug}] Creating SmartContract...`);
     const smartContractData = {
       contract_key: contract_key,
       type: SmartContractType.non_fungible_tokens,
@@ -784,16 +812,18 @@ export class NearScraperService {
 
 
   async createCollection(smartContractId, slug) {
+    this.logger.log(`[scraping ${slug}] Creating Collection...`);
     return await this.prismaService.collection.upsert({ 
       where:  { slug: slug },
-      update: { smart_contract_id: smartContractId },
-      create: { smart_contract_id: smartContractId },
+      update: {},
+      create: { slug: slug, smart_contract_id: smartContractId },
       select: { id: true }
     })
   }
 
 
-  async createCollectionScrape(collectionId) {
+  async createCollectionScrape(collectionId, slug) {
+    this.logger.log(`[scraping ${slug}] Creating CollectionScrape...`);
     return await this.prismaService.collectionScrape.upsert({ 
       where: { collection_id: collectionId },
       update: {},
@@ -834,7 +864,13 @@ export class NearScraperService {
   }
 
 
-  async createCollectionScrapeError(error, nftContractMetadataBaseUri, firstTokenMeta, slug) {
+  async createCollectionScrapeError(err, nftContractMetadataBaseUri, firstTokenMeta, slug) {
+    let error = err.stack;
+    if (err.isAxiosError) {
+      error = JSON.stringify(err.toJSON(), null, 2);
+      error.innerException = err.response.data;
+    }
+    
     const collection = await this.prismaService.collection.findUnique({
       where: { slug: slug }, select: { id: true }
     })

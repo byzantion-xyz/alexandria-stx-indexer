@@ -6,8 +6,8 @@ import { TxProcessResult } from 'src/indexers/common/interfaces/tx-process-resul
 import { UnlistTransactionService } from './providers/unlist-transaction.service';
 import * as moment from 'moment';
 import { TxHelperService } from './providers/tx-helper.service';
-import { PrismaStreamerService } from 'src/prisma/prisma-streamer.service';
 import { Transaction } from './dto/near-transaction.dto';
+import { NearTxStreamAdapterService } from './providers/near-tx-stream-adapter.service';
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -17,47 +17,24 @@ export class NearIndexerService {
 
   constructor(
     private readonly prismaService: PrismaService,
-    private readonly prismaStreamerService: PrismaStreamerService,
+    private nearTxStreamAdapter: NearTxStreamAdapterService,
     private buyTransaction: BuyTransactionService,
     private listTransaction: ListTransactionService,
     private unlistTransaction: UnlistTransactionService,
     private txHelper: TxHelperService
   ) { }
   
-  async fetchTransactions(missing: boolean = false): Promise<Transaction[]> {
-    const smartContracts = await this.prismaService.smartContract.findMany();
-    const accounts = smartContracts.map(sc => sc.contract_key);
-    let accounts_in = "";
-    for (let i in accounts) {
-      accounts_in += `'${accounts[i]}',`;
-    }
-    accounts_in = accounts_in.slice(0, -1);
-
-    const result: Transaction[] = await this.prismaStreamerService.$queryRawUnsafe(`
-      select * from transaction t inner join receipt r on t.success_receipt_id =r.receipt_id
-      where block_height >= 65000000 and 
-      receiver_id in (${accounts_in}) AND 
-      processed = false AND 
-      missing = ${missing} AND
-      (( execution_outcome->'outcome'->'status'->'SuccessValue' is not null)
-      or (execution_outcome->'outcome'->'status'->'SuccessReceiptId' is not null))
-      order by t.block_height limit 3000;
-    `);
-
-    return result;
-  }
-
   async runIndexer() {
     this.logger.debug('runIndexer() Initialize');
 
-    const rows: Transaction[] = await this.fetchTransactions(false);
+    const rows: Transaction[] = await this.nearTxStreamAdapter.fetchTxs();
     this.logger.debug('Processing transactions');
 
     for await (const doc of rows) {
       const transaction: Transaction = doc;
 
       const txResult: TxProcessResult = await this.processTransaction(transaction);
-      await this.setTransactionResult(doc.hash, txResult);
+      await this.nearTxStreamAdapter.setTxResult(doc.hash, txResult);
     }
 
     await delay(5000);
@@ -68,13 +45,13 @@ export class NearIndexerService {
   async runIndexerForMissing() {
     this.logger.debug('runIndexerForMissing() Initialize');
 
-    const cursor = await this.fetchTransactions(true);
+    const cursor = await this.nearTxStreamAdapter.fetchMissingTxs();
     this.logger.debug('Processing missing transactions');
 
     for await (const doc of cursor) {
       const transaction: Transaction = <Transaction>doc;
       const txResult: TxProcessResult = await this.processTransaction(transaction);
-      await this.setTransactionResult(doc.hash, txResult);
+      await this.nearTxStreamAdapter.setTxResult(doc.hash, txResult);
     }
 
     await delay(5000);
@@ -125,14 +102,5 @@ export class NearIndexerService {
       throw new Error(`No service defined for the context: ${name}`);
     }
     return microIndexer;
-  }
-
-  async setTransactionResult(hash: string, result: TxProcessResult) {
-    if (result.processed || result.missing) {
-      await this.prismaStreamerService.transaction.update({ where: { hash }, data: { 
-        processed: result.processed,
-        missing: result.missing
-      }});
-    }
   }
 }

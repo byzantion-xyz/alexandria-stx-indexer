@@ -9,6 +9,7 @@ import { UnlistTransactionService } from './near-indexer/providers/unlist-transa
 import { DiscordBotModule } from 'src/discord-bot/discord-bot.module';
 import { PrismaModule } from 'src/prisma/prisma.module';
 import { ScrapersModule } from 'src/scrapers/scrapers.module';
+import { NearTxStreamAdapterService } from './near-indexer/providers/near-tx-stream-adapter.service';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { ScrapersModule } from 'src/scrapers/scrapers.module';
     ListTransactionService,
     TxHelperService,
     UnlistTransactionService,
+    NearTxStreamAdapterService,
   ],
   exports: [
     NearIndexerService

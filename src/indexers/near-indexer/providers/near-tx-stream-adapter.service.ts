@@ -4,9 +4,10 @@ import { TxProcessResult } from 'src/indexers/common/interfaces/tx-process-resul
 import { TxStreamAdapter } from 'src/indexers/common/interfaces/tx-stream-adapter.interface';
 import { PrismaStreamerService } from 'src/prisma/prisma-streamer.service';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { Transaction } from '../dto/near-transaction.dto';
-import { TxHelperService } from './tx-helper.service';
+import { Transaction } from '../interfaces/near-transaction.dto';
+import { TxHelperService } from '../../common/helpers/tx-helper.service';
 import * as moment from 'moment';
+import { NearTxHelperService } from './near-tx-helper.service';
 
 @Injectable()
 export class NearTxStreamAdapterService implements TxStreamAdapter {
@@ -15,7 +16,8 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
   constructor(
     private readonly prismaService: PrismaService,
     private readonly prismaStreamerService: PrismaStreamerService,
-    private txHelper: TxHelperService
+    private txHelper: TxHelperService,
+    private nearTxHelper: NearTxHelperService
   ) { }
 
   async fetchTxs(): Promise<CommonTx[]> {
@@ -76,7 +78,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
       const args = tx.transaction.actions[0].FunctionCall?.args;
       let parsed_args;
       if (args) {
-        parsed_args = this.txHelper.parseBase64Arguments(args);
+        parsed_args = this.nearTxHelper.parseBase64Arguments(args);
       }
 
       const notify = moment(new Date(this.txHelper.nanoToMiliSeconds(tx.block_timestamp))).utc() >

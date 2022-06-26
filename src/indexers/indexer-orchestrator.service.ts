@@ -5,7 +5,7 @@ import { ListIndexerService } from './common/providers/list-indexer.service';
 import { TxProcessResult } from 'src/indexers/common/interfaces/tx-process-result.interface';
 import { UnlistIndexerService } from './common/providers/unlist-indexer.service';
 
-import { TxHelperService } from './near-indexer/providers/tx-helper.service';
+import { TxHelperService } from './common/helpers/tx-helper.service';
 import { NearTxStreamAdapterService } from './near-indexer/providers/near-tx-stream-adapter.service';
 import { CommonTx } from './common/interfaces/common-tx.interface';
 

@@ -2,8 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { NftMeta, NftState, SmartContract, SmartContractFunction } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import * as moment from 'moment';
-import { CreateActionCommonArgs } from '../../common/interfaces/create-action-common.dto';
-import { Transaction } from '../dto/near-transaction.dto';
+import { CreateActionCommonArgs } from '../interfaces/create-action-common.dto';
 import { CommonTx } from 'src/indexers/common/interfaces/common-tx.interface';
 
 @Injectable()
@@ -14,27 +13,14 @@ export class TxHelperService {
     private readonly prismaService: PrismaService
   ) { }
 
-  isNewNftListOrSale(tx: CommonTx, nft_state: NftState) {
-    return !nft_state || !nft_state.list_block_height ||
-      tx.block_height > nft_state.list_block_height ||
-      (tx.block_height === nft_state.list_block_height && tx.nonce > nft_state.list_tx_index);
-  }
-
   nanoToMiliSeconds(nanoseconds: bigint) {
     return Number(BigInt(nanoseconds) / BigInt(1e6));
   }
 
-  parseBase64Arguments(args: string) {
-    try {
-      let json = JSON.parse(Buffer.from(args, 'base64').toString());
-      if (json.msg) {
-        json.msg = JSON.parse(json.msg);
-      }
-      return json;
-    } catch (err) {
-      this.logger.warn('parseBase64Arguments() failed. ', err);
-      throw err;
-    }
+  isNewNftListOrSale(tx: CommonTx, nft_state: NftState) {
+    return !nft_state || !nft_state.list_block_height ||
+      tx.block_height > nft_state.list_block_height ||
+      (tx.block_height === nft_state.list_block_height && tx.nonce > nft_state.list_tx_index);
   }
 
   extractArgumentData(args: JSON, scf: SmartContractFunction, field: string) {

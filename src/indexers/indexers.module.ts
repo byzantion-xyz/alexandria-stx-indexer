@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
 import { NearIndexerController } from './near-indexer/near-indexer.controller';
 import { IndexerOrchestratorService } from './indexer-orchestrator.service';
-import { BuyTransactionService } from './common/providers/buy-transaction.service';
-import { ListTransactionService } from './common/providers/list-transaction.service';
+import { BuyIndexerService } from './common/providers/buy-indexer.service';
+import { ListIndexerService } from './common/providers/list-indexer.service';
 import { TxHelperService } from './near-indexer/providers/tx-helper.service';
-import { UnlistTransactionService } from './common/providers/unlist-transaction.service';
+import { UnlistIndexerService } from './common/providers/unlist-indexer.service';
 import { DiscordBotModule } from 'src/discord-bot/discord-bot.module';
 import { PrismaModule } from 'src/prisma/prisma.module';
 import { ScrapersModule } from 'src/scrapers/scrapers.module';
@@ -19,10 +19,10 @@ import { NearTxStreamAdapterService } from './near-indexer/providers/near-tx-str
   controllers: [NearIndexerController],
   providers: [
     IndexerOrchestratorService,
-    BuyTransactionService,
-    ListTransactionService,
+    BuyIndexerService,
+    ListIndexerService,
     TxHelperService,
-    UnlistTransactionService,
+    UnlistIndexerService,
     NearTxStreamAdapterService,
   ],
   exports: [

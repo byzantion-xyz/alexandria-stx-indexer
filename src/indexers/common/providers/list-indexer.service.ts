@@ -10,8 +10,8 @@ import { CreateActionCommonArgs, CreateListAction } from '../interfaces/create-a
 import { CommonTx } from 'src/indexers/common/interfaces/common-tx.interface';
 
 @Injectable()
-export class ListTransactionService {
-  private readonly logger = new Logger(ListTransactionService.name);
+export class ListIndexerService {
+  private readonly logger = new Logger(ListIndexerService.name);
 
   constructor(
     private readonly prismaService: PrismaService,

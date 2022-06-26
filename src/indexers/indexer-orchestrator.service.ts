@@ -1,9 +1,9 @@
 import { Logger, Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { BuyTransactionService } from './common/providers/buy-transaction.service';
-import { ListTransactionService } from './common/providers/list-transaction.service';
+import { BuyIndexerService } from './common/providers/buy-indexer.service';
+import { ListIndexerService } from './common/providers/list-indexer.service';
 import { TxProcessResult } from 'src/indexers/common/interfaces/tx-process-result.interface';
-import { UnlistTransactionService } from './common/providers/unlist-transaction.service';
+import { UnlistIndexerService } from './common/providers/unlist-indexer.service';
 
 import { TxHelperService } from './near-indexer/providers/tx-helper.service';
 import { NearTxStreamAdapterService } from './near-indexer/providers/near-tx-stream-adapter.service';
@@ -18,9 +18,9 @@ export class IndexerOrchestratorService {
   constructor(
     private readonly prismaService: PrismaService,
     private nearTxStreamAdapter: NearTxStreamAdapterService,
-    private buyTransaction: BuyTransactionService,
-    private listTransaction: ListTransactionService,
-    private unlistTransaction: UnlistTransactionService,
+    private buyIndexer: BuyIndexerService,
+    private listIndexer: ListIndexerService,
+    private unlistIndexer: UnlistIndexerService,
     private txHelper: TxHelperService
   ) { }
   
@@ -85,7 +85,7 @@ export class IndexerOrchestratorService {
   }
 
   getMicroIndexer(name: string) {
-    const microIndexer = this[name + 'Transaction'];
+    const microIndexer = this[name + 'Indexer'];
     if (!microIndexer) {
       throw new Error(`No service defined for the context: ${name}`);
     }

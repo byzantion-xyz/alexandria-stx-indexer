@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { CommonTx } from 'src/indexers/common/interfaces/common-tx.interface';
 import { TxProcessResult } from 'src/indexers/common/interfaces/tx-process-result.interface';
 import { TxStreamAdapter } from 'src/indexers/common/interfaces/tx-stream-adapter.interface';
@@ -10,19 +10,20 @@ import * as moment from 'moment';
 
 @Injectable()
 export class NearTxStreamAdapterService implements TxStreamAdapter {
+  private readonly logger = new Logger(NearTxStreamAdapterService.name);
 
   constructor(
     private readonly prismaService: PrismaService,
     private readonly prismaStreamerService: PrismaStreamerService,
     private txHelper: TxHelperService
-  ) {}
+  ) { }
 
   async fetchTxs(): Promise<CommonTx[]> {
     const accounts = await this.fetchAccounts();
     const query: string = this.buildQuery(accounts);
     const txs: Transaction[] = await this.prismaStreamerService.$queryRawUnsafe(query);
 
-    const result: CommonTx[] = this.transform(txs);
+    const result: CommonTx[] = this.transformTxs(txs);
     return result;
   }
 
@@ -31,16 +32,18 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
     const query: string = this.buildQuery(accounts, true);
     const txs: Transaction[] = await this.prismaStreamerService.$queryRawUnsafe(query);
 
-    const result: CommonTx[] = this.transform(txs);
+    const result: CommonTx[] = this.transformTxs(txs);
     return result;
   }
 
   async setTxResult(txHash: string, txResult: TxProcessResult): Promise<void> {
     if (txResult.processed || txResult.missing) {
-      await this.prismaStreamerService.transaction.update({ where: { hash: txHash }, data: { 
-        processed: txResult.processed,
-        missing: txResult.missing
-      }});
+      await this.prismaStreamerService.transaction.update({
+        where: { hash: txHash }, data: {
+          processed: txResult.processed,
+          missing: txResult.missing
+        }
+      });
     }
   }
 
@@ -60,7 +63,6 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
 
     return `select * from transaction t inner join receipt r on t.success_receipt_id =r.receipt_id
       where block_height >= 65000000 and 
-      receiver_id in (${accounts_in}) AND 
       processed = false AND 
       missing = ${missing} AND
       (( execution_outcome->'outcome'->'status'->'SuccessValue' is not null)
@@ -68,15 +70,18 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
       order by t.block_height limit 3000;`;
   }
 
-  transform(txs: Transaction[]): CommonTx[] {
-    let result: CommonTx[] = [];
+  transformTx(tx: Transaction): CommonTx {
+    try {
+      const args = tx.transaction.actions[0].FunctionCall?.args;
+      let parsed_args;
+      if (args) {
+        parsed_args = this.txHelper.parseBase64Arguments(args);
+      }
 
-    for (let tx of txs) {
-      const parsed_args = this.txHelper.parseBase64Arguments(tx);
       const notify = moment(new Date(this.txHelper.nanoToMiliSeconds(tx.block_timestamp))).utc() >
         moment().subtract(2, 'hours').utc() ? true : false;
-      
-      result.push({
+      // TODO: Generate one transaction per tx.transaction.Action?
+      return {
         hash: tx.transaction.hash,
         block_hash: tx.block_hash,
         block_timestamp: tx.block_timestamp,
@@ -87,9 +92,18 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
         function_name: tx.transaction.actions[0].FunctionCall?.method_name,
         args: parsed_args,
         notify
-      });
+      };
+    } catch (err) {
+      this.logger.warn(`transormTx() has failed for tx hash: ${tx.hash}`);
+    }
+  }
 
-      // TODO: Generate one transaction per Action?
+  transformTxs(txs: Transaction[]): CommonTx[] {
+    let result: CommonTx[] = [];
+    
+    for (let tx of txs) {
+      const transformed_tx = this.transformTx(tx);
+      if (transformed_tx) result.push(transformed_tx);
     }
 
     return result;

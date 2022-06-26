@@ -24,9 +24,9 @@ export class TxHelperService {
     return Number(BigInt(nanoseconds) / BigInt(1e6));
   }
 
-  parseBase64Arguments(tx: Transaction) {
+  parseBase64Arguments(args: string) {
     try {
-      let json = JSON.parse(Buffer.from(tx.transaction.actions[0].FunctionCall.args, 'base64').toString());
+      let json = JSON.parse(Buffer.from(args, 'base64').toString());
       if (json.msg) {
         json.msg = JSON.parse(json.msg);
       }

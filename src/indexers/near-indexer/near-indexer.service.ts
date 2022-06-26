@@ -27,36 +27,29 @@ export class NearIndexerService {
   async runIndexer() {
     this.logger.debug('runIndexer() Initialize');
 
-    const rows: Transaction[] = await this.nearTxStreamAdapter.fetchTxs();
-    this.logger.debug('Processing transactions');
-
-    for await (const doc of rows) {
-      const transaction: Transaction = doc;
-
-      const txResult: TxProcessResult = await this.processTransaction(transaction);
-      await this.nearTxStreamAdapter.setTxResult(doc.hash, txResult);
-    }
-
-    await delay(5000);
+    const txs: Transaction[] = await this.nearTxStreamAdapter.fetchTxs();
+    await this.processTransactions(txs);
 
     this.logger.debug('runIndexer() Completed');
   }
 
   async runIndexerForMissing() {
     this.logger.debug('runIndexerForMissing() Initialize');
+    
+    const txs = await this.nearTxStreamAdapter.fetchMissingTxs();
+    await this.processTransactions(txs);
+    
+    this.logger.debug('runIndexerForMissing() Completed');
+  }
 
-    const cursor = await this.nearTxStreamAdapter.fetchMissingTxs();
-    this.logger.debug('Processing missing transactions');
-
-    for await (const doc of cursor) {
+  async processTransactions(transactions: Transaction[]) {
+    for await (const doc of transactions) {
       const transaction: Transaction = <Transaction>doc;
       const txResult: TxProcessResult = await this.processTransaction(transaction);
       await this.nearTxStreamAdapter.setTxResult(doc.hash, txResult);
     }
 
     await delay(5000);
-
-    this.logger.debug('runIndexerForMissing() Completed');
   }
 
   async processTransaction(transaction: Transaction): Promise<TxProcessResult> {

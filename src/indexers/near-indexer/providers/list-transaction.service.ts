@@ -7,7 +7,7 @@ import { ListBotService } from 'src/discord-bot/providers/list-bot.service';
 import { MissingCollectionService } from 'src/scrapers/near-scraper/providers/missing-collection.service';
 import { CreateActionCommonArgs, CreateListAction } from '../dto/create-action-common.dto';
 
-import { Transaction } from '../dto/near-transaction.dto';
+import { CommonTx } from 'src/indexers/common/interfaces/common-tx.interface';
 
 @Injectable()
 export class ListTransactionService {
@@ -20,17 +20,14 @@ export class ListTransactionService {
     private missingSmartContractService: MissingCollectionService
   ) { }
 
-  async process(tx: Transaction, sc: SmartContract, scf: SmartContractFunction, notify: boolean) {
-    this.logger.debug(`process() ${tx.transaction.hash}`);
+  async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction, notify: boolean) {
+    this.logger.debug(`process() ${tx.hash}`);
     let txResult: TxProcessResult = { processed: false, missing: false };
     let market_sc: SmartContract;
 
-    // TODO: Arguments will come parsed once near-streamer is updated
-    const args = this.txHelper.parseBase64Arguments(tx);
-
-    const token_id = this.txHelper.extractArgumentData(args, scf, 'token_id');
-    let contract_key = this.txHelper.extractArgumentData(args, scf, 'contract_key');
-    const list_action = this.txHelper.extractArgumentData(args, scf, 'list_action');
+    const token_id = this.txHelper.extractArgumentData(tx.args, scf, 'token_id');
+    let contract_key = this.txHelper.extractArgumentData(tx.args, scf, 'contract_key');
+    const list_action = this.txHelper.extractArgumentData(tx.args, scf, 'list_action');
 
     // Check if custodial
     if (sc.type === SmartContractType.non_fungible_tokens) {
@@ -41,14 +38,14 @@ export class ListTransactionService {
     const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
 
     if (nftMeta && this.txHelper.isNewNftListOrSale(tx, nftMeta.nft_state) && list_action === 'sale') {
-      const price = this.txHelper.extractArgumentData(args, scf, 'price');
+      const price = this.txHelper.extractArgumentData(tx.args, scf, 'price');
 
       let update = { 
         listed: true,
         list_price: price,
         list_contract_id: sc.id,
-        list_tx_index: tx.transaction.nonce,
-        list_seller: tx.transaction.signer_id,
+        list_tx_index: tx.nonce,
+        list_seller: tx.signer,
         list_block_height: tx.block_height
       };
 
@@ -63,7 +60,7 @@ export class ListTransactionService {
         ...actionCommonArgs,
         action: ActionName.list,
         list_price: price,
-        seller: tx.transaction.signer_id
+        seller: tx.signer
       };
 
       const newAction = await this.createAction(listActionParams); 
@@ -86,7 +83,7 @@ export class ListTransactionService {
       txResult.missing = true;
     }
 
-    this.logger.debug(`process() completed ${tx.transaction.hash}`);
+    this.logger.debug(`process() completed ${tx.hash}`);
     return txResult;
   }
 

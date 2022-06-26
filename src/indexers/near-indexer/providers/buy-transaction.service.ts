@@ -6,7 +6,7 @@ import { TxHelperService } from './tx-helper.service';
 
 import { SalesBotService } from 'src/discord-bot/providers/sales-bot.service';
 import { CreateActionCommonArgs, CreateBuyAction } from '../dto/create-action-common.dto';
-import { Transaction } from '../dto/near-transaction.dto';
+import { CommonTx } from 'src/indexers/common/interfaces/common-tx.interface';
 
 @Injectable()
 export class BuyTransactionService {
@@ -18,22 +18,19 @@ export class BuyTransactionService {
     private salesBotService: SalesBotService
   ) { }
 
-  async process(tx: Transaction, sc: SmartContract, scf: SmartContractFunction, notify: boolean) {
-    this.logger.debug(`process() ${tx.transaction.hash}`);
+  async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction, notify: boolean) {
+    this.logger.debug(`process() ${tx.hash}`);
     let txResult: TxProcessResult = { processed: false, missing: false };
 
-    // TODO: Arguments will be parsed in the streamer directly.
-    let args = this.txHelper.parseBase64Arguments(tx);
-
-    const token_id = this.txHelper.extractArgumentData(args, scf, 'token_id');
-    const contract_key = this.txHelper.extractArgumentData(args, scf, 'contract_key');
-    const price = this.txHelper.extractArgumentData(args, scf, 'price');
+    const token_id = this.txHelper.extractArgumentData(tx.args, scf, 'token_id');
+    const contract_key = this.txHelper.extractArgumentData(tx.args, scf, 'contract_key');
+    const price = this.txHelper.extractArgumentData(tx.args, scf, 'price');
 
     const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
 
     if (nftMeta && this.txHelper.isNewNftListOrSale(tx, nftMeta.nft_state)) {
 
-      await this.txHelper.unlistMeta(nftMeta.id, tx.transaction.nonce, tx.block_height);
+      await this.txHelper.unlistMeta(nftMeta.id, tx.nonce, tx.block_height);
 
       const actionCommonArgs: CreateActionCommonArgs = this.txHelper.setCommonActionParams(tx, sc, nftMeta, sc);
       const buyActionParams: CreateBuyAction = {
@@ -41,7 +38,7 @@ export class BuyTransactionService {
         action: ActionName.buy,
         list_price: price || (nftMeta.nft_state?.listed ? nftMeta.nft_state.list_price : undefined),
         seller: nftMeta.nft_state && nftMeta.nft_state.listed ? nftMeta.nft_state.list_seller : undefined,
-        buyer: tx.transaction.signer_id,
+        buyer: tx.signer
       };
 
       const newAction = await this.createAction(buyActionParams);
@@ -58,7 +55,7 @@ export class BuyTransactionService {
       txResult.missing = true;
     }
 
-    this.logger.debug(`process() completed ${tx.transaction.hash}`);
+    this.logger.debug(`process() completed ${tx.hash}`);
     return txResult;
   }
 

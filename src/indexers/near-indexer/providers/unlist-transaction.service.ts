@@ -5,7 +5,7 @@ import { TxProcessResult } from 'src/indexers/common/interfaces/tx-process-resul
 import { TxHelperService } from './tx-helper.service';
 import { CreateActionCommonArgs, CreateUnlistAction } from '../dto/create-action-common.dto';
 
-import { Transaction } from '../dto/near-transaction.dto';
+import { CommonTx } from 'src/indexers/common/interfaces/common-tx.interface';
 
 @Injectable()
 export class UnlistTransactionService {
@@ -16,16 +16,13 @@ export class UnlistTransactionService {
     private txHelper: TxHelperService
   ) { }
 
-  async process(tx: Transaction, sc: SmartContract, scf: SmartContractFunction, notify: boolean) {
-    this.logger.debug(`process() ${tx.transaction.hash}`);
+  async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction, notify: boolean) {
+    this.logger.debug(`process() ${tx.hash}`);
     let txResult: TxProcessResult = { processed: false, missing: false };
     let market_sc: SmartContract;
 
-    // TODO: Arguments will be parsed in the streamer directly.
-    let args = this.txHelper.parseBase64Arguments(tx);
-
-    const token_id = this.txHelper.extractArgumentData(args, scf, 'token_id');
-    let contract_key = this.txHelper.extractArgumentData(args, scf, 'contract_key');
+    const token_id = this.txHelper.extractArgumentData(tx.args, scf, 'token_id');
+    let contract_key = this.txHelper.extractArgumentData(tx.args, scf, 'contract_key');
     
     // Check if custodial
     if (sc.type === SmartContractType.non_fungible_tokens) {
@@ -36,7 +33,7 @@ export class UnlistTransactionService {
     const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
 
     if (nftMeta && this.txHelper.isNewNftListOrSale(tx, nftMeta.nft_state)) {
-      await this.txHelper.unlistMeta(nftMeta.id, tx.transaction.nonce, tx.block_height);
+      await this.txHelper.unlistMeta(nftMeta.id, tx.nonce, tx.block_height);
 
       const actionCommonArgs: CreateActionCommonArgs = this.txHelper.setCommonActionParams(tx, sc, nftMeta, market_sc);
       const unlistActionParams: CreateUnlistAction = {
@@ -57,7 +54,7 @@ export class UnlistTransactionService {
       txResult.missing = true;
     }
 
-    this.logger.debug(`process() completed ${tx.transaction.hash}`);
+    this.logger.debug(`process() completed ${tx.hash}`);
     return txResult;
   }
 

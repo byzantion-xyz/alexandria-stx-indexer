@@ -4,6 +4,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import * as moment from 'moment';
 import { CreateActionCommonArgs } from '../dto/create-action-common.dto';
 import { Transaction } from '../dto/near-transaction.dto';
+import { CommonTx } from 'src/indexers/common/interfaces/common-tx.interface';
 
 @Injectable()
 export class TxHelperService {
@@ -13,10 +14,10 @@ export class TxHelperService {
     private readonly prismaService: PrismaService
   ) { }
 
-  isNewNftListOrSale(tx: Transaction, nft_state: NftState) {
+  isNewNftListOrSale(tx: CommonTx, nft_state: NftState) {
     return !nft_state || !nft_state.list_block_height ||
       tx.block_height > nft_state.list_block_height ||
-      (tx.block_height === nft_state.list_block_height && tx.transaction.nonce > nft_state.list_tx_index);
+      (tx.block_height === nft_state.list_block_height && tx.nonce > nft_state.list_tx_index);
   }
 
   nanoToMiliSeconds(nanoseconds: bigint) {
@@ -86,15 +87,15 @@ export class TxHelperService {
     });
   }
 
-  setCommonActionParams(tx: Transaction, sc: SmartContract, nftMeta: NftMeta, msc?: SmartContract): CreateActionCommonArgs {
+  setCommonActionParams(tx: CommonTx, sc: SmartContract, nftMeta: NftMeta, msc?: SmartContract): CreateActionCommonArgs {
     return {
       nft_meta_id: nftMeta.id,
       smart_contract_id: sc.id,
       collection_id: nftMeta.collection_id,
       block_height: tx.block_height,
-      tx_index: tx.transaction.nonce,
+      tx_index: tx.nonce,
       block_time: moment(new Date(this.nanoToMiliSeconds(tx.block_timestamp))).toDate(),
-      tx_id: tx.transaction.hash,
+      tx_id: tx.hash,
       ... (msc && {
         market_name: msc.name,
         marketplace_smart_contract_id: msc.id,

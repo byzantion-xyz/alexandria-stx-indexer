@@ -1,9 +1,12 @@
 import { Injectable } from '@nestjs/common';
+import { CommonTx } from 'src/indexers/common/interfaces/common-tx.interface';
 import { TxProcessResult } from 'src/indexers/common/interfaces/tx-process-result.interface';
 import { TxStreamAdapter } from 'src/indexers/common/interfaces/tx-stream-adapter.interface';
 import { PrismaStreamerService } from 'src/prisma/prisma-streamer.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Transaction } from '../dto/near-transaction.dto';
+import { TxHelperService } from './tx-helper.service';
+import * as moment from 'moment';
 
 @Injectable()
 export class NearTxStreamAdapterService implements TxStreamAdapter {
@@ -11,21 +14,24 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
   constructor(
     private readonly prismaService: PrismaService,
     private readonly prismaStreamerService: PrismaStreamerService,
+    private txHelper: TxHelperService
   ) {}
 
-  async fetchTxs(): Promise<Transaction[]> {
+  async fetchTxs(): Promise<CommonTx[]> {
     const accounts = await this.fetchAccounts();
     const query: string = this.buildQuery(accounts);
-    const result: Transaction[] = await this.prismaStreamerService.$queryRawUnsafe(query);
+    const txs: Transaction[] = await this.prismaStreamerService.$queryRawUnsafe(query);
 
+    const result: CommonTx[] = this.transform(txs);
     return result;
   }
 
-  async fetchMissingTxs(): Promise<Transaction[]> {
+  async fetchMissingTxs(): Promise<CommonTx[]> {
     const accounts = await this.fetchAccounts();
     const query: string = this.buildQuery(accounts, true);
-    const result: Transaction[] = await this.prismaStreamerService.$queryRawUnsafe(query);
+    const txs: Transaction[] = await this.prismaStreamerService.$queryRawUnsafe(query);
 
+    const result: CommonTx[] = this.transform(txs);
     return result;
   }
 
@@ -60,6 +66,33 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
       (( execution_outcome->'outcome'->'status'->'SuccessValue' is not null)
       or (execution_outcome->'outcome'->'status'->'SuccessReceiptId' is not null))
       order by t.block_height limit 3000;`;
+  }
+
+  transform(txs: Transaction[]): CommonTx[] {
+    let result: CommonTx[] = [];
+
+    for (let tx of txs) {
+      const parsed_args = this.txHelper.parseBase64Arguments(tx);
+      const notify = moment(new Date(this.txHelper.nanoToMiliSeconds(tx.block_timestamp))).utc() >
+        moment().subtract(2, 'hours').utc() ? true : false;
+      
+      result.push({
+        hash: tx.transaction.hash,
+        block_hash: tx.block_hash,
+        block_timestamp: tx.block_timestamp,
+        block_height: tx.block_height,
+        nonce: tx.transaction.nonce,
+        signer: tx.transaction.signer_id,
+        receiver: tx.transaction.receiver_id,
+        function_name: tx.transaction.actions[0].FunctionCall?.method_name,
+        args: parsed_args,
+        notify
+      });
+
+      // TODO: Generate one transaction per Action?
+    }
+
+    return result;
   }
 
 }

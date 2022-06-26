@@ -2,10 +2,10 @@ import { Logger, Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { SmartContract, SmartContractFunction, ActionName, SmartContractType } from '@prisma/client';
 import { TxProcessResult } from 'src/indexers/common/interfaces/tx-process-result.interface';
-import { TxHelperService } from './tx-helper.service';
+import { TxHelperService } from '../../near-indexer/providers/tx-helper.service';
 import { ListBotService } from 'src/discord-bot/providers/list-bot.service';
 import { MissingCollectionService } from 'src/scrapers/near-scraper/providers/missing-collection.service';
-import { CreateActionCommonArgs, CreateListAction } from '../dto/create-action-common.dto';
+import { CreateActionCommonArgs, CreateListAction } from '../interfaces/create-action-common.dto';
 
 import { CommonTx } from 'src/indexers/common/interfaces/common-tx.interface';
 

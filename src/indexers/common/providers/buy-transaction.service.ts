@@ -1,49 +1,50 @@
 import { Logger, Injectable, NotAcceptableException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { SmartContract, SmartContractFunction, ActionName, SmartContractType } from '@prisma/client';
+import { Prisma, NftMeta, SmartContract, SmartContractFunction, ActionName, Action } from '@prisma/client';
 import { TxProcessResult } from 'src/indexers/common/interfaces/tx-process-result.interface';
-import { TxHelperService } from './tx-helper.service';
-import { CreateActionCommonArgs, CreateUnlistAction } from '../dto/create-action-common.dto';
+import { TxHelperService } from '../../near-indexer/providers/tx-helper.service';
 
+import { SalesBotService } from 'src/discord-bot/providers/sales-bot.service';
+import { CreateActionCommonArgs, CreateBuyAction } from '../interfaces/create-action-common.dto';
 import { CommonTx } from 'src/indexers/common/interfaces/common-tx.interface';
 
 @Injectable()
-export class UnlistTransactionService {
-  private readonly logger = new Logger(UnlistTransactionService.name);
+export class BuyTransactionService {
+  private readonly logger = new Logger(BuyTransactionService.name);
 
   constructor(
     private readonly prismaService: PrismaService,
-    private txHelper: TxHelperService
+    private txHelper: TxHelperService,
+    private salesBotService: SalesBotService
   ) { }
 
   async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction, notify: boolean) {
     this.logger.debug(`process() ${tx.hash}`);
     let txResult: TxProcessResult = { processed: false, missing: false };
-    let market_sc: SmartContract;
 
     const token_id = this.txHelper.extractArgumentData(tx.args, scf, 'token_id');
-    let contract_key = this.txHelper.extractArgumentData(tx.args, scf, 'contract_key');
-    
-    // Check if custodial
-    if (sc.type === SmartContractType.non_fungible_tokens) {
-      market_sc = await this.prismaService.smartContract.findUnique({ where: { contract_key } })
-      contract_key = sc.contract_key;
-    }
+    const contract_key = this.txHelper.extractArgumentData(tx.args, scf, 'contract_key');
+    const price = this.txHelper.extractArgumentData(tx.args, scf, 'price');
 
     const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
 
     if (nftMeta && this.txHelper.isNewNftListOrSale(tx, nftMeta.nft_state)) {
+
       await this.txHelper.unlistMeta(nftMeta.id, tx.nonce, tx.block_height);
 
-      const actionCommonArgs: CreateActionCommonArgs = this.txHelper.setCommonActionParams(tx, sc, nftMeta, market_sc);
-      const unlistActionParams: CreateUnlistAction = {
+      const actionCommonArgs: CreateActionCommonArgs = this.txHelper.setCommonActionParams(tx, sc, nftMeta, sc);
+      const buyActionParams: CreateBuyAction = {
         ...actionCommonArgs,
-        action: ActionName.unlist,
-        list_price: nftMeta.nft_state && nftMeta.nft_state.list_price ? nftMeta.nft_state.list_price : undefined,
-        seller: nftMeta.nft_state?.list_seller || undefined
+        action: ActionName.buy,
+        list_price: price || (nftMeta.nft_state?.listed ? nftMeta.nft_state.list_price : undefined),
+        seller: nftMeta.nft_state && nftMeta.nft_state.listed ? nftMeta.nft_state.list_seller : undefined,
+        buyer: tx.signer
       };
 
-      await this.createAction(unlistActionParams);
+      const newAction = await this.createAction(buyActionParams);
+      if (newAction && notify) {
+        this.salesBotService.createAndSend(newAction.id);
+      }
 
       txResult.processed = true;
     } else if (nftMeta) {
@@ -58,13 +59,14 @@ export class UnlistTransactionService {
     return txResult;
   }
 
-  async createAction(params: CreateUnlistAction) {
+  async createAction(params: CreateBuyAction) {
     try {
       const action = await this.prismaService.action.create({
         data: { ...params }
       });
 
       this.logger.log(`New action ${params.action}: ${action.id} `);
+      return action;
     } catch (err) {
       this.logger.warn(err);
     }

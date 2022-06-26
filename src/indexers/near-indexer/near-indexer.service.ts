@@ -1,9 +1,9 @@
 import { Logger, Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { BuyTransactionService } from './providers/buy-transaction.service';
-import { ListTransactionService } from './providers/list-transaction.service';
+import { BuyTransactionService } from '../common/providers/buy-transaction.service';
+import { ListTransactionService } from '../common/providers/list-transaction.service';
 import { TxProcessResult } from 'src/indexers/common/interfaces/tx-process-result.interface';
-import { UnlistTransactionService } from './providers/unlist-transaction.service';
+import { UnlistTransactionService } from '../common/providers/unlist-transaction.service';
 
 import { TxHelperService } from './providers/tx-helper.service';
 import { NearTxStreamAdapterService } from './providers/near-tx-stream-adapter.service';

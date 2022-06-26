@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { NftMeta, NftState, SmartContract, SmartContractFunction } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import * as moment from 'moment';
-import { CreateActionCommonArgs } from '../dto/create-action-common.dto';
+import { CreateActionCommonArgs } from '../../common/interfaces/create-action-common.dto';
 import { Transaction } from '../dto/near-transaction.dto';
 import { CommonTx } from 'src/indexers/common/interfaces/common-tx.interface';
 

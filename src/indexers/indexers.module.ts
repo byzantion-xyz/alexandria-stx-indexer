@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { NearIndexerController } from './near-indexer/near-indexer.controller';
-import { NearIndexerService } from './near-indexer/near-indexer.service';
+import { IndexerOrchestratorService } from './indexer-orchestrator.service';
 import { BuyTransactionService } from './common/providers/buy-transaction.service';
 import { ListTransactionService } from './common/providers/list-transaction.service';
 import { TxHelperService } from './near-indexer/providers/tx-helper.service';
@@ -18,7 +18,7 @@ import { NearTxStreamAdapterService } from './near-indexer/providers/near-tx-str
   ],
   controllers: [NearIndexerController],
   providers: [
-    NearIndexerService,
+    IndexerOrchestratorService,
     BuyTransactionService,
     ListTransactionService,
     TxHelperService,
@@ -26,7 +26,7 @@ import { NearTxStreamAdapterService } from './near-indexer/providers/near-tx-str
     NearTxStreamAdapterService,
   ],
   exports: [
-    NearIndexerService
+    IndexerOrchestratorService
   ]
 })
 export class IndexersModule {}

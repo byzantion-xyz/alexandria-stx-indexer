@@ -1,19 +1,19 @@
 import { Logger, Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { BuyTransactionService } from '../common/providers/buy-transaction.service';
-import { ListTransactionService } from '../common/providers/list-transaction.service';
+import { BuyTransactionService } from './common/providers/buy-transaction.service';
+import { ListTransactionService } from './common/providers/list-transaction.service';
 import { TxProcessResult } from 'src/indexers/common/interfaces/tx-process-result.interface';
-import { UnlistTransactionService } from '../common/providers/unlist-transaction.service';
+import { UnlistTransactionService } from './common/providers/unlist-transaction.service';
 
-import { TxHelperService } from './providers/tx-helper.service';
-import { NearTxStreamAdapterService } from './providers/near-tx-stream-adapter.service';
-import { CommonTx } from '../common/interfaces/common-tx.interface';
+import { TxHelperService } from './near-indexer/providers/tx-helper.service';
+import { NearTxStreamAdapterService } from './near-indexer/providers/near-tx-stream-adapter.service';
+import { CommonTx } from './common/interfaces/common-tx.interface';
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 @Injectable()
-export class NearIndexerService {
-  private readonly logger = new Logger(NearIndexerService.name);
+export class IndexerOrchestratorService {
+  private readonly logger = new Logger(IndexerOrchestratorService.name);
 
   constructor(
     private readonly prismaService: PrismaService,

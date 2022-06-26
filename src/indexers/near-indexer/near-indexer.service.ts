@@ -2,7 +2,7 @@ import { Logger, Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { BuyTransactionService } from './providers/buy-transaction.service';
 import { ListTransactionService } from './providers/list-transaction.service';
-import { TxProcessResult } from 'src/common/interfaces/tx-process-result.interface';
+import { TxProcessResult } from 'src/indexers/common/interfaces/tx-process-result.interface';
 import { UnlistTransactionService } from './providers/unlist-transaction.service';
 import * as moment from 'moment';
 import { TxHelperService } from './providers/tx-helper.service';

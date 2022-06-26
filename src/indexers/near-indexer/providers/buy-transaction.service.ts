@@ -1,7 +1,7 @@
 import { Logger, Injectable, NotAcceptableException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Prisma, NftMeta, SmartContract, SmartContractFunction, ActionName, Action } from '@prisma/client';
-import { TxProcessResult } from 'src/common/interfaces/tx-process-result.interface';
+import { TxProcessResult } from 'src/indexers/common/interfaces/tx-process-result.interface';
 import { TxHelperService } from './tx-helper.service';
 
 import { SalesBotService } from 'src/discord-bot/providers/sales-bot.service';

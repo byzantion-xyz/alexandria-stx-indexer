@@ -61,12 +61,13 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
     }
     accounts_in = accounts_in.slice(0, -1);
 
-    return `select * from transaction t inner join receipt r on t.success_receipt_id =r.receipt_id
+    return `select * from transaction t inner join receipt r on t.success_receipt_id =r.receipt_id 
       where block_height >= 65000000 and 
+      receiver_id in (${accounts_in}) AND  
       processed = false AND 
-      missing = ${missing} AND
-      (( execution_outcome->'outcome'->'status'->'SuccessValue' is not null)
-      or (execution_outcome->'outcome'->'status'->'SuccessReceiptId' is not null))
+      missing = ${missing} AND 
+      (( execution_outcome->'outcome'->'status'->'SuccessValue' is not null) 
+      or (execution_outcome->'outcome'->'status'->'SuccessReceiptId' is not null)) 
       order by t.block_height limit 3000;`;
   }
 

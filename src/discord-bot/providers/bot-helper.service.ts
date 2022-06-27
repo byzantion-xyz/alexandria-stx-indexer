@@ -17,8 +17,11 @@ export class BotHelperService {
   ) { }
 
   createDiscordBotDto(nftMeta: NftMeta, collection: Collection, sc: SmartContract, msc: SmartContract, action: Action): DiscordBotDto {
-    const marketplaceLink = msc.base_marketplace_uri + msc.token_uri + 
+    let marketplaceLink: string;
+    if (msc) {
+      marketplaceLink = msc.base_marketplace_uri + msc.token_uri + 
       sc.contract_key + '::' + nftMeta.token_id + '/' + nftMeta.token_id;
+    }
     const transactionLink = `https://explorer.near.org/transactions/${action.tx_id}`;
 
     return {
@@ -26,7 +29,7 @@ export class BotHelperService {
       title: nftMeta.name,
       rarity: nftMeta.rarity,
       price: `${Number(Number(action.list_price) / 1e24).toFixed(2)} NEAR`, // TODO: Round to USD also
-      marketplaceLink,
+      ... (marketplaceLink && { marketplaceLink}),
       transactionLink,
       image: nftMeta.image
     };
@@ -50,7 +53,9 @@ export class BotHelperService {
     const roundedRarity: number = rarity ? Math.round(rarity * 100) / 100 : 0;
 
     embed.setTitle(`${title} ${subTitle}`);
-    embed.setURL(marketplaceLink);
+    if (marketplaceLink) {
+      embed.setURL(marketplaceLink);
+    }
     embed.setDescription(`**Rarity**: ${roundedRarity}\n**Price**: ${price}`);
     //embed.addField('Attributes', `[View](${byzFinalLink})`, true);
     embed.addField('Transaction', `[View](${transactionLink})`, true);

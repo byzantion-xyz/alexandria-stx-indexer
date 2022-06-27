@@ -58,10 +58,9 @@ export class DiscordServerService {
 
   async fetchChannelsBySlug(slug: string, purpose: DiscordChannelType) {
     let collection = await this.prisma.collection.findUnique({ where: { slug } });
-
     let channels;
     if (collection) {
-      channels = this.prisma.discordServerChannel.findMany({
+      channels = await this.prisma.discordServerChannel.findMany({
         where: { 
           collections: {
             some: { collection_id: collection.id }

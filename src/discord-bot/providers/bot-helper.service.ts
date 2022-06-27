@@ -84,10 +84,10 @@ export class BotHelperService {
         nft_meta: {
           include: {
             nft_state: true,
-            smart_contract: true
+            smart_contract: true,
+            collection: true
           }
         },
-        smart_contract: true,
         marketplace_smart_contract: true
       }
     });

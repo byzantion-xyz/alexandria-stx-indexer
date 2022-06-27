@@ -1,6 +1,6 @@
 import { DiscordChannelType } from "@prisma/client"
 
 export interface fetchDiscordServerChannels {
-    contract_key: string
+    slug: string
     purpose: DiscordChannelType
   }

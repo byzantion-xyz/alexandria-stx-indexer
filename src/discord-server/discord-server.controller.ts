@@ -38,8 +38,11 @@ export class DiscordServerController {
   @Get('channels')
   async fetchChannels(@Query() params: fetchDiscordServerChannels) {
     this.logger.debug(params);
-    let channels = await this.discordServerService.fetchChannelsByContractKey(params.contract_key, params.purpose);
-    this.logger.log('Channels ', channels);
+    let channels = await this.discordServerService.fetchChannelsBySlug(params.slug, params.purpose);
+    this.logger.log('Channels ');
+    for (let channel of channels) {
+      this.logger.log(channel);
+    }
     return 'Ok';
   }
 

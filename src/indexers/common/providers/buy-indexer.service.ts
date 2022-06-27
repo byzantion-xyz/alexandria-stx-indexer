@@ -7,9 +7,10 @@ import { TxHelperService } from '../helpers/tx-helper.service';
 import { SalesBotService } from 'src/discord-bot/providers/sales-bot.service';
 import { CreateActionCommonArgs, CreateBuyAction } from '../interfaces/create-action-common.dto';
 import { CommonTx } from 'src/indexers/common/interfaces/common-tx.interface';
+import { IndexerService } from '../interfaces/indexer-service.interface';
 
 @Injectable()
-export class BuyIndexerService {
+export class BuyIndexerService implements IndexerService {
   private readonly logger = new Logger(BuyIndexerService.name);
 
   constructor(
@@ -18,7 +19,7 @@ export class BuyIndexerService {
     private salesBotService: SalesBotService
   ) { }
 
-  async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction, notify: boolean) {
+  async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {
     this.logger.debug(`process() ${tx.hash}`);
     let txResult: TxProcessResult = { processed: false, missing: false };
 
@@ -42,7 +43,7 @@ export class BuyIndexerService {
       };
 
       const newAction = await this.createAction(buyActionParams);
-      if (newAction && notify) {
+      if (newAction && tx.notify) {
         this.salesBotService.createAndSend(newAction.id);
       }
 
@@ -59,7 +60,7 @@ export class BuyIndexerService {
     return txResult;
   }
 
-  async createAction(params: CreateBuyAction) {
+  async createAction(params: CreateBuyAction): Promise<Action> {
     try {
       const action = await this.prismaService.action.create({
         data: { ...params }

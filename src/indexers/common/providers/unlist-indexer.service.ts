@@ -1,14 +1,15 @@
 import { Logger, Injectable, NotAcceptableException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { SmartContract, SmartContractFunction, ActionName, SmartContractType } from '@prisma/client';
+import { SmartContract, SmartContractFunction, ActionName, SmartContractType, Action } from '@prisma/client';
 import { TxProcessResult } from 'src/indexers/common/interfaces/tx-process-result.interface';
 import { TxHelperService } from '../helpers/tx-helper.service';
 import { CreateActionCommonArgs, CreateUnlistAction } from '../interfaces/create-action-common.dto';
 
 import { CommonTx } from 'src/indexers/common/interfaces/common-tx.interface';
+import { IndexerService } from '../interfaces/indexer-service.interface';
 
 @Injectable()
-export class UnlistIndexerService {
+export class UnlistIndexerService implements IndexerService {
   private readonly logger = new Logger(UnlistIndexerService.name);
 
   constructor(
@@ -16,7 +17,7 @@ export class UnlistIndexerService {
     private txHelper: TxHelperService
   ) { }
 
-  async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction, notify: boolean) {
+  async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {
     this.logger.debug(`process() ${tx.hash}`);
     let txResult: TxProcessResult = { processed: false, missing: false };
     let market_sc: SmartContract;
@@ -58,13 +59,15 @@ export class UnlistIndexerService {
     return txResult;
   }
 
-  async createAction(params: CreateUnlistAction) {
+  async createAction(params: CreateUnlistAction): Promise<Action> {
     try {
       const action = await this.prismaService.action.create({
         data: { ...params }
       });
 
       this.logger.log(`New action ${params.action}: ${action.id} `);
+
+      return action;
     } catch (err) {
       this.logger.warn(err);
     }

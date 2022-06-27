@@ -1,16 +1,17 @@
 import { Logger, Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { SmartContract, SmartContractFunction, ActionName, SmartContractType } from '@prisma/client';
+import { SmartContract, SmartContractFunction, ActionName, SmartContractType, Action } from '@prisma/client';
 import { TxProcessResult } from 'src/indexers/common/interfaces/tx-process-result.interface';
 import { TxHelperService } from '../helpers/tx-helper.service';
 import { ListBotService } from 'src/discord-bot/providers/list-bot.service';
 import { MissingCollectionService } from 'src/scrapers/near-scraper/providers/missing-collection.service';
-import { CreateActionCommonArgs, CreateListAction } from '../interfaces/create-action-common.dto';
+import { CreateAction, CreateActionCommonArgs, CreateListAction } from '../interfaces/create-action-common.dto';
 
 import { CommonTx } from 'src/indexers/common/interfaces/common-tx.interface';
+import { IndexerService } from '../interfaces/indexer-service.interface';
 
 @Injectable()
-export class ListIndexerService {
+export class ListIndexerService implements IndexerService {
   private readonly logger = new Logger(ListIndexerService.name);
 
   constructor(
@@ -20,7 +21,7 @@ export class ListIndexerService {
     private missingSmartContractService: MissingCollectionService
   ) { }
 
-  async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction, notify: boolean) {
+  async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction) {
     this.logger.debug(`process() ${tx.hash}`);
     let txResult: TxProcessResult = { processed: false, missing: false };
     let market_sc: SmartContract;
@@ -64,7 +65,7 @@ export class ListIndexerService {
       };
 
       const newAction = await this.createAction(listActionParams); 
-      if (newAction && notify) {
+      if (newAction && tx.notify) {
         this.listBotService.createAndSend(newAction.id);
       }
 
@@ -87,7 +88,7 @@ export class ListIndexerService {
     return txResult;
   }
 
-  async createAction(params: CreateListAction) {
+  async createAction(params: CreateListAction): Promise<Action> {
     try {
       const action = await this.prismaService.action.create({
         data: { ...params }

@@ -20,7 +20,7 @@ export class ListBotService {
 
   async send(data: DiscordBotDto) {
     try {
-      const channels = await this.discordServerService.fetchChannelsByContractKey(data.contract_key, DiscordChannelType.listings);
+      const channels = await this.discordServerService.fetchChannelsBySlug(data.slug, DiscordChannelType.listings);
 
       const subTitle = 'has been listed for sale';
       const color: ColorResolvable = 'YELLOW';

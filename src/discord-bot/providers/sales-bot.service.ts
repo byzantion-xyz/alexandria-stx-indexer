@@ -20,7 +20,7 @@ export class SalesBotService {
 
   async send(data: DiscordBotDto) {
     try {
-      const channels = await this.discordServerService.fetchChannelsByContractKey(data.contract_key, DiscordChannelType.sales);
+      const channels = await this.discordServerService.fetchChannelsBySlug(data.slug, DiscordChannelType.sales);
       const subTitle = 'has been sold';
       const color: ColorResolvable = 'BLUE';
 

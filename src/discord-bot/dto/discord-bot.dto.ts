@@ -1,5 +1,5 @@
 export interface DiscordBotDto {
-  contract_key: string;
+  slug: string;
   title: string;
   rarity: number;
   price: string;

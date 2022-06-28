@@ -103,14 +103,10 @@ export class NearScraperService {
       if (isParasCustodialCollection) creatorWalletId = tokenMetas[0].metadata.creator_id;
       await this.createCollectionCreator(loadedCollection.id, creatorWalletId, slug);
 
-      // pin IPFS to our pinata
-      await this.setCollectionScrapeStage(collection.id, CollectionScrapeStage.pinning);
-      if (isParasCustodialCollection) {
-        // Pin each custodial nft image to our pinata (each paras custodial nft has a distinct image hash)
-        // await this.pinMultipleImages(slug);
-      } else {
-        // Pin the first item's meta as it's the same hash for the whole folder of metas and images
-        await this.pin(tokenMetas, nftContractMetadata.base_uri, slug);
+      // If non-custodail, pin the first item's meta as it's the same hash for the whole folder of metas and images
+      if (!isParasCustodialCollection) {
+        await this.setCollectionScrapeStage(collection.id, CollectionScrapeStage.pinning_folder);
+        await this.pinFolderHash(tokenMetas[0], nftContractMetadata.base_uri, slug);
       }
       
       // load NftMetas + NftMetaAttributes
@@ -124,6 +120,12 @@ export class NearScraperService {
       // create CollectionAttributes
       await this.setCollectionScrapeStage(collection.id, CollectionScrapeStage.creating_collection_attributes);
       await this.createCollectionAttributes(slug);
+
+      // if Paras custodial collection, pin each distinct token image to our pinata by sending tasks to rate-limited queue service
+      if (isParasCustodialCollection) {
+        await this.setCollectionScrapeStage(collection.id, CollectionScrapeStage.pinning_multiple_images);
+        this.pinMultipleImages({slug: slug});
+      }
 
       // mark scrape as done and succeeded
       await this.markScrapeSuccess(collection.id, slug);
@@ -192,10 +194,9 @@ export class NearScraperService {
   }
 
 
-  async pin(tokenMetas, nftContractMetadataBaseUri, slug) {
-    if (tokenMetas.length == 0) return
+  async pinFolderHash(firstTokenMeta, nftContractMetadataBaseUri, slug) {
+    if (!firstTokenMeta) return
     this.logger.log(`[scraping ${slug}] pin`);
-    const firstTokenMeta = tokenMetas[0]
     const firstTokenIpfsUrl = this.getTokenIpfsUrl(nftContractMetadataBaseUri, firstTokenMeta?.metadata?.reference);
     if (!firstTokenIpfsUrl || !firstTokenIpfsUrl.includes('ipfs')) return // if the metadata is not stored on ipfs return
 
@@ -311,7 +312,17 @@ export class NearScraperService {
         if (scrape_non_custodial_from_paras || isParasCustodialCollection) {
           attributes = tokenMetas[i].metadata.attributes;
         } else {
-          attributes = this.getNftMetaAttributesFromMeta(tokenIpfsMetas[i], collection.title, tokenMetas[i], slug);
+          attributes = this.getNftMetaAttributesFromMeta(tokenIpfsMetas[i], tokenMetas[i], slug);
+        }
+
+        // set default attribute if no attributes found
+        if (!attributes || Object.keys(attributes).length === 0 && attributes.constructor === Object) {
+          attributes = [
+            {
+              trait_type: slug,
+              value: collection.title
+            }
+          ]
         }
 
         let mediaUrl = this.getTokenIpfsMediaUrl(nftContractMetadataBaseUri, tokenMetas[i].metadata.media)
@@ -550,7 +561,7 @@ export class NearScraperService {
   };
 
 
-  getNftMetaAttributesFromMeta(tokenIpfsMeta, collectionTitle, tokenMeta, slug) {
+  getNftMetaAttributesFromMeta(tokenIpfsMeta, tokenMeta, slug) {
     let attributes = []
     switch(slug) {
       case "misfits.tenk.near":
@@ -595,16 +606,6 @@ export class NearScraperService {
           value: attr.value.toString()
         }
       })
-    }
-
-    // set default attribute if no attributes found
-    if (!attributes || Object.keys(attributes).length === 0 && attributes.constructor === Object) {
-      attributes = [
-        {
-          trait_type: slug,
-          value: collectionTitle
-        }
-      ]
     }
     
     return attributes
@@ -891,7 +892,7 @@ export class NearScraperService {
 
 
   async pinMultipleImages(data) {
-    const { slug, offset, limit } = data;
+    const { slug, offset = 0 } = data;
 
     const collection = await this.prismaService.collection.findUnique({ where: { slug: slug } })
 
@@ -909,19 +910,17 @@ export class NearScraperService {
       },
     })
 
-    const limiter = new Bottleneck({
-      minTime: 1500,
-      maxConcurrent: 20
-    });
-
     for (let i = 0; i < nftMetas.length; i++) {
       const pinHash = this.ipfsHelperService.getPinHashFromUrl(nftMetas[i].image);
-      await limiter.schedule(() => {
-        return this.ipfsHelperService.pinByHash(pinHash, `${slug} ${nftMetas[i]?.token_id} (Rank ${nftMetas[i]?.ranking}) - Image`);
+      const pinJob = await axios.post("http://localhost:5001/api/pin-hash", {
+        hash: pinHash,
+        name: `${slug} ${nftMetas[i]?.token_id} (Rank ${nftMetas[i]?.ranking}) - Image`
       })
-
-      if (i % 100 === 0) {
-        console.log(`Token #: ${i}`)
+      if (pinJob.error) {
+        throw new Error(pinJob.erro)
+      }
+      if (pinJob.jobInfo) {
+        throw new Error(`Error: ${pinJob.error} -- JobInfo: ${pinJob.jobInfo}`)
       }
     }
   };

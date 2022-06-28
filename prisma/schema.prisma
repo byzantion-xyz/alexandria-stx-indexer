@@ -364,10 +364,11 @@ enum DiscordChannelType {
 
 enum CollectionScrapeStage {
   getting_tokens
-  pinning
+  pinning_folder
   loading_nft_metas
   updating_rarities
   creating_collection_attributes
+  pinning_multiple_images
   done
 }
 

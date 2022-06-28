@@ -5,6 +5,7 @@ import { CollectionScrapeStage } from '@prisma/client'
 import { CollectionScrapeOutcome } from '@prisma/client'
 import { IpfsHelperService } from '../providers/ipfs-helper.service';
 import { runScraperData } from './dto/run-scraper-data.dto';
+import Bottleneck from "bottleneck";
 const axios = require('axios').default;
 const https = require('https');
 
@@ -106,26 +107,27 @@ export class NearScraperService {
       await this.setCollectionScrapeStage(collection.id, CollectionScrapeStage.pinning);
       if (isParasCustodialCollection) {
         // Pin each custodial nft image to our pinata (each paras custodial nft has a distinct image hash)
+        // await this.pinMultipleImages(slug);
       } else {
         // Pin the first item's meta as it's the same hash for the whole folder of metas and images
         await this.pin(tokenMetas, nftContractMetadata.base_uri, slug);
       }
       
-      // load NftMetas + NftMetaAttributes
-      await this.setCollectionScrapeStage(collection.id, CollectionScrapeStage.loading_nft_metas);
-      await this.loadNftMetasAndTheirAttributes(tokenMetas, nftContractMetadata.base_uri, smartContract.id, slug, loadedCollection, scrape_non_custodial_from_paras, isParasCustodialCollection);
+      // // load NftMetas + NftMetaAttributes
+      // await this.setCollectionScrapeStage(collection.id, CollectionScrapeStage.loading_nft_metas);
+      // await this.loadNftMetasAndTheirAttributes(tokenMetas, nftContractMetadata.base_uri, smartContract.id, slug, loadedCollection, scrape_non_custodial_from_paras, isParasCustodialCollection);
       
-      // update NftMeta + NftMetaAttributes rarities
-      await this.setCollectionScrapeStage(collection.id, CollectionScrapeStage.updating_rarities);
-      await this.updateRarities(slug);
+      // // update NftMeta + NftMetaAttributes rarities
+      // await this.setCollectionScrapeStage(collection.id, CollectionScrapeStage.updating_rarities);
+      // await this.updateRarities(slug);
 
-      // create CollectionAttributes
-      await this.setCollectionScrapeStage(collection.id, CollectionScrapeStage.creating_collection_attributes);
-      await this.createCollectionAttributes(slug);
+      // // create CollectionAttributes
+      // await this.setCollectionScrapeStage(collection.id, CollectionScrapeStage.creating_collection_attributes);
+      // await this.createCollectionAttributes(slug);
 
-      // mark scrape as done and succeeded
-      await this.markScrapeSuccess(collection.id, slug);
-      this.logger.log(`[scraping ${slug}] SCRAPING COMPLETE`);
+      // // mark scrape as done and succeeded
+      // await this.markScrapeSuccess(collection.id, slug);
+      // this.logger.log(`[scraping ${slug}] SCRAPING COMPLETE`);
       return "Success"
 
     } catch(err) {
@@ -888,24 +890,39 @@ export class NearScraperService {
   }
 
 
-  async pinMultipleImages(tokenMetas, nftContractMetadataBaseUri, slug) {
-    if (tokenMetas.length == 0) return
-    this.logger.log(`[scraping ${slug}] pin multiple`);
+  async pinMultipleImages(data) {
+    const { slug, offset, limit } = data;
 
-    let pinPromises = []
-    for (let i = 0; i < tokenMetas.length; i++) {
-      const tokenIpfsUrl = this.getTokenIpfsUrl(nftContractMetadataBaseUri, tokenMetas[i]?.metadata?.media);
-      if (!tokenIpfsUrl || !tokenIpfsUrl.includes('ipfs')) continue // if the metadata is not stored on ipfs continue loop
+    const collection = await this.prismaService.collection.findUnique({ where: { slug: slug } })
 
-      const pinHash = this.ipfsHelperService.getPinHashFromUrl(tokenIpfsUrl);
-      const byzPinataPromise = this.ipfsHelperService.pinByHash(pinHash, `${slug} ${tokenMetas[i]?.token_id} Image`);
-      pinPromises.push(byzPinataPromise);
-      if (i % 5 === 0) {
-        await Promise.all(pinPromises);
-        pinPromises = [];
-        await delay(200);
+    const nftMetas = await this.prismaService.nftMeta.findMany({
+      orderBy: {
+        ranking: 'asc',
+      },
+      skip: offset,
+      where: { collection_id: collection.id },
+      select: {
+        id: true,
+        image: true,
+        token_id: true,
+        ranking: true
+      },
+    })
+
+    const limiter = new Bottleneck({
+      minTime: 1500,
+      maxConcurrent: 20
+    });
+
+    for (let i = 0; i < nftMetas.length; i++) {
+      const pinHash = this.ipfsHelperService.getPinHashFromUrl(nftMetas[i].image);
+      await limiter.schedule(() => {
+        return this.ipfsHelperService.pinByHash(pinHash, `${slug} ${nftMetas[i]?.token_id} (Rank ${nftMetas[i]?.ranking}) - Image`);
+      })
+
+      if (i % 100 === 0) {
+        console.log(`Token #: ${i}`)
       }
     }
-    await Promise.all(pinPromises);
   };
 }

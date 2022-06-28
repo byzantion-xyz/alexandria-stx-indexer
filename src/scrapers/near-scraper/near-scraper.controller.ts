@@ -32,4 +32,12 @@ export class NearScraperController {
     const result = await this.nearScraper.createCollectionAttributes(data.slug);
     return result;
   }
+
+  @Post('pin-multiple-images')
+  async pinMultipleImages(
+    @Body() data: { slug, offset, limit }
+  ) {
+    const result = await this.nearScraper.pinMultipleImages(data);
+    return result;
+  }
 }

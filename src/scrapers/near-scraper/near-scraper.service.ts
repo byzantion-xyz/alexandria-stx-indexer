@@ -113,21 +113,21 @@ export class NearScraperService {
         await this.pin(tokenMetas, nftContractMetadata.base_uri, slug);
       }
       
-      // // load NftMetas + NftMetaAttributes
-      // await this.setCollectionScrapeStage(collection.id, CollectionScrapeStage.loading_nft_metas);
-      // await this.loadNftMetasAndTheirAttributes(tokenMetas, nftContractMetadata.base_uri, smartContract.id, slug, loadedCollection, scrape_non_custodial_from_paras, isParasCustodialCollection);
+      // load NftMetas + NftMetaAttributes
+      await this.setCollectionScrapeStage(collection.id, CollectionScrapeStage.loading_nft_metas);
+      await this.loadNftMetasAndTheirAttributes(tokenMetas, nftContractMetadata.base_uri, smartContract.id, slug, loadedCollection, scrape_non_custodial_from_paras, isParasCustodialCollection);
       
-      // // update NftMeta + NftMetaAttributes rarities
-      // await this.setCollectionScrapeStage(collection.id, CollectionScrapeStage.updating_rarities);
-      // await this.updateRarities(slug);
+      // update NftMeta + NftMetaAttributes rarities
+      await this.setCollectionScrapeStage(collection.id, CollectionScrapeStage.updating_rarities);
+      await this.updateRarities(slug);
 
-      // // create CollectionAttributes
-      // await this.setCollectionScrapeStage(collection.id, CollectionScrapeStage.creating_collection_attributes);
-      // await this.createCollectionAttributes(slug);
+      // create CollectionAttributes
+      await this.setCollectionScrapeStage(collection.id, CollectionScrapeStage.creating_collection_attributes);
+      await this.createCollectionAttributes(slug);
 
-      // // mark scrape as done and succeeded
-      // await this.markScrapeSuccess(collection.id, slug);
-      // this.logger.log(`[scraping ${slug}] SCRAPING COMPLETE`);
+      // mark scrape as done and succeeded
+      await this.markScrapeSuccess(collection.id, slug);
+      this.logger.log(`[scraping ${slug}] SCRAPING COMPLETE`);
       return "Success"
 
     } catch(err) {

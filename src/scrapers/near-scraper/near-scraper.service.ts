@@ -5,7 +5,6 @@ import { CollectionScrapeStage } from '@prisma/client'
 import { CollectionScrapeOutcome } from '@prisma/client'
 import { IpfsHelperService } from '../providers/ipfs-helper.service';
 import { runScraperData } from './dto/run-scraper-data.dto';
-import Bottleneck from "bottleneck";
 const axios = require('axios').default;
 const https = require('https');
 
@@ -329,6 +328,10 @@ export class NearScraperService {
         if (mediaUrl && mediaUrl != "" && mediaUrl.includes('ipfs')) {
           mediaUrl = this.ipfsHelperService.getByzIpfsUrl(mediaUrl);
         }
+
+        console.log("attributes", attributes)
+        console.log("")
+        console.log("token", tokenMetas[i])
 
         const nftMeta = this.prismaService.nftMeta.create({
           data: {

@@ -9,31 +9,27 @@ datasource db {
   shadowDatabaseUrl = env("NEAR_STREAMER_SHADOW_DATABASE_URL")
 }
 
-model Transaction {
-  hash String @id
+model receipt {
+  receipt_id        String @id
+  receipt           Json
+  execution_outcome Json
 
-  outcome     Json @db.JsonB
-  transaction Json @db.JsonB
+  args              Json?  @db.JsonB
+  logs              Json?  @db.JsonB
+}
 
-  block_hash      String
-  block_timestamp BigInt
-  block_height    BigInt
-
-  receiver_id         String?
-  success_receipt_id  String?
-
-  missing   Boolean @default(false)
-  processed Boolean @default(false)
+model transaction {
+  hash               String  @id
+  outcome            Json
+  transaction        Json
+  missing            Boolean @default(false)
+  processed          Boolean @default(false)
+  block_hash         String
+  block_height       BigInt
+  block_timestamp    BigInt
+  success_receipt_id String?
+  receiver_id        String?
 
   @@index([receiver_id])
   @@index([success_receipt_id])
-  @@map("transaction")
-}
-
-model Receipt {
-  receipt_id        String @id
-  receipt           Json @db.JsonB
-  execution_outcome Json @db.JsonB
-
-  @@map("receipt")
 }

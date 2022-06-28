@@ -1,13 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { NearIndexerService } from 'src/indexers/near-indexer/near-indexer.service';
+import { IndexerOrchestratorService } from 'src/indexers/indexer-orchestrator.service';
 
 @Injectable()
 export class TasksService {
     private readonly logger = new Logger(TasksService.name);
 
     constructor(
-        private nearIndexer: NearIndexerService
+        private nearIndexer: IndexerOrchestratorService
     ) {}
 
     @Cron(CronExpression.EVERY_5_MINUTES)

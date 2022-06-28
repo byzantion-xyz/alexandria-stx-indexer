@@ -32,15 +32,14 @@ export class DiscordServerService {
     });
   }
 
-  async fetchChannelsByContractKey(contract_key: string, purpose: DiscordChannelType) {
-    let smart_contract = await this.prisma.smartContract.findUnique({ where: { contract_key } });
-
+  async fetchChannelsBySlug(slug: string, purpose: DiscordChannelType) {
+    let collection = await this.prisma.collection.findUnique({ where: { slug } });
     let channels;
-    if (smart_contract) {
-      channels = this.prisma.discordServerChannel.findMany({
+    if (collection) {
+      channels = await this.prisma.discordServerChannel.findMany({
         where: { 
-          smart_contracts: {
-            some: { smart_contract_id: smart_contract.id }
+          collections: {
+            some: { collection_id: collection.id }
           },
           purpose: purpose,
           discord_server: {

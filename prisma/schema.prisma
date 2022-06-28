@@ -9,22 +9,22 @@ datasource db {
 }
 
 model SmartContract {
-  id                       String                                @id @default(uuid()) @db.Uuid
-  contract_key             String                                @unique
+  id                       String                  @id @default(uuid()) @db.Uuid
+  contract_key             String                  @unique
   spec                     String?
   name                     String?
-  scanned_transactions     Int                                   @default(0)
+  scanned_transactions     Int                     @default(0)
   type                     SmartContractType
-  chain_id                 String                                @db.Uuid
-  created_at               DateTime                              @default(now())
-  updated_at               DateTime                              @updatedAt
+  chain_id                 String                  @db.Uuid
+  created_at               DateTime                @default(now())
+  updated_at               DateTime                @updatedAt
   asset_name               String?
-  frozen                   Boolean                               @default(false)
+  frozen                   Boolean                 @default(false)
   json_meta                Json?
   base_marketplace_uri     String?
   token_uri                String?
   collection_uri           String?
-  chain                    Chain                                 @relation(fields: [chain_id], references: [id])
+  chain                    Chain                   @relation(fields: [chain_id], references: [id])
   collections              Collection[]
   actions                  Action[]
   collection_bids          CollectionBid[]
@@ -32,8 +32,7 @@ model SmartContract {
   nft_metas                NftMeta[]
   nft_state                NftState[]
   smart_contract_functions SmartContractFunction[]
-  discord_server_channels  SmartContractOnDiscordServerChannel[]
-  marketplace_actions      Action[]                              @relation("marketplace_actions")
+  marketplace_actions      Action[]                @relation("marketplace_actions")
 
   @@map("smart_contract")
 }
@@ -79,26 +78,27 @@ model Chain {
 }
 
 model Collection {
-  id                   String                @id @default(uuid()) @db.Uuid
-  collection_size      Int?
-  description          String?
-  external_url         String?
-  volume               Int                   @default(0)
-  floor                Int                   @default(0)
-  cover_image          String?
-  trending             Boolean               @default(false)
-  title                String?
-  created_at           DateTime              @default(now())
-  updated_at           DateTime              @updatedAt
-  slug                 String?               @unique
-  actions              Action[]
-  attributes           CollectionAttribute[]
-  metas                NftMeta[]
-  smart_contract_id    String?               @db.Uuid
-  smart_contract       SmartContract?        @relation(fields: [smart_contract_id], references: [id])
-  collection_scrape_id String?               @unique @db.Uuid
-  collection_scrape    CollectionScrape?     @relation(fields: [collection_scrape_id], references: [id])
-  creator              CollectionCreator?
+  id                      String                             @id @default(uuid()) @db.Uuid
+  collection_size         Int?
+  description             String?
+  external_url            String?
+  volume                  Int                                @default(0)
+  floor                   Int                                @default(0)
+  cover_image             String?
+  trending                Boolean                            @default(false)
+  title                   String?
+  created_at              DateTime                           @default(now())
+  updated_at              DateTime                           @updatedAt
+  slug                    String?                            @unique
+  actions                 Action[]
+  attributes              CollectionAttribute[]
+  metas                   NftMeta[]
+  smart_contract_id       String?                            @db.Uuid
+  smart_contract          SmartContract?                     @relation(fields: [smart_contract_id], references: [id])
+  collection_scrape_id    String?                            @unique @db.Uuid
+  collection_scrape       CollectionScrape?                  @relation(fields: [collection_scrape_id], references: [id])
+  creator                 CollectionCreator?
+  discord_server_channels CollectionOnDiscordServerChannel[]
 
   @@map("collection")
 }
@@ -303,28 +303,29 @@ model DiscordServer {
 }
 
 model DiscordServerChannel {
-  id                String                                @id @default(uuid()) @db.Uuid
+  id                String                             @id @default(uuid()) @db.Uuid
   channel_id        String
   name              String
   purpose           DiscordChannelType
-  discord_server    DiscordServer                         @relation(fields: [discord_server_id], references: [id])
-  discord_server_id String                                @db.Uuid
-  smart_contracts   SmartContractOnDiscordServerChannel[]
+  discord_server    DiscordServer                      @relation(fields: [discord_server_id], references: [id])
+  discord_server_id String                             @db.Uuid
+  collections       CollectionOnDiscordServerChannel[]
+
 
   @@map("discord_server_channel")
 }
 
-model SmartContractOnDiscordServerChannel {
-  smart_contract            SmartContract        @relation(fields: [smart_contract_id], references: [id])
-  smart_contract_id         String               @db.Uuid
+model CollectionOnDiscordServerChannel {
+  collection                Collection           @relation(fields: [collection_id], references: [id])
+  collection_id             String               @db.Uuid
   discord_server_channel    DiscordServerChannel @relation(fields: [discord_server_channel_id], references: [id])
   discord_server_channel_id String               @db.Uuid
 
   updated_at DateTime @updatedAt
   created_at DateTime @default(now())
 
-  @@unique([smart_contract_id, discord_server_channel_id])
-  @@map("smart_contract_on_discord_server_channel")
+  @@unique([collection_id, discord_server_channel_id])
+  @@map("collection_on_discord_server_channel")
 }
 
 enum CollectionBidStatus {

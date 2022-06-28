@@ -1,6 +1,6 @@
 import { InjectDiscordClient } from '@discord-nestjs/core';
 import { Injectable, Logger } from '@nestjs/common';
-import { Action, NftMeta, NftState, SmartContract } from '@prisma/client';
+import { Collection, Action, NftMeta, SmartContract } from '@prisma/client';
 import axios from 'axios';
 import { Client, ColorResolvable, MessageAttachment, MessageEmbed } from 'discord.js';
 import * as sharp from 'sharp';
@@ -16,17 +16,20 @@ export class BotHelperService {
     private readonly prismaService: PrismaService,
   ) { }
 
-  createDiscordBotDto(nftMeta: NftMeta, sc: SmartContract, msc: SmartContract, action: Action): DiscordBotDto {
-    const marketplaceLink = msc.base_marketplace_uri + msc.token_uri + 
+  createDiscordBotDto(nftMeta: NftMeta, collection: Collection, sc: SmartContract, msc: SmartContract, action: Action): DiscordBotDto {
+    let marketplaceLink: string;
+    if (msc) {
+      marketplaceLink = msc.base_marketplace_uri + msc.token_uri + 
       sc.contract_key + '::' + nftMeta.token_id + '/' + nftMeta.token_id;
+    }
     const transactionLink = `https://explorer.near.org/transactions/${action.tx_id}`;
 
     return {
-      contract_key: sc.contract_key,
+      slug: collection.slug,
       title: nftMeta.name,
       rarity: nftMeta.rarity,
       price: `${Number(Number(action.list_price) / 1e24).toFixed(2)} NEAR`, // TODO: Round to USD also
-      marketplaceLink,
+      ... (marketplaceLink && { marketplaceLink}),
       transactionLink,
       image: nftMeta.image
     };
@@ -50,7 +53,9 @@ export class BotHelperService {
     const roundedRarity: number = rarity ? Math.round(rarity * 100) / 100 : 0;
 
     embed.setTitle(`${title} ${subTitle}`);
-    embed.setURL(marketplaceLink);
+    if (marketplaceLink) {
+      embed.setURL(marketplaceLink);
+    }
     embed.setDescription(`**Rarity**: ${roundedRarity}\n**Price**: ${price}`);
     //embed.addField('Attributes', `[View](${byzFinalLink})`, true);
     embed.addField('Transaction', `[View](${transactionLink})`, true);
@@ -84,15 +89,17 @@ export class BotHelperService {
         nft_meta: {
           include: {
             nft_state: true,
-            smart_contract: true
+            smart_contract: true,
+            collection: true
           }
         },
-        smart_contract: true,
+        collection: true,
         marketplace_smart_contract: true
       }
     });
     const data: DiscordBotDto = this.createDiscordBotDto(
       action.nft_meta,
+      action.collection,
       action.nft_meta.smart_contract,
       action.marketplace_smart_contract,
       action

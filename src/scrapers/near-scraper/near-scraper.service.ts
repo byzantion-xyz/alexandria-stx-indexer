@@ -183,9 +183,7 @@ export class NearScraperService {
     this.logger.log(`[scraping ${slug}] pin`);
     const firstTokenIpfsUrl = this.getTokenIpfsUrl(nftContractMetadataBaseUri, firstTokenMeta?.metadata?.reference);
     if (!firstTokenIpfsUrl || !firstTokenIpfsUrl.includes('ipfs')) return // if the metadata is not stored on ipfs return
-
     await this.ipfsHelperService.pinIpfsFolder(firstTokenIpfsUrl, `${slug}`);
-    await delay(5000) // delay 5 seconds to ensure that the pinned byzantion pinata url is ready to query in the next step 
   };
 
 

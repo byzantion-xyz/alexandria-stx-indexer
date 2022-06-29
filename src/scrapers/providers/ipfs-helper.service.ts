@@ -25,6 +25,8 @@ export class IpfsHelperService {
           isPinned = await this.checkIfAlreadyPinned(pinHash);
           if (isPinned) break; // break when pin has completed
         }
+
+        await delay(5000) // delay another 5 seconds to ensure that the pinned byzantion pinata url is ready to query in the next step 
   
         if (!isPinned) isPinning = true; //throw new Error(`Error. Timeout experienced while waiting to pin ${pinHash}`);
       }

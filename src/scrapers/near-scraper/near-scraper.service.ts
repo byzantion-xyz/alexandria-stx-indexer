@@ -108,7 +108,7 @@ export class NearScraperService {
       // if Paras custodial collection, pin each distinct token image to our pinata by sending tasks to rate-limited queue service
       if (isParasCustodialCollection) {
         await this.setCollectionScrapeStage(collection.id, CollectionScrapeStage.pinning_multiple_images);
-        this.pinMultipleImages({slug: slug});
+        await this.pinMultipleImages({slug: slug});
       }
 
       // mark scrape as done and succeeded

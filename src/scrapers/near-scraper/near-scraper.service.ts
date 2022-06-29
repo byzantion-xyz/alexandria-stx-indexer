@@ -855,6 +855,7 @@ export class NearScraperService {
 
   async pinMultipleImages(data) {
     const { slug, offset = 0 } = data;
+    this.logger.log(`[${slug}] Pinning Multiple Images...`);
 
     const collection = await this.prismaService.collection.findUnique({ where: { slug: slug } })
 
@@ -880,6 +881,7 @@ export class NearScraperService {
           name: `${slug} ${nftMetas[i]?.token_id} (Rank ${nftMetas[i]?.ranking}) - Image`
         })
         if (pinJob.error) {
+          throw new Error(`Error: ${pinJob.error}`);
         }
         if (pinJob.jobInfo) {
           throw new Error(`Error: ${pinJob.error} -- JobInfo: ${pinJob.jobInfo}`)
@@ -888,5 +890,6 @@ export class NearScraperService {
         throw new Error(err)
       }
     }
+    this.logger.log(`[${slug}] Pinning Multiple Images Complete.`);
   };
 }

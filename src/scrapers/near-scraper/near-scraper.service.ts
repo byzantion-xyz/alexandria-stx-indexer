@@ -5,26 +5,10 @@ import { CollectionScrapeStage } from '@prisma/client'
 import { CollectionScrapeOutcome } from '@prisma/client'
 import { IpfsHelperService } from '../providers/ipfs-helper.service';
 import { runScraperData } from './dto/run-scraper-data.dto';
+import { ContractConnectionService } from './providers/contract-connection-service';
+
 const axios = require('axios').default;
 const https = require('https');
-
-const nearAPI = require("near-api-js");
-const { keyStores, connect } = nearAPI;
-
-const homedir = require("os").homedir();
-const CREDENTIALS_DIR = ".near-credentials";
-const credentialsPath = require("path").join(homedir, CREDENTIALS_DIR);
-const keyStore = new keyStores.UnencryptedFileSystemKeyStore(credentialsPath);
-const nearAccountId = "9936890d36d4dc77414e685f7ac667fc7b67d16a0cf8dae8a9c46f0976635ecf"
-
-const nearConfig = {
-  networkId: "mainnet",
-  keyStore,
-  nodeUrl: "https://rpc.mainnet.near.org",
-  walletUrl: "https://wallet.mainnet.near.org",
-  helperUrl: "https://helper.mainnet.near.org",
-  explorerUrl: "https://explorer.mainnet.near.org",
-};
 
 const NEAR_PROTOCOL_DB_ID = "174c3df6-0221-4ca7-b966-79ac8d981bdb"
 
@@ -38,7 +22,8 @@ export class NearScraperService {
 
   constructor(
     private readonly prismaService: PrismaService,
-    private readonly ipfsHelperService: IpfsHelperService
+    private readonly ipfsHelperService: IpfsHelperService,
+    private readonly contractConnectionService: ContractConnectionService
   ) {}
 
 
@@ -65,7 +50,7 @@ export class NearScraperService {
     await this.incrementScrapeAttemptByOne(collection.id);
 
     // Get contract data from chain
-    const contract = await this.connectNftContract(contract_key);
+    const contract = await this.contractConnectionService.connectNftContract(contract_key);
     const nftContractMetadata = await contract.nft_metadata();
     const collectionSize = await contract.nft_total_supply();
 
@@ -708,26 +693,6 @@ export class NearScraperService {
   }
 
 
-  async getContract(contract_key, account) {
-    return new nearAPI.Contract(
-      account, // the account object that is connecting
-      contract_key, // name of contract you're connecting to
-      {
-        viewMethods: ["nft_metadata", "nft_token", "nft_total_supply", "nft_tokens"], // view methods do not change state but usually return a value
-        sender: account, // account object to initialize and sign transactions.
-      }
-    );
-  }
-
-
-  async connectNftContract(contract_id) {
-    const near = await connect(nearConfig);
-    const account = await near.account(nearAccountId);
-    const contract = await this.getContract(contract_id, account);
-    return contract
-  }
-
-
   getTokenIpfsUrl(base_uri, reference) {
     if (base_uri == 'https://nearnaut.mypinata.cloud/ipfs') return null
     if (reference.includes("https")) return reference
@@ -911,15 +876,18 @@ export class NearScraperService {
 
     for (let i = 0; i < nftMetas.length; i++) {
       const pinHash = this.ipfsHelperService.getPinHashFromUrl(nftMetas[i].image);
-      const pinJob = await axios.post("https://byz-pinning-service.onrender.com/api/pin-hash", {
-        hash: pinHash,
-        name: `${slug} ${nftMetas[i]?.token_id} (Rank ${nftMetas[i]?.ranking}) - Image`
-      })
-      if (pinJob.error) {
-        throw new Error(pinJob.erro)
-      }
-      if (pinJob.jobInfo) {
-        throw new Error(`Error: ${pinJob.error} -- JobInfo: ${pinJob.jobInfo}`)
+      try {
+        const pinJob = await axios.post("https://byz-pinning-service.onrender.com/api/pin-hash", {
+          hash: pinHash,
+          name: `${slug} ${nftMetas[i]?.token_id} (Rank ${nftMetas[i]?.ranking}) - Image`
+        })
+        if (pinJob.error) {
+        }
+        if (pinJob.jobInfo) {
+          throw new Error(`Error: ${pinJob.error} -- JobInfo: ${pinJob.jobInfo}`)
+        }
+      } catch(err) {
+        throw new Error(err)
       }
     }
   };

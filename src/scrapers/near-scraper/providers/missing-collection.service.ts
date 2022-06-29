@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { runScraperData } from '../dto/run-scraper-data.dto';
 import { NearScraperService } from '../near-scraper.service';
+import { ContractConnectionService } from './contract-connection-service';
 import { requestMissingCollection } from './dto/request-missing-collection.dto';
 
 @Injectable()
@@ -10,10 +11,22 @@ export class MissingCollectionService {
 
   constructor(
     private readonly prismaService: PrismaService,
-    private nearScraperService: NearScraperService
+    private nearScraperService: NearScraperService,
+    private readonly contractConnectionService: ContractConnectionService
   ) { }
 
   async scrapeMissing(data: requestMissingCollection) {
+
+    // check if the transaction reciever (contract_key) is a nft smart contract, return early if it is not
+    const contract = await this.contractConnectionService.connectNftContract(data.contract_key);
+    let isNftSmartContract = true;
+    try {
+      await contract.nft_metadata();
+    } catch(err) {
+      isNftSmartContract = false;
+    }
+    if (!isNftSmartContract) return
+
 
     let scrapeParams: runScraperData = {
       contract_key: data.contract_key
@@ -22,10 +35,7 @@ export class MissingCollectionService {
     if (data.contract_key == "x.paras.near") {
       scrapeParams.token_series_id = data.token_id;
     } 
-    // Get rid of else once we want to enable scraping for x.paras.near custodial collections
-    else {
-      await this.nearScraperService.scrape(scrapeParams);
-    }
 
+    await this.nearScraperService.scrape(scrapeParams);
   }
 }

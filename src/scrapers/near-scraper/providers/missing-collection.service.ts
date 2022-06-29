@@ -35,7 +35,9 @@ export class MissingCollectionService {
     if (data.contract_key == "x.paras.near") {
       scrapeParams.token_series_id = data.token_id;
     } 
-
-    await this.nearScraperService.scrape(scrapeParams);
+    // get rid of else when ready to enable auto scraping for x.paras.near custodial collections
+    else {
+      await this.nearScraperService.scrape(scrapeParams);
+    }
   }
 }

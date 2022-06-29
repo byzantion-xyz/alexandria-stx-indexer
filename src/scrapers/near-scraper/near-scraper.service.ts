@@ -329,10 +329,6 @@ export class NearScraperService {
           mediaUrl = this.ipfsHelperService.getByzIpfsUrl(mediaUrl);
         }
 
-        console.log("attributes", attributes)
-        console.log("")
-        console.log("token", tokenMetas[i])
-
         const nftMeta = this.prismaService.nftMeta.create({
           data: {
             smart_contract_id: smartContractId,

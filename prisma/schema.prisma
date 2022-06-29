@@ -215,6 +215,7 @@ model NftMetaAttribute {
   meta       NftMeta  @relation(fields: [meta_id], references: [id])
 
   @@unique([trait_type, value, meta_id])
+  @@index(fields: [trait_type, value])
   @@map("nft_meta_attribute")
 }
 

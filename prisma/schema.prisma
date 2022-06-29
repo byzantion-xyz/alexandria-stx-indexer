@@ -214,7 +214,7 @@ model NftMetaAttribute {
   updated_at DateTime @updatedAt
   meta       NftMeta  @relation(fields: [meta_id], references: [id])
 
-  @@unique([trait_type, value, meta_id])
+  @@unique([meta_id, trait_type, value])
   @@index(fields: [trait_type, value])
   @@map("nft_meta_attribute")
 }

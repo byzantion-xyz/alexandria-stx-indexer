@@ -1,36 +1,40 @@
-import { Body, Controller, Get, Logger, Param, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, HttpException, HttpStatus, Logger, Param, Post, Query, UsePipes, ValidationPipe } from '@nestjs/common';
 import { DiscordChannelType } from '@prisma/client';
-import { createDiscordServer } from './dto/discord-server.dto';
-import { fetchDiscordServerChannels } from './dto/fetch-discord-server-channels.dto'
+import { PrismaService } from 'src/prisma/prisma.service';
+import { CreateDiscordServer } from './interfaces/discord-server.dto';
+import { fetchDiscordServerChannels } from './interfaces/fetch-discord-server-channels.dto'
 import { DiscordServerService } from './providers/discord-server.service';
 
-@Controller('discord-server')
+@Controller('api/discord-server')
 export class DiscordServerController {
   private readonly logger = new Logger(DiscordServerController.name);
 
   constructor(
-    private discordServerService: DiscordServerService
+    private discordServerService: DiscordServerService,
+    private readonly prisma: PrismaService
   ) { }
 
-  @Post()
-  async loadServer(@Body() body: createDiscordServer) {
-     /* Body example */
-    /*let params: createDiscordServer = {
-      server_id: "933254508878901319",
-      server_name: 'NEAR Ocean',
-      active: false,
-      discord_server_channels: [{
-        channel_id: "987048128542814288",
-        name: 'sales-and-listings',
-        purpose: DiscordChannelType.listings,
-      }, {
-        channel_id: "987048128542814288",
-        name: 'sales-and-listings',
-        purpose: DiscordChannelType.sales,
-      }]
-    };*/
-   
-    this.discordServerService.create(body);
+  @Post('configure')
+  @UsePipes(new ValidationPipe({ transform: true, whitelist: true, forbidNonWhitelisted: true, enableDebugMessages: true }))
+  async loadServer(@Body() body: CreateDiscordServer) {
+    this.logger.log(JSON.stringify(body, null, 2));
+    // TODO: Verify server id
+    // TODO: Verify channel id and channel in server
+
+    // Check that collection slug is found and transform to ids.
+    let collectionIds = [];
+    for (let ch of body.channels) {
+      for (let slug of ch.collections) {
+        let collection = await this.prisma.collection.findUnique({ where: { slug }});
+        if (!collection) {
+          throw new HttpException(`Unable to find this collection: "${slug}"`, HttpStatus.BAD_REQUEST);
+        }
+        collectionIds.push(collection.id);
+      }
+      ch.collections = collectionIds;
+    }
+
+    await this.discordServerService.create(body);
 
     return 'Ok';
   }

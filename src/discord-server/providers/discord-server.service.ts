@@ -1,7 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { DiscordChannelType } from '@prisma/client';
+import { channel } from 'diagnostics_channel';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { createDiscordServer } from '../dto/discord-server.dto';
+import { CreateDiscordServer, CreateDiscordServerChannel } from '../interfaces/discord-server.dto';
 
 @Injectable()
 export class DiscordServerService {
@@ -11,23 +12,25 @@ export class DiscordServerService {
     private readonly prisma: PrismaService
   ) { }
 
-  async create(params: createDiscordServer) {
-    let discordServerChannels = [];
+  async create(params: CreateDiscordServer) {
+    let channels: CreateDiscordServerChannel[] = [];
 
-    if (params.discord_server_channels && params.discord_server_channels.length) {
-      discordServerChannels = params.discord_server_channels;
+    if (params.channels && params.channels.length) {
+      for (let ch of params.channels) {
+        channels.push({
+          channel_id: ch.channel_id,
+          name: ch.name,
+          purpose: ch.purpose,
+          collections: ch.collections
+        })
+      }
     }
 
     await this.prisma.discordServer.create({
       data: {
         server_id: params.server_id,
         server_name: params.server_name,
-        active: params.active,
-        ...(params.discord_server_channels && {
-          discord_server_channels: {
-            create: discordServerChannels
-          }
-        })
+        ...(channels && channels.length && { discord_server_channels: { create: channels }})
       }
     });
   }

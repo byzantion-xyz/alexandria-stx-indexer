@@ -43,8 +43,11 @@ export class NearScraperService {
     const collectionScrape = await this.createCollectionScrape(collection.id, slug);
 
     // Check if contract should be scraped and return (quit scrape process) if not
-    const shouldScrape = await this.checkShouldScrape(scrape_non_custodial_from_paras, force_scrape, collection.id, slug);
-    if (!shouldScrape) return -1
+    try {
+      await this.checkShouldScrape(scrape_non_custodial_from_paras, force_scrape, collection.id, slug);
+    } catch(err) {
+      return err.toString()
+    }
 
     // Should scrape, so increment scrape attempt 
     await this.incrementScrapeAttemptByOne(collection.id);
@@ -119,7 +122,7 @@ export class NearScraperService {
     } catch(err) {
       this.logger.error(`[scraping ${slug}] Error while scraping: ${err}`);
       await this.createCollectionScrapeError(err, nftContractMetadata.base_uri, tokenMetas[0], slug);
-      return err
+      return err.toString();
     }
   }
 
@@ -164,13 +167,14 @@ export class NearScraperService {
         where: { collection_id: collectionId }
       })
       if (collectionScrape.outcome == CollectionScrapeOutcome.succeeded && !force_scrape) {
-        this.logger.log(`[scraping ${slug}] Scrape skipped, already scraped successfully.`);
-        return false
+        const errorMsg = `[scraping ${slug}] Scrape skipped, already scraped successfully.`;
+        this.logger.log(errorMsg);
+        throw new Error(errorMsg)
       }
       if (collectionScrape.attempts >= 2 && !force_scrape) {
         const errorMsg = `[scraping ${slug}] Contract scrape attempted twice already and failed. Check for errors in collectionScrape id: ${collectionScrape.id}. To re-scrape, pass in force_scrape: true, or set the SmartContractScrape.attempts back to 0.`;
         this.logger.error(errorMsg);
-        return false
+        throw new Error(errorMsg)
       }
 
       return true

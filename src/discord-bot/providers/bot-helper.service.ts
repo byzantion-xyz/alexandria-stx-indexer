@@ -1,6 +1,6 @@
 import { InjectDiscordClient } from '@discord-nestjs/core';
 import { Injectable, Logger } from '@nestjs/common';
-import { Collection, Action, NftMeta, SmartContract } from '@prisma/client';
+import { Collection, Action, NftMeta, SmartContract, NftState } from '@prisma/client';
 import axios from 'axios';
 import { Client, ColorResolvable, MessageAttachment, MessageEmbed } from 'discord.js';
 import * as sharp from 'sharp';
@@ -22,22 +22,34 @@ export class BotHelperService {
       marketplaceLink = msc.base_marketplace_uri + msc.token_uri + 
       sc.contract_key + '::' + nftMeta.token_id + '/' + nftMeta.token_id;
     }
+
+    let seller: string;
+    let buyer: string;
+    if (action.action == "buy") {
+      if (action.seller) seller = action.seller;
+      if (action.buyer) buyer = action.buyer;
+    }
+
     const transactionLink = `https://explorer.near.org/transactions/${action.tx_id}`;
 
     return {
       slug: collection.slug,
       title: nftMeta.name,
       rarity: nftMeta.rarity,
+      ranking: nftMeta.ranking,
       price: `${Number(Number(action.list_price) / 1e24).toFixed(2)} NEAR`, // TODO: Round to USD also
       ... (marketplaceLink && { marketplaceLink}),
       transactionLink,
+      ... (seller && { seller}),
+      ... (buyer && { buyer}),
       image: nftMeta.image
     };
   }
 
   async sendMessage(message, channel_id: string) {
     const channel = await this.client.channels.fetch(channel_id);
-    if (channel.type === 'GUILD_TEXT' && process.env.NODE_ENV === 'production') {
+    console.log("channel", channel)
+    if (channel.type === 'GUILD_TEXT') {
       await channel.send(message);
     } else {
       this.logger.warn('Not a valid text channel');
@@ -45,7 +57,7 @@ export class BotHelperService {
   }
 
   async buildMessage(data: DiscordBotDto, server_name: string, color: ColorResolvable, subTitle: string) {
-    const { title, rarity, price, marketplaceLink, transactionLink, image } = data;
+    const { title, rarity, ranking, price, marketplaceLink, transactionLink, image } = data;
 
     const embed = new MessageEmbed().setColor(color);
     let attachments = [];
@@ -56,7 +68,18 @@ export class BotHelperService {
     if (marketplaceLink) {
       embed.setURL(marketplaceLink);
     }
-    embed.setDescription(`**Rarity**: ${roundedRarity}\n**Price**: ${price}`);
+
+    let description: string;
+    description = `
+      **Ranking**: ${ranking}
+      **Rarity**: ${roundedRarity}
+      **Price**: ${price}
+    `
+    if (data.buyer) description += `**Buyer**: ${data.buyer}\n`;
+    if (data.seller) description += `**Seller**: ${data.seller}\n`
+
+    embed.setDescription(description);
+
     //embed.addField('Attributes', `[View](${byzFinalLink})`, true);
     embed.addField('Transaction', `[View](${transactionLink})`, true);
 

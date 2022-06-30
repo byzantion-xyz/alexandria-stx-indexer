@@ -10,7 +10,7 @@ export class CryptoRateService {
   ) { }
 
   async getNearToUSDRate() {
-    const cryptoRate = await this.prismaService.crypto_rates.findUnique({
+    const cryptoRate = await this.prismaService.cryptoRate.findUnique({
       where: {
         fiat_currency_crypto_currency: {
           fiat_currency: "USD",

@@ -31,10 +31,6 @@ export class DiscordServerService {
       };
     });
 
-    for (let d of discord_server_channels) {
-      this.logger.log(d);
-    }
-
     await this.prisma.discordServer.create({
       data: {
         server_id: params.server_id,

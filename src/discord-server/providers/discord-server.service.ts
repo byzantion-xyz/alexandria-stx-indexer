@@ -34,7 +34,9 @@ export class DiscordServerService {
         channel_id: ch.channel_id,
         name: ch.name,
         purpose: ch.purpose,
-        collections: { create: [{ collection: { connect: { id: ch.collections[0]} }}]}
+        collections: { 
+          create: ch.collections.map(collectionId => ({ collection: { connect: { id: collectionId}}}))
+        }
       };
     });
 

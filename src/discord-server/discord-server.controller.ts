@@ -47,8 +47,8 @@ export class DiscordServerController {
   }
 
   async validateAndTransform(params: CreateDiscordServer): Promise<CreateDiscordServer> {
-    let collectionIds = [];
     for (let ch of params.channels) {
+      let collectionIds = [];
       let result = await this.discordHelper.isChannelOnServer(ch.channel_id, params.server_id);
       if (!result.server_exists) {
         throw new HttpException(`Discord server does not exists: "${params.server_id}"`, HttpStatus.BAD_REQUEST);

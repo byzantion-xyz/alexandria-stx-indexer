@@ -5,26 +5,10 @@ import { CollectionScrapeStage } from '@prisma/client'
 import { CollectionScrapeOutcome } from '@prisma/client'
 import { IpfsHelperService } from '../providers/ipfs-helper.service';
 import { runScraperData } from './dto/run-scraper-data.dto';
+import { ContractConnectionService } from './providers/contract-connection-service';
+
 const axios = require('axios').default;
 const https = require('https');
-
-const nearAPI = require("near-api-js");
-const { keyStores, connect } = nearAPI;
-
-const homedir = require("os").homedir();
-const CREDENTIALS_DIR = ".near-credentials";
-const credentialsPath = require("path").join(homedir, CREDENTIALS_DIR);
-const keyStore = new keyStores.UnencryptedFileSystemKeyStore(credentialsPath);
-const nearAccountId = "9936890d36d4dc77414e685f7ac667fc7b67d16a0cf8dae8a9c46f0976635ecf"
-
-const nearConfig = {
-  networkId: "mainnet",
-  keyStore,
-  nodeUrl: "https://rpc.mainnet.near.org",
-  walletUrl: "https://wallet.mainnet.near.org",
-  helperUrl: "https://helper.mainnet.near.org",
-  explorerUrl: "https://explorer.mainnet.near.org",
-};
 
 const NEAR_PROTOCOL_DB_ID = "174c3df6-0221-4ca7-b966-79ac8d981bdb"
 
@@ -38,7 +22,8 @@ export class NearScraperService {
 
   constructor(
     private readonly prismaService: PrismaService,
-    private readonly ipfsHelperService: IpfsHelperService
+    private readonly ipfsHelperService: IpfsHelperService,
+    private readonly contractConnectionService: ContractConnectionService
   ) {}
 
 
@@ -58,14 +43,17 @@ export class NearScraperService {
     const collectionScrape = await this.createCollectionScrape(collection.id, slug);
 
     // Check if contract should be scraped and return (quit scrape process) if not
-    const shouldScrape = await this.checkShouldScrape(scrape_non_custodial_from_paras, force_scrape, collection.id, slug);
-    if (!shouldScrape) return -1
+    try {
+      await this.checkShouldScrape(scrape_non_custodial_from_paras, force_scrape, collection.id, slug);
+    } catch(err) {
+      return err.toString()
+    }
 
     // Should scrape, so increment scrape attempt 
     await this.incrementScrapeAttemptByOne(collection.id);
 
     // Get contract data from chain
-    const contract = await this.connectNftContract(contract_key);
+    const contract = await this.contractConnectionService.connectNftContract(contract_key);
     const nftContractMetadata = await contract.nft_metadata();
     const collectionSize = await contract.nft_total_supply();
 
@@ -123,7 +111,7 @@ export class NearScraperService {
       // if Paras custodial collection, pin each distinct token image to our pinata by sending tasks to rate-limited queue service
       if (isParasCustodialCollection) {
         await this.setCollectionScrapeStage(collection.id, CollectionScrapeStage.pinning_multiple_images);
-        this.pinMultipleImages({slug: slug});
+        await this.pinMultipleImages({slug: slug});
       }
 
       // mark scrape as done and succeeded
@@ -134,7 +122,7 @@ export class NearScraperService {
     } catch(err) {
       this.logger.error(`[scraping ${slug}] Error while scraping: ${err}`);
       await this.createCollectionScrapeError(err, nftContractMetadata.base_uri, tokenMetas[0], slug);
-      return err
+      return err.toString();
     }
   }
 
@@ -179,13 +167,14 @@ export class NearScraperService {
         where: { collection_id: collectionId }
       })
       if (collectionScrape.outcome == CollectionScrapeOutcome.succeeded && !force_scrape) {
-        this.logger.log(`[scraping ${slug}] Scrape skipped, already scraped successfully.`);
-        return false
+        const errorMsg = `[scraping ${slug}] Scrape skipped, already scraped successfully.`;
+        this.logger.log(errorMsg);
+        throw new Error(errorMsg)
       }
       if (collectionScrape.attempts >= 2 && !force_scrape) {
         const errorMsg = `[scraping ${slug}] Contract scrape attempted twice already and failed. Check for errors in collectionScrape id: ${collectionScrape.id}. To re-scrape, pass in force_scrape: true, or set the SmartContractScrape.attempts back to 0.`;
         this.logger.error(errorMsg);
-        return false
+        throw new Error(errorMsg)
       }
 
       return true
@@ -198,9 +187,7 @@ export class NearScraperService {
     this.logger.log(`[scraping ${slug}] pin`);
     const firstTokenIpfsUrl = this.getTokenIpfsUrl(nftContractMetadataBaseUri, firstTokenMeta?.metadata?.reference);
     if (!firstTokenIpfsUrl || !firstTokenIpfsUrl.includes('ipfs')) return // if the metadata is not stored on ipfs return
-
     await this.ipfsHelperService.pinIpfsFolder(firstTokenIpfsUrl, `${slug}`);
-    await delay(5000) // delay 5 seconds to ensure that the pinned byzantion pinata url is ready to query in the next step 
   };
 
 
@@ -708,26 +695,6 @@ export class NearScraperService {
   }
 
 
-  async getContract(contract_key, account) {
-    return new nearAPI.Contract(
-      account, // the account object that is connecting
-      contract_key, // name of contract you're connecting to
-      {
-        viewMethods: ["nft_metadata", "nft_token", "nft_total_supply", "nft_tokens"], // view methods do not change state but usually return a value
-        sender: account, // account object to initialize and sign transactions.
-      }
-    );
-  }
-
-
-  async connectNftContract(contract_id) {
-    const near = await connect(nearConfig);
-    const account = await near.account(nearAccountId);
-    const contract = await this.getContract(contract_id, account);
-    return contract
-  }
-
-
   getTokenIpfsUrl(base_uri, reference) {
     if (base_uri == 'https://nearnaut.mypinata.cloud/ipfs') return null
     if (reference.includes("https")) return reference
@@ -892,6 +859,7 @@ export class NearScraperService {
 
   async pinMultipleImages(data) {
     const { slug, offset = 0 } = data;
+    this.logger.log(`[${slug}] Pinning Multiple Images...`);
 
     const collection = await this.prismaService.collection.findUnique({ where: { slug: slug } })
 
@@ -911,16 +879,21 @@ export class NearScraperService {
 
     for (let i = 0; i < nftMetas.length; i++) {
       const pinHash = this.ipfsHelperService.getPinHashFromUrl(nftMetas[i].image);
-      const pinJob = await axios.post("https://byz-pinning-service.onrender.com/api/pin-hash", {
-        hash: pinHash,
-        name: `${slug} ${nftMetas[i]?.token_id} (Rank ${nftMetas[i]?.ranking}) - Image`
-      })
-      if (pinJob.error) {
-        throw new Error(pinJob.erro)
-      }
-      if (pinJob.jobInfo) {
-        throw new Error(`Error: ${pinJob.error} -- JobInfo: ${pinJob.jobInfo}`)
+      try {
+        const pinJob = await axios.post("https://byz-pinning-service.onrender.com/api/pin-hash", {
+          hash: pinHash,
+          name: `${slug} ${nftMetas[i]?.token_id} (Rank ${nftMetas[i]?.ranking}) - Image`
+        })
+        if (pinJob.error) {
+          throw new Error(`Error: ${pinJob.error}`);
+        }
+        if (pinJob.jobInfo) {
+          throw new Error(`Error: ${pinJob.error} -- JobInfo: ${pinJob.jobInfo}`)
+        }
+      } catch(err) {
+        throw new Error(err)
       }
     }
+    this.logger.log(`[${slug}] Pinning Multiple Images Complete.`);
   };
 }

@@ -14,8 +14,15 @@ export class DiscordServerService {
 
   async create(params: CreateDiscordServer) {
 
-    const discordServer = await this.prisma.discordServer.findUnique({ where: { server_id: params.server_id }});
+    const discordServer = await this.prisma.discordServer.findUnique({ where: { server_id: params.server_id }, include: { discord_server_channels: true }});
     if (discordServer) {
+      for (let ch of discordServer.discord_server_channels) {
+        await this.prisma.discordServerChannel.update({ 
+          where: { id: ch.id  }, 
+          data: { collections: { deleteMany: {}} }
+        });
+      }
+     
       await this.prisma.discordServerChannel.deleteMany({ where: { discord_server_id: discordServer.id }});
       await this.prisma.discordServer.delete({ 
         where: { server_id: params.server_id }

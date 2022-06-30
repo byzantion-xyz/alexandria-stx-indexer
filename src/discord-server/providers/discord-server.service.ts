@@ -13,24 +13,33 @@ export class DiscordServerService {
   ) { }
 
   async create(params: CreateDiscordServer) {
-    let channels: CreateDiscordServerChannel[] = [];
 
-    if (params.channels && params.channels.length) {
-      for (let ch of params.channels) {
-        channels.push({
-          channel_id: ch.channel_id,
-          name: ch.name,
-          purpose: ch.purpose,
-          collections: ch.collections
-        })
-      }
+    const discordServer = await this.prisma.discordServer.findUnique({ where: { server_id: params.server_id }});
+    if (discordServer) {
+      await this.prisma.discordServerChannel.deleteMany({ where: { discord_server_id: discordServer.id }});
+      await this.prisma.discordServer.delete({ 
+        where: { server_id: params.server_id }
+      });
+    }
+
+    const discord_server_channels = params.channels.map(ch => {
+      return {
+        channel_id: ch.channel_id,
+        name: ch.name,
+        purpose: ch.purpose,
+        collections: { create: [{ collection: { connect: { id: ch.collections[0]} }}]}
+      };
+    });
+
+    for (let d of discord_server_channels) {
+      this.logger.log(d);
     }
 
     await this.prisma.discordServer.create({
       data: {
         server_id: params.server_id,
         server_name: params.server_name,
-        ...(channels && channels.length && { discord_server_channels: { create: channels }})
+        discord_server_channels: { create: discord_server_channels } 
       }
     });
   }

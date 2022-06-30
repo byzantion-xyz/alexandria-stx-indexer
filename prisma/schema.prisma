@@ -329,7 +329,7 @@ model CollectionOnDiscordServerChannel {
   @@map("collection_on_discord_server_channel")
 }
 
-model crypto_rates {
+model CryptoRate {
   id              String    @id @db.Uuid
   fiat_currency   String
   crypto_currency String
@@ -338,6 +338,7 @@ model crypto_rates {
   updated_at      DateTime? @default(now()) @db.Timestamp(6)
 
   @@unique([fiat_currency, crypto_currency], map: "crypto_rates_uk_fiat_crypto")
+  @@map("crypto_rate")
 }
 
 enum CollectionBidStatus {

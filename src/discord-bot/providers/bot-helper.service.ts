@@ -38,7 +38,7 @@ export class BotHelperService {
       rarity: nftMeta.rarity,
       ranking: nftMeta.ranking,
       collectionSize: collection.collection_size,
-      price: `${Number(Number(action.list_price) / 1e24).toFixed(2)} NEAR`, // TODO: Round to USD also
+      price: Number(Number(action.list_price) / 1e24),
       ... (marketplaceLink && { marketplaceLink}),
       transactionLink,
       ... (seller && { seller}),
@@ -80,12 +80,24 @@ export class BotHelperService {
     embed.setDescription(`
       **Rarity Ranking**: ${ranking}/${collectionSize}
       **Rarity Score**: ${roundedRarity}
-      **Price**: ${price} NEAR ($${priceInUSD} USD)
+      **Price**: ${Number(price).toFixed(2)} NEAR ($${priceInUSD} USD)
     `);
 
+    let seller: string;
+    if (data.seller) {
+      seller = data.seller;
+      if (data.seller && data.seller.length > 20) seller = data.seller.slice(0,5) + "..." + data.seller.slice(-5)
+    }
+
+    let buyer: string;
+    if (data.buyer) {
+      buyer = data.buyer;
+      if (data.buyer && data.buyer.length > 20) buyer = data.buyer.slice(0,5) + "..." + data.buyer.slice(-5)
+    }
+
     //embed.addField('Attributes', `[View](${byzFinalLink})`, true);
-    if (data.seller) embed.addField(`Seller`, `[${data.seller}](https://paras.id/${data.seller}/collectibles)`, true);
-    if (data.buyer) embed.addField(`Buyer`, `[${data.buyer}](https://paras.id/${data.buyer}/collectibles)`, true);
+    if (seller) embed.addField(`Seller`, `[${seller}](https://paras.id/${data.seller}/collectibles)`, true);
+    if (buyer) embed.addField(`Buyer`, `[${buyer}](https://paras.id/${data.buyer}/collectibles)`, true);
     embed.addField('Transaction', `[View](${transactionLink})`, true);
 
     if (image) {

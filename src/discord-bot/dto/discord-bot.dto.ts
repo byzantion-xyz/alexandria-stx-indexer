@@ -4,7 +4,7 @@ export interface DiscordBotDto {
   rarity: number;
   ranking: number;
   collectionSize: number;
-  price: string;
+  price: number;
   marketplaceLink?: string;
   transactionLink: string;
   seller?: string;

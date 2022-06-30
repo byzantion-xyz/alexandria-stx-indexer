@@ -6,6 +6,7 @@ import { Client, ColorResolvable, MessageAttachment, MessageEmbed } from 'discor
 import * as sharp from 'sharp';
 import { DiscordBotDto } from 'src/discord-bot/dto/discord-bot.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { CryptoRateService } from './crypto-rate.service';
 
 @Injectable()
 export class BotHelperService {
@@ -14,6 +15,7 @@ export class BotHelperService {
   constructor(
     @InjectDiscordClient() private client: Client,
     private readonly prismaService: PrismaService,
+    private readonly cryptoRateService: CryptoRateService
   ) { }
 
   createDiscordBotDto(nftMeta: NftMeta, collection: Collection, sc: SmartContract, msc: SmartContract, action: Action): DiscordBotDto {
@@ -25,10 +27,8 @@ export class BotHelperService {
 
     let seller: string;
     let buyer: string;
-    if (action.action == "buy") {
-      if (action.seller) seller = action.seller;
-      if (action.buyer) buyer = action.buyer;
-    }
+    if (action.seller) seller = action.seller;
+    if (action.buyer) buyer = action.buyer;
 
     const transactionLink = `https://explorer.near.org/transactions/${action.tx_id}`;
 
@@ -37,6 +37,7 @@ export class BotHelperService {
       title: nftMeta.name,
       rarity: nftMeta.rarity,
       ranking: nftMeta.ranking,
+      collectionSize: collection.collection_size,
       price: `${Number(Number(action.list_price) / 1e24).toFixed(2)} NEAR`, // TODO: Round to USD also
       ... (marketplaceLink && { marketplaceLink}),
       transactionLink,
@@ -57,7 +58,7 @@ export class BotHelperService {
   }
 
   async buildMessage(data: DiscordBotDto, server_name: string, color: ColorResolvable, subTitle: string) {
-    const { title, rarity, ranking, price, marketplaceLink, transactionLink, image } = data;
+    const { title, rarity, ranking, collectionSize, price, marketplaceLink, transactionLink, image } = data;
 
     const embed = new MessageEmbed().setColor(color);
     let attachments = [];
@@ -69,18 +70,22 @@ export class BotHelperService {
       embed.setURL(marketplaceLink);
     }
 
-    let description: string;
-    description = `
-      **Ranking**: ${ranking}
-      **Rarity**: ${roundedRarity}
-      **Price**: ${price}
-    `
-    if (data.buyer) description += `**Buyer**: ${data.buyer}\n`;
-    if (data.seller) description += `**Seller**: ${data.seller}\n`
+    let priceInUSD: number;
+    const nearToUSDRate = await this.cryptoRateService.getNearToUSDRate();
+    if (nearToUSDRate) {
+      priceInUSD = Number(nearToUSDRate) * Number(price);
+      priceInUSD = Math.round((priceInUSD + Number.EPSILON) * 100) / 100;
+    }
 
-    embed.setDescription(description);
+    embed.setDescription(`
+      **Rarity Ranking**: ${ranking}/${collectionSize}
+      **Rarity Score**: ${roundedRarity}
+      **Price**: ${price} NEAR ($${priceInUSD} USD)
+    `);
 
     //embed.addField('Attributes', `[View](${byzFinalLink})`, true);
+    if (data.seller) embed.addField(`Seller`, `[${data.seller}](https://paras.id/${data.seller}/collectibles)`, true);
+    if (data.buyer) embed.addField(`Buyer`, `[${data.buyer}](https://paras.id/${data.buyer}/collectibles)`, true);
     embed.addField('Transaction', `[View](${transactionLink})`, true);
 
     if (image) {
@@ -101,6 +106,8 @@ export class BotHelperService {
 
     if (embed.video) attachments = []; // Do not include video files
     embed.setTimestamp();
+
+    embed.setFooter({ text: 'Powered by Byzantion.xyz', iconURL: 'https://res.cloudinary.com/daxts7gzz/image/upload/v1656619671/byz-logo-2.webp' });
 
     return { embeds: [embed], files: attachments };
   }

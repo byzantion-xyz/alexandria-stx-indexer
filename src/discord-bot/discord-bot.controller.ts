@@ -18,14 +18,12 @@ export class DiscordBotController {
   @Post('listing')
   @UsePipes(new ValidationPipe({ transform: true }))
   async postListing(@Body() listing: DiscordBotDto) {
-   
     this.listBotService.send(listing);
   }
 
   @Post('sale')
   @UsePipes(new ValidationPipe({ transform: true }))
   async postSale(@Body() sale: DiscordBotDto) {
-
     this.saleBotService.send(sale);
   }
 

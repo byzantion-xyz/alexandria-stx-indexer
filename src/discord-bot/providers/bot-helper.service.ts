@@ -69,6 +69,7 @@ export class BotHelperService {
       embed.setURL(marketplaceLink);
     }
 
+    // TODO: Fetch coin to do conversion from chain.botsCoin ?
     let priceInUSD: number;
     const nearToUSDRate = await this.cryptoRateService.getNearToUSDRate();
     if (nearToUSDRate) {
@@ -76,6 +77,7 @@ export class BotHelperService {
       priceInUSD = Math.round((priceInUSD + Number.EPSILON) * 100) / 100;
     }
 
+    // TODO: Fetch coin from chain.coin
     embed.setDescription(`
       **Rarity Ranking**: ${ranking}/${collectionSize}
       **Rarity Score**: ${roundedRarity}
@@ -93,6 +95,8 @@ export class BotHelperService {
       buyer = data.buyer;
       if (data.buyer && data.buyer.length > 20) buyer = data.buyer.slice(0,5) + "..." + data.buyer.slice(-5)
     }
+
+    // TODO: Fetch sellers/buyers path from smartContract.addressPath?
 
     //embed.addField('Attributes', `[View](${byzFinalLink})`, true);
     if (seller) embed.addField(`Seller`, `[${seller}](https://paras.id/${data.seller}/collectibles)`, true);

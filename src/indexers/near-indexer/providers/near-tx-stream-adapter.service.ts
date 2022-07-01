@@ -93,6 +93,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
 
   async fetchAccounts(): Promise<string[]> {
     const smartContracts: SmartContractWithFunctions[] = await this.prismaService.smartContract.findMany({
+      where: { chain: { symbol: 'Near'} },
       include: { smart_contract_functions: true },
     });
 

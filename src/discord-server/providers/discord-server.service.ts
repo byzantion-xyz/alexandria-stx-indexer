@@ -44,6 +44,7 @@ export class DiscordServerService {
       data: {
         server_id: params.server_id,
         server_name: params.server_name,
+        active: true,
         discord_server_channels: { create: discord_server_channels } 
       }
     });

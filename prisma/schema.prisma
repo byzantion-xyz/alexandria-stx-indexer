@@ -312,7 +312,7 @@ model DiscordServerChannel {
   discord_server_id String                             @db.Uuid
   collections       CollectionOnDiscordServerChannel[]
 
-
+  @@unique([discord_server_id, channel_id, purpose])
   @@map("discord_server_channel")
 }
 

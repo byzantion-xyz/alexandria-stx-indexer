@@ -49,8 +49,7 @@ export class BotHelperService {
 
   async sendMessage(message, channel_id: string) {
     const channel = await this.client.channels.fetch(channel_id);
-    console.log("channel", channel)
-    if (channel.type === 'GUILD_TEXT') {
+    if (channel.type === 'GUILD_TEXT' && process.env.NODE_ENV === 'production') {
       await channel.send(message);
     } else {
       this.logger.warn('Not a valid text channel');

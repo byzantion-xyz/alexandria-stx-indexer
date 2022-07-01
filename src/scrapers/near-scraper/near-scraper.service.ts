@@ -29,13 +29,16 @@ export class NearScraperService {
 
   async scrape(data: runScraperData) {
     this.logger.log(`START SCRAPE`);
-    const { contract_key, token_series_id, token_id, starting_token_id, ending_token_id } = data;
+    const { slug: slugInput, contract_key, token_series_id, token_id, starting_token_id, ending_token_id } = data;
     const { scrape_non_custodial_from_paras = false, force_scrape = false } = data;
     let isParasCustodialCollection = false;
     if (token_series_id) isParasCustodialCollection = true;
 
     // get collection slug
-    const slug = await this.getSlug(contract_key, token_series_id);
+    let slug = slugInput;
+    if (!slug) {
+      slug = await this.getSlug(contract_key, token_series_id);
+    }
     
     // create SmartContract, Collection, and CollectionScrape tables if they don't exist
     const smartContract = await this.createSmartContract(contract_key, slug);
@@ -69,7 +72,7 @@ export class NearScraperService {
           tokenMetas.push(token);
         } 
         if (isParasCustodialCollection) {
-          const tokens = await this.getTokensFromParasCustodialCollection(contract_key, token_series_id);
+          const tokens = await this.getTokensFromParasCustodialCollection(slug);
           tokenMetas = tokens;
         } else {
           const tokens = await this.getMultipleTokenMetasFromContract(contract, collectionSize, starting_token_id, ending_token_id, slug);
@@ -598,11 +601,7 @@ export class NearScraperService {
   }
 
 
-  async getTokensFromParasCustodialCollection(contract_key, token_series_id) {
-    // get collection_id from Paras API
-    const res = await axios.get(`https://api-v2-mainnet.paras.id/token/${contract_key}::${token_series_id}`);
-    const collection_id = res.data.metadata.collection_id;
-
+  async getTokensFromParasCustodialCollection(slug) {
     // get tokens from collection_id from Paras API
     const MAX_BATCH_LIMIT = 100;
     let currentSkip = 0;
@@ -610,7 +609,7 @@ export class NearScraperService {
     while (true) {
       const res = await axios.get("https://api-v2-mainnet.paras.id/token", {
         params: {
-          collection_id: collection_id,
+          collection_id: slug,
           __skip: currentSkip,
           __limit: MAX_BATCH_LIMIT
         }

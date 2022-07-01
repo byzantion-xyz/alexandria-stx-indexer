@@ -1,13 +1,18 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { CommonTx } from 'src/indexers/common/interfaces/common-tx.interface';
-import { TxProcessResult } from 'src/indexers/common/interfaces/tx-process-result.interface';
-import { TxStreamAdapter } from 'src/indexers/common/interfaces/tx-stream-adapter.interface';
-import { PrismaStreamerService } from 'src/prisma/prisma-streamer.service';
-import { PrismaService } from 'src/prisma/prisma.service';
-import { Transaction } from '../interfaces/near-transaction.dto';
-import { TxHelperService } from '../../common/helpers/tx-helper.service';
-import * as moment from 'moment';
-import { NearTxHelperService } from './near-tx-helper.service';
+import { Injectable, Logger } from "@nestjs/common";
+import { CommonTx } from "src/indexers/common/interfaces/common-tx.interface";
+import { TxProcessResult } from "src/indexers/common/interfaces/tx-process-result.interface";
+import { TxStreamAdapter } from "src/indexers/common/interfaces/tx-stream-adapter.interface";
+import { PrismaStreamerService } from "src/prisma/prisma-streamer.service";
+import { PrismaService } from "src/prisma/prisma.service";
+import { Transaction } from "../interfaces/near-transaction.dto";
+import { TxHelperService } from "../../common/helpers/tx-helper.service";
+import * as moment from "moment";
+import { NearTxHelperService } from "./near-tx-helper.service";
+import { SmartContract, SmartContractFunction, SmartContractType } from "@prisma/client";
+
+interface SmartContractWithFunctions extends SmartContract {
+  smart_contract_functions: SmartContractFunction[]
+}
 
 @Injectable()
 export class NearTxStreamAdapterService implements TxStreamAdapter {
@@ -18,12 +23,14 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
     private readonly prismaStreamerService: PrismaStreamerService,
     private txHelper: TxHelperService,
     private nearTxHelper: NearTxHelperService
-  ) { }
+  ) {}
 
   async fetchTxs(): Promise<CommonTx[]> {
     const accounts = await this.fetchAccounts();
     const query: string = this.buildQuery(accounts);
-    const txs: Transaction[] = await this.prismaStreamerService.$queryRawUnsafe(query);
+    const txs: Transaction[] = await this.prismaStreamerService.$queryRawUnsafe(
+      query
+    );
 
     const result: CommonTx[] = this.transformTxs(txs);
     return result;
@@ -32,7 +39,9 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
   async fetchMissingTxs(): Promise<CommonTx[]> {
     const accounts = await this.fetchAccounts();
     const query: string = this.buildQuery(accounts, true);
-    const txs: Transaction[] = await this.prismaStreamerService.$queryRawUnsafe(query);
+    const txs: Transaction[] = await this.prismaStreamerService.$queryRawUnsafe(
+      query
+    );
 
     const result: CommonTx[] = this.transformTxs(txs);
     return result;
@@ -41,17 +50,55 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
   async setTxResult(txHash: string, txResult: TxProcessResult): Promise<void> {
     if (txResult.processed || txResult.missing) {
       await this.prismaStreamerService.transaction.update({
-        where: { hash: txHash }, data: {
+        where: { hash: txHash },
+        data: {
           processed: txResult.processed,
-          missing: txResult.missing
-        }
+          missing: txResult.missing,
+        },
       });
     }
   }
 
+  async verifySmartContracts(smartContracts: SmartContractWithFunctions[]): Promise<any> {
+    // Create smartContractFunctions for listings and unlists.
+    for (let sc of smartContracts) {
+      if (
+        sc.type === SmartContractType.non_fungible_tokens &&
+        (!sc.smart_contract_functions || !sc.smart_contract_functions.length)
+      ) {
+        await this.prismaService.smartContractFunction.createMany({
+          data: [
+            {
+              smart_contract_id: sc.id,
+              args: {
+                price: "msg.price",
+                token_id: "token_id",
+                list_action: "msg.market_type",
+                contract_key: "account_id",
+              },
+              name: "list",
+              function_name: "nft_approve",
+            },
+            {
+              smart_contract_id: sc.id,
+              args: { token_id: "token_id", contract_key: "account_id" },
+              name: "unlist",
+              function_name: "nft_revoke",
+            },
+          ],
+        });
+      }
+    }
+  }
+
   async fetchAccounts(): Promise<string[]> {
-    const smartContracts = await this.prismaService.smartContract.findMany();
-    const accounts = smartContracts.map(sc => sc.contract_key);
+    const smartContracts: SmartContractWithFunctions[] = await this.prismaService.smartContract.findMany({
+      include: { smart_contract_functions: true },
+    });
+
+    // TODO: Move to the scrapper process for new smart contracts
+    await this.verifySmartContracts(smartContracts);
+    const accounts = smartContracts.map((sc) => sc.contract_key);
 
     return accounts;
   }

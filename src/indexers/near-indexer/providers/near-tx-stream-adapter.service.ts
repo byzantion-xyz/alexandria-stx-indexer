@@ -68,6 +68,8 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
       transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_buy" }}]' OR
       transaction->'actions' @> '[{"FunctionCall": { "method_name": "buy" }}]' OR
       transaction->'actions' @> '[{"FunctionCall": { "method_name": "delete_market_data" }}]') AND
+      ((execution_outcome->'outcome'->'status'->'SuccessValue' is not null) 
+      or (execution_outcome->'outcome'->'status'->'SuccessReceiptId' is not null))
       processed = false AND 
       missing = true
       order by t.block_height ASC limit 5000;   
@@ -178,11 +180,9 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
     let result: CommonTx[] = [];
     
     for (let tx of txs) {
-        if (this.determineIfSuccessTx(tx.execution_outcome.outcome.status)) {
-          const transformed_tx = this.transformTx(tx);
-          if (transformed_tx) result.push(transformed_tx);
-        }
-      }
+      const transformed_tx = this.transformTx(tx);
+      if (transformed_tx) result.push(transformed_tx);        
+    }
 
     return result;
   }

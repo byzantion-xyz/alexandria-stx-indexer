@@ -118,7 +118,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
       transaction->'actions' @> '[{"FunctionCall": {}}]' AND  
       processed = false AND 
       missing = ${missing}
-      order by t.block_height ${ missing ? 'limit 50000' : 'limit 5000'};`;
+      order by t.block_height ASC 5000;`;
   }
 
   transformTx(tx: Transaction): CommonTx {

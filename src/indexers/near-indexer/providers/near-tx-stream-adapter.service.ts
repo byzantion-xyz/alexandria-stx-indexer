@@ -38,7 +38,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
       where block_height >= 68000000 and
       processed = false AND 
       missing = false AND
-      ( execution_outcome->'outcome'->'status'->'SuccessValue' is not null) 
+      ((execution_outcome->'outcome'->'status'->'SuccessValue' is not null) 
       or (execution_outcome->'outcome'->'status'->'SuccessReceiptId' is not null))
       order by t.block_height ASC 
       limit 5000;

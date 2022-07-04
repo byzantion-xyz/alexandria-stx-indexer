@@ -1,25 +1,30 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
-import { SmartContractType } from '@prisma/client';
+import { Injectable } from "@nestjs/common";
+import { PrismaService } from "src/prisma/prisma.service";
+import { SmartContractType } from "@prisma/client";
+import { Repository } from "typeorm";
+import { SmartContract } from "src/entities/SmartContract";
+import { InjectRepository } from "@nestjs/typeorm";
 
 interface createSmartContractFunctionArgs {
-  name: string
-  function_name: string
-  args: object
+  name: string;
+  function_name: string;
+  args: object;
 }
 
 interface createSmartContractArgs {
-  contract_key: string 
-  name: string
-  type: SmartContractType
-  asset_name?: string
+  contract_key: string;
+  name: string;
+  type: SmartContractType;
+  asset_name?: string;
 }
 
 @Injectable()
 export class SmartContractService {
   constructor(
-    private readonly prisma: PrismaService
-  ) { }
+    private readonly prisma: PrismaService,
+    @InjectRepository(SmartContract)
+    private smartContractRepository: Repository<SmartContract>
+  ) {}
 
   async createSmartContract(chainSymbol: string, params: createSmartContractArgs) {
     await this.prisma.chain.update({
@@ -31,9 +36,9 @@ export class SmartContractService {
             name: params.name,
             type: params.type,
             asset_name: params.asset_name,
-          }
-        }
-      }
+          },
+        },
+      },
     });
   }
 
@@ -45,11 +50,10 @@ export class SmartContractService {
           create: {
             name: params.name,
             function_name: params.function_name,
-            args: params.args
-          }
-        }
-      }
-    })
+            args: params.args,
+          },
+        },
+      },
+    });
   }
-
 }

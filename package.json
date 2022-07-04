@@ -30,6 +30,7 @@
     "@nestjs/mapped-types": "*",
     "@nestjs/platform-express": "^8.0.0",
     "@nestjs/schedule": "^2.0.1",
+    "@nestjs/typeorm": "^8.1.4",
     "@prisma/client": "^3.14.0",
     "@types/sharp": "^0.30.4",
     "axios": "^0.27.2",
@@ -40,10 +41,12 @@
     "https": "^1.0.0",
     "moment": "^2.29.3",
     "near-api-js": "^0.44.2",
+    "pg": "^8.7.3",
     "reflect-metadata": "^0.1.13",
     "rimraf": "^3.0.2",
     "rxjs": "^7.2.0",
     "sharp": "^0.30.6",
+    "typeorm": "^0.3.7",
     "uuid": "^8.3.2"
   },
   "devDependencies": {

@@ -1,13 +1,17 @@
-import { Logger, Injectable, NotAcceptableException } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
-import { Prisma, NftMeta, SmartContract, SmartContractFunction, ActionName, Action } from '@prisma/client';
-import { TxProcessResult } from 'src/indexers/common/interfaces/tx-process-result.interface';
-import { TxHelperService } from '../helpers/tx-helper.service';
+import { Logger, Injectable, NotAcceptableException } from "@nestjs/common";
+import { PrismaService } from "src/prisma/prisma.service";
+import { SmartContract, SmartContractFunction, ActionName, Action } from "@prisma/client";
+import { TxProcessResult } from "src/indexers/common/interfaces/tx-process-result.interface";
+import { TxHelperService } from "../helpers/tx-helper.service";
 
-import { SalesBotService } from 'src/discord-bot/providers/sales-bot.service';
-import { CreateActionCommonArgs, CreateBuyAction } from '../interfaces/create-action-common.dto';
-import { CommonTx } from 'src/indexers/common/interfaces/common-tx.interface';
-import { IndexerService } from '../interfaces/indexer-service.interface';
+import { SalesBotService } from "src/discord-bot/providers/sales-bot.service";
+import { CreateActionCommonArgs, CreateBuyAction } from "../interfaces/create-action-common.dto";
+import { CommonTx } from "src/indexers/common/interfaces/common-tx.interface";
+import { IndexerService } from "../interfaces/indexer-service.interface";
+import { InjectRepository } from "@nestjs/typeorm";
+// import { NftMeta as NftMetaEntity } from 'src/entities/NftMeta';
+import { Action as ActionEntity } from "src/entities/Action";
+import { Repository } from "typeorm";
 
 @Injectable()
 export class BuyIndexerService implements IndexerService {
@@ -16,21 +20,22 @@ export class BuyIndexerService implements IndexerService {
   constructor(
     private readonly prismaService: PrismaService,
     private txHelper: TxHelperService,
-    private salesBotService: SalesBotService
-  ) { }
+    private salesBotService: SalesBotService,
+    @InjectRepository(ActionEntity)
+    private actionRepository: Repository<ActionEntity>
+  ) {}
 
   async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {
     this.logger.debug(`process() ${tx.hash}`);
     let txResult: TxProcessResult = { processed: false, missing: false };
 
-    const token_id = this.txHelper.extractArgumentData(tx.args, scf, 'token_id');
-    const contract_key = this.txHelper.extractArgumentData(tx.args, scf, 'contract_key');
-    const price = this.txHelper.extractArgumentData(tx.args, scf, 'price');
+    const token_id = this.txHelper.extractArgumentData(tx.args, scf, "token_id");
+    const contract_key = this.txHelper.extractArgumentData(tx.args, scf, "contract_key");
+    const price = this.txHelper.extractArgumentData(tx.args, scf, "price");
 
     const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
 
     if (nftMeta && this.txHelper.isNewNftListOrSale(tx, nftMeta.nft_state)) {
-
       await this.txHelper.unlistMeta(nftMeta.id, tx.nonce, tx.block_height);
 
       const actionCommonArgs: CreateActionCommonArgs = this.txHelper.setCommonActionParams(tx, sc, nftMeta, sc);
@@ -39,7 +44,7 @@ export class BuyIndexerService implements IndexerService {
         action: ActionName.buy,
         list_price: price || (nftMeta.nft_state?.listed ? nftMeta.nft_state.list_price : undefined),
         seller: nftMeta.nft_state && nftMeta.nft_state.listed ? nftMeta.nft_state.list_seller : undefined,
-        buyer: tx.signer
+        buyer: tx.signer,
       };
 
       const newAction = await this.createAction(buyActionParams);
@@ -62,9 +67,13 @@ export class BuyIndexerService implements IndexerService {
 
   async createAction(params: CreateBuyAction): Promise<Action> {
     try {
+      // Prisma
       const action = await this.prismaService.action.create({
-        data: { ...params }
+        data: { ...params },
       });
+
+      // TypeORM
+      // const action = await this.actionRepository.save();
 
       this.logger.log(`New action ${params.action}: ${action.id} `);
       return action;
@@ -72,5 +81,4 @@ export class BuyIndexerService implements IndexerService {
       this.logger.warn(err);
     }
   }
-
 }

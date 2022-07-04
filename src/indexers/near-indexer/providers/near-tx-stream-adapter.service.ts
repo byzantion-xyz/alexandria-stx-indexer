@@ -37,7 +37,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
     const query: string = `select * from transaction t inner join receipt r on t.success_receipt_id =r.receipt_id 
       where block_height >= 68000000 and
       processed = false AND 
-      missing = true
+      missing = false
       order by t.block_height ASC 
       limit 5000;
     `;

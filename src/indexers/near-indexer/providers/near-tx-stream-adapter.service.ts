@@ -113,7 +113,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
     accounts_in = accounts_in.slice(0, -1);
 
     return `select * from transaction t inner join receipt r on t.success_receipt_id =r.receipt_id 
-      where block_height >= 65000000 and 
+      where block_height >= 68000000 and 
       receiver_id in (${accounts_in}) AND  
       processed = false AND 
       missing = ${missing}

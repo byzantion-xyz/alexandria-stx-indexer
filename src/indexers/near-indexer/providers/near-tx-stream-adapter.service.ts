@@ -4,11 +4,12 @@ import { TxProcessResult } from "src/indexers/common/interfaces/tx-process-resul
 import { TxStreamAdapter } from "src/indexers/common/interfaces/tx-stream-adapter.interface";
 import { PrismaStreamerService } from "src/prisma/prisma-streamer.service";
 import { PrismaService } from "src/prisma/prisma.service";
-import { Transaction } from "../interfaces/near-transaction.dto";
 import { TxHelperService } from "../../common/helpers/tx-helper.service";
 import * as moment from "moment";
 import { NearTxHelperService } from "./near-tx-helper.service";
 import { SmartContract, SmartContractFunction, SmartContractType } from "@prisma/client";
+import { Transaction } from "../interfaces/near-transaction.dto";
+import { ExecutionStatus, ExecutionStatusBasic } from "near-api-js/lib/providers/provider";
 
 interface SmartContractWithFunctions extends SmartContract {
   smart_contract_functions: SmartContractFunction[]
@@ -112,13 +113,12 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
     accounts_in = accounts_in.slice(0, -1);
 
     return `select * from transaction t inner join receipt r on t.success_receipt_id =r.receipt_id 
-      where block_height >= 65000000 and 
-      receiver_id in (${accounts_in}) AND  
+      where block_height >= 68000000 and 
+      receiver_id in (${accounts_in}) AND
+      transaction->'actions' @> '[{"FunctionCall": {}}]' AND  
       processed = false AND 
-      missing = ${missing} AND 
-      (( execution_outcome->'outcome'->'status'->'SuccessValue' is not null) 
-      or (execution_outcome->'outcome'->'status'->'SuccessReceiptId' is not null)) 
-      order by t.block_height limit 3000;`;
+      missing = ${missing}
+      order by t.block_height ${ missing ? 'limit 50000' : 'limit 5000'};`;
   }
 
   transformTx(tx: Transaction): CommonTx {
@@ -149,13 +149,23 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
     }
   }
 
+  determineIfSuccessTx(status: ExecutionStatus | ExecutionStatusBasic): boolean {
+    if ((status as ExecutionStatus).SuccessReceiptId || (status as ExecutionStatus).SuccessValue) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
   transformTxs(txs: Transaction[]): CommonTx[] {
     let result: CommonTx[] = [];
     
     for (let tx of txs) {
-      const transformed_tx = this.transformTx(tx);
-      if (transformed_tx) result.push(transformed_tx);
-    }
+        if (this.determineIfSuccessTx(tx.execution_outcome.outcome.status)) {
+          const transformed_tx = this.transformTx(tx);
+          if (transformed_tx) result.push(transformed_tx);
+        }
+      }
 
     return result;
   }

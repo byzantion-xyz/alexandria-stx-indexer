@@ -117,7 +117,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
       receiver_id in (${accounts_in}) AND  
       processed = false AND 
       missing = ${missing}
-      order by t.block_height ${ missing ? 'limit 50000' : 'limit 3000'};`;
+      order by t.block_height ${ missing ? 'limit 50000' : 'limit 25000'};`;
   }
 
   transformTx(tx: Transaction): CommonTx {

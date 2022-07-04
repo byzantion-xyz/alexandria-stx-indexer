@@ -136,18 +136,6 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
     return accounts;
   }
 
-  buildQuery(accounts: string[], missing = false): string {
-   
-
-    return `select * from transaction t inner join receipt r on t.success_receipt_id =r.receipt_id 
-      where block_height >= 68000000 and 
-      receiver_id in (${accounts_in}) AND
-      transaction->'actions' @> '[{"FunctionCall": {}}]' AND  
-      processed = false AND 
-      missing = ${missing}
-      order by t.block_height ASC limit 5000;`;
-  }
-
   transformTx(tx: Transaction): CommonTx {
     try {
       const args = tx.transaction.actions[0].FunctionCall?.args;

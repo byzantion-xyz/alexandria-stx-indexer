@@ -5,21 +5,18 @@ import { DiscordServerChannel } from "./DiscordServerChannel";
 @Index("discord_server_server_id_key", ["serverId"], { unique: true })
 @Entity("discord_server", { schema: "public" })
 export class DiscordServer {
-  @Column("uuid", { primary: true, name: "id" })
+  @Column("uuid", { primary: true })
   id: string;
 
-  @Column("text", { name: "server_id" })
-  serverId: string;
+  @Column("text")
+  server_id: string;
 
-  @Column("text", { name: "server_name" })
-  serverName: string;
+  @Column("text")
+  server_name: string;
 
-  @Column("boolean", { name: "active", default: () => "false" })
+  @Column("boolean", { default: () => "false" })
   active: boolean;
 
-  @OneToMany(
-    () => DiscordServerChannel,
-    (discordServerChannel) => discordServerChannel.discordServer
-  )
-  discordServerChannels: DiscordServerChannel[];
+  @OneToMany(() => DiscordServerChannel, (discordServerChannel) => discordServerChannel.discord_server)
+  discord_server_channels: DiscordServerChannel[];
 }

@@ -31,7 +31,7 @@ export class CollectionCreator {
   @Column("uuid", { name: "collection_id" })
   collectionId: string;
 
-  @OneToOne(() => Collection, (collection) => collection.collectionCreator, {
+  @OneToOne(() => Collection, (collection) => collection.collection_creator, {
     onDelete: "RESTRICT",
     onUpdate: "CASCADE",
   })

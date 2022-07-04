@@ -5,19 +5,19 @@ import { NftMeta } from "./NftMeta";
 @Index("nft_meta_bns_meta_id_key", ["metaId"], { unique: true })
 @Entity("nft_meta_bns", { schema: "public" })
 export class NftMetaBns {
-  @Column("uuid", { primary: true, name: "id" })
+  @Column("uuid", { primary: true })
   id: string;
 
-  @Column("text", { name: "name" })
+  @Column("text")
   name: string;
 
-  @Column("text", { name: "namespace" })
+  @Column("text")
   namespace: string;
 
-  @Column("uuid", { name: "meta_id" })
-  metaId: string;
+  @Column("uuid")
+  meta_id: string;
 
-  @OneToOne(() => NftMeta, (nftMeta) => nftMeta.nftMetaBns, {
+  @OneToOne(() => NftMeta, (nftMeta) => nftMeta.nft_meta_bns, {
     onDelete: "RESTRICT",
     onUpdate: "CASCADE",
   })

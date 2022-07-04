@@ -58,7 +58,7 @@ export class CollectionBid {
   @Column("bigint", { name: "bid_price" })
   bidPrice: string;
 
-  @ManyToOne(() => SmartContract, (smartContract) => smartContract.collectionBids, {
+  @ManyToOne(() => SmartContract, (smartContract) => smartContract.collection_bids, {
     onDelete: "RESTRICT",
     onUpdate: "CASCADE",
   })

@@ -1,12 +1,4 @@
-import {
-  Column,
-  Entity,
-  Index,
-  JoinColumn,
-  ManyToOne,
-  OneToMany,
-  OneToOne,
-} from "typeorm";
+import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany, OneToOne } from "typeorm";
 import { Action } from "./Action";
 import { Chain } from "./Chain";
 import { Collection } from "./Collection";
@@ -21,52 +13,51 @@ import { NftState } from "./NftState";
 @Index("nft_meta_pkey", ["id"], { unique: true })
 @Entity("nft_meta", { schema: "public" })
 export class NftMeta {
-  @Column("uuid", { primary: true, name: "id" })
+  @Column("uuid", { primary: true })
   id: string;
 
-  @Column("text", { name: "uuid" })
+  @Column("text")
   uuid: string;
 
-  @Column("text", { name: "name" })
+  @Column("text")
   name: string;
 
-  @Column("text", { name: "namespace", nullable: true })
+  @Column("text", { nullable: true })
   namespace: string | null;
 
-  @Column("text", { name: "image" })
+  @Column("text")
   image: string;
 
-  @Column("text", { name: "token_id" })
-  tokenId: string;
+  @Column("text")
+  token_id: string;
 
-  @Column("double precision", { name: "rarity", nullable: true, precision: 53 })
+  @Column("double precision", { nullable: true, precision: 53 })
   rarity: number | null;
 
-  @Column("integer", { name: "ranking" })
+  @Column("integer")
   ranking: number;
 
-  @Column("text", { name: "asset_name", nullable: true })
-  assetName: string | null;
+  @Column("text", { nullable: true })
+  asset_name: string | null;
 
-  @Column("text", { name: "grouping", nullable: true })
+  @Column("text", { nullable: true })
   grouping: string | null;
 
-  @Column("uuid", { name: "collection_id", nullable: true })
-  collectionId: string | null;
+  @Column("uuid", { nullable: true })
+  collection_id: string | null;
 
   @Column("timestamp without time zone", {
-    name: "created_at",
     default: () => "CURRENT_TIMESTAMP",
   })
-  createdAt: Date;
+  created_at: Date;
 
-  @Column("timestamp without time zone", { name: "updated_at" })
-  updatedAt: Date;
+  @Column("timestamp without time zone")
+  updated_at: Date;
 
-  @Column("jsonb", { name: "json_meta", nullable: true })
-  jsonMeta: object | null;
+  @Column("jsonb", { nullable: true })
+  json_meta: object | null;
 
-  @OneToMany(() => Action, (action) => action.nftMeta)
+  @OneToMany(() => Action, (action) => action.nft_meta)
   actions: Action[];
 
   @ManyToOne(() => Chain, (chain) => chain.nftMetas, {
@@ -76,29 +67,26 @@ export class NftMeta {
   @JoinColumn([{ name: "chain_id", referencedColumnName: "id" }])
   chain: Chain;
 
-  @ManyToOne(() => Collection, (collection) => collection.nftMetas, {
+  @ManyToOne(() => Collection, (collection) => collection.nft_metas, {
     onDelete: "SET NULL",
     onUpdate: "CASCADE",
   })
   @JoinColumn([{ name: "collection_id", referencedColumnName: "id" }])
   collection: Collection;
 
-  @ManyToOne(() => SmartContract, (smartContract) => smartContract.nftMetas, {
+  @ManyToOne(() => SmartContract, (smartContract) => smartContract.nft_metas, {
     onDelete: "RESTRICT",
     onUpdate: "CASCADE",
   })
   @JoinColumn([{ name: "smart_contract_id", referencedColumnName: "id" }])
-  smartContract: SmartContract;
+  smart_contract: SmartContract;
 
-  @OneToMany(
-    () => NftMetaAttribute,
-    (nftMetaAttribute) => nftMetaAttribute.meta
-  )
-  nftMetaAttributes: NftMetaAttribute[];
+  @OneToMany(() => NftMetaAttribute, (nftMetaAttribute) => nftMetaAttribute.meta)
+  attributes: NftMetaAttribute[];
 
   @OneToOne(() => NftMetaBns, (nftMetaBns) => nftMetaBns.meta)
-  nftMetaBns: NftMetaBns;
+  nft_meta_bns: NftMetaBns;
 
   @OneToOne(() => NftState, (nftState) => nftState.meta)
-  nftState: NftState;
+  nft_state: NftState;
 }

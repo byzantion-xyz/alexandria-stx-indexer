@@ -47,6 +47,6 @@ export class CollectionScrape {
   @Column("integer", { name: "attempts", default: () => "0" })
   attempts: number;
 
-  @OneToOne(() => Collection, (collection) => collection.collectionScrape)
+  @OneToOne(() => Collection, (collection) => collection.collection_scrape)
   collection: Collection;
 }

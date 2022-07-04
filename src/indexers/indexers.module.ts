@@ -14,9 +14,16 @@ import { TypeOrmModule } from "@nestjs/typeorm";
 import { Action } from "src/entities/Action";
 import { NftMeta } from "src/entities/NftMeta";
 import { NftState } from "src/entities/NftState";
+import { SmartContract } from "src/entities/SmartContract";
+import { SmartContractFunction } from "src/entities/SmartContractFunction";
 
 @Module({
-  imports: [DiscordBotModule, PrismaModule, ScrapersModule, TypeOrmModule.forFeature([NftMeta, NftState, Action])],
+  imports: [
+    DiscordBotModule,
+    PrismaModule,
+    ScrapersModule,
+    TypeOrmModule.forFeature([NftMeta, NftState, Action, SmartContract, SmartContractFunction]),
+  ],
   controllers: [NearIndexerController],
   providers: [
     IndexerOrchestratorService,

@@ -1,12 +1,23 @@
-import { Logger, Injectable, NotAcceptableException } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
-import { SmartContract, SmartContractFunction, ActionName, SmartContractType, Action } from '@prisma/client';
-import { TxProcessResult } from 'src/indexers/common/interfaces/tx-process-result.interface';
-import { TxHelperService } from '../helpers/tx-helper.service';
-import { CreateActionCommonArgs, CreateUnlistAction } from '../interfaces/create-action-common.dto';
+import { Logger, Injectable, NotAcceptableException } from "@nestjs/common";
+import { PrismaService } from "src/prisma/prisma.service";
+// import { SmartContract, SmartContractFunction, ActionName, SmartContractType, Action } from "@prisma/client";
+import { TxProcessResult } from "src/indexers/common/interfaces/tx-process-result.interface";
+import { TxHelperService } from "../helpers/tx-helper.service";
+import {
+  CreateActionCommonArgs,
+  CreateUnlistAction,
+  CreateUnlistActionTO,
+} from "../interfaces/create-action-common.dto";
 
-import { CommonTx } from 'src/indexers/common/interfaces/common-tx.interface';
-import { IndexerService } from '../interfaces/indexer-service.interface';
+import { CommonTx } from "src/indexers/common/interfaces/common-tx.interface";
+import { IndexerService } from "../interfaces/indexer-service.interface";
+
+import { InjectRepository } from "@nestjs/typeorm";
+import { SmartContract } from "src/entities/SmartContract";
+import { SmartContractFunction } from "src/entities/SmartContractFunction";
+import { Repository } from "typeorm";
+import { ActionName, SmartContractType } from "../helpers/indexer-enums";
+import { Action } from "src/entities/Action";
 
 @Injectable()
 export class UnlistIndexerService implements IndexerService {
@@ -14,20 +25,25 @@ export class UnlistIndexerService implements IndexerService {
 
   constructor(
     private readonly prismaService: PrismaService,
-    private txHelper: TxHelperService
-  ) { }
+    private txHelper: TxHelperService,
+    @InjectRepository(Action)
+    private actionRepository: Repository<Action>,
+    @InjectRepository(SmartContract)
+    private smartContractRepository: Repository<SmartContract>
+  ) {}
 
   async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {
     this.logger.debug(`process() ${tx.hash}`);
     let txResult: TxProcessResult = { processed: false, missing: false };
     let market_sc: SmartContract;
 
-    const token_id = this.txHelper.extractArgumentData(tx.args, scf, 'token_id');
-    let contract_key = this.txHelper.extractArgumentData(tx.args, scf, 'contract_key');
-    
+    const token_id = this.txHelper.extractArgumentData(tx.args, scf, "token_id");
+    let contract_key = this.txHelper.extractArgumentData(tx.args, scf, "contract_key");
+
     // Check if custodial
     if (sc.type === SmartContractType.non_fungible_tokens) {
-      market_sc = await this.prismaService.smartContract.findUnique({ where: { contract_key } })
+      // market_sc = await this.prismaService.smartContract.findUnique({ where: { contract_key } });
+      market_sc = await this.smartContractRepository.findOneBy({ contract_key });
       contract_key = sc.contract_key;
     }
 
@@ -37,11 +53,11 @@ export class UnlistIndexerService implements IndexerService {
       await this.txHelper.unlistMeta(nftMeta.id, tx.nonce, tx.block_height);
 
       const actionCommonArgs: CreateActionCommonArgs = this.txHelper.setCommonActionParams(tx, sc, nftMeta, market_sc);
-      const unlistActionParams: CreateUnlistAction = {
+      const unlistActionParams: CreateUnlistActionTO = {
         ...actionCommonArgs,
         action: ActionName.unlist,
         list_price: nftMeta.nft_state && nftMeta.nft_state.list_price ? nftMeta.nft_state.list_price : undefined,
-        seller: nftMeta.nft_state?.list_seller || undefined
+        seller: nftMeta.nft_state?.list_seller || undefined,
       };
 
       await this.createAction(unlistActionParams);
@@ -59,11 +75,13 @@ export class UnlistIndexerService implements IndexerService {
     return txResult;
   }
 
-  async createAction(params: CreateUnlistAction): Promise<Action> {
+  async createAction(params: CreateUnlistActionTO): Promise<Action> {
     try {
-      const action = await this.prismaService.action.create({
-        data: { ...params }
-      });
+      // const action = await this.prismaService.action.create({
+      //   data: { ...params },
+      // });
+      const actionObject = this.actionRepository.create(params);
+      const action = await this.actionRepository.save(actionObject);
 
       this.logger.log(`New action ${params.action}: ${action.id} `);
 
@@ -72,5 +90,4 @@ export class UnlistIndexerService implements IndexerService {
       this.logger.warn(err);
     }
   }
-
 }

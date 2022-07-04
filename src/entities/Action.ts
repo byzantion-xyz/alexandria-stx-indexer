@@ -6,55 +6,57 @@ import { NftMeta } from "./NftMeta";
 @Index("action_pkey", ["id"], { unique: true })
 @Entity("action", { schema: "public" })
 export class Action {
-  @Column("uuid", { primary: true, name: "id" })
+  @Column("uuid", { primary: true })
   id: string;
 
-  @Column("enum", { name: "action", enum: ["list", "unlist", "buy"] })
+  @Column("enum", { enum: ["list", "unlist", "buy"] })
   action: "list" | "unlist" | "buy";
 
-  @Column("jsonb", { name: "bid_attribute", nullable: true })
-  bidAttribute: object | null;
+  @Column("jsonb", { nullable: true })
+  bid_attribute: object | null;
 
   @Column("numeric", {
-    name: "list_price",
     nullable: true,
     precision: 32,
     scale: 0,
   })
-  listPrice: string | null;
+  list_price: bigint;
 
-  @Column("text", { name: "seller", nullable: true })
+  @Column("text", { nullable: true })
   seller: string | null;
 
-  @Column("text", { name: "buyer", nullable: true })
+  @Column("text", { nullable: true })
   buyer: string | null;
 
-  @Column("bigint", { name: "bid_price", nullable: true })
-  bidPrice: string | null;
+  @Column("bigint", { nullable: true })
+  bid_price: bigint;
 
-  @Column("bigint", { name: "block_height" })
-  blockHeight: string;
+  @Column("bigint")
+  block_height: bigint;
 
-  @Column("bigint", { name: "tx_index" })
-  txIndex: string;
+  @Column("bigint")
+  tx_index: bigint;
 
-  @Column("timestamp without time zone", { name: "block_time" })
-  blockTime: Date;
+  @Column("timestamp without time zone")
+  block_time: Date;
 
-  @Column("text", { name: "tx_id" })
-  txId: string;
+  @Column("text")
+  tx_id: string;
 
-  @Column("boolean", { name: "segment", default: () => "false" })
+  @Column("boolean", { default: () => "false" })
   segment: boolean;
 
-  @Column("text", { name: "market_name", nullable: true })
-  marketName: string | null;
+  @Column("text", { nullable: true })
+  market_name: string | null;
 
-  @Column("bigint", { name: "nonce", nullable: true })
-  nonce: string | null;
+  @Column("bigint", { nullable: true })
+  nonce: bigint;
 
-  @Column("integer", { name: "units", nullable: true })
+  @Column("integer", { nullable: true })
   units: number | null;
+
+  @Column()
+  collection_id: string;
 
   @ManyToOne(() => Collection, (collection) => collection.actions, {
     onDelete: "SET NULL",
@@ -63,24 +65,33 @@ export class Action {
   @JoinColumn([{ name: "collection_id", referencedColumnName: "id" }])
   collection: Collection;
 
-  @ManyToOne(() => SmartContract, (smartContract) => smartContract.marketplaceActions, {
+  @Column()
+  marketplace_smart_contract_id: string;
+
+  @ManyToOne(() => SmartContract, (smartContract) => smartContract.marketplace_actions, {
     onDelete: "SET NULL",
     onUpdate: "CASCADE",
   })
   @JoinColumn([{ name: "marketplace_smart_contract_id", referencedColumnName: "id" }])
-  marketplaceSmartContract: SmartContract;
+  marketplace_smart_contract: SmartContract;
+
+  @Column()
+  nft_meta_id: string;
 
   @ManyToOne(() => NftMeta, (nftMeta) => nftMeta.actions, {
     onDelete: "SET NULL",
     onUpdate: "CASCADE",
   })
   @JoinColumn([{ name: "nft_meta_id", referencedColumnName: "id" }])
-  nftMeta: NftMeta;
+  nft_meta: NftMeta;
 
-  @ManyToOne(() => SmartContract, (smartContract) => smartContract.contractActions, {
+  @Column()
+  smart_contract_id: string;
+
+  @ManyToOne(() => SmartContract, (smartContract) => smartContract.contract_actions, {
     onDelete: "SET NULL",
     onUpdate: "CASCADE",
   })
   @JoinColumn([{ name: "smart_contract_id", referencedColumnName: "id" }])
-  smartContract: SmartContract;
+  smart_contract: SmartContract;
 }

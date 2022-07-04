@@ -2,44 +2,37 @@ import { Column, Entity, Index, JoinColumn, ManyToOne } from "typeorm";
 import { Collection } from "./Collection";
 import { DiscordServerChannel } from "./DiscordServerChannel";
 
-@Index(
-  "collection_on_discord_server_channel_collection_id_discord__key",
-  ["collectionId", "discordServerChannelId"],
-  { unique: true }
-)
+@Index("collection_on_discord_server_channel_collection_id_discord__key", ["collectionId", "discordServerChannelId"], {
+  unique: true,
+})
 @Entity("collection_on_discord_server_channel", { schema: "public" })
 export class CollectionOnDiscordServerChannel {
-  @Column("uuid", { name: "collection_id" })
+  @Column("uuid")
   collectionId: string;
 
-  @Column("uuid", { name: "discord_server_channel_id" })
-  discordServerChannelId: string;
+  @Column("uuid")
+  discord_server_channel_id: string;
 
-  @Column("timestamp without time zone", { name: "updated_at" })
-  updatedAt: Date;
+  @Column("timestamp without time zone")
+  updated_at: Date;
 
   @Column("timestamp without time zone", {
-    name: "created_at",
     default: () => "CURRENT_TIMESTAMP",
   })
-  createdAt: Date;
+  created_at: Date;
 
-  @ManyToOne(
-    () => Collection,
-    (collection) => collection.collectionOnDiscordServerChannels,
-    { onDelete: "RESTRICT", onUpdate: "CASCADE" }
-  )
+  @ManyToOne(() => Collection, (collection) => collection.collection_on_discord_server_channels, {
+    onDelete: "RESTRICT",
+    onUpdate: "CASCADE",
+  })
   @JoinColumn([{ name: "collection_id", referencedColumnName: "id" }])
   collection: Collection;
 
   @ManyToOne(
     () => DiscordServerChannel,
-    (discordServerChannel) =>
-      discordServerChannel.collectionOnDiscordServerChannels,
+    (discordServerChannel) => discordServerChannel.collection_on_discord_server_channels,
     { onDelete: "RESTRICT", onUpdate: "CASCADE" }
   )
-  @JoinColumn([
-    { name: "discord_server_channel_id", referencedColumnName: "id" },
-  ])
-  discordServerChannel: DiscordServerChannel;
+  @JoinColumn([{ name: "discord_server_channel_id", referencedColumnName: "id" }])
+  discord_server_channel: DiscordServerChannel;
 }

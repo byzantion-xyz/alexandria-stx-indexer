@@ -1,11 +1,4 @@
-import {
-  Column,
-  Entity,
-  Index,
-  JoinColumn,
-  ManyToOne,
-  OneToOne,
-} from "typeorm";
+import { Column, Entity, Index, JoinColumn, ManyToOne, OneToOne } from "typeorm";
 import { SmartContract } from "./SmartContract";
 import { NftMeta } from "./NftMeta";
 
@@ -13,100 +6,99 @@ import { NftMeta } from "./NftMeta";
 @Index("nft_state_meta_id_key", ["metaId"], { unique: true })
 @Entity("nft_state", { schema: "public" })
 export class NftState {
-  @Column("uuid", { primary: true, name: "id" })
+  @Column("uuid", { primary: true })
   id: string;
 
-  @Column("boolean", { name: "burned", default: () => "false" })
+  @Column("boolean", { default: () => "false" })
   burned: boolean;
 
-  @Column("boolean", { name: "minted", default: () => "false" })
+  @Column("boolean", { default: () => "false" })
   minted: boolean;
 
-  @Column("text", { name: "mint_tx", nullable: true })
-  mintTx: string | null;
+  @Column("text", { nullable: true })
+  mint_tx: string | null;
 
-  @Column("boolean", { name: "listed", default: () => "false" })
+  @Column("boolean", { default: () => "false" })
   listed: boolean;
 
   @Column("numeric", {
-    name: "list_price",
     nullable: true,
     precision: 32,
     scale: 0,
   })
-  listPrice: string | null;
+  list_price: bigint;
 
-  @Column("text", { name: "list_seller", nullable: true })
-  listSeller: string | null;
+  @Column("text", { nullable: true })
+  list_seller: string | null;
 
-  @Column("bigint", { name: "list_block_height", nullable: true })
-  listBlockHeight: string | null;
+  @Column("bigint", { nullable: true })
+  list_block_height: bigint;
 
-  @Column("bigint", { name: "list_tx_index", nullable: true })
-  listTxIndex: string | null;
+  @Column("bigint", { nullable: true })
+  list_tx_index: bigint;
 
-  @Column("boolean", { name: "asking", default: () => "false" })
+  @Column("boolean", { default: () => "false" })
   asking: boolean;
 
-  @Column("bigint", { name: "asking_price", nullable: true })
-  askingPrice: string | null;
+  @Column("bigint", { nullable: true })
+  asking_price: bigint;
 
-  @Column("bigint", { name: "asking_block_height", nullable: true })
-  askingBlockHeight: string | null;
+  @Column("bigint", { nullable: true })
+  asking_block_height: bigint;
 
-  @Column("bigint", { name: "asking_tx_index", nullable: true })
-  askingTxIndex: string | null;
+  @Column("bigint", { nullable: true })
+  asking_tx_index: bigint;
 
-  @Column("text", { name: "asking_seller", nullable: true })
-  askingSeller: string | null;
+  @Column("text", { nullable: true })
+  asking_seller: string | null;
 
-  @Column("boolean", { name: "bid", default: () => "false" })
+  @Column("boolean", { default: () => "false" })
   bid: boolean;
 
-  @Column("bigint", { name: "bid_price", nullable: true })
-  bidPrice: string | null;
+  @Column("bigint", { nullable: true })
+  bid_price: bigint;
 
-  @Column("text", { name: "bid_buyer", nullable: true })
-  bidBuyer: string | null;
+  @Column("text", { nullable: true })
+  bid_buyer: string | null;
 
-  @Column("text", { name: "bid_contract", nullable: true })
-  bidContract: string | null;
+  @Column("text", { nullable: true })
+  bid_contract: string | null;
 
-  @Column("bigint", { name: "bid_block_height", nullable: true })
-  bidBlockHeight: string | null;
+  @Column("bigint", { nullable: true })
+  bid_block_height: bigint;
 
-  @Column("bigint", { name: "bid_tx_index", nullable: true })
-  bidTxIndex: string | null;
+  @Column("bigint", { nullable: true })
+  bid_tx_index: bigint;
 
-  @Column("boolean", { name: "staked", default: () => "false" })
+  @Column("boolean", { default: () => "false" })
   staked: boolean;
 
-  @Column("text", { name: "staking_contract", nullable: true })
-  stakingContract: string | null;
+  @Column("text", { nullable: true })
+  staking_contract: string | null;
 
-  @Column("text", { name: "staked_owner", nullable: true })
-  stakedOwner: string | null;
+  @Column("text", { nullable: true })
+  staked_owner: string | null;
 
-  @Column("bigint", { name: "staked_block_height", nullable: true })
-  stakedBlockHeight: string | null;
+  @Column("bigint", { nullable: true })
+  stakedBlockHeight: bigint;
 
-  @Column("bigint", { name: "staked_tx_index", nullable: true })
-  stakedTxIndex: string | null;
+  @Column("bigint", { nullable: true })
+  staked_block_height: bigint;
 
   @Column("uuid", { name: "meta_id" })
-  metaId: string;
+  meta_id: string;
 
   @Column("timestamp without time zone", { name: "updated_at" })
-  updatedAt: Date;
+  updated_at: Date;
 
-  @ManyToOne(() => SmartContract, (smartContract) => smartContract.nftStates, {
+  @ManyToOne(() => SmartContract, (smartContract) => smartContract.nft_state, {
     onDelete: "SET NULL",
     onUpdate: "CASCADE",
   })
   @JoinColumn([{ name: "list_contract_id", referencedColumnName: "id" }])
-  listContract: SmartContract;
+  list_contract: SmartContract;
 
-  @OneToOne(() => NftMeta, (nftMeta) => nftMeta.nftState, {
+  @OneToOne(() => NftMeta, (nftMeta) => nftMeta.nft_state, {
     onDelete: "RESTRICT",
     onUpdate: "CASCADE",
   })

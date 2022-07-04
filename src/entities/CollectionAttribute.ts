@@ -1,11 +1,9 @@
 import { Column, Entity, Index, JoinColumn, ManyToOne } from "typeorm";
 import { Collection } from "./Collection";
 
-@Index(
-  "collection_attribute_collection_id_trait_type_value_key",
-  ["collectionId", "traitType", "value"],
-  { unique: true }
-)
+@Index("collection_attribute_collection_id_trait_type_value_key", ["collectionId", "traitType", "value"], {
+  unique: true,
+})
 @Index("collection_attribute_pkey", ["id"], { unique: true })
 @Entity("collection_attribute", { schema: "public" })
 export class CollectionAttribute {
@@ -36,11 +34,10 @@ export class CollectionAttribute {
   @Column("text", { name: "trait_type" })
   traitType: string;
 
-  @ManyToOne(
-    () => Collection,
-    (collection) => collection.collectionAttributes,
-    { onDelete: "RESTRICT", onUpdate: "CASCADE" }
-  )
+  @ManyToOne(() => Collection, (collection) => collection.collection_attributes, {
+    onDelete: "RESTRICT",
+    onUpdate: "CASCADE",
+  })
   @JoinColumn([{ name: "collection_id", referencedColumnName: "id" }])
   collection: Collection;
 }

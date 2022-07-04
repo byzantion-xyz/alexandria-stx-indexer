@@ -1,12 +1,4 @@
-import {
-  Column,
-  Entity,
-  Index,
-  JoinColumn,
-  ManyToOne,
-  OneToMany,
-  OneToOne,
-} from "typeorm";
+import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany, OneToOne } from "typeorm";
 import { Action } from "./Action";
 import { CollectionScrape } from "./CollectionScrape";
 import { SmartContract } from "./SmartContract";
@@ -26,13 +18,13 @@ export class Collection {
   id: string;
 
   @Column("integer", { name: "collection_size", nullable: true })
-  collectionSize: number | null;
+  collection_size: number | null;
 
   @Column("text", { name: "description", nullable: true })
   description: string | null;
 
   @Column("text", { name: "external_url", nullable: true })
-  externalUrl: string | null;
+  external_url: string | null;
 
   @Column("integer", { name: "volume", default: () => "0" })
   volume: number;
@@ -41,7 +33,7 @@ export class Collection {
   floor: number;
 
   @Column("text", { name: "cover_image", nullable: true })
-  coverImage: string | null;
+  cover_image: string | null;
 
   @Column("boolean", { name: "trending", default: () => "false" })
   trending: boolean;
@@ -53,55 +45,46 @@ export class Collection {
     name: "created_at",
     default: () => "CURRENT_TIMESTAMP",
   })
-  createdAt: Date;
+  created_at: Date;
 
   @Column("timestamp without time zone", { name: "updated_at" })
-  updatedAt: Date;
+  updated_at: Date;
 
   @Column("text", { name: "slug", nullable: true })
   slug: string | null;
 
   @Column("uuid", { name: "collection_scrape_id", nullable: true })
-  collectionScrapeId: string | null;
+  collection_scrape_id: string | null;
 
   @OneToMany(() => Action, (action) => action.collection)
   actions: Action[];
 
-  @OneToOne(
-    () => CollectionScrape,
-    (collectionScrape) => collectionScrape.collection,
-    { onDelete: "SET NULL", onUpdate: "CASCADE" }
-  )
+  @OneToOne(() => CollectionScrape, (collectionScrape) => collectionScrape.collection, {
+    onDelete: "SET NULL",
+    onUpdate: "CASCADE",
+  })
   @JoinColumn([{ name: "collection_scrape_id", referencedColumnName: "id" }])
-  collectionScrape: CollectionScrape;
+  collection_scrape: CollectionScrape;
 
-  @ManyToOne(
-    () => SmartContract,
-    (smartContract) => smartContract.collections,
-    { onDelete: "SET NULL", onUpdate: "CASCADE" }
-  )
+  @ManyToOne(() => SmartContract, (smartContract) => smartContract.collections, {
+    onDelete: "SET NULL",
+    onUpdate: "CASCADE",
+  })
   @JoinColumn([{ name: "smart_contract_id", referencedColumnName: "id" }])
-  smartContract: SmartContract;
+  smart_contract: SmartContract;
 
-  @OneToMany(
-    () => CollectionAttribute,
-    (collectionAttribute) => collectionAttribute.collection
-  )
-  collectionAttributes: CollectionAttribute[];
+  @OneToMany(() => CollectionAttribute, (collectionAttribute) => collectionAttribute.collection)
+  collection_attributes: CollectionAttribute[];
 
-  @OneToOne(
-    () => CollectionCreator,
-    (collectionCreator) => collectionCreator.collection
-  )
-  collectionCreator: CollectionCreator;
+  @OneToOne(() => CollectionCreator, (collectionCreator) => collectionCreator.collection)
+  collection_creator: CollectionCreator;
 
   @OneToMany(
     () => CollectionOnDiscordServerChannel,
-    (collectionOnDiscordServerChannel) =>
-      collectionOnDiscordServerChannel.collection
+    (collectionOnDiscordServerChannel) => collectionOnDiscordServerChannel.collection
   )
-  collectionOnDiscordServerChannels: CollectionOnDiscordServerChannel[];
+  collection_on_discord_server_channels: CollectionOnDiscordServerChannel[];
 
   @OneToMany(() => NftMeta, (nftMeta) => nftMeta.collection)
-  nftMetas: NftMeta[];
+  nft_metas: NftMeta[];
 }

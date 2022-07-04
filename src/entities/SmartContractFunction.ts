@@ -1,43 +1,39 @@
 import { Column, Entity, Index, JoinColumn, ManyToOne } from "typeorm";
 import { SmartContract } from "./SmartContract";
 
-@Index(
-  "smart_contract_function_function_name_smart_contract_id_key",
-  ["functionName", "smartContractId"],
-  { unique: true }
-)
+@Index("smart_contract_function_function_name_smart_contract_id_key", ["functionName", "smartContractId"], {
+  unique: true,
+})
 @Index("smart_contract_function_pkey", ["id"], { unique: true })
 @Entity("smart_contract_function", { schema: "public" })
 export class SmartContractFunction {
-  @Column("uuid", { primary: true, name: "id" })
+  @Column("uuid", { primary: true })
   id: string;
 
-  @Column("text", { name: "name" })
+  @Column("text")
   name: string;
 
-  @Column("text", { name: "function_name" })
-  functionName: string;
+  @Column("text")
+  function_name: string;
 
-  @Column("jsonb", { name: "args" })
+  @Column("jsonb")
   args: object;
 
-  @Column("uuid", { name: "smart_contract_id" })
-  smartContractId: string;
+  @Column("uuid")
+  smart_contract_id: string;
 
   @Column("timestamp without time zone", {
-    name: "created_at",
     default: () => "CURRENT_TIMESTAMP",
   })
-  createdAt: Date;
+  created_at: Date;
 
-  @Column("timestamp without time zone", { name: "updated_at" })
-  updatedAt: Date;
+  @Column("timestamp without time zone")
+  updated_at: Date;
 
-  @ManyToOne(
-    () => SmartContract,
-    (smartContract) => smartContract.smartContractFunctions,
-    { onDelete: "RESTRICT", onUpdate: "CASCADE" }
-  )
+  @ManyToOne(() => SmartContract, (smartContract) => smartContract.smart_contract_functions, {
+    onDelete: "RESTRICT",
+    onUpdate: "CASCADE",
+  })
   @JoinColumn([{ name: "smart_contract_id", referencedColumnName: "id" }])
-  smartContract: SmartContract;
+  smart_contract: SmartContract;
 }

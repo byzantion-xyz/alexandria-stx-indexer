@@ -12,74 +12,72 @@ import { SmartContractFunction } from "./SmartContractFunction";
 @Index("smart_contract_pkey", ["id"], { unique: true })
 @Entity("smart_contract", { schema: "public" })
 export class SmartContract {
-  @Column("uuid", { primary: true, name: "id" })
+  @Column("uuid", { primary: true })
   id: string;
 
-  @Column("text", { name: "contract_key" })
-  contractKey: string;
+  @Column("text")
+  contract_key: string;
 
-  @Column("text", { name: "name", nullable: true })
+  @Column("text", { nullable: true })
   name: string | null;
 
-  @Column("integer", { name: "scanned_transactions", default: () => "0" })
-  scannedTransactions: number;
+  @Column("integer", { default: () => "0" })
+  scanned_transactions: number;
 
   @Column("enum", {
-    name: "type",
     enum: ["non_fungible_tokens", "marketplace", "staking", "fungible_tokens", "bridge", "token_series"],
   })
   type: "non_fungible_tokens" | "marketplace" | "staking" | "fungible_tokens" | "bridge" | "token_series";
 
   @Column("timestamp without time zone", {
-    name: "created_at",
     default: () => "CURRENT_TIMESTAMP",
   })
-  createdAt: Date;
+  created_at: Date;
 
-  @Column("timestamp without time zone", { name: "updated_at" })
-  updatedAt: Date;
+  @Column("timestamp without time zone")
+  updated_at: Date;
 
-  @Column("text", { name: "asset_name", nullable: true })
-  assetName: string | null;
+  @Column("text", { nullable: true })
+  asset_name: string | null;
 
-  @Column("boolean", { name: "frozen", default: () => "false" })
+  @Column("boolean", { default: () => "false" })
   frozen: boolean;
 
-  @Column("jsonb", { name: "json_meta", nullable: true })
-  jsonMeta: object | null;
+  @Column("jsonb", { nullable: true })
+  json_meta: object | null;
 
-  @Column("text", { name: "spec", nullable: true })
+  @Column("text", { nullable: true })
   spec: string | null;
 
-  @Column("text", { name: "base_marketplace_uri", nullable: true })
-  baseMarketplaceUri: string | null;
+  @Column("text", { nullable: true })
+  base_marketplace_uri: string | null;
 
-  @Column("text", { name: "collection_uri", nullable: true })
-  collectionUri: string | null;
+  @Column("text", { nullable: true })
+  collection_uri: string | null;
 
-  @Column("text", { name: "token_uri", nullable: true })
-  tokenUri: string | null;
+  @Column("text", { nullable: true })
+  token_uri: string | null;
 
-  @OneToMany(() => Action, (action) => action.marketplaceSmartContract)
-  marketplaceActions: Action[];
+  @OneToMany(() => Action, (action) => action.marketplace_smart_contract)
+  marketplace_actions: Action[];
 
-  @OneToMany(() => Action, (action) => action.smartContract)
-  contractActions: Action[];
+  @OneToMany(() => Action, (action) => action.smart_contract)
+  contract_actions: Action[];
 
-  @OneToMany(() => Collection, (collection) => collection.smartContract)
+  @OneToMany(() => Collection, (collection) => collection.smart_contract)
   collections: Collection[];
 
   @OneToMany(() => CollectionBid, (collectionBid) => collectionBid.smartContract)
-  collectionBids: CollectionBid[];
+  collection_bids: CollectionBid[];
 
   @OneToOne(() => Commission, (commission) => commission.smartContract)
   commission: Commission;
 
-  @OneToMany(() => NftMeta, (nftMeta) => nftMeta.smartContract)
-  nftMetas: NftMeta[];
+  @OneToMany(() => NftMeta, (nftMeta) => nftMeta.smart_contract)
+  nft_metas: NftMeta[];
 
-  @OneToMany(() => NftState, (nftState) => nftState.listContract)
-  nftStates: NftState[];
+  @OneToMany(() => NftState, (nftState) => nftState.list_contract)
+  nft_state: NftState[];
 
   @ManyToOne(() => Chain, (chain) => chain.smartContracts, {
     onDelete: "RESTRICT",
@@ -88,6 +86,6 @@ export class SmartContract {
   @JoinColumn([{ name: "chain_id", referencedColumnName: "id" }])
   chain: Chain;
 
-  @OneToMany(() => SmartContractFunction, (smartContractFunction) => smartContractFunction.smartContract)
-  smartContractFunctions: SmartContractFunction[];
+  @OneToMany(() => SmartContractFunction, (smartContractFunction) => smartContractFunction.smart_contract)
+  smart_contract_functions: SmartContractFunction[];
 }

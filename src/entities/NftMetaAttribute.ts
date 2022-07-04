@@ -2,11 +2,7 @@ import { Column, Entity, Index, JoinColumn, ManyToOne } from "typeorm";
 import { NftMeta } from "./NftMeta";
 
 @Index("nft_meta_attribute_pkey", ["id"], { unique: true })
-@Index(
-  "nft_meta_attribute_meta_id_trait_type_value_key",
-  ["metaId", "traitType", "value"],
-  { unique: true }
-)
+@Index("nft_meta_attribute_meta_id_trait_type_value_key", ["metaId", "traitType", "value"], { unique: true })
 @Index("nft_meta_attribute_trait_type_value_idx", ["traitType", "value"], {})
 @Entity("nft_meta_attribute", { schema: "public" })
 export class NftMetaAttribute {
@@ -45,7 +41,7 @@ export class NftMetaAttribute {
   @Column("timestamp without time zone", { name: "updated_at" })
   updatedAt: Date;
 
-  @ManyToOne(() => NftMeta, (nftMeta) => nftMeta.nftMetaAttributes, {
+  @ManyToOne(() => NftMeta, (nftMeta) => nftMeta.attributes, {
     onDelete: "RESTRICT",
     onUpdate: "CASCADE",
   })

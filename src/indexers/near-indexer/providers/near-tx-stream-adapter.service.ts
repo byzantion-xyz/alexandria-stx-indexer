@@ -25,10 +25,23 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
     private txHelper: TxHelperService,
     private nearTxHelper: NearTxHelperService
   ) {}
-
+  
   async fetchTxs(): Promise<CommonTx[]> {
     const accounts = await this.fetchAccounts();
-    const query: string = this.buildQuery(accounts);
+    let accounts_in = "";
+    for (let i in accounts) {
+      accounts_in += `'${accounts[i]}',`;
+    }
+    accounts_in = accounts_in.slice(0, -1);
+    
+    const query: string = `select * from transaction t inner join receipt r on t.success_receipt_id =r.receipt_id 
+      where block_height >= 68000000 and
+      processed = false AND 
+      missing = true
+      order by t.block_height ASC 
+      limit 5000;
+    `;
+
     const txs: Transaction[] = await this.prismaStreamerService.$queryRawUnsafe(
       query
     );
@@ -39,7 +52,25 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
 
   async fetchMissingTxs(): Promise<CommonTx[]> {
     const accounts = await this.fetchAccounts();
-    const query: string = this.buildQuery(accounts, true);
+    let accounts_in = "";
+    for (let i in accounts) {
+      accounts_in += `'${accounts[i]}',`;
+    }
+    accounts_in = accounts_in.slice(0, -1);
+    const query: string = `select * from transaction t inner join receipt r on t.success_receipt_id =r.receipt_id 
+      where block_height >= 68000000 and 
+      receiver_id in (${accounts_in}) AND
+      transaction->'actions' @> '[{"FunctionCall": {}}]' AND  
+      (transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_approve"}}]' OR
+      transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_revoke"}}]' OR
+      transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_buy" }}]' OR
+      transaction->'actions' @> '[{"FunctionCall": { "method_name": "buy" }}]' OR
+      transaction->'actions' @> '[{"FunctionCall": { "method_name": "delete_market_data" }}]') AND
+      processed = false AND 
+      missing = true
+      order by t.block_height ASC limit 5000;   
+    `;
+
     const txs: Transaction[] = await this.prismaStreamerService.$queryRawUnsafe(
       query
     );
@@ -106,11 +137,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
   }
 
   buildQuery(accounts: string[], missing = false): string {
-    let accounts_in = "";
-    for (let i in accounts) {
-      accounts_in += `'${accounts[i]}',`;
-    }
-    accounts_in = accounts_in.slice(0, -1);
+   
 
     return `select * from transaction t inner join receipt r on t.success_receipt_id =r.receipt_id 
       where block_height >= 68000000 and 

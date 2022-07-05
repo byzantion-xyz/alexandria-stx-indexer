@@ -42,7 +42,10 @@ export class UnlistIndexerService implements IndexerService {
 
     // Check if custodial
     if (sc.type === SmartContractType.non_fungible_tokens) {
+      // Prisma
       // market_sc = await this.prismaService.smartContract.findUnique({ where: { contract_key } });
+      
+      // TypeORM
       market_sc = await this.smartContractRepository.findOneBy({ contract_key });
       contract_key = sc.contract_key;
     }
@@ -77,15 +80,18 @@ export class UnlistIndexerService implements IndexerService {
 
   async createAction(params: CreateUnlistActionTO): Promise<Action> {
     try {
+      // Prisma
       // const action = await this.prismaService.action.create({
       //   data: { ...params },
       // });
-      const actionObject = this.actionRepository.create(params);
-      const action = await this.actionRepository.save(actionObject);
 
-      this.logger.log(`New action ${params.action}: ${action.id} `);
+      // TypeORM
+      const action = this.actionRepository.create(params);
+      const saved = await this.actionRepository.save(action);
 
-      return action;
+      this.logger.log(`New action ${params.action}: ${saved.id} `);
+
+      return saved;
     } catch (err) {
       this.logger.warn(err);
     }

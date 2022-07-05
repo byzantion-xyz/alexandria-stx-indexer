@@ -40,7 +40,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
       ((execution_outcome->'outcome'->'status'->'SuccessValue' is not null) 
       or (execution_outcome->'outcome'->'status'->'SuccessReceiptId' is not null))
       order by t.block_height ASC 
-      limit 3000;
+      limit 1000;
     `;
 
     const txs: Transaction[] = await this.prismaStreamerService.$queryRawUnsafe(

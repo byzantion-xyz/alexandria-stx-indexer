@@ -14,46 +14,45 @@ import { NftMeta } from "./NftMeta";
 @Index("collection_slug_key", ["slug"], { unique: true })
 @Entity("collection", { schema: "public" })
 export class Collection {
-  @Column("uuid", { primary: true, name: "id" })
+  @Column("uuid", { primary: true })
   id: string;
 
-  @Column("integer", { name: "collection_size", nullable: true })
+  @Column("integer", { nullable: true })
   collection_size: number | null;
 
-  @Column("text", { name: "description", nullable: true })
+  @Column("text", { nullable: true })
   description: string | null;
 
-  @Column("text", { name: "external_url", nullable: true })
+  @Column("text", { nullable: true })
   external_url: string | null;
 
-  @Column("integer", { name: "volume", default: () => "0" })
+  @Column("integer", { default: () => "0" })
   volume: number;
 
-  @Column("integer", { name: "floor", default: () => "0" })
+  @Column("integer", { default: () => "0" })
   floor: number;
 
-  @Column("text", { name: "cover_image", nullable: true })
+  @Column("text", { nullable: true })
   cover_image: string | null;
 
-  @Column("boolean", { name: "trending", default: () => "false" })
+  @Column("boolean", { default: () => "false" })
   trending: boolean;
 
-  @Column("text", { name: "title", nullable: true })
+  @Column("text", { nullable: true })
   title: string | null;
 
   @Column("timestamp without time zone", {
-    name: "created_at",
     default: () => "CURRENT_TIMESTAMP",
   })
   created_at: Date;
 
-  @Column("timestamp without time zone", { name: "updated_at" })
+  @Column("timestamp without time zone")
   updated_at: Date;
 
-  @Column("text", { name: "slug", nullable: true })
+  @Column("text", { nullable: true })
   slug: string | null;
 
-  @Column("uuid", { name: "collection_scrape_id", nullable: true })
+  @Column("uuid", { nullable: true })
   collection_scrape_id: string | null;
 
   @OneToMany(() => Action, (action) => action.collection)

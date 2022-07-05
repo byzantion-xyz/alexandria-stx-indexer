@@ -4,64 +4,64 @@ import { SmartContract } from "./SmartContract";
 @Index("collection_bid_pkey", ["id"], { unique: true })
 @Entity("collection_bid", { schema: "public" })
 export class CollectionBid {
-  @Column("uuid", { primary: true, name: "id" })
+  @Column("uuid", { primary: true })
   id: string;
 
-  @Column("text", { name: "token_id" })
-  tokenId: string;
+  @Column("text")
+  token_id: string;
 
-  @Column("text", { name: "token_id_list", nullable: true, array: true })
-  tokenIdList: string[] | null;
+  @Column("text", { nullable: true, array: true })
+  token_id_list: string[] | null;
 
-  @Column("integer", { name: "nonce" })
+  @Column("integer")
   nonce: number;
 
-  @Column("text", { name: "bid_contract_nonce" })
-  bidContractNonce: string;
+  @Column("text")
+  bid_contract_nonce: string;
 
-  @Column("text", { name: "bid_buyer" })
-  bidBuyer: string;
+  @Column("text")
+  bid_buyer: string;
 
-  @Column("text", { name: "bid_seller" })
-  bidSeller: string;
+  @Column("text")
+  bid_seller: string;
 
-  @Column("enum", { name: "status", enum: ["active", "pending", "cancelled", "matched"], default: () => "active" })
+  @Column("enum", { enum: ["active", "pending", "cancelled", "matched"], default: () => "active" })
   status: "active" | "pending" | "cancelled" | "matched";
 
-  @Column("text", { name: "pending_txs", nullable: true, array: true })
-  pendingTxs: string[] | null;
+  @Column("text", { nullable: true, array: true })
+  pending_txs: string[] | null;
 
-  @Column("text", { name: "pending_tx" })
-  pendingTx: string;
+  @Column("text")
+  pending_tx: string;
 
-  @Column("text", { name: "tx_id" })
-  txId: string;
+  @Column("text")
+  tx_id: string;
 
-  @Column("bigint", { name: "block_height" })
-  blockHeight: string;
+  @Column("bigint")
+  block_height: string;
 
-  @Column("text", { name: "match_tx_id" })
-  matchTxId: string;
+  @Column("text")
+  match_tx_id: string;
 
-  @Column("text", { name: "cancel_tx_id" })
-  cancelTxId: string;
+  @Column("text")
+  cancel_tx_id: string;
 
-  @Column("enum", { name: "bid_type", enum: ["collection", "attribute", "solo"] })
-  bidType: "collection" | "attribute" | "solo";
+  @Column("enum", { enum: ["collection", "attribute", "solo"] })
+  bid_type: "collection" | "attribute" | "solo";
 
-  @Column("timestamp without time zone", { name: "created_at", default: () => "CURRENT_TIMESTAMP" })
-  createdAt: Date;
+  @Column("timestamp without time zone", { default: () => "CURRENT_TIMESTAMP" })
+  created_at: Date;
 
-  @Column("timestamp without time zone", { name: "updated_at" })
-  updatedAt: Date;
+  @Column("timestamp without time zone")
+  updated_at: Date;
 
-  @Column("bigint", { name: "bid_price" })
-  bidPrice: string;
+  @Column("bigint")
+  bid_price: string;
 
   @ManyToOne(() => SmartContract, (smartContract) => smartContract.collection_bids, {
     onDelete: "RESTRICT",
     onUpdate: "CASCADE",
   })
   @JoinColumn([{ name: "smart_contract_id", referencedColumnName: "id" }])
-  smartContract: SmartContract;
+  smart_contract: SmartContract;
 }

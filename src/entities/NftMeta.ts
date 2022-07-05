@@ -60,7 +60,7 @@ export class NftMeta {
   @OneToMany(() => Action, (action) => action.nft_meta)
   actions: Action[];
 
-  @ManyToOne(() => Chain, (chain) => chain.nftMetas, {
+  @ManyToOne(() => Chain, (chain) => chain.nft_metas, {
     onDelete: "RESTRICT",
     onUpdate: "CASCADE",
   })

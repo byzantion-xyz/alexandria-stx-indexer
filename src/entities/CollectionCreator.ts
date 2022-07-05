@@ -7,29 +7,29 @@ import { Collection } from "./Collection";
 @Index("collection_creator_pkey", ["id"], { unique: true })
 @Entity("collection_creator", { schema: "public" })
 export class CollectionCreator {
-  @Column("uuid", { primary: true, name: "id" })
+  @Column("uuid", { primary: true })
   id: string;
 
-  @Column("text", { name: "wallet_id" })
-  walletId: string;
+  @Column("text")
+  wallet_id: string;
 
-  @Column("text", { name: "name", nullable: true })
+  @Column("text", { nullable: true })
   name: string | null;
 
-  @Column("text", { name: "bio", nullable: true })
+  @Column("text", { nullable: true })
   bio: string | null;
 
-  @Column("text", { name: "twitter", nullable: true })
+  @Column("text", { nullable: true })
   twitter: string | null;
 
-  @Column("text", { name: "discord", nullable: true })
+  @Column("text", { nullable: true })
   discord: string | null;
 
-  @Column("text", { name: "website", nullable: true })
+  @Column("text", { nullable: true })
   website: string | null;
 
-  @Column("uuid", { name: "collection_id" })
-  collectionId: string;
+  @Column("uuid")
+  collection_id: string;
 
   @OneToOne(() => Collection, (collection) => collection.collection_creator, {
     onDelete: "RESTRICT",

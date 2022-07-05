@@ -8,34 +8,33 @@ import { SmartContract } from "./SmartContract";
 })
 @Entity("commission", { schema: "public" })
 export class Commission {
-  @Column("uuid", { primary: true, name: "id" })
+  @Column("uuid", { primary: true })
   id: string;
 
-  @Column("text", { name: "commission_key" })
+  @Column("text")
   commissionKey: string;
 
-  @Column("boolean", { name: "custodial" })
+  @Column("boolean")
   custodial: boolean;
 
-  @Column("integer", { name: "amount", nullable: true })
+  @Column("integer", { nullable: true })
   amount: number | null;
 
-  @Column("uuid", { name: "smart_contract_id" })
-  smartContractId: string;
+  @Column("uuid")
+  smart_contract_id: string;
 
   @Column("timestamp without time zone", {
-    name: "created_at",
     default: () => "CURRENT_TIMESTAMP",
   })
-  createdAt: Date;
+  created_at: Date;
 
-  @Column("timestamp without time zone", { name: "updated_at" })
-  updatedAt: Date;
+  @Column("timestamp without time zone")
+  updated_at: Date;
 
   @OneToOne(() => SmartContract, (smartContract) => smartContract.commission, {
     onDelete: "RESTRICT",
     onUpdate: "CASCADE",
   })
   @JoinColumn([{ name: "smart_contract_id", referencedColumnName: "id" }])
-  smartContract: SmartContract;
+  smart_contract: SmartContract;
 }

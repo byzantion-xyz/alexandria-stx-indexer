@@ -7,32 +7,31 @@ import { Collection } from "./Collection";
 @Index("collection_attribute_pkey", ["id"], { unique: true })
 @Entity("collection_attribute", { schema: "public" })
 export class CollectionAttribute {
-  @Column("uuid", { primary: true, name: "id" })
+  @Column("uuid", { primary: true })
   id: string;
 
-  @Column("text", { name: "value" })
+  @Column("text")
   value: string;
 
-  @Column("double precision", { name: "rarity", precision: 53 })
+  @Column("double precision", { precision: 53 })
   rarity: number;
 
-  @Column("integer", { name: "total" })
+  @Column("integer")
   total: number;
 
-  @Column("uuid", { name: "collection_id" })
-  collectionId: string;
+  @Column("uuid")
+  collection_id: string;
 
   @Column("timestamp without time zone", {
-    name: "created_at",
     default: () => "CURRENT_TIMESTAMP",
   })
-  createdAt: Date;
+  created_at: Date;
 
-  @Column("timestamp without time zone", { name: "updated_at" })
-  updatedAt: Date;
+  @Column("timestamp without time zone")
+  updated_at: Date;
 
-  @Column("text", { name: "trait_type" })
-  traitType: string;
+  @Column("text")
+  trait_type: string;
 
   @ManyToOne(() => Collection, (collection) => collection.collection_attributes, {
     onDelete: "RESTRICT",

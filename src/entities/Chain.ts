@@ -13,23 +13,22 @@ export class Chain {
   name: string;
 
   @Column("timestamp without time zone", {
-    name: "created_at",
     default: () => "CURRENT_TIMESTAMP",
   })
   createdAt: Date;
 
-  @Column("timestamp without time zone", { name: "updated_at" })
-  updatedAt: Date;
+  @Column("timestamp without time zone")
+  updated_at: Date;
 
-  @Column("text", { name: "coin", nullable: true })
+  @Column("text", { nullable: true })
   coin: string | null;
 
-  @Column("text", { name: "symbol" })
+  @Column("text")
   symbol: string;
 
   @OneToMany(() => NftMeta, (nftMeta) => nftMeta.chain)
-  nftMetas: NftMeta[];
+  nft_metas: NftMeta[];
 
   @OneToMany(() => SmartContract, (smartContract) => smartContract.chain)
-  smartContracts: SmartContract[];
+  smart_contracts: SmartContract[];
 }

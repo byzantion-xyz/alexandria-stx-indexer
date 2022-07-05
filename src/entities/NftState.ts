@@ -85,10 +85,10 @@ export class NftState {
   @Column("bigint", { nullable: true })
   staked_block_height: bigint;
 
-  @Column("uuid", { name: "meta_id" })
+  @Column("uuid")
   meta_id: string;
 
-  @Column("timestamp without time zone", { name: "updated_at" })
+  @Column("timestamp without time zone")
   updated_at: Date;
 
   @ManyToOne(() => SmartContract, (smartContract) => smartContract.nft_state, {

@@ -20,7 +20,7 @@ export class DiscordServerChannel {
   @Column("enum", { enum: ["sales", "listings", "bids"] })
   purpose: "sales" | "listings" | "bids";
 
-  @Column("uuid", { name: "discord_server_id" })
+  @Column("uuid")
   discord_server_id: string;
 
   @OneToMany(

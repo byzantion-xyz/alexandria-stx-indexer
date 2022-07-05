@@ -67,10 +67,10 @@ export class SmartContract {
   @OneToMany(() => Collection, (collection) => collection.smart_contract)
   collections: Collection[];
 
-  @OneToMany(() => CollectionBid, (collectionBid) => collectionBid.smartContract)
+  @OneToMany(() => CollectionBid, (collectionBid) => collectionBid.smart_contract)
   collection_bids: CollectionBid[];
 
-  @OneToOne(() => Commission, (commission) => commission.smartContract)
+  @OneToOne(() => Commission, (commission) => commission.smart_contract)
   commission: Commission;
 
   @OneToMany(() => NftMeta, (nftMeta) => nftMeta.smart_contract)
@@ -79,7 +79,7 @@ export class SmartContract {
   @OneToMany(() => NftState, (nftState) => nftState.list_contract)
   nft_state: NftState[];
 
-  @ManyToOne(() => Chain, (chain) => chain.smartContracts, {
+  @ManyToOne(() => Chain, (chain) => chain.smart_contracts, {
     onDelete: "RESTRICT",
     onUpdate: "CASCADE",
   })

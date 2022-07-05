@@ -2,8 +2,8 @@ import { Column, Entity, Index, JoinColumn, ManyToOne } from "typeorm";
 import { NftMeta } from "./NftMeta";
 
 @Index("nft_meta_attribute_pkey", ["id"], { unique: true })
-@Index("nft_meta_attribute_meta_id_trait_type_value_key", ["metaId", "traitType", "value"], { unique: true })
-@Index("nft_meta_attribute_trait_type_value_idx", ["traitType", "value"], {})
+@Index("nft_meta_attribute_meta_id_trait_type_value_key", ["meta_id", "trait_type", "value"], { unique: true })
+@Index("nft_meta_attribute_trait_type_value_idx", ["trait_type", "value"], {})
 @Entity("nft_meta_attribute", { schema: "public" })
 export class NftMetaAttribute {
   @Column("uuid", { primary: true })

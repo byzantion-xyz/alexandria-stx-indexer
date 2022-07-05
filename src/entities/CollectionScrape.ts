@@ -1,7 +1,7 @@
 import { Column, Entity, Index, OneToOne } from "typeorm";
 import { Collection } from "./Collection";
 
-@Index("collection_scrape_collection_id_key", ["collectionId"], { unique: true })
+@Index("collection_scrape_collection_id_key", ["collection_id"], { unique: true })
 @Index("collection_scrape_pkey", ["id"], { unique: true })
 @Entity("collection_scrape", { schema: "public" })
 export class CollectionScrape {
@@ -41,7 +41,7 @@ export class CollectionScrape {
   error: object | null;
 
   @Column("uuid")
-  collectionId: string;
+  collection_id: string;
 
   @Column("integer", { default: () => "0" })
   attempts: number;

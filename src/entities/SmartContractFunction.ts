@@ -1,7 +1,7 @@
 import { Column, Entity, Index, JoinColumn, ManyToOne } from "typeorm";
 import { SmartContract } from "./SmartContract";
 
-@Index("smart_contract_function_function_name_smart_contract_id_key", ["functionName", "smartContractId"], {
+@Index("smart_contract_function_function_name_smart_contract_id_key", ["function_name", "smart_contract_id"], {
   unique: true,
 })
 @Index("smart_contract_function_pkey", ["id"], { unique: true })

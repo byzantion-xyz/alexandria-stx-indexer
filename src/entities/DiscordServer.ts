@@ -2,7 +2,7 @@ import { Column, Entity, Index, OneToMany } from "typeorm";
 import { DiscordServerChannel } from "./DiscordServerChannel";
 
 @Index("discord_server_pkey", ["id"], { unique: true })
-@Index("discord_server_server_id_key", ["serverId"], { unique: true })
+@Index("discord_server_server_id_key", ["server_id"], { unique: true })
 @Entity("discord_server", { schema: "public" })
 export class DiscordServer {
   @Column("uuid", { primary: true })

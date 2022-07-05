@@ -2,9 +2,13 @@ import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany } from "typeorm
 import { CollectionOnDiscordServerChannel } from "./CollectionOnDiscordServerChannel";
 import { DiscordServer } from "./DiscordServer";
 
-@Index("discord_server_channel_discord_server_id_channel_id_purpose_key", ["channelId", "discordServerId", "purpose"], {
-  unique: true,
-})
+@Index(
+  "discord_server_channel_discord_server_id_channel_id_purpose_key",
+  ["channel_id", "discord_server_id", "purpose"],
+  {
+    unique: true,
+  }
+)
 @Index("discord_server_channel_pkey", ["id"], { unique: true })
 @Entity("discord_server_channel", { schema: "public" })
 export class DiscordServerChannel {

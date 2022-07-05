@@ -1,6 +1,6 @@
 import { Column, Entity, Index } from "typeorm";
 
-@Index("crypto_rates_uk_fiat_crypto", ["cryptoCurrency", "fiatCurrency"], {
+@Index("crypto_rates_uk_fiat_crypto", ["crypto_currency", "fiat_currency"], {
   unique: true,
 })
 @Index("crypto_rate_pkey", ["id"], { unique: true })

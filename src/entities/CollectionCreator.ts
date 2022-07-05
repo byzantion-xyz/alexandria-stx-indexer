@@ -1,7 +1,7 @@
 import { Column, Entity, Index, JoinColumn, OneToOne } from "typeorm";
 import { Collection } from "./Collection";
 
-@Index("collection_creator_collection_id_key", ["collectionId"], {
+@Index("collection_creator_collection_id_key", ["collection_id"], {
   unique: true,
 })
 @Index("collection_creator_pkey", ["id"], { unique: true })

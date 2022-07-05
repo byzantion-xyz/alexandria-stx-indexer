@@ -3,7 +3,7 @@ import { SmartContract } from "./SmartContract";
 import { NftMeta } from "./NftMeta";
 
 @Index("nft_state_pkey", ["id"], { unique: true })
-@Index("nft_state_meta_id_key", ["metaId"], { unique: true })
+@Index("nft_state_meta_id_key", ["meta_id"], { unique: true })
 @Entity("nft_state", { schema: "public" })
 export class NftState {
   @Column("uuid", { primary: true })

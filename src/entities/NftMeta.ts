@@ -7,7 +7,7 @@ import { NftMetaAttribute } from "./NftMetaAttribute";
 import { NftMetaBns } from "./NftMetaBns";
 import { NftState } from "./NftState";
 
-@Index("nft_meta_collection_id_token_id_key", ["collectionId", "tokenId"], {
+@Index("nft_meta_collection_id_token_id_key", ["collection_id", "token_id"], {
   unique: true,
 })
 @Index("nft_meta_pkey", ["id"], { unique: true })

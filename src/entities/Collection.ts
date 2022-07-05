@@ -7,7 +7,7 @@ import { CollectionCreator } from "./CollectionCreator";
 import { CollectionOnDiscordServerChannel } from "./CollectionOnDiscordServerChannel";
 import { NftMeta } from "./NftMeta";
 
-@Index("collection_collection_scrape_id_key", ["collectionScrapeId"], {
+@Index("collection_collection_scrape_id_key", ["collection_scrape_id"], {
   unique: true,
 })
 @Index("collection_pkey", ["id"], { unique: true })

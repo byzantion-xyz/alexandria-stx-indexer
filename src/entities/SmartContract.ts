@@ -8,7 +8,7 @@ import { NftState } from "./NftState";
 import { Chain } from "./Chain";
 import { SmartContractFunction } from "./SmartContractFunction";
 
-@Index("smart_contract_contract_key_key", ["contractKey"], { unique: true })
+@Index("smart_contract_contract_key_key", ["contract_key"], { unique: true })
 @Index("smart_contract_pkey", ["id"], { unique: true })
 @Entity("smart_contract", { schema: "public" })
 export class SmartContract {

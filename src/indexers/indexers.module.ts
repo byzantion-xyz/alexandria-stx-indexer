@@ -10,6 +10,7 @@ import { PrismaModule } from 'src/prisma/prisma.module';
 import { ScrapersModule } from 'src/scrapers/scrapers.module';
 import { NearTxStreamAdapterService } from './near-indexer/providers/near-tx-stream-adapter.service';
 import { NearTxHelperService } from './near-indexer/providers/near-tx-helper.service';
+import { StacksTxStreamAdapterService } from './stacks-indexer/providers/stacks-tx-stream-adapter/stacks-tx-stream-adapter.service';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { NearTxHelperService } from './near-indexer/providers/near-tx-helper.ser
     UnlistIndexerService,
     NearTxStreamAdapterService,
     NearTxHelperService,
+    StacksTxStreamAdapterService,
   ],
   exports: [
     IndexerOrchestratorService

@@ -20,7 +20,7 @@ export class TasksService {
       }
     }
 
-    @Cron(CronExpression.EVERY_HOUR)
+    @Cron(CronExpression.EVERY_10_MINUTES)
     handleCronMissingTransactions() {
       if (process.env.NODE_ENV === 'production') {
         this.logger.log('Trigger near indexer for missing transactions');

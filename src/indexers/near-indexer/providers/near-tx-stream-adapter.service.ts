@@ -71,7 +71,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
       or (execution_outcome->'outcome'->'status'->'SuccessReceiptId' is not null)) AND
       processed = false AND 
       missing = true
-      order by t.block_height ASC limit 5000;   
+      order by t.block_height ASC limit 3000;   
     `;
 
     const txs: Transaction[] = await this.prismaStreamerService.$queryRawUnsafe(

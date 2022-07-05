@@ -1,6 +1,4 @@
 import { Logger, Injectable } from "@nestjs/common";
-import { PrismaService } from "src/prisma/prisma.service";
-// import { SmartContract, SmartContractFunction, ActionName, SmartContractType, Action } from "@prisma/client";
 import { TxProcessResult } from "src/indexers/common/interfaces/tx-process-result.interface";
 import { TxHelperService } from "../helpers/tx-helper.service";
 import { ListBotService } from "src/discord-bot/providers/list-bot.service";
@@ -28,7 +26,6 @@ export class ListIndexerService implements IndexerService {
   private readonly logger = new Logger(ListIndexerService.name);
 
   constructor(
-    private readonly prismaService: PrismaService,
     private txHelper: TxHelperService,
     private listBotService: ListBotService,
     // private missingSmartContractService: MissingCollectionService,
@@ -51,9 +48,6 @@ export class ListIndexerService implements IndexerService {
 
     // Check if custodial
     if (sc.type === SmartContractType.non_fungible_tokens) {
-      // Prisma
-      // market_sc = await this.prismaService.smartContract.findUnique({ where: { contract_key } });
-      // TypeORM
       market_sc = await this.smartContractRepository.findOneBy({ contract_key });
       contract_key = sc.contract_key;
     }
@@ -73,13 +67,6 @@ export class ListIndexerService implements IndexerService {
       };
 
       // TODO: Use unified service to update NftMeta and handle NftState changes
-      // Prisma:
-      //await this.prismaService.nftMeta.update({
-      //  where: { id: nftMeta.id },
-      //  data: { nft_state: { upsert: { create: update, update: update } } },
-      //});
-
-      // TypeORM
       await this.nftStateRepository.upsert({ meta_id: nftMeta.id, ...update }, ["meta_id"]);
 
       const actionCommonArgs: CreateActionCommonArgs = this.txHelper.setCommonActionParams(tx, sc, nftMeta, market_sc);
@@ -116,12 +103,6 @@ export class ListIndexerService implements IndexerService {
 
   async createAction(params: CreateListActionTO): Promise<Action> {
     try {
-      // Prisma
-      // const action = await this.prismaService.action.create({
-      //   data: { ...params }
-      // });
-
-      // TypeORM
       const action = this.actionRepository.create(params);
       const saved = await this.actionRepository.save(action);
       this.logger.log(`New action ${params.action}: ${saved.id} `);

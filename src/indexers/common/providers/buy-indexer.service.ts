@@ -1,6 +1,4 @@
 import { Logger, Injectable, NotAcceptableException } from "@nestjs/common";
-import { PrismaService } from "src/prisma/prisma.service";
-// import { SmartContract, SmartContractFunction, ActionName, Action } from "@prisma/client";
 
 import { TxProcessResult } from "src/indexers/common/interfaces/tx-process-result.interface";
 import { TxHelperService } from "../helpers/tx-helper.service";
@@ -22,7 +20,6 @@ export class BuyIndexerService implements IndexerService {
   private readonly logger = new Logger(BuyIndexerService.name);
 
   constructor(
-    // private readonly prismaService: PrismaService,
     private txHelper: TxHelperService,
     private salesBotService: SalesBotService,
     @InjectRepository(ActionEntity)
@@ -71,12 +68,6 @@ export class BuyIndexerService implements IndexerService {
 
   async createAction(params: CreateBuyActionTO): Promise<ActionEntity> {
     try {
-      // Prisma
-      // const action = await this.prismaService.action.create({
-      //   data: { ...params },
-      // });
-
-      // TypeORM
       const action = await this.actionRepository.create(params);
 
       this.logger.log(`New action ${params.action}: ${action.id} `);

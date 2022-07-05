@@ -1,5 +1,4 @@
 import { Logger, Injectable } from '@nestjs/common';
-//import { PrismaService } from 'src/prisma/prisma.service';
 import { BuyIndexerService } from './common/providers/buy-indexer.service';
 import { ListIndexerService } from './common/providers/list-indexer.service';
 import { TxProcessResult } from 'src/indexers/common/interfaces/tx-process-result.interface';
@@ -18,7 +17,6 @@ export class IndexerOrchestratorService {
   private readonly logger = new Logger(IndexerOrchestratorService.name);
 
   constructor(
-    //private readonly prismaService: PrismaService,
     private nearTxStreamAdapter: NearTxStreamAdapterService,
     private buyIndexer: BuyIndexerService,
     private listIndexer: ListIndexerService,
@@ -58,15 +56,7 @@ export class IndexerOrchestratorService {
 
     try {
       const method_name = transaction.function_name;
-      
-      // Prisma
-      //const finder = {
-      //  where: { contract_key: transaction.receiver },
-      //  include: { smart_contract_functions: true }
-      //};
-      //const smart_contract = await this.prismaService.smartContract.findUnique(finder);
-      
-      // TypeORM
+
       const finder = {
         where: { contract_key: 'asac.near' },
         relations: { smart_contract_functions: true }

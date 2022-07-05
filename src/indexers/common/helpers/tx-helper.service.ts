@@ -1,6 +1,4 @@
 import { Injectable, Logger } from "@nestjs/common";
-// import { NftMeta, SmartContract, SmartContractFunction } from "@prisma/client";
-// import { PrismaService } from "src/prisma/prisma.service";
 import * as moment from "moment";
 import { CreateActionCommonArgs } from "../interfaces/create-action-common.dto";
 import { CommonTx } from "src/indexers/common/interfaces/common-tx.interface";
@@ -17,16 +15,11 @@ export class TxHelperService {
   private readonly logger = new Logger(TxHelperService.name);
 
   constructor(
-    // private readonly prismaService: PrismaService
     @InjectRepository(NftState)
     private nftStateRepository: Repository<NftState>,
-    @InjectRepository(NftMeta)
-    private nftMetaRepository: Repository<NftMeta>,
     @InjectRepository(SmartContract)
     private smartContractRepository: Repository<SmartContract>
-  ) // @InjectRepository(SmartContractFunction)
-  // private smartContractFunctionRepository: Repository<SmartContractFunction>
-  {}
+  ) {}
 
   nanoToMiliSeconds(nanoseconds: bigint) {
     return Number(BigInt(nanoseconds) / BigInt(1e6));
@@ -54,20 +47,6 @@ export class TxHelperService {
   }
 
   async findMetaByContractKey(contract_key: string, token_id: string) {
-    // const nft_smart_contract_old = await this.prismaService.smartContract.findUnique({
-    //   where: { contract_key },
-    //   select: {
-    //     nft_metas: {
-    //       where: {
-    //         token_id: token_id,
-    //       },
-    //       include: {
-    //         nft_state: true,
-    //         smart_contract: true,
-    //       },
-    //     },
-    //   },
-    // });
     const nft_smart_contract = await this.smartContractRepository.findOne({
       where: {
         contract_key,
@@ -91,13 +70,6 @@ export class TxHelperService {
       list_block_height: block_height,
     };
 
-    // Prisma
-    // return await this.prismaService.nftMeta.update({
-    //   where: { id: nftMetaId },
-    //   data: { nft_state: { upsert: { create: update, update: update } } },
-    // });
-
-    // TypeORM
     return await this.nftStateRepository.upsert({ id: nftMetaId,  ...update }, ["meta_id"]);
   }
 

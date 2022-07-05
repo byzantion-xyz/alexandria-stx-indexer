@@ -15,7 +15,7 @@ export class Chain {
   @Column("timestamp without time zone", {
     default: () => "CURRENT_TIMESTAMP",
   })
-  createdAt: Date;
+  created_at: Date;
 
   @Column("timestamp without time zone")
   updated_at: Date;

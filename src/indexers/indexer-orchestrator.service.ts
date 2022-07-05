@@ -1,13 +1,14 @@
 import { Logger, Injectable } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
 import { BuyIndexerService } from './common/providers/buy-indexer.service';
 import { ListIndexerService } from './common/providers/list-indexer.service';
 import { TxProcessResult } from 'src/indexers/common/interfaces/tx-process-result.interface';
 import { UnlistIndexerService } from './common/providers/unlist-indexer.service';
 
-import { TxHelperService } from './common/helpers/tx-helper.service';
 import { NearTxStreamAdapterService } from './near-indexer/providers/near-tx-stream-adapter.service';
 import { CommonTx } from './common/interfaces/common-tx.interface';
+import { SmartContract } from 'src/entities/SmartContract';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -16,12 +17,11 @@ export class IndexerOrchestratorService {
   private readonly logger = new Logger(IndexerOrchestratorService.name);
 
   constructor(
-    private readonly prismaService: PrismaService,
     private nearTxStreamAdapter: NearTxStreamAdapterService,
     private buyIndexer: BuyIndexerService,
     private listIndexer: ListIndexerService,
     private unlistIndexer: UnlistIndexerService,
-    private txHelper: TxHelperService
+    @InjectRepository(SmartContract) private smartContractRepository: Repository<SmartContract>
   ) { }
   
   async runIndexer() {
@@ -56,12 +56,12 @@ export class IndexerOrchestratorService {
 
     try {
       const method_name = transaction.function_name;
-      const finder = {
-        where: { contract_key: transaction.receiver },
-        include: { smart_contract_functions: true }
-      };
 
-      const smart_contract = await this.prismaService.smartContract.findUnique(finder);
+      const finder = {
+        where: { contract_key: 'asac.near' },
+        relations: { smart_contract_functions: true }
+      };
+      const smart_contract = await this.smartContractRepository.findOne(finder);
 
       if (smart_contract) {
         let smart_contract_function = smart_contract.smart_contract_functions.find(f => f.function_name === method_name);

@@ -1,6 +1,4 @@
 import { Logger, Injectable, NotAcceptableException } from "@nestjs/common";
-import { PrismaService } from "src/prisma/prisma.service";
-// import { SmartContract, SmartContractFunction, ActionName, Action } from "@prisma/client";
 
 import { TxProcessResult } from "src/indexers/common/interfaces/tx-process-result.interface";
 import { TxHelperService } from "../helpers/tx-helper.service";
@@ -11,7 +9,7 @@ import { CommonTx } from "src/indexers/common/interfaces/common-tx.interface";
 import { IndexerService } from "../interfaces/indexer-service.interface";
 
 import { InjectRepository } from "@nestjs/typeorm";
-import { Action as ActionEntity } from "src/entities/Action";
+import { Action, Action as ActionEntity } from "src/entities/Action";
 import { SmartContract } from "src/entities/SmartContract";
 import { SmartContractFunction } from "src/entities/SmartContractFunction";
 import { Repository } from "typeorm";
@@ -22,7 +20,6 @@ export class BuyIndexerService implements IndexerService {
   private readonly logger = new Logger(BuyIndexerService.name);
 
   constructor(
-    // private readonly prismaService: PrismaService,
     private txHelper: TxHelperService,
     private salesBotService: SalesBotService,
     @InjectRepository(ActionEntity)
@@ -71,17 +68,7 @@ export class BuyIndexerService implements IndexerService {
 
   async createAction(params: CreateBuyActionTO): Promise<ActionEntity> {
     try {
-      console.log(params);
-      // Prisma
-      // const action = await this.prismaService.action.create({
-      //   data: { ...params },
-      // });
-
-      // TypeORM
-      // const action = await this.actionRepository.create(params);
-
-      const action = this.actionRepository.create();
-      await this.actionRepository.merge(action, params);
+      const action = await this.actionRepository.create(params);
 
       this.logger.log(`New action ${params.action}: ${action.id} `);
       return action;

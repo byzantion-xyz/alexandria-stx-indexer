@@ -1,6 +1,4 @@
 import { Logger, Injectable, NotAcceptableException } from "@nestjs/common";
-import { PrismaService } from "src/prisma/prisma.service";
-// import { SmartContract, SmartContractFunction, ActionName, SmartContractType, Action } from "@prisma/client";
 import { TxProcessResult } from "src/indexers/common/interfaces/tx-process-result.interface";
 import { TxHelperService } from "../helpers/tx-helper.service";
 import {
@@ -24,7 +22,6 @@ export class UnlistIndexerService implements IndexerService {
   private readonly logger = new Logger(UnlistIndexerService.name);
 
   constructor(
-    private readonly prismaService: PrismaService,
     private txHelper: TxHelperService,
     @InjectRepository(Action)
     private actionRepository: Repository<Action>,
@@ -42,7 +39,6 @@ export class UnlistIndexerService implements IndexerService {
 
     // Check if custodial
     if (sc.type === SmartContractType.non_fungible_tokens) {
-      // market_sc = await this.prismaService.smartContract.findUnique({ where: { contract_key } });
       market_sc = await this.smartContractRepository.findOneBy({ contract_key });
       contract_key = sc.contract_key;
     }
@@ -77,15 +73,12 @@ export class UnlistIndexerService implements IndexerService {
 
   async createAction(params: CreateUnlistActionTO): Promise<Action> {
     try {
-      // const action = await this.prismaService.action.create({
-      //   data: { ...params },
-      // });
-      const actionObject = this.actionRepository.create(params);
-      const action = await this.actionRepository.save(actionObject);
+      const action = this.actionRepository.create(params);
+      const saved = await this.actionRepository.save(action);
 
-      this.logger.log(`New action ${params.action}: ${action.id} `);
+      this.logger.log(`New action ${params.action}: ${saved.id} `);
 
-      return action;
+      return saved;
     } catch (err) {
       this.logger.warn(err);
     }

@@ -1,6 +1,4 @@
 import { Logger, Injectable } from "@nestjs/common";
-import { PrismaService } from "src/prisma/prisma.service";
-// import { SmartContract, SmartContractFunction, ActionName, SmartContractType, Action } from "@prisma/client";
 import { TxProcessResult } from "src/indexers/common/interfaces/tx-process-result.interface";
 import { TxHelperService } from "../helpers/tx-helper.service";
 import { ListBotService } from "src/discord-bot/providers/list-bot.service";
@@ -21,18 +19,20 @@ import { SmartContract } from "src/entities/SmartContract";
 import { SmartContractFunction } from "src/entities/SmartContractFunction";
 import { Repository } from "typeorm";
 import { ActionName, SmartContractType } from "../helpers/indexer-enums";
+import { NftState } from "src/entities/NftState";
 
 @Injectable()
 export class ListIndexerService implements IndexerService {
   private readonly logger = new Logger(ListIndexerService.name);
 
   constructor(
-    private readonly prismaService: PrismaService,
     private txHelper: TxHelperService,
     private listBotService: ListBotService,
     // private missingSmartContractService: MissingCollectionService,
     @InjectRepository(Action)
     private actionRepository: Repository<Action>,
+    @InjectRepository(NftState)
+    private nftStateRepository: Repository<NftState>,
     @InjectRepository(SmartContract)
     private smartContractRepository: Repository<SmartContract>
   ) {}
@@ -48,7 +48,6 @@ export class ListIndexerService implements IndexerService {
 
     // Check if custodial
     if (sc.type === SmartContractType.non_fungible_tokens) {
-      // market_sc = await this.prismaService.smartContract.findUnique({ where: { contract_key } });
       market_sc = await this.smartContractRepository.findOneBy({ contract_key });
       contract_key = sc.contract_key;
     }
@@ -68,10 +67,7 @@ export class ListIndexerService implements IndexerService {
       };
 
       // TODO: Use unified service to update NftMeta and handle NftState changes
-      await this.prismaService.nftMeta.update({
-        where: { id: nftMeta.id },
-        data: { nft_state: { upsert: { create: update, update: update } } },
-      });
+      await this.nftStateRepository.upsert({ meta_id: nftMeta.id, ...update }, ["meta_id"]);
 
       const actionCommonArgs: CreateActionCommonArgs = this.txHelper.setCommonActionParams(tx, sc, nftMeta, market_sc);
       const listActionParams: CreateListActionTO = {
@@ -107,16 +103,10 @@ export class ListIndexerService implements IndexerService {
 
   async createAction(params: CreateListActionTO): Promise<Action> {
     try {
-      // Prisma
-      // const action = await this.prismaService.action.create({
-      //   data: { ...params }
-      // });
-
-      const action = this.actionRepository.create();
-      await this.actionRepository.merge(action, params);
-
-      this.logger.log(`New action ${params.action}: ${action.id} `);
-      return action;
+      const action = this.actionRepository.create(params);
+      const saved = await this.actionRepository.save(action);
+      this.logger.log(`New action ${params.action}: ${saved.id} `);
+      return saved;
     } catch (err) {
       this.logger.warn(err);
     }

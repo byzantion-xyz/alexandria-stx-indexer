@@ -35,6 +35,12 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
     accounts_in = accounts_in.slice(0, -1);
     const query: string = `select * from transaction t inner join receipt r on t.success_receipt_id =r.receipt_id 
       where block_height >= 68000000 and
+      transaction->'actions' @> '[{"FunctionCall": {}}]' AND  
+      (transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_approve"}}]' OR
+      transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_revoke"}}]' OR
+      transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_buy" }}]' OR
+      transaction->'actions' @> '[{"FunctionCall": { "method_name": "buy" }}]' OR
+      transaction->'actions' @> '[{"FunctionCall": { "method_name": "delete_market_data" }}]') AND
       processed = false AND 
       missing = false AND
       ((execution_outcome->'outcome'->'status'->'SuccessValue' is not null) 

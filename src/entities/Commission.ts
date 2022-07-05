@@ -1,7 +1,7 @@
 import { Column, Entity, Index, JoinColumn, OneToOne } from "typeorm";
 import { SmartContract } from "./SmartContract";
 
-@Index("commission_commission_key_key", ["commissionKey"], { unique: true })
+@Index("commission_commission_key_key", ["commission_key"], { unique: true })
 @Index("commission_pkey", ["id"], { unique: true })
 @Index("commission_smart_contract_id_key", ["smart_contract_id"], {
   unique: true,
@@ -12,7 +12,7 @@ export class Commission {
   id: string;
 
   @Column("text")
-  commissionKey: string;
+  commission_key: string;
 
   @Column("boolean")
   custodial: boolean;

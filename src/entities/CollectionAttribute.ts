@@ -1,7 +1,7 @@
 import { Column, Entity, Index, JoinColumn, ManyToOne } from "typeorm";
 import { Collection } from "./Collection";
 
-@Index("collection_attribute_collection_id_trait_type_value_key", ["collectionId", "traitType", "value"], {
+@Index("collection_attribute_collection_id_trait_type_value_key", ["collection_id", "trait_type", "value"], {
   unique: true,
 })
 @Index("collection_attribute_pkey", ["id"], { unique: true })

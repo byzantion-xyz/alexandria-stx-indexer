@@ -15,13 +15,14 @@ import { Action as ActionEntity } from "src/entities/Action";
 import { SmartContract } from "src/entities/SmartContract";
 import { SmartContractFunction } from "src/entities/SmartContractFunction";
 import { Repository } from "typeorm";
+import { ActionName } from "../helpers/indexer-enums";
 
 @Injectable()
 export class BuyIndexerService implements IndexerService {
   private readonly logger = new Logger(BuyIndexerService.name);
 
   constructor(
-    private readonly prismaService: PrismaService,
+    // private readonly prismaService: PrismaService,
     private txHelper: TxHelperService,
     private salesBotService: SalesBotService,
     @InjectRepository(ActionEntity)
@@ -44,7 +45,7 @@ export class BuyIndexerService implements IndexerService {
       const actionCommonArgs: CreateActionCommonArgs = this.txHelper.setCommonActionParams(tx, sc, nftMeta, sc);
       const buyActionParams: CreateBuyActionTO = {
         ...actionCommonArgs,
-        action: "buy", // TODO: replace with constant - ActionName.buy,
+        action: ActionName.buy,
         list_price: price || (nftMeta.nft_state?.listed ? nftMeta.nft_state.list_price : undefined),
         seller: nftMeta.nft_state && nftMeta.nft_state.listed ? nftMeta.nft_state.list_seller : undefined,
         buyer: tx.signer,

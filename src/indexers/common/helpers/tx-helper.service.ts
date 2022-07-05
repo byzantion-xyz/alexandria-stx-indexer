@@ -1,6 +1,6 @@
 import { Injectable, Logger } from "@nestjs/common";
 // import { NftMeta, SmartContract, SmartContractFunction } from "@prisma/client";
-import { PrismaService } from "src/prisma/prisma.service";
+// import { PrismaService } from "src/prisma/prisma.service";
 import * as moment from "moment";
 import { CreateActionCommonArgs } from "../interfaces/create-action-common.dto";
 import { CommonTx } from "src/indexers/common/interfaces/common-tx.interface";
@@ -23,10 +23,10 @@ export class TxHelperService {
     @InjectRepository(NftMeta)
     private nftMetaRepository: Repository<NftMeta>,
     @InjectRepository(SmartContract)
-    private smartContractRepository: Repository<SmartContract>,
-    @InjectRepository(SmartContractFunction)
-    private smartContractFunctionRepository: Repository<SmartContractFunction>
-  ) {}
+    private smartContractRepository: Repository<SmartContract>
+  ) // @InjectRepository(SmartContractFunction)
+  // private smartContractFunctionRepository: Repository<SmartContractFunction>
+  {}
 
   nanoToMiliSeconds(nanoseconds: bigint) {
     return Number(BigInt(nanoseconds) / BigInt(1e6));

@@ -19,7 +19,6 @@ export class NearTxHelperService {
       return json;
     } catch (err) {
       this.logger.warn('parseBase64Arguments() failed. ', err);
-      throw err;
     }
   }
 

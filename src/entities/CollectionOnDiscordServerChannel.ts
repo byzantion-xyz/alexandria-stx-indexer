@@ -1,4 +1,4 @@
-import { Column, Entity, Index, JoinColumn, ManyToOne } from "typeorm";
+import { PrimaryColumn, Column, Entity, Index, JoinColumn, ManyToOne } from "typeorm";
 import { Collection } from "./Collection";
 import { DiscordServerChannel } from "./DiscordServerChannel";
 
@@ -11,10 +11,10 @@ import { DiscordServerChannel } from "./DiscordServerChannel";
 )
 @Entity("collection_on_discord_server_channel", { schema: "public" })
 export class CollectionOnDiscordServerChannel {
-  @Column("uuid")
+  @PrimaryColumn("uuid")
   collection_id: string;
 
-  @Column("uuid")
+  @PrimaryColumn("uuid")
   discord_server_channel_id: string;
 
   @Column("timestamp without time zone")

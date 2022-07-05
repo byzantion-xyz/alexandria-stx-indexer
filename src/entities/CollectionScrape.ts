@@ -35,7 +35,7 @@ export class CollectionScrape {
   outcome: "skipped" | "succeeded" | "failed" | null;
 
   @Column("text", { nullable: true })
-  outcomeMsg: string | null;
+  outcome_msg: string | null;
 
   @Column("jsonb", { nullable: true })
   error: object | null;

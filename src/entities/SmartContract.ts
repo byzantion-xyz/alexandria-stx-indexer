@@ -1,4 +1,4 @@
-import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany, OneToOne } from "typeorm";
+import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
 import { Action } from "./Action";
 import { Collection } from "./Collection";
 import { CollectionBid } from "./CollectionBid";
@@ -12,7 +12,7 @@ import { SmartContractFunction } from "./SmartContractFunction";
 @Index("smart_contract_pkey", ["id"], { unique: true })
 @Entity("smart_contract", { schema: "public" })
 export class SmartContract {
-  @Column("uuid", { primary: true })
+  @PrimaryGeneratedColumn("uuid")
   id: string;
 
   @Column("text")
@@ -78,6 +78,9 @@ export class SmartContract {
 
   @OneToMany(() => NftState, (nftState) => nftState.list_contract)
   nft_state: NftState[];
+
+  @Column()
+  chain_id: string;
 
   @ManyToOne(() => Chain, (chain) => chain.smart_contracts, {
     onDelete: "RESTRICT",

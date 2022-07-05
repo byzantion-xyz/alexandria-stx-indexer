@@ -65,6 +65,9 @@ export class Collection {
   @JoinColumn([{ name: "collection_scrape_id", referencedColumnName: "id" }])
   collection_scrape: CollectionScrape;
 
+  @Column()
+  smart_contract_id: string;
+
   @ManyToOne(() => SmartContract, (smartContract) => smartContract.collections, {
     onDelete: "SET NULL",
     onUpdate: "CASCADE",

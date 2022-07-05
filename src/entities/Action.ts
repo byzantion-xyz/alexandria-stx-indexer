@@ -1,4 +1,4 @@
-import { Column, Entity, Index, JoinColumn, ManyToOne } from "typeorm";
+import { Column, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 import { Collection } from "./Collection";
 import { SmartContract } from "./SmartContract";
 import { NftMeta } from "./NftMeta";
@@ -6,8 +6,8 @@ import { NftMeta } from "./NftMeta";
 @Index("action_pkey", ["id"], { unique: true })
 @Entity("action", { schema: "public" })
 export class Action {
-  @Column("uuid", { primary: true })
-  id: string;
+  @PrimaryGeneratedColumn("uuid")
+  readonly id: string;
 
   @Column("enum", { enum: ["list", "unlist", "buy"] })
   action: "list" | "unlist" | "buy";

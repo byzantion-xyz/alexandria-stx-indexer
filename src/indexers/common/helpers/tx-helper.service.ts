@@ -91,10 +91,13 @@ export class TxHelperService {
       list_block_height: block_height,
     };
 
+    // Prisma
     // return await this.prismaService.nftMeta.update({
     //   where: { id: nftMetaId },
     //   data: { nft_state: { upsert: { create: update, update: update } } },
     // });
+
+    // TypeORM
     return await this.nftStateRepository.upsert({ id: nftMetaId,  ...update }, ["meta_id"]);
   }
 

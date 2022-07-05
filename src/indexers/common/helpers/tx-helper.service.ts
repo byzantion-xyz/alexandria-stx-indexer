@@ -68,14 +68,12 @@ export class TxHelperService {
     //     },
     //   },
     // });
-
     const nft_smart_contract = await this.smartContractRepository.findOne({
       where: {
         contract_key,
         nft_metas: { token_id },
       },
-      // select: { nft_metas: true },
-      relations: { nft_metas: true },
+      relations: { nft_metas: { nft_state: true } },
     });
 
     if (nft_smart_contract && nft_smart_contract.nft_metas && nft_smart_contract.nft_metas.length === 1) {
@@ -84,7 +82,7 @@ export class TxHelperService {
   }
 
   async unlistMeta(nftMetaId: string, nonce: bigint, block_height: bigint) {
-    let updatedMeta = {
+    let update = {
       listed: false,
       list_price: undefined,
       list_seller: null,
@@ -97,8 +95,7 @@ export class TxHelperService {
     //   where: { id: nftMetaId },
     //   data: { nft_state: { upsert: { create: update, update: update } } },
     // });
-    const nftMeta = await this.nftMetaRepository.findOneBy({ id: nftMetaId });
-    return await this.nftStateRepository.save(updatedMeta);
+    return await this.nftStateRepository.upsert({ id: nftMetaId,  ...update }, ["meta_id"]);
   }
 
   setCommonActionParams(

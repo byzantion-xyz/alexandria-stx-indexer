@@ -1,4 +1,4 @@
-import { Column, Entity, Index, JoinColumn, ManyToOne, OneToOne } from "typeorm";
+import { Column, Entity, Index, JoinColumn, ManyToOne, OneToOne, PrimaryGeneratedColumn } from "typeorm";
 import { SmartContract } from "./SmartContract";
 import { NftMeta } from "./NftMeta";
 
@@ -6,8 +6,8 @@ import { NftMeta } from "./NftMeta";
 @Index("nft_state_meta_id_key", ["meta_id"], { unique: true })
 @Entity("nft_state", { schema: "public" })
 export class NftState {
-  @Column("uuid", { primary: true })
-  id: string;
+  @PrimaryGeneratedColumn("uuid")
+  readonly id!: string;
 
   @Column("boolean", { default: () => "false" })
   burned: boolean;

@@ -48,7 +48,7 @@ import { TypeOrmModule } from "@nestjs/typeorm";
         type: "postgres",
         synchronize: false,
         logging: false,
-        entities: [__dirname + "/../**/*.entities{.ts,.js}"],
+        entities: [__dirname + "/entities/*{.ts,.js}"],
         migrations: [],
         subscribers: [],
       }),

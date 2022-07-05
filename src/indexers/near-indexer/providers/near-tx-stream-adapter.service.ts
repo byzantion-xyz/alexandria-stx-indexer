@@ -33,7 +33,6 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
       accounts_in += `'${accounts[i]}',`;
     }
     accounts_in = accounts_in.slice(0, -1);
-    
     const query: string = `select * from transaction t inner join receipt r on t.success_receipt_id =r.receipt_id 
       where block_height >= 68000000 and
       processed = false AND 
@@ -41,7 +40,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
       ((execution_outcome->'outcome'->'status'->'SuccessValue' is not null) 
       or (execution_outcome->'outcome'->'status'->'SuccessReceiptId' is not null))
       order by t.block_height ASC 
-      limit 5000;
+      limit 3000;
     `;
 
     const txs: Transaction[] = await this.prismaStreamerService.$queryRawUnsafe(

@@ -80,10 +80,10 @@ export class NftState {
   staked_owner: string | null;
 
   @Column("bigint", { nullable: true })
-  stakedBlockHeight: bigint;
+  staked_block_height: bigint;
 
   @Column("bigint", { nullable: true })
-  staked_block_height: bigint;
+  staked_tx_index: bigint;
 
   @Column("uuid")
   meta_id: string;

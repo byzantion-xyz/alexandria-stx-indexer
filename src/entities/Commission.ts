@@ -3,7 +3,7 @@ import { SmartContract } from "./SmartContract";
 
 @Index("commission_commission_key_key", ["commissionKey"], { unique: true })
 @Index("commission_pkey", ["id"], { unique: true })
-@Index("commission_smart_contract_id_key", ["smartContractId"], {
+@Index("commission_smart_contract_id_key", ["smart_contract_id"], {
   unique: true,
 })
 @Entity("commission", { schema: "public" })

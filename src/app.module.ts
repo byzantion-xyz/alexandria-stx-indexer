@@ -1,7 +1,7 @@
 import { Module } from "@nestjs/common";
 import { AppController } from "./app.controller";
 import { AppService } from "./app.service";
-import { ConfigModule } from "@nestjs/config";
+import { ConfigModule, ConfigService } from "@nestjs/config";
 import { IndexersModule } from "./indexers/indexers.module";
 import { CommonModule } from "./common/common.module";
 import { ScrapersModule } from "./scrapers/scrapers.module";
@@ -41,14 +41,18 @@ import { TypeOrmModule } from "@nestjs/typeorm";
     DiscordServerModule,
     PrismaModule,
     TasksModule,
-    TypeOrmModule.forRoot({
-      url: "postgres://universal-staging-user:RpyHOdJXH6AyxkNUzz@34.168.241.120/byz-universal-postgres-staging",
-      type: "postgres",
-      synchronize: false,
-      logging: false,
-      entities: [__dirname + "/../**/*.entities{.ts,.js}"],
-      migrations: [],
-      subscribers: [],
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: async (config: ConfigService) => ({
+        url: config.get('DATABASE_URL'),
+        type: "postgres",
+        synchronize: false,
+        logging: false,
+        entities: [__dirname + "/../**/*.entities{.ts,.js}"],
+        migrations: [],
+        subscribers: [],
+      }),
+      inject: [ConfigService]
     }),
   ],
   controllers: [AppController],

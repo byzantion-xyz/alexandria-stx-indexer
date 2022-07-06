@@ -272,9 +272,9 @@ export class DbHelperService {
   }
 
   async findNftMetasForPinning(collectionId: string, offset: number) {
-    return this.nftMetaRepo.find({
-      where: { collection_id: collectionId },
+    return await this.nftMetaRepo.find({
       select: ["id", "image", "token_id", "ranking"],
+      where: { collection_id: collectionId },
       order: { ranking: "ASC" },
       skip: offset,
     });

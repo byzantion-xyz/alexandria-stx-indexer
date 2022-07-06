@@ -4,10 +4,8 @@ import { TxHelperService } from "../helpers/tx-helper.service";
 import { ListBotService } from "src/discord-bot/providers/list-bot.service";
 import { MissingCollectionService } from "src/scrapers/near-scraper/providers/missing-collection.service";
 import {
-  CreateAction,
   CreateActionCommonArgs,
   CreateListActionTO,
-  CreateListAction,
 } from "../interfaces/create-action-common.dto";
 
 import { CommonTx } from "src/indexers/common/interfaces/common-tx.interface";

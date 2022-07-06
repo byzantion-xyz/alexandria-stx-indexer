@@ -3,7 +3,6 @@ import { TxProcessResult } from "src/indexers/common/interfaces/tx-process-resul
 import { TxHelperService } from "../helpers/tx-helper.service";
 import {
   CreateActionCommonArgs,
-  CreateUnlistAction,
   CreateUnlistActionTO,
 } from "../interfaces/create-action-common.dto";
 

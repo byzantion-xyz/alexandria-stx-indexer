@@ -1,2 +1,0 @@
--- AlterTable
-ALTER TABLE "action" ALTER COLUMN "nonce" SET DATA TYPE BIGINT;

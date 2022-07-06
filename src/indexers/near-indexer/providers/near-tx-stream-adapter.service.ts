@@ -99,9 +99,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
         {
           processed: txResult.processed,
           missing: txResult.missing,
-        })
-      
-    
+        });
     }
   }
 

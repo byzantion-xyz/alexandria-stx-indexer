@@ -1,4 +1,14 @@
-import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany, OneToOne } from "typeorm";
+import {
+  Column,
+  Entity,
+  Index,
+  JoinColumn,
+  ManyToOne,
+  OneToMany,
+  OneToOne,
+  PrimaryColumn,
+  PrimaryGeneratedColumn,
+} from "typeorm";
 import { Action } from "./Action";
 import { Chain } from "./Chain";
 import { Collection } from "./Collection";
@@ -13,7 +23,7 @@ import { NftState } from "./NftState";
 @Index("nft_meta_pkey", ["id"], { unique: true })
 @Entity("nft_meta", { schema: "public" })
 export class NftMeta {
-  @Column("uuid", { primary: true })
+  @PrimaryGeneratedColumn("uuid")
   id: string;
 
   @Column("text")
@@ -60,6 +70,9 @@ export class NftMeta {
   @OneToMany(() => Action, (action) => action.nft_meta)
   actions: Action[];
 
+  @Column()
+  chain_id: string;
+
   @ManyToOne(() => Chain, (chain) => chain.nft_metas, {
     onDelete: "RESTRICT",
     onUpdate: "CASCADE",
@@ -74,6 +87,9 @@ export class NftMeta {
   @JoinColumn([{ name: "collection_id", referencedColumnName: "id" }])
   collection: Collection;
 
+  @Column()
+  smart_contract_id: string;
+
   @ManyToOne(() => SmartContract, (smartContract) => smartContract.nft_metas, {
     onDelete: "RESTRICT",
     onUpdate: "CASCADE",
@@ -81,7 +97,7 @@ export class NftMeta {
   @JoinColumn([{ name: "smart_contract_id", referencedColumnName: "id" }])
   smart_contract: SmartContract;
 
-  @OneToMany(() => NftMetaAttribute, (nftMetaAttribute) => nftMetaAttribute.meta)
+  @OneToMany(() => NftMetaAttribute, (nftMetaAttribute) => nftMetaAttribute.meta, { cascade: true })
   attributes: NftMetaAttribute[];
 
   @OneToOne(() => NftMetaBns, (nftMetaBns) => nftMetaBns.meta)

@@ -1,9 +1,11 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Collection } from "src/entities/Collection";
+import { CollectionAttribute } from "src/entities/CollectionAttribute";
 import { CollectionCreator } from "src/entities/CollectionCreator";
 import { CollectionScrape } from "src/entities/CollectionScrape";
 import { NftMeta } from "src/entities/NftMeta";
+import { NftMetaAttribute } from "src/entities/NftMetaAttribute";
 import { SmartContract } from "src/entities/SmartContract";
 import {
   CollectionScrapeOutcome,
@@ -11,6 +13,7 @@ import {
   SmartContractType,
 } from "src/indexers/common/helpers/indexer-enums";
 import { Repository } from "typeorm";
+import { v4 as uuidv4 } from "uuid";
 
 const NEAR_PROTOCOL_DB_ID = "174c3df6-0221-4ca7-b966-79ac8d981bdb";
 
@@ -20,15 +23,17 @@ export class DbHelperService {
 
   constructor(
     @InjectRepository(SmartContract)
-    private smartContractRepository: Repository<SmartContract>,
+    private smartContractRepo: Repository<SmartContract>,
     @InjectRepository(Collection)
-    private collectionRepository: Repository<Collection>,
+    private collectionRepo: Repository<Collection>,
+    // @InjectRepository(CollectionAttribute)
+    // private collectionAttributeRepo: Repository<CollectionAttribute>,
     @InjectRepository(CollectionScrape)
-    private collectionScrapeRepository: Repository<CollectionScrape>,
+    private collectionScrapeRepo: Repository<CollectionScrape>,
     @InjectRepository(CollectionCreator)
-    private collectionCreatorRepository: Repository<CollectionCreator>,
+    private collectionCreatorRepo: Repository<CollectionCreator>,
     @InjectRepository(NftMeta)
-    private nftMetaRepository: Repository<NftMeta>
+    private nftMetaRepo: Repository<NftMeta> // @InjectRepository(NftMetaAttribute) // private nftMetaAttributeRepo: Repository<NftMetaAttribute>
   ) {}
 
   // ####### Smart Contract Functions
@@ -41,13 +46,13 @@ export class DbHelperService {
       chain_id: NEAR_PROTOCOL_DB_ID,
     };
 
-    let smartContract = await this.smartContractRepository.findOneBy({ contract_key });
+    let smartContract = await this.smartContractRepo.findOneBy({ contract_key });
     if (!smartContract) {
-      smartContract = this.smartContractRepository.create();
+      smartContract = this.smartContractRepo.create();
     }
-    this.smartContractRepository.merge(smartContract, smartContractData);
+    this.smartContractRepo.merge(smartContract, smartContractData);
     // this.logger.log("smartContract", JSON.stringify(smartContract, null, 2));
-    return await this.smartContractRepository.save(smartContract);
+    return await this.smartContractRepo.save(smartContract);
   }
 
   async loadSmartContract(nftContractMetadata, contract_key, slug) {
@@ -71,13 +76,13 @@ export class DbHelperService {
     //   create: data,
     //   select: { id: true },
     // });
-    let smartContract = await this.smartContractRepository.findOneBy({ contract_key });
+    let smartContract = await this.smartContractRepo.findOneBy({ contract_key });
     if (!smartContract) {
-      smartContract = this.smartContractRepository.create();
+      smartContract = this.smartContractRepo.create();
     }
-    this.smartContractRepository.merge(smartContract, data);
+    this.smartContractRepo.merge(smartContract, data);
 
-    return await this.smartContractRepository.save(smartContract);
+    return await this.smartContractRepo.save(smartContract);
   }
 
   // ######## Collection Functions
@@ -85,11 +90,11 @@ export class DbHelperService {
   async createCollection(smartContractId: string, slug: string) {
     this.logger.log(`[scraping ${slug}] Creating Collection...`);
 
-    let collection = await this.collectionRepository.findOneBy({ slug });
+    let collection = await this.collectionRepo.findOneBy({ slug });
     if (!collection) {
-      collection = this.collectionRepository.create({ slug: slug, smart_contract_id: smartContractId });
+      collection = this.collectionRepo.create({ slug: slug, smart_contract_id: smartContractId });
     }
-    return await this.collectionRepository.save(collection);
+    return await this.collectionRepo.save(collection);
 
     // return await this.prismaService.collection.upsert({
     //   where: { slug: slug },
@@ -100,14 +105,14 @@ export class DbHelperService {
   }
 
   async upsertCollection(slug: string, data: any) {
-    let collection = await this.collectionRepository.findOneBy({ slug });
+    let collection = await this.collectionRepo.findOneBy({ slug });
 
     if (!collection) {
-      collection = this.collectionRepository.create();
+      collection = this.collectionRepo.create();
     }
-    this.collectionRepository.merge(collection, data);
+    this.collectionRepo.merge(collection, data);
 
-    return await this.collectionRepository.save(collection);
+    return await this.collectionRepo.save(collection);
 
     // const loadedCollection = await this.prismaService.collection.upsert({
     //   where: { slug: slug },
@@ -116,16 +121,43 @@ export class DbHelperService {
     // });
   }
 
+  async findCollectionBy(finder: any) {
+    return await this.collectionRepo.findOneBy(finder);
+  }
+
+  // ################################# CollectionAttribute Functions
+
+  async setCollectionAttributes(collectionId: string) {
+    // delete
+    const sqlDelete = "delete from collection_attribute where collection_id = $1";
+    const delResult = await this.collectionRepo.query(sqlDelete, [collectionId]);
+    // this.logger.debug("setCollectionAttributes delete result", delResult);
+
+    // insert
+    const sql = `insert into collection_attribute(collection_id, trait_type, value, rarity, total)
+    select nm.collection_id, nma.trait_type, nma.value, max(nma.rarity), 0 
+      from nft_meta_attribute nma 
+      join nft_meta nm on nma.meta_id = nm.id
+      where nm.collection_id = $1
+      group by nma.trait_type, nma.value, nm.collection_id`;
+    const params = [collectionId];
+
+    const result = await this.collectionRepo.query(sql, params);
+    // this.logger.debug("setCollectionAttributes insert result", delResult);
+
+    return result;
+  }
+
   // ################################# CollectionScrape Functions
 
   async createCollectionScrape(collectionId, slug) {
     this.logger.log(`[scraping ${slug}] Creating CollectionScrape...`);
 
-    let collectionScrape = await this.collectionScrapeRepository.findOneBy({ collection_id: collectionId });
+    let collectionScrape = await this.collectionScrapeRepo.findOneBy({ collection_id: collectionId });
     if (!collectionScrape) {
-      collectionScrape = this.collectionScrapeRepository.create({ collection_id: collectionId });
+      collectionScrape = this.collectionScrapeRepo.create({ collection_id: collectionId });
     }
-    return await this.collectionRepository.save(collectionScrape);
+    return await this.collectionRepo.save(collectionScrape);
 
     // return await this.prismaService.collectionScrape.upsert({
     //   where: { collection_id: collectionId },
@@ -141,7 +173,7 @@ export class DbHelperService {
     //   outcome: { not: CollectionScrapeOutcome.failed }
     // };
     // return await this.collectionScrapeRepository.count(condition);
-    const query = this.collectionScrapeRepository
+    const query = this.collectionScrapeRepo
       .createQueryBuilder()
       .where(
         `stage NOT IN ('${CollectionScrapeStage.getting_tokens}', '${CollectionScrapeStage.done}') AND outcome != '${CollectionScrapeOutcome.failed}'`
@@ -150,15 +182,15 @@ export class DbHelperService {
   }
 
   async updateCollectionScrape(where, data) {
-    await this.collectionScrapeRepository.update(where, data);
+    await this.collectionScrapeRepo.update(where, data);
   }
 
   async findCollectionScrapeByCollectionId(collection_id) {
-    return await this.collectionScrapeRepository.findOneBy({ collection_id });
+    return await this.collectionScrapeRepo.findOneBy({ collection_id });
   }
 
   async incrementScrapeAttemptByOne(collectionId) {
-    await this.collectionScrapeRepository
+    await this.collectionScrapeRepo
       .createQueryBuilder()
       .update()
       .set({
@@ -175,5 +207,80 @@ export class DbHelperService {
     //     stage: CollectionScrapeStage.getting_tokens,
     //   },
     // });
+  }
+
+  async setCollectionScrapeStage(collectionId, stage) {
+    await this.collectionScrapeRepo.update({ collection_id: collectionId }, { stage });
+
+    // await this.prismaService.collectionScrape.update({
+    //   where: { collection_id: collectionId },
+    //   data: { stage: stage },
+    // });
+  }
+
+  // ################################# CollectionCreator Functions
+
+  async createCollectionCreator(collectionId, creatorWalletId, slug) {
+    this.logger.log(`[scraping ${slug}] Creating CollectionCreator`);
+
+    await this.collectionCreatorRepo.upsert({ collection_id: collectionId, wallet_id: creatorWalletId }, [
+      "collection_id",
+    ]);
+
+    // const collectionCreator = await this.prismaService.collectionCreator.upsert({
+    //   where: { collection_id: collectionId },
+    //   update: { wallet_id: creatorWalletId },
+    //   create: { collection_id: collectionId, wallet_id: creatorWalletId },
+    //   select: { id: true },
+    // });
+    // return collectionCreator;
+  }
+
+  // ################################# NftMeta Functions
+
+  async findOneNftMeta(collectionId: string, tokenId: string) {
+    const finder = {
+      where: {
+        collection_id: collectionId,
+        token_id: tokenId ?? "",
+      },
+    };
+    return this.nftMetaRepo.findOne(finder);
+
+    // const nftMeta = await this.prismaService.nftMeta.findUnique({
+    //   where: {
+    //     collection_id_token_id: {
+    //       collection_id: collection.id,
+    //       token_id: tokenMetas[i]?.token_id ?? "",
+    //     },
+    //   },
+    // });
+  }
+
+  async insertNftMeta(dataNftMeta) {
+    const nftMeta = this.nftMetaRepo.create(dataNftMeta) as unknown as NftMeta;
+    // this.logger.debug("NftMeta object", JSON.stringify(nftMeta, null, 2));
+    return this.nftMetaRepo.save(nftMeta, { transaction: true });
+  }
+
+  async findNftMetasWithAttributes(finder) {
+    return await this.nftMetaRepo.find({
+      where: finder,
+      select: ["id", "rarity"],
+      relations: ["attributes"],
+    });
+  }
+
+  async findNftMetasForPinning(collectionId: string, offset: number) {
+    return this.nftMetaRepo.find({
+      where: { collection_id: collectionId },
+      select: ["id", "image", "token_id", "ranking"],
+      order: { ranking: "ASC" },
+      skip: offset,
+    });
+  }
+
+  async updateNftMeta(nftMeta) {
+    return this.nftMetaRepo.save(nftMeta, { transaction: true });
   }
 }

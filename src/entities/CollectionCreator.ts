@@ -1,4 +1,4 @@
-import { Column, Entity, Index, JoinColumn, OneToOne } from "typeorm";
+import { Column, Entity, Index, JoinColumn, OneToOne, PrimaryGeneratedColumn } from "typeorm";
 import { Collection } from "./Collection";
 
 @Index("collection_creator_collection_id_key", ["collection_id"], {
@@ -7,7 +7,7 @@ import { Collection } from "./Collection";
 @Index("collection_creator_pkey", ["id"], { unique: true })
 @Entity("collection_creator", { schema: "public" })
 export class CollectionCreator {
-  @Column("uuid", { primary: true })
+  @PrimaryGeneratedColumn("uuid")
   id: string;
 
   @Column("text")

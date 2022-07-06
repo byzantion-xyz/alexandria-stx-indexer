@@ -29,13 +29,14 @@ export class DiscordServerChannel {
 
   @OneToMany(
     () => CollectionOnDiscordServerChannel,
-    (collectionOnDiscordServerChannel) => collectionOnDiscordServerChannel.discord_server_channel
+    (collectionOnDiscordServerChannel) => collectionOnDiscordServerChannel.discord_server_channel,
+    { cascade: true }
   )
   collection_on_discord_server_channels: CollectionOnDiscordServerChannel[];
 
   @ManyToOne(() => DiscordServer, (discordServer) => discordServer.discord_server_channels, {
     onDelete: "RESTRICT",
-    onUpdate: "CASCADE",
+    onUpdate: "CASCADE"
   })
   @JoinColumn([{ name: "discord_server_id", referencedColumnName: "id" }])
   discord_server: DiscordServer;

@@ -17,6 +17,6 @@ export class DiscordServer {
   @Column("boolean", { default: () => "false" })
   active: boolean;
 
-  @OneToMany(() => DiscordServerChannel, (discordServerChannel) => discordServerChannel.discord_server)
+  @OneToMany(() => DiscordServerChannel, (discordServerChannel) => discordServerChannel.discord_server, { cascade: true })
   discord_server_channels: DiscordServerChannel[];
 }

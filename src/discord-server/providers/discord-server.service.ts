@@ -39,29 +39,19 @@ export class DiscordServerService {
       await this.discordServerRepository.remove(discordServer);
     }
 
-    const discord_server_channels = params.channels.map((ch) => {
-      return {
-        channel_id: ch.channel_id,
-        name: ch.name,
-        purpose: ch.purpose,
-        /*collections: {
-          create: ch.collections.map((collectionId) => ({
-            collection: { connect: { id: collectionId } },
-          })),
-        },*/
-      };
-    });
-
     const discordServerObj = this.discordServerRepository.create({
       server_id: params.server_id,
       server_name: params.server_name,
-      active: true
+      active: true,
+      discord_server_channels: params.channels.map((ch) => ({
+        channel_id: ch.channel_id,
+        name: ch.name,
+        purpose: ch.purpose,
+        collection_on_discord_server_channels: ch.collections.map((collection_id) => ({ collection_id }))
+      }))
     });
 
-    const discordServerChannel = this.discordServerChannelRepository.create(discord_server_channels[0]);
-    discordServerObj.discord_server_channels.push(discordServerChannel);
-
-    const saved = await this.discordServerRepository.save(discordServerObj);
+    await this.discordServerRepository.save(discordServerObj, { transaction: true });
   }
 
   async fetchChannelsBySlug(slug: string, purpose: DiscordChannelType) {

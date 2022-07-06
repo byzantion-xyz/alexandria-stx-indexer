@@ -70,7 +70,7 @@ export class TxHelperService {
       list_block_height: block_height,
     };
 
-    return await this.nftStateRepository.upsert({ id: nftMetaId,  ...update }, ["meta_id"]);
+    return await this.nftStateRepository.upsert({ meta_id: nftMetaId,  ...update }, ["meta_id"]);
   }
 
   setCommonActionParams(

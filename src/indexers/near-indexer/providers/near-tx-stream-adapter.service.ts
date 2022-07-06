@@ -25,10 +25,30 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
     private txHelper: TxHelperService,
     private nearTxHelper: NearTxHelperService
   ) {}
-
+  
   async fetchTxs(): Promise<CommonTx[]> {
     const accounts = await this.fetchAccounts();
-    const query: string = this.buildQuery(accounts);
+    let accounts_in = "";
+    for (let i in accounts) {
+      accounts_in += `'${accounts[i]}',`;
+    }
+    accounts_in = accounts_in.slice(0, -1);
+    const query: string = `select * from transaction t inner join receipt r on t.success_receipt_id =r.receipt_id 
+      where block_height >= 68000000 and
+      transaction->'actions' @> '[{"FunctionCall": {}}]' AND  
+      (transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_approve"}}]' OR
+      transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_revoke"}}]' OR
+      transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_buy" }}]' OR
+      transaction->'actions' @> '[{"FunctionCall": { "method_name": "buy" }}]' OR
+      transaction->'actions' @> '[{"FunctionCall": { "method_name": "delete_market_data" }}]') AND
+      processed = false AND 
+      missing = false AND
+      ((execution_outcome->'outcome'->'status'->'SuccessValue' is not null) 
+      or (execution_outcome->'outcome'->'status'->'SuccessReceiptId' is not null))
+      order by t.block_height ASC 
+      limit 1000;
+    `;
+
     const txs: Transaction[] = await this.prismaStreamerService.$queryRawUnsafe(
       query
     );
@@ -39,7 +59,27 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
 
   async fetchMissingTxs(): Promise<CommonTx[]> {
     const accounts = await this.fetchAccounts();
-    const query: string = this.buildQuery(accounts, true);
+    let accounts_in = "";
+    for (let i in accounts) {
+      accounts_in += `'${accounts[i]}',`;
+    }
+    accounts_in = accounts_in.slice(0, -1);
+    const query: string = `select * from transaction t inner join receipt r on t.success_receipt_id =r.receipt_id 
+      where block_height >= 68000000 and 
+      receiver_id in (${accounts_in}) AND
+      transaction->'actions' @> '[{"FunctionCall": {}}]' AND  
+      (transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_approve"}}]' OR
+      transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_revoke"}}]' OR
+      transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_buy" }}]' OR
+      transaction->'actions' @> '[{"FunctionCall": { "method_name": "buy" }}]' OR
+      transaction->'actions' @> '[{"FunctionCall": { "method_name": "delete_market_data" }}]') AND
+      ((execution_outcome->'outcome'->'status'->'SuccessValue' is not null) 
+      or (execution_outcome->'outcome'->'status'->'SuccessReceiptId' is not null)) AND
+      processed = false AND 
+      missing = true
+      order by t.block_height ASC limit 3000;   
+    `;
+
     const txs: Transaction[] = await this.prismaStreamerService.$queryRawUnsafe(
       query
     );
@@ -105,21 +145,6 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
     return accounts;
   }
 
-  buildQuery(accounts: string[], missing = false): string {
-    let accounts_in = "";
-    for (let i in accounts) {
-      accounts_in += `'${accounts[i]}',`;
-    }
-    accounts_in = accounts_in.slice(0, -1);
-
-    return `select * from transaction t inner join receipt r on t.success_receipt_id =r.receipt_id 
-      where block_height >= 65000000 and 
-      receiver_id in (${accounts_in}) AND  
-      processed = false AND 
-      missing = ${missing}
-      order by t.block_height ${ missing ? 'limit 50000' : 'limit 3000'};`;
-  }
-
   transformTx(tx: Transaction): CommonTx {
     try {
       const args = tx.transaction.actions[0].FunctionCall?.args;
@@ -160,11 +185,9 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
     let result: CommonTx[] = [];
     
     for (let tx of txs) {
-        if (this.determineIfSuccessTx(tx.execution_outcome.outcome.status)) {
-          const transformed_tx = this.transformTx(tx);
-          if (transformed_tx) result.push(transformed_tx);
-        }
-      }
+      const transformed_tx = this.transformTx(tx);
+      if (transformed_tx) result.push(transformed_tx);        
+    }
 
     return result;
   }

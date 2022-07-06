@@ -12,12 +12,13 @@ export class NearTxHelperService {
     try {
       let json = JSON.parse(Buffer.from(args, 'base64').toString());
       if (json.msg) {
-        json.msg = JSON.parse(json.msg);
+        try {
+          json.msg = JSON.parse(json.msg);
+        } catch (err) {}
       }
       return json;
     } catch (err) {
       this.logger.warn('parseBase64Arguments() failed. ', err);
-      throw err;
     }
   }
 

@@ -1,14 +1,14 @@
-import { Logger, Injectable } from '@nestjs/common';
-import { BuyIndexerService } from './common/providers/buy-indexer.service';
-import { ListIndexerService } from './common/providers/list-indexer.service';
-import { TxProcessResult } from 'src/indexers/common/interfaces/tx-process-result.interface';
-import { UnlistIndexerService } from './common/providers/unlist-indexer.service';
+import { Logger, Injectable } from "@nestjs/common";
+import { BuyIndexerService } from "./common/providers/buy-indexer.service";
+import { ListIndexerService } from "./common/providers/list-indexer.service";
+import { TxProcessResult } from "src/indexers/common/interfaces/tx-process-result.interface";
+import { UnlistIndexerService } from "./common/providers/unlist-indexer.service";
 
-import { NearTxStreamAdapterService } from './near-indexer/providers/near-tx-stream-adapter.service';
-import { CommonTx } from './common/interfaces/common-tx.interface';
-import { SmartContract } from 'src/entities/SmartContract';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { NearTxStreamAdapterService } from "./near-indexer/providers/near-tx-stream-adapter.service";
+import { CommonTx } from "./common/interfaces/common-tx.interface";
+import { SmartContract } from "src/database/universal/entities/SmartContract";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -22,24 +22,24 @@ export class IndexerOrchestratorService {
     private listIndexer: ListIndexerService,
     private unlistIndexer: UnlistIndexerService,
     @InjectRepository(SmartContract) private smartContractRepository: Repository<SmartContract>
-  ) { }
-  
+  ) {}
+
   async runIndexer() {
-    this.logger.debug('runIndexer() Initialize');
+    this.logger.debug("runIndexer() Initialize");
 
     const txs: CommonTx[] = await this.nearTxStreamAdapter.fetchTxs();
     await this.processTransactions(txs);
 
-    this.logger.debug('runIndexer() Completed');
+    this.logger.debug("runIndexer() Completed");
   }
 
   async runIndexerForMissing() {
-    this.logger.debug('runIndexerForMissing() Initialize');
-    
+    this.logger.debug("runIndexerForMissing() Initialize");
+
     const txs: CommonTx[] = await this.nearTxStreamAdapter.fetchMissingTxs();
     await this.processTransactions(txs);
-    
-    this.logger.debug('runIndexerForMissing() Completed');
+
+    this.logger.debug("runIndexerForMissing() Completed");
   }
 
   async processTransactions(transactions: CommonTx[]) {
@@ -59,14 +59,16 @@ export class IndexerOrchestratorService {
 
       const finder = {
         where: { contract_key: transaction.receiver },
-        relations: { smart_contract_functions: true }
+        relations: { smart_contract_functions: true },
       };
       const smart_contract = await this.smartContractRepository.findOne(finder);
 
       if (smart_contract) {
-        let smart_contract_function = smart_contract.smart_contract_functions.find(f => f.function_name === method_name);
+        let smart_contract_function = smart_contract.smart_contract_functions.find(
+          (f) => f.function_name === method_name
+        );
         if (smart_contract_function) {
-          const txHandler = this.getMicroIndexer(smart_contract_function.name)
+          const txHandler = this.getMicroIndexer(smart_contract_function.name);
           result = await txHandler.process(transaction, smart_contract, smart_contract_function);
         } else {
           this.logger.log(`function_name: ${method_name} not found in ${transaction.receiver}`);
@@ -85,7 +87,7 @@ export class IndexerOrchestratorService {
   }
 
   getMicroIndexer(name: string) {
-    const microIndexer = this[name + 'Indexer'];
+    const microIndexer = this[name + "Indexer"];
     if (!microIndexer) {
       throw new Error(`No service defined for the context: ${name}`);
     }

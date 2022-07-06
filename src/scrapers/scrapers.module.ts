@@ -5,14 +5,14 @@ import { IpfsHelperService } from "./providers/ipfs-helper.service";
 import { MissingCollectionService } from "./near-scraper/providers/missing-collection.service";
 import { ContractConnectionService } from "./near-scraper/providers/contract-connection-service";
 import { TypeOrmModule } from "@nestjs/typeorm";
-import { SmartContract } from "src/entities/SmartContract";
+import { SmartContract } from "src/database/universal/entities/SmartContract";
 import { DbHelperService } from "./common/db-helper/db-helper.service";
-import { Collection } from "src/entities/Collection";
-import { CollectionScrape } from "src/entities/CollectionScrape";
-import { CollectionCreator } from "src/entities/CollectionCreator";
-import { NftMeta } from "src/entities/NftMeta";
-import { NftMetaAttribute } from "src/entities/NftMetaAttribute";
-import { CollectionAttribute } from "src/entities/CollectionAttribute";
+import { Collection } from "src/database/universal/entities/Collection";
+import { CollectionScrape } from "src/database/universal/entities/CollectionScrape";
+import { CollectionCreator } from "src/database/universal/entities/CollectionCreator";
+import { NftMeta } from "src/database/universal/entities/NftMeta";
+import { NftMetaAttribute } from "src/database/universal/entities/NftMetaAttribute";
+import { CollectionAttribute } from "src/database/universal/entities/CollectionAttribute";
 
 @Module({
   imports: [

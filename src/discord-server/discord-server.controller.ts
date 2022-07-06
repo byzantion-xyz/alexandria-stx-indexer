@@ -1,24 +1,24 @@
-import { 
-  Body, 
-  Controller, 
-  Get, 
-  HttpException, 
-  HttpStatus, 
-  Logger, 
-  Post, 
-  Query, 
-  UsePipes, 
-  ValidationPipe 
-} from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Collection } from 'src/entities/Collection';
-import { Repository } from 'typeorm';
-import { CreateDiscordServer } from './interfaces/discord-server.dto';
-import { fetchDiscordServerChannels } from './interfaces/fetch-discord-server-channels.dto'
-import { DiscordHelperService } from './providers/discord-helper.service';
-import { DiscordServerService } from './providers/discord-server.service';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpException,
+  HttpStatus,
+  Logger,
+  Post,
+  Query,
+  UsePipes,
+  ValidationPipe,
+} from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Collection } from "src/database/universal/entities/Collection";
+import { Repository } from "typeorm";
+import { CreateDiscordServer } from "./interfaces/discord-server.dto";
+import { fetchDiscordServerChannels } from "./interfaces/fetch-discord-server-channels.dto";
+import { DiscordHelperService } from "./providers/discord-helper.service";
+import { DiscordServerService } from "./providers/discord-server.service";
 
-@Controller('api/discord-server')
+@Controller("api/discord-server")
 export class DiscordServerController {
   private readonly logger = new Logger(DiscordServerController.name);
 
@@ -26,27 +26,29 @@ export class DiscordServerController {
     private discordServerService: DiscordServerService,
     private discordHelper: DiscordHelperService,
     @InjectRepository(Collection)
-    private collectionRepository: Repository<Collection>,
-  ) { }
+    private collectionRepository: Repository<Collection>
+  ) {}
 
-  @Post('configure')
-  @UsePipes(new ValidationPipe({ transform: true, whitelist: true, forbidNonWhitelisted: true, enableDebugMessages: true }))
+  @Post("configure")
+  @UsePipes(
+    new ValidationPipe({ transform: true, whitelist: true, forbidNonWhitelisted: true, enableDebugMessages: true })
+  )
   async loadServer(@Body() body: CreateDiscordServer) {
     const params = await this.validateAndTransform(body);
     await this.discordServerService.create(params);
 
-    return 'Ok';
+    return "Ok";
   }
 
-  @Get('channels')
+  @Get("channels")
   async fetchChannels(@Query() params: fetchDiscordServerChannels) {
     this.logger.debug(params);
     let channels = await this.discordServerService.fetchChannelsBySlug(params.slug, params.purpose);
-    this.logger.log('Channels ');
+    this.logger.log("Channels ");
     for (let channel of channels) {
       this.logger.log(channel);
     }
-    return 'Ok';
+    return "Ok";
   }
 
   async validateAndTransform(params: CreateDiscordServer): Promise<CreateDiscordServer> {
@@ -57,7 +59,10 @@ export class DiscordServerController {
         throw new HttpException(`Discord server does not exists: "${params.server_id}"`, HttpStatus.BAD_REQUEST);
       }
       if (!result.channel_in_server) {
-        throw new HttpException(`Channel: "${ch.channel_id}" is not in discord server: ${params.server_id}`, HttpStatus.BAD_REQUEST);        
+        throw new HttpException(
+          `Channel: "${ch.channel_id}" is not in discord server: ${params.server_id}`,
+          HttpStatus.BAD_REQUEST
+        );
       }
 
       for (let slug of ch.collections) {
@@ -73,5 +78,4 @@ export class DiscordServerController {
 
     return params;
   }
-
 }

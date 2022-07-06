@@ -10,13 +10,13 @@ import { ScrapersModule } from "src/scrapers/scrapers.module";
 import { NearTxStreamAdapterService } from "./near-indexer/providers/near-tx-stream-adapter.service";
 import { NearTxHelperService } from "./near-indexer/providers/near-tx-helper.service";
 import { TypeOrmModule } from "@nestjs/typeorm";
-import { Action } from "src/entities/Action";
-import { NftMeta } from "src/entities/NftMeta";
-import { NftState } from "src/entities/NftState";
-import { SmartContract } from "src/entities/SmartContract";
-import { SmartContractFunction } from "src/entities/SmartContractFunction";
-import { Transaction } from "src/database/near-stream/Transaction";
-import { Receipt } from "src/database/near-stream/Receipt";
+import { Action } from "src/database/universal/entities/Action";
+import { NftMeta } from "src/database/universal/entities/NftMeta";
+import { NftState } from "src/database/universal/entities/NftState";
+import { SmartContract } from "src/database/universal/entities/SmartContract";
+import { SmartContractFunction } from "src/database/universal/entities/SmartContractFunction";
+import { Transaction } from "src/database/near-stream/entities/Transaction";
+import { Receipt } from "src/database/near-stream/entities/Receipt";
 
 @Module({
   imports: [

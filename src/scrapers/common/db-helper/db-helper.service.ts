@@ -1,10 +1,10 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Collection } from "src/entities/Collection";
-import { CollectionCreator } from "src/entities/CollectionCreator";
-import { CollectionScrape } from "src/entities/CollectionScrape";
-import { NftMeta } from "src/entities/NftMeta";
-import { SmartContract } from "src/entities/SmartContract";
+import { Collection } from "src/database/universal/entities/Collection";
+import { CollectionCreator } from "src/database/universal/entities/CollectionCreator";
+import { CollectionScrape } from "src/database/universal/entities/CollectionScrape";
+import { NftMeta } from "src/database/universal/entities/NftMeta";
+import { SmartContract } from "src/database/universal/entities/SmartContract";
 import {
   CollectionScrapeOutcome,
   CollectionScrapeStage,

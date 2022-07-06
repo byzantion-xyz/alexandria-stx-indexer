@@ -14,12 +14,12 @@ import { CommonTx } from "src/indexers/common/interfaces/common-tx.interface";
 import { IndexerService } from "../interfaces/indexer-service.interface";
 
 import { InjectRepository } from "@nestjs/typeorm";
-import { Action } from "src/entities/Action";
-import { SmartContract } from "src/entities/SmartContract";
-import { SmartContractFunction } from "src/entities/SmartContractFunction";
+import { Action } from "src/database/universal/entities/Action";
+import { SmartContract } from "src/database/universal/entities/SmartContract";
+import { SmartContractFunction } from "src/database/universal/entities/SmartContractFunction";
 import { Repository } from "typeorm";
 import { ActionName, SmartContractType } from "../helpers/indexer-enums";
-import { NftState } from "src/entities/NftState";
+import { NftState } from "src/database/universal/entities/NftState";
 
 @Injectable()
 export class ListIndexerService implements IndexerService {

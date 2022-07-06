@@ -1,16 +1,13 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { channel } from "diagnostics_channel";
-import { Collection } from "src/entities/Collection";
-import { CollectionOnDiscordServerChannel } from "src/entities/CollectionOnDiscordServerChannel";
-import { DiscordServer } from "src/entities/DiscordServer";
-import { DiscordServerChannel } from "src/entities/DiscordServerChannel";
+import { Collection } from "src/database/universal/entities/Collection";
+import { CollectionOnDiscordServerChannel } from "src/database/universal/entities/CollectionOnDiscordServerChannel";
+import { DiscordServer } from "src/database/universal/entities/DiscordServer";
+import { DiscordServerChannel } from "src/database/universal/entities/DiscordServerChannel";
 import { DiscordChannelType } from "src/indexers/common/helpers/indexer-enums";
 import { RelationId, Repository } from "typeorm";
-import {
-  CreateDiscordServer,
-  CreateDiscordServerChannel,
-} from "../interfaces/discord-server.dto";
+import { CreateDiscordServer, CreateDiscordServerChannel } from "../interfaces/discord-server.dto";
 
 @Injectable()
 export class DiscordServerService {
@@ -27,7 +24,7 @@ export class DiscordServerService {
 
   async create(params: CreateDiscordServer) {
     const discordServer = await this.discordServerRepository.findOne({
-      where: { server_id: params.server_id},
+      where: { server_id: params.server_id },
       relations: { discord_server_channels: { collection_on_discord_server_channels: true } },
     });
 
@@ -47,8 +44,8 @@ export class DiscordServerService {
         channel_id: ch.channel_id,
         name: ch.name,
         purpose: ch.purpose,
-        collection_on_discord_server_channels: ch.collections.map((collection_id) => ({ collection_id }))
-      }))
+        collection_on_discord_server_channels: ch.collections.map((collection_id) => ({ collection_id })),
+      })),
     });
 
     await this.discordServerRepository.save(discordServerObj, { transaction: true });
@@ -61,7 +58,7 @@ export class DiscordServerService {
           collection: { slug },
         },
         purpose: purpose,
-        discord_server: { active: true }
+        discord_server: { active: true },
       },
       relations: { discord_server: true },
     });

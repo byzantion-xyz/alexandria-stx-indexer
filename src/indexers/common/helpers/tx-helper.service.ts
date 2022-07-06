@@ -4,10 +4,10 @@ import { CreateActionCommonArgs } from "../interfaces/create-action-common.dto";
 import { CommonTx } from "src/indexers/common/interfaces/common-tx.interface";
 
 import { InjectRepository } from "@nestjs/typeorm";
-import { NftState } from "src/entities/NftState";
-import { NftMeta } from "src/entities/NftMeta";
-import { SmartContract } from "src/entities/SmartContract";
-import { SmartContractFunction } from "src/entities/SmartContractFunction";
+import { NftState } from "src/database/universal/entities/NftState";
+import { NftMeta } from "src/database/universal/entities/NftMeta";
+import { SmartContract } from "src/database/universal/entities/SmartContract";
+import { SmartContractFunction } from "src/database/universal/entities/SmartContractFunction";
 import { Repository } from "typeorm";
 
 @Injectable()
@@ -70,7 +70,7 @@ export class TxHelperService {
       list_block_height: block_height,
     };
 
-    return await this.nftStateRepository.upsert({ meta_id: nftMetaId,  ...update }, ["meta_id"]);
+    return await this.nftStateRepository.upsert({ meta_id: nftMetaId, ...update }, ["meta_id"]);
   }
 
   setCommonActionParams(

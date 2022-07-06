@@ -9,9 +9,9 @@ import { CommonTx } from "src/indexers/common/interfaces/common-tx.interface";
 import { IndexerService } from "../interfaces/indexer-service.interface";
 
 import { InjectRepository } from "@nestjs/typeorm";
-import { Action, Action as ActionEntity } from "src/entities/Action";
-import { SmartContract } from "src/entities/SmartContract";
-import { SmartContractFunction } from "src/entities/SmartContractFunction";
+import { Action, Action as ActionEntity } from "src/database/universal/entities/Action";
+import { SmartContract } from "src/database/universal/entities/SmartContract";
+import { SmartContractFunction } from "src/database/universal/entities/SmartContractFunction";
 import { Repository } from "typeorm";
 import { ActionName } from "../helpers/indexer-enums";
 

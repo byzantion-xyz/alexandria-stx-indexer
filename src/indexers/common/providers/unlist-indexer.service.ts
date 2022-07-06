@@ -11,11 +11,11 @@ import { CommonTx } from "src/indexers/common/interfaces/common-tx.interface";
 import { IndexerService } from "../interfaces/indexer-service.interface";
 
 import { InjectRepository } from "@nestjs/typeorm";
-import { SmartContract } from "src/entities/SmartContract";
-import { SmartContractFunction } from "src/entities/SmartContractFunction";
+import { SmartContract } from "src/database/universal/entities/SmartContract";
+import { SmartContractFunction } from "src/database/universal/entities/SmartContractFunction";
 import { Repository } from "typeorm";
 import { ActionName, SmartContractType } from "../helpers/indexer-enums";
-import { Action } from "src/entities/Action";
+import { Action } from "src/database/universal/entities/Action";
 
 @Injectable()
 export class UnlistIndexerService implements IndexerService {

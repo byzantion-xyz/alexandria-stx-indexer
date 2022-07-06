@@ -6,16 +6,13 @@ import { TxHelperService } from "../../common/helpers/tx-helper.service";
 import * as moment from "moment";
 import { NearTxHelperService } from "./near-tx-helper.service";
 import { Transaction } from "../interfaces/near-transaction.dto";
-import {
-  ExecutionStatus,
-  ExecutionStatusBasic,
-} from "near-api-js/lib/providers/provider";
-import { SmartContract } from "src/entities/SmartContract";
+import { ExecutionStatus, ExecutionStatusBasic } from "near-api-js/lib/providers/provider";
+import { SmartContract } from "src/database/universal/entities/SmartContract";
 import { InjectEntityManager, InjectRepository } from "@nestjs/typeorm";
 import { EntityManager, Repository } from "typeorm";
 import { SmartContractType } from "src/indexers/common/helpers/indexer-enums";
-import { SmartContractFunction } from "src/entities/SmartContractFunction";
-import { Transaction as TransactionEntity } from "src/database/near-stream/Transaction";
+import { SmartContractFunction } from "src/database/universal/entities/SmartContractFunction";
+import { Transaction as TransactionEntity } from "src/database/near-stream/entities/Transaction";
 
 @Injectable()
 export class NearTxStreamAdapterService implements TxStreamAdapter {
@@ -24,15 +21,14 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
   constructor(
     private txHelper: TxHelperService,
     private nearTxHelper: NearTxHelperService,
-   /* @InjectEntityManager('NEAR-STREAM')
+    /* @InjectEntityManager('NEAR-STREAM')
     private entityManager: EntityManager,*/
-    @InjectRepository(TransactionEntity, 'NEAR-STREAM')
+    @InjectRepository(TransactionEntity, "NEAR-STREAM")
     private transactionRepository: Repository<TransactionEntity>,
     @InjectRepository(SmartContract)
     private smartContractRepository: Repository<SmartContract>,
     @InjectRepository(SmartContractFunction)
-    private smartContractFunctionRepository: Repository<SmartContractFunction>,
- 
+    private smartContractFunctionRepository: Repository<SmartContractFunction>
   ) {}
 
   async fetchTxs(): Promise<CommonTx[]> {
@@ -94,12 +90,13 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
 
   async setTxResult(txHash: string, txResult: TxProcessResult): Promise<void> {
     if (txResult.processed || txResult.missing) {
-
-      await this.transactionRepository.update({ hash: txHash },
+      await this.transactionRepository.update(
+        { hash: txHash },
         {
           processed: txResult.processed,
           missing: txResult.missing,
-        });
+        }
+      );
     }
   }
 
@@ -111,7 +108,6 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
         sc.type === SmartContractType.non_fungible_tokens &&
         (!sc.smart_contract_functions || !sc.smart_contract_functions.length)
       ) {
-      
         const data = await this.smartContractFunctionRepository.create([
           {
             smart_contract_id: sc.id,
@@ -139,13 +135,12 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
 
   async fetchAccounts(verifySmartContracts: boolean = false): Promise<string[]> {
     // TODO: Move to the scrapper process for new smart contracts
-    const smartContracts: SmartContract[] =
-      await this.smartContractRepository.find({
-        where: { chain: { symbol: "Near" } },
-        relations: { smart_contract_functions: true },
-      });
+    const smartContracts: SmartContract[] = await this.smartContractRepository.find({
+      where: { chain: { symbol: "Near" } },
+      relations: { smart_contract_functions: true },
+    });
 
-    if(verifySmartContracts) {
+    if (verifySmartContracts) {
       await this.verifySmartContracts(smartContracts);
     }
 
@@ -162,8 +157,11 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
         parsed_args = this.nearTxHelper.parseBase64Arguments(args);
       }
 
-      const notify = moment(new Date(this.txHelper.nanoToMiliSeconds(tx.block_timestamp))).utc() >
-        moment().subtract(2, 'hours').utc() ? true : false;
+      const notify =
+        moment(new Date(this.txHelper.nanoToMiliSeconds(tx.block_timestamp))).utc() >
+        moment().subtract(2, "hours").utc()
+          ? true
+          : false;
       // TODO: Generate one transaction per tx.transaction.Action?
       return {
         hash: tx.transaction.hash,
@@ -175,7 +173,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
         receiver: tx.transaction.receiver_id,
         function_name: tx.transaction.actions[0].FunctionCall?.method_name,
         args: parsed_args,
-        notify
+        notify,
       };
     } catch (err) {
       this.logger.warn(`transormTx() has failed for tx hash: ${tx.hash}`);

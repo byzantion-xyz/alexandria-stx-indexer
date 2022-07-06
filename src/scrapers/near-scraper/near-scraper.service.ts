@@ -1,12 +1,8 @@
 import { Injectable, Logger } from "@nestjs/common";
-import { CollectionScrapeStage } from "@prisma/client";
-import { CollectionScrapeOutcome } from "@prisma/client";
+import { CollectionScrapeStage, CollectionScrapeOutcome } from "src/indexers/common/helpers/indexer-enums";
 import { IpfsHelperService } from "../providers/ipfs-helper.service";
 import { runScraperData } from "./dto/run-scraper-data.dto";
 import { ContractConnectionService } from "./providers/contract-connection-service";
-import { InjectRepository } from "@nestjs/typeorm";
-import { SmartContract } from "src/entities/SmartContract";
-import { Repository } from "typeorm";
 import { DbHelperService } from "../common/db-helper/db-helper.service";
 
 const axios = require("axios").default;

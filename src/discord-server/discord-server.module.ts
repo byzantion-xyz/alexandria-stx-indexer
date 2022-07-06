@@ -9,12 +9,13 @@ import { DiscordServerChannel } from 'src/entities/DiscordServerChannel';
 import { Collection } from 'src/entities/Collection';
 import { DiscordServer } from 'src/entities/DiscordServer';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { CollectionOnDiscordServerChannel } from 'src/entities/CollectionOnDiscordServerChannel';
 
 @Module({
   imports: [
     PrismaModule, 
     DiscordModule.forFeature(),
-    TypeOrmModule.forFeature([Collection, DiscordServer, DiscordServerChannel])
+    TypeOrmModule.forFeature([Collection, DiscordServer, DiscordServerChannel, CollectionOnDiscordServerChannel])
   ],  
   controllers: [DiscordServerController],
   providers: [DiscordServerService, DiscordHelperService],

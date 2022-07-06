@@ -1,4 +1,4 @@
-import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany } from "typeorm";
+import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 import { CollectionOnDiscordServerChannel } from "./CollectionOnDiscordServerChannel";
 import { DiscordServer } from "./DiscordServer";
 
@@ -12,7 +12,7 @@ import { DiscordServer } from "./DiscordServer";
 @Index("discord_server_channel_pkey", ["id"], { unique: true })
 @Entity("discord_server_channel", { schema: "public" })
 export class DiscordServerChannel {
-  @Column("uuid", { primary: true })
+  @PrimaryGeneratedColumn("uuid")
   id: string;
 
   @Column("text")

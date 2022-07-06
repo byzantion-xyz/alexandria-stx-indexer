@@ -65,7 +65,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
   }
 
   async fetchMissingTxs(): Promise<CommonTx[]> {
-    const accounts = await this.fetchAccounts();
+    const accounts = await this.fetchAccounts(true);
     let accounts_in = "";
     for (let i in accounts) {
       accounts_in += `'${accounts[i]}',`;
@@ -137,14 +137,18 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
     }
   }
 
-  async fetchAccounts(): Promise<string[]> {
+  async fetchAccounts(verifySmartContracts: boolean = false): Promise<string[]> {
     // TODO: Move to the scrapper process for new smart contracts
     const smartContracts: SmartContract[] =
       await this.smartContractRepository.find({
         where: { chain: { symbol: "Near" } },
         relations: { smart_contract_functions: true },
       });
-    await this.verifySmartContracts(smartContracts);
+
+    if(verifySmartContracts) {
+      await this.verifySmartContracts(smartContracts);
+    }
+
     const accounts = smartContracts.map((sc) => sc.contract_key);
 
     return accounts;

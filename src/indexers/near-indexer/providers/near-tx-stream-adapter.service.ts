@@ -24,8 +24,10 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
   constructor(
     private txHelper: TxHelperService,
     private nearTxHelper: NearTxHelperService,
-    @InjectEntityManager('NEAR-STREAM')
-    private entityManager: EntityManager,
+   /* @InjectEntityManager('NEAR-STREAM')
+    private entityManager: EntityManager,*/
+    @InjectRepository(TransactionEntity, 'NEAR-STREAM')
+    private transactionRepository: Repository<TransactionEntity>,
     @InjectRepository(SmartContract)
     private smartContractRepository: Repository<SmartContract>,
     @InjectRepository(SmartContractFunction)
@@ -57,7 +59,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
       limit 1000;
     `;
 
-    const txs: Transaction[] = await this.entityManager.query(sql);
+    const txs: Transaction[] = await this.transactionRepository.query(sql);
     const result: CommonTx[] = this.transformTxs(txs);
     return result;
   }
@@ -85,7 +87,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
       order by t.block_height ASC limit 3000;   
     `;
 
-    const txs: Transaction[] = await this.entityManager.query(sql);
+    const txs: Transaction[] = await this.transactionRepository.query(sql);
     const result: CommonTx[] = this.transformTxs(txs);
     return result;
   }
@@ -93,12 +95,13 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
   async setTxResult(txHash: string, txResult: TxProcessResult): Promise<void> {
     if (txResult.processed || txResult.missing) {
 
-      /*await this.entityManager.update({ hash: txHash },
+      await this.transactionRepository.update({ hash: txHash },
         {
           processed: txResult.processed,
           missing: txResult.missing,
-        }
-      );*/
+        })
+      
+    
     }
   }
 

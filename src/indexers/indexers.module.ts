@@ -6,7 +6,6 @@ import { ListIndexerService } from "./common/providers/list-indexer.service";
 import { TxHelperService } from "./common/helpers/tx-helper.service";
 import { UnlistIndexerService } from "./common/providers/unlist-indexer.service";
 import { DiscordBotModule } from "src/discord-bot/discord-bot.module";
-import { PrismaModule } from "src/prisma/prisma.module";
 import { ScrapersModule } from "src/scrapers/scrapers.module";
 import { NearTxStreamAdapterService } from "./near-indexer/providers/near-tx-stream-adapter.service";
 import { NearTxHelperService } from "./near-indexer/providers/near-tx-helper.service";
@@ -22,7 +21,6 @@ import { Receipt } from "src/database/near-stream/Receipt";
 @Module({
   imports: [
     DiscordBotModule,
-    PrismaModule,
     ScrapersModule,
     TypeOrmModule.forFeature([NftMeta, NftState, Action, SmartContract, SmartContractFunction]),
     TypeOrmModule.forFeature([Transaction, Receipt], "NEAR-STREAM"),

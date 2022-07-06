@@ -3,29 +3,37 @@ import { CommonTx } from "src/indexers/common/interfaces/common-tx.interface";
 import { TxProcessResult } from "src/indexers/common/interfaces/tx-process-result.interface";
 import { TxStreamAdapter } from "src/indexers/common/interfaces/tx-stream-adapter.interface";
 import { PrismaStreamerService } from "src/prisma/prisma-streamer.service";
-import { PrismaService } from "src/prisma/prisma.service";
+//import { PrismaService } from "src/prisma/prisma.service";
 import { TxHelperService } from "../../common/helpers/tx-helper.service";
 import * as moment from "moment";
 import { NearTxHelperService } from "./near-tx-helper.service";
-import { SmartContract, SmartContractFunction, SmartContractType } from "@prisma/client";
+//import { SmartContract, SmartContractFunction, SmartContractType } from "@prisma/client";
 import { Transaction } from "../interfaces/near-transaction.dto";
-import { ExecutionStatus, ExecutionStatusBasic } from "near-api-js/lib/providers/provider";
-
-interface SmartContractWithFunctions extends SmartContract {
-  smart_contract_functions: SmartContractFunction[]
-}
+import {
+  ExecutionStatus,
+  ExecutionStatusBasic,
+} from "near-api-js/lib/providers/provider";
+import { SmartContract } from "src/entities/SmartContract";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
+import { SmartContractType } from "src/indexers/common/helpers/indexer-enums";
+import { SmartContractFunction } from "src/entities/SmartContractFunction";
 
 @Injectable()
 export class NearTxStreamAdapterService implements TxStreamAdapter {
   private readonly logger = new Logger(NearTxStreamAdapterService.name);
 
   constructor(
-    private readonly prismaService: PrismaService,
+    //private readonly prismaService: PrismaService,
     private readonly prismaStreamerService: PrismaStreamerService,
     private txHelper: TxHelperService,
-    private nearTxHelper: NearTxHelperService
+    private nearTxHelper: NearTxHelperService,
+    @InjectRepository(SmartContract)
+    private smartContractRepository: Repository<SmartContract>,
+    @InjectRepository(SmartContractFunction)
+    private smartContractFunctionRepository: Repository<SmartContractFunction>
   ) {}
-  
+
   async fetchTxs(): Promise<CommonTx[]> {
     const accounts = await this.fetchAccounts();
     let accounts_in = "";
@@ -100,45 +108,47 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
     }
   }
 
-  async verifySmartContracts(smartContracts: SmartContractWithFunctions[]): Promise<any> {
+  async verifySmartContracts(smartContracts: SmartContract[]): Promise<any> {
     // Create smartContractFunctions for listings and unlists.
+
     for (let sc of smartContracts) {
       if (
         sc.type === SmartContractType.non_fungible_tokens &&
         (!sc.smart_contract_functions || !sc.smart_contract_functions.length)
       ) {
-        await this.prismaService.smartContractFunction.createMany({
-          data: [
-            {
-              smart_contract_id: sc.id,
-              args: {
-                price: "msg.price",
-                token_id: "token_id",
-                list_action: "msg.market_type",
-                contract_key: "account_id",
-              },
-              name: "list",
-              function_name: "nft_approve",
+      
+        const data = await this.smartContractFunctionRepository.create([
+          {
+            smart_contract_id: sc.id,
+            args: {
+              price: "msg.price",
+              token_id: "token_id",
+              list_action: "msg.market_type",
+              contract_key: "account_id",
             },
-            {
-              smart_contract_id: sc.id,
-              args: { token_id: "token_id", contract_key: "account_id" },
-              name: "unlist",
-              function_name: "nft_revoke",
-            },
-          ],
-        });
+            name: "list",
+            function_name: "nft_approve",
+          },
+          {
+            smart_contract_id: sc.id,
+            args: { token_id: "token_id", contract_key: "account_id" },
+            name: "unlist",
+            function_name: "nft_revoke",
+          },
+        ]);
+
+        await this.smartContractFunctionRepository.save(data);
       }
     }
   }
 
   async fetchAccounts(): Promise<string[]> {
-    const smartContracts: SmartContractWithFunctions[] = await this.prismaService.smartContract.findMany({
-      where: { chain: { symbol: 'Near'} },
-      include: { smart_contract_functions: true },
-    });
-
     // TODO: Move to the scrapper process for new smart contracts
+    const smartContracts: SmartContract[] =
+      await this.smartContractRepository.find({
+        where: { chain: { symbol: "Near" } },
+        relations: { smart_contract_functions: true },
+      });
     await this.verifySmartContracts(smartContracts);
     const accounts = smartContracts.map((sc) => sc.contract_key);
 
@@ -183,13 +193,12 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
 
   transformTxs(txs: Transaction[]): CommonTx[] {
     let result: CommonTx[] = [];
-    
+
     for (let tx of txs) {
       const transformed_tx = this.transformTx(tx);
-      if (transformed_tx) result.push(transformed_tx);        
+      if (transformed_tx) result.push(transformed_tx);
     }
 
     return result;
   }
-
 }

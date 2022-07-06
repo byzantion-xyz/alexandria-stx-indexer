@@ -25,7 +25,7 @@ import { Receipt } from "src/database/near-stream/Receipt";
     PrismaModule,
     ScrapersModule,
     TypeOrmModule.forFeature([NftMeta, NftState, Action, SmartContract, SmartContractFunction]),
-    TypeOrmModule.forFeature([Transaction, Receipt], "NEAR_STREAM"),
+    TypeOrmModule.forFeature([Transaction, Receipt], "NEAR-STREAM"),
   ],
   controllers: [NearIndexerController],
   providers: [

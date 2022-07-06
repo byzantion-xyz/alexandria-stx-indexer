@@ -55,9 +55,10 @@ import { TypeOrmModule } from "@nestjs/typeorm";
       inject: [ConfigService]
     }),
     TypeOrmModule.forRootAsync({
+      name: 'NEAR-STREAM',
       imports: [ConfigModule],
       useFactory: async (config: ConfigService) => ({   
-        name: 'NEAR-STREAM',     
+        name: 'NEAR-STREAM',
         url: config.get('NEAR_STREAMER_SQL_DATABASE_URL'),
         type: "postgres",
         synchronize: false,

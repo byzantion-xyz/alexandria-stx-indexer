@@ -11,8 +11,8 @@ import {
   ExecutionStatusBasic,
 } from "near-api-js/lib/providers/provider";
 import { SmartContract } from "src/entities/SmartContract";
-import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
+import { InjectEntityManager, InjectRepository } from "@nestjs/typeorm";
+import { EntityManager, Repository } from "typeorm";
 import { SmartContractType } from "src/indexers/common/helpers/indexer-enums";
 import { SmartContractFunction } from "src/entities/SmartContractFunction";
 import { Transaction as TransactionEntity } from "src/database/near-stream/Transaction";
@@ -24,8 +24,8 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
   constructor(
     private txHelper: TxHelperService,
     private nearTxHelper: NearTxHelperService,
-    @InjectRepository(TransactionEntity, 'NEAR-STREAM')
-    private transactionRepository: Repository<TransactionEntity>,
+    @InjectEntityManager('NEAR-STREAM')
+    private entityManager: EntityManager,
     @InjectRepository(SmartContract)
     private smartContractRepository: Repository<SmartContract>,
     @InjectRepository(SmartContractFunction)
@@ -57,7 +57,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
       limit 1000;
     `;
 
-    const txs: Transaction[] = await this.transactionRepository.query(sql);
+    const txs: Transaction[] = await this.entityManager.query(sql);
     const result: CommonTx[] = this.transformTxs(txs);
     return result;
   }
@@ -85,7 +85,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
       order by t.block_height ASC limit 3000;   
     `;
 
-    const txs: Transaction[] = await this.transactionRepository.query(sql);
+    const txs: Transaction[] = await this.entityManager.query(sql);
     const result: CommonTx[] = this.transformTxs(txs);
     return result;
   }
@@ -93,12 +93,12 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
   async setTxResult(txHash: string, txResult: TxProcessResult): Promise<void> {
     if (txResult.processed || txResult.missing) {
 
-      await this.transactionRepository.update({ hash: txHash },
+      /*await this.entityManager.update({ hash: txHash },
         {
           processed: txResult.processed,
           missing: txResult.missing,
         }
-      );
+      );*/
     }
   }
 

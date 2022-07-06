@@ -1,4 +1,4 @@
-import { Column, Entity, Index, JoinColumn, ManyToOne } from "typeorm";
+import { Column, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 import { SmartContract } from "./SmartContract";
 
 @Index("smart_contract_function_function_name_smart_contract_id_key", ["function_name", "smart_contract_id"], {
@@ -7,7 +7,7 @@ import { SmartContract } from "./SmartContract";
 @Index("smart_contract_function_pkey", ["id"], { unique: true })
 @Entity("smart_contract_function", { schema: "public" })
 export class SmartContractFunction {
-  @Column("uuid", { primary: true })
+  @PrimaryGeneratedColumn("uuid")
   id: string;
 
   @Column("text")

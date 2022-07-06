@@ -9,7 +9,6 @@ import { DiscordModule } from "@discord-nestjs/core";
 import { Intents } from "discord.js";
 import { DiscordBotModule } from "./discord-bot/discord-bot.module";
 import { DiscordServerModule } from "./discord-server/discord-server.module";
-import { PrismaModule } from "./prisma/prisma.module";
 import { ScheduleModule } from "@nestjs/schedule";
 import { TasksModule } from "./tasks/tasks.module";
 
@@ -39,7 +38,6 @@ import { TypeOrmModule } from "@nestjs/typeorm";
     CommonModule,
     DiscordBotModule,
     DiscordServerModule,
-    PrismaModule,
     TasksModule,
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],

@@ -5,11 +5,16 @@ import { DiscordServerService } from './providers/discord-server.service';
 import { DiscordHelperService } from './providers/discord-helper.service';
 import { DiscordModule } from '@discord-nestjs/core';
 import { ApikeyMiddleware } from 'src/common/middlewares/apikey.middleware';
+import { DiscordServerChannel } from 'src/entities/DiscordServerChannel';
+import { Collection } from 'src/entities/Collection';
+import { DiscordServer } from 'src/entities/DiscordServer';
+import { TypeOrmModule } from '@nestjs/typeorm';
 
 @Module({
   imports: [
     PrismaModule, 
-    DiscordModule.forFeature()
+    DiscordModule.forFeature(),
+    TypeOrmModule.forFeature([Collection, DiscordServer, DiscordServerChannel])
   ],  
   controllers: [DiscordServerController],
   providers: [DiscordServerService, DiscordHelperService],

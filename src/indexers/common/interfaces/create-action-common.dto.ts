@@ -1,6 +1,4 @@
-import { ActionName } from "@prisma/client";
 import { ActionName as ActionNameTO } from "../helpers/indexer-enums";
-import { Decimal } from "@prisma/client/runtime";
 
 export interface CreateActionCommonArgs {
   nft_meta_id: string;
@@ -14,20 +12,6 @@ export interface CreateActionCommonArgs {
   tx_id: string;
 }
 
-export interface CreateListAction extends CreateActionCommonArgs {
-  list_price: Decimal;
-  action: ActionName;
-  seller: string;
-}
-
-export interface CreateUnlistAction extends CreateListAction {}
-export interface CreateBuyAction extends CreateListAction {
-  buyer: string;
-}
-
-export type CreateAction = CreateListAction | CreateUnlistAction | CreateBuyAction;
-
-// TypeORM version
 export interface CreateListActionTO extends CreateActionCommonArgs {
   list_price: bigint;
   action: ActionNameTO;

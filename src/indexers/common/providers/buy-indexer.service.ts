@@ -4,7 +4,7 @@ import { TxProcessResult } from "src/indexers/common/interfaces/tx-process-resul
 import { TxHelperService } from "../helpers/tx-helper.service";
 
 import { SalesBotService } from "src/discord-bot/providers/sales-bot.service";
-import { CreateActionCommonArgs, CreateBuyAction, CreateBuyActionTO } from "../interfaces/create-action-common.dto";
+import { CreateActionCommonArgs, CreateBuyActionTO } from "../interfaces/create-action-common.dto";
 import { CommonTx } from "src/indexers/common/interfaces/common-tx.interface";
 import { IndexerService } from "../interfaces/indexer-service.interface";
 

@@ -288,7 +288,6 @@ export class NearScraperService {
           mediaUrl = this.ipfsHelperService.getByzIpfsUrl(mediaUrl);
         }
 
-        // const nftMeta = this.prismaService.nftMeta.create({
         const nftMetaInsert = this.dbHelper.insertNftMeta({
           smart_contract_id: smartContractId,
           chain_id: NEAR_PROTOCOL_DB_ID,

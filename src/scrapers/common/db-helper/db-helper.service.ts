@@ -135,11 +135,11 @@ export class DbHelperService {
 
     // insert
     const sql = `insert into collection_attribute(collection_id, trait_type, value, rarity, total)
-    select nm.collection_id, nma.trait_type, nma.value, max(nma.rarity), 0 
+    select nm.collection_id, nma.trait_type, nma.value, nma.rarity, 0 
       from nft_meta_attribute nma 
       join nft_meta nm on nma.meta_id = nm.id
       where nm.collection_id = $1
-      group by nma.trait_type, nma.value, nm.collection_id`;
+      group by nma.trait_type, nma.value, nm.collection_id, nma.rarity`;
     const params = [collectionId];
 
     const result = await this.collectionRepo.query(sql, params);
@@ -154,10 +154,11 @@ export class DbHelperService {
     this.logger.log(`[scraping ${slug}] Creating CollectionScrape...`);
 
     let collectionScrape = await this.collectionScrapeRepo.findOneBy({ collection_id: collectionId });
+    this.logger.debug("collectionScrape", JSON.stringify(collectionScrape));
     if (!collectionScrape) {
       collectionScrape = this.collectionScrapeRepo.create({ collection_id: collectionId });
     }
-    return await this.collectionRepo.save(collectionScrape);
+    return await this.collectionScrapeRepo.save(collectionScrape);
 
     // return await this.prismaService.collectionScrape.upsert({
     //   where: { collection_id: collectionId },
@@ -186,7 +187,7 @@ export class DbHelperService {
   }
 
   async findCollectionScrapeByCollectionId(collection_id) {
-    return await this.collectionScrapeRepo.findOneBy({ collection_id });
+    return await this.collectionScrapeRepo.findOneBy({ collection_id: collection_id });
   }
 
   async incrementScrapeAttemptByOne(collectionId) {

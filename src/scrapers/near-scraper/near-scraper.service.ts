@@ -1,6 +1,4 @@
 import { Injectable, Logger } from "@nestjs/common";
-// import { PrismaService } from "src/prisma/prisma.service";
-// import { SmartContractType } from "@prisma/client";
 import { CollectionScrapeStage } from "@prisma/client";
 import { CollectionScrapeOutcome } from "@prisma/client";
 import { IpfsHelperService } from "../providers/ipfs-helper.service";
@@ -26,7 +24,6 @@ export class NearScraperService {
 
   constructor(
     private dbHelper: DbHelperService,
-    // private readonly prismaService: PrismaService,
     private readonly ipfsHelperService: IpfsHelperService,
     private readonly contractConnectionService: ContractConnectionService,
     @InjectRepository(SmartContract)
@@ -46,7 +43,7 @@ export class NearScraperService {
       slug = await this.getSlug(contract_key, token_series_id);
     }
 
-    // create SmartContract, Collection, and CollectionScrape tables if they don't exist
+    // create SmartContract, Collection, and CollectionScrape records if they don't exist
     const smartContract = await this.dbHelper.createSmartContract(contract_key, slug);
     const collection = await this.dbHelper.createCollection(smartContract.id, slug);
     const collectionScrape = await this.dbHelper.createCollectionScrape(collection.id, slug);
@@ -152,6 +149,7 @@ export class NearScraperService {
       return "Success";
     } catch (err) {
       this.logger.error(`[scraping ${slug}] Error while scraping: ${err}`);
+      this.logger.debug(err.stack);
       await this.createCollectionScrapeError(err, nftContractMetadata.base_uri, tokenMetas[0], slug);
       return err.toString();
     }
@@ -286,8 +284,8 @@ export class NearScraperService {
     }
 
     let nftMetaPromises = [];
-    for (let i = 0; i < 10; i++) {
-      // for (let i = 0; i < tokenMetas.length; i++) {
+    // for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < tokenMetas.length; i++) {
       const nftMeta = await this.dbHelper.findOneNftMeta(collection.id, tokenMetas[i]?.token_id);
       if (nftMeta) continue; // if nftMeta already exists, skip loading it
 
@@ -472,7 +470,7 @@ export class NearScraperService {
       count++;
     }
 
-    // await Promise.all(updatedNftMetasPromises);
+    await Promise.all(updatedNftMetasPromises);
     this.logger.log(`[scraping ${slug}] All Rarity and Rankings updated`);
     return "Rarites/Rankings Updated";
   }
@@ -663,17 +661,17 @@ export class NearScraperService {
     tokenMetas = tokenMetas.filter((token) => !!token);
 
     // TODO: Don't forget to uncomment again!!!
-    // if (tokenMetas.length < Number(collectionSize)) {
-    //   const errorMsg = `[scraping ${slug}] # of tokens scraped: ${
-    //     tokenMetas.length
-    //   } is less than # of tokens in contract ${Number(
-    //     collectionSize
-    //   )}. This means you need to re-scrape and pass in an ending_token_id that is at least ${Number(
-    //     collectionSize
-    //   )}. (So the iterator has a chance to scrape token_ids up to that number). This issue exists because the token supply has changed from the original supply. Check the collection on paras.id to see how high the token ids go.`;
-    //   this.logger.error(errorMsg);
-    //   throw new Error(errorMsg);
-    // }
+    if (tokenMetas.length < Number(collectionSize)) {
+      const errorMsg = `[scraping ${slug}] # of tokens scraped: ${
+        tokenMetas.length
+      } is less than # of tokens in contract ${Number(
+        collectionSize
+      )}. This means you need to re-scrape and pass in an ending_token_id that is at least ${Number(
+        collectionSize
+      )}. (So the iterator has a chance to scrape token_ids up to that number). This issue exists because the token supply has changed from the original supply. Check the collection on paras.id to see how high the token ids go.`;
+      this.logger.error(errorMsg);
+      throw new Error(errorMsg);
+    }
 
     this.logger.log(`[scraping ${slug}] Number of NftMetas to process: ${tokenMetas.length}`);
     return tokenMetas;
@@ -704,8 +702,8 @@ export class NearScraperService {
     let tokenIpfsMetaPromises = [];
     let tokenIpfsMetas = [];
 
-    for (let i = 0; i < 10; i++) {
-      // for (let i = 0; i < tokenMetas.length; i++) {
+    // for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < tokenMetas.length; i++) {
       let tokenIpfsUrl = this.getTokenIpfsUrl(nftContractMetadataBaseUri, tokenMetas[i].metadata.reference);
       if (!tokenIpfsUrl || (tokenIpfsUrl && tokenIpfsUrl == "")) continue;
 

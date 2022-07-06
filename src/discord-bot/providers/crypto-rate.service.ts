@@ -1,26 +1,26 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { InjectRepository } from '@nestjs/typeorm';
+import { CryptoRate } from 'src/entities/CryptoRate';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class CryptoRateService {
   private readonly logger = new Logger(CryptoRateService.name);
 
   constructor(
-    private readonly prismaService: PrismaService,
+    @InjectRepository(CryptoRate)
+    private cryptoRateRepository: Repository<CryptoRate>,
   ) { }
 
   async getNearToUSDRate() {
-    const cryptoRate = await this.prismaService.cryptoRate.findUnique({
+    const cryptoRate = await this.cryptoRateRepository.findOne({
       where: {
-        fiat_currency_crypto_currency: {
-          fiat_currency: "USD",
-          crypto_currency: "near"
-        }
+        fiat_currency: "USD",
+        crypto_currency: "near"
       },
-      select: {
-        rate: true
-      }
-    })
+      select: { rate: true }
+    });
+
     return cryptoRate.rate;
   }
 }

@@ -1,11 +1,15 @@
 import { InjectDiscordClient } from '@discord-nestjs/core';
 import { Injectable, Logger } from '@nestjs/common';
-import { Collection, Action, NftMeta, SmartContract, NftState } from '@prisma/client';
+import { InjectRepository } from '@nestjs/typeorm';
 import axios from 'axios';
 import { Client, ColorResolvable, MessageAttachment, MessageEmbed } from 'discord.js';
 import * as sharp from 'sharp';
 import { DiscordBotDto } from 'src/discord-bot/dto/discord-bot.dto';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { Action } from 'src/entities/Action';
+import { Collection } from 'src/entities/Collection';
+import { NftMeta } from 'src/entities/NftMeta';
+import { SmartContract } from 'src/entities/SmartContract';
+import { Repository } from 'typeorm';
 import { CryptoRateService } from './crypto-rate.service';
 
 @Injectable()
@@ -14,8 +18,9 @@ export class BotHelperService {
 
   constructor(
     @InjectDiscordClient() private client: Client,
-    private readonly prismaService: PrismaService,
-    private readonly cryptoRateService: CryptoRateService
+    private readonly cryptoRateService: CryptoRateService,
+    @InjectRepository(Action)
+    private actionRepository: Repository<Action>,
   ) { }
 
   createDiscordBotDto(nftMeta: NftMeta, collection: Collection, sc: SmartContract, msc: SmartContract, action: Action): DiscordBotDto {
@@ -128,20 +133,15 @@ export class BotHelperService {
   }
 
   async fetchActionData(actionId: string): Promise<DiscordBotDto> {
-    const action = await this.prismaService.action.findUnique({
+    const action = await this.actionRepository.findOne({
       where: { id: actionId },
-      include: {
-        nft_meta: {
-          include: {
-            nft_state: true,
-            smart_contract: true,
-            collection: true
-          }
-        },
+      relations: {
+        nft_meta: { nft_state: true, smart_contract: true },
         collection: true,
         marketplace_smart_contract: true
       }
     });
+
     const data: DiscordBotDto = this.createDiscordBotDto(
       action.nft_meta,
       action.collection,

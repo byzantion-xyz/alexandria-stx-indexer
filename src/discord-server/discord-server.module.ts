@@ -1,5 +1,4 @@
 import { MiddlewareConsumer, Module, NestModule, RequestMethod } from '@nestjs/common';
-import { PrismaModule } from 'src/prisma/prisma.module';
 import { DiscordServerController } from './discord-server.controller';
 import { DiscordServerService } from './providers/discord-server.service';
 import { DiscordHelperService } from './providers/discord-helper.service';
@@ -13,7 +12,6 @@ import { CollectionOnDiscordServerChannel } from 'src/entities/CollectionOnDisco
 
 @Module({
   imports: [
-    PrismaModule, 
     DiscordModule.forFeature(),
     TypeOrmModule.forFeature([Collection, DiscordServer, DiscordServerChannel, CollectionOnDiscordServerChannel])
   ],  

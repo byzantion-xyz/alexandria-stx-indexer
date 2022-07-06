@@ -2,7 +2,7 @@ import { Injectable, Logger } from "@nestjs/common";
 import { CommonTx } from "src/indexers/common/interfaces/common-tx.interface";
 import { TxProcessResult } from "src/indexers/common/interfaces/tx-process-result.interface";
 import { TxStreamAdapter } from "src/indexers/common/interfaces/tx-stream-adapter.interface";
-import { PrismaStreamerService } from "src/prisma/prisma-streamer.service";
+//import { PrismaStreamerService } from "src/prisma/prisma-streamer.service";
 //import { PrismaService } from "src/prisma/prisma.service";
 import { TxHelperService } from "../../common/helpers/tx-helper.service";
 import * as moment from "moment";
@@ -25,13 +25,15 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
 
   constructor(
     //private readonly prismaService: PrismaService,
-    private readonly prismaStreamerService: PrismaStreamerService,
+    //private readonly prismaStreamerService: PrismaStreamerService,
     private txHelper: TxHelperService,
     private nearTxHelper: NearTxHelperService,
     @InjectRepository(SmartContract)
     private smartContractRepository: Repository<SmartContract>,
     @InjectRepository(SmartContractFunction)
-    private smartContractFunctionRepository: Repository<SmartContractFunction>
+    private smartContractFunctionRepository: Repository<SmartContractFunction>,
+    @InjectRepository(Transaction)
+    private smartContractFunctionRepository: Repository<Transaction>
   ) {}
 
   async fetchTxs(): Promise<CommonTx[]> {
@@ -41,6 +43,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
       accounts_in += `'${accounts[i]}',`;
     }
     accounts_in = accounts_in.slice(0, -1);
+
     const query: string = `select * from transaction t inner join receipt r on t.success_receipt_id =r.receipt_id 
       where block_height >= 68000000 and
       transaction->'actions' @> '[{"FunctionCall": {}}]' AND  
@@ -57,7 +60,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
       limit 1000;
     `;
 
-    const txs: Transaction[] = await this.prismaStreamerService.$queryRawUnsafe(
+    const txs: Transaction[] = await this..$queryRawUnsafe(
       query
     );
 

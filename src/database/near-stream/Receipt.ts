@@ -1,6 +1,6 @@
 import { Column, Entity, PrimaryColumn } from 'typeorm';
 
-@Entity()
+@Entity('receipt', { schema: 'public' })
 export class Receipt {
   @PrimaryColumn()
   receipt_id: string;

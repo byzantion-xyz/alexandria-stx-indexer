@@ -16,6 +16,8 @@ import { NftMeta } from "src/entities/NftMeta";
 import { NftState } from "src/entities/NftState";
 import { SmartContract } from "src/entities/SmartContract";
 import { SmartContractFunction } from "src/entities/SmartContractFunction";
+import { Transaction } from "src/database/near-stream/Transaction";
+import { Receipt } from "src/database/near-stream/Receipt";
 
 @Module({
   imports: [
@@ -23,6 +25,7 @@ import { SmartContractFunction } from "src/entities/SmartContractFunction";
     PrismaModule,
     ScrapersModule,
     TypeOrmModule.forFeature([NftMeta, NftState, Action, SmartContract, SmartContractFunction]),
+    TypeOrmModule.forFeature([Transaction, Receipt], "NEAR_STREAM"),
   ],
   controllers: [NearIndexerController],
   providers: [

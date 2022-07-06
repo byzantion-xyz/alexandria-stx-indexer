@@ -2,12 +2,9 @@ import { Injectable, Logger } from "@nestjs/common";
 import { CommonTx } from "src/indexers/common/interfaces/common-tx.interface";
 import { TxProcessResult } from "src/indexers/common/interfaces/tx-process-result.interface";
 import { TxStreamAdapter } from "src/indexers/common/interfaces/tx-stream-adapter.interface";
-//import { PrismaStreamerService } from "src/prisma/prisma-streamer.service";
-//import { PrismaService } from "src/prisma/prisma.service";
 import { TxHelperService } from "../../common/helpers/tx-helper.service";
 import * as moment from "moment";
 import { NearTxHelperService } from "./near-tx-helper.service";
-//import { SmartContract, SmartContractFunction, SmartContractType } from "@prisma/client";
 import { Transaction } from "../interfaces/near-transaction.dto";
 import {
   ExecutionStatus,
@@ -18,22 +15,22 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { SmartContractType } from "src/indexers/common/helpers/indexer-enums";
 import { SmartContractFunction } from "src/entities/SmartContractFunction";
+import { Transaction as TransactionEntity } from "src/database/near-stream/Transaction";
 
 @Injectable()
 export class NearTxStreamAdapterService implements TxStreamAdapter {
   private readonly logger = new Logger(NearTxStreamAdapterService.name);
 
   constructor(
-    //private readonly prismaService: PrismaService,
-    //private readonly prismaStreamerService: PrismaStreamerService,
     private txHelper: TxHelperService,
     private nearTxHelper: NearTxHelperService,
+    @InjectRepository(TransactionEntity, 'NEAR-STREAM')
+    private transactionRepository: Repository<TransactionEntity>,
     @InjectRepository(SmartContract)
     private smartContractRepository: Repository<SmartContract>,
     @InjectRepository(SmartContractFunction)
     private smartContractFunctionRepository: Repository<SmartContractFunction>,
-    @InjectRepository(Transaction)
-    private smartContractFunctionRepository: Repository<Transaction>
+ 
   ) {}
 
   async fetchTxs(): Promise<CommonTx[]> {
@@ -44,7 +41,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
     }
     accounts_in = accounts_in.slice(0, -1);
 
-    const query: string = `select * from transaction t inner join receipt r on t.success_receipt_id =r.receipt_id 
+    const sql = `select * from transaction t inner join receipt r on t.success_receipt_id =r.receipt_id 
       where block_height >= 68000000 and
       transaction->'actions' @> '[{"FunctionCall": {}}]' AND  
       (transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_approve"}}]' OR
@@ -60,10 +57,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
       limit 1000;
     `;
 
-    const txs: Transaction[] = await this..$queryRawUnsafe(
-      query
-    );
-
+    const txs: Transaction[] = await this.transactionRepository.query(sql);
     const result: CommonTx[] = this.transformTxs(txs);
     return result;
   }
@@ -75,7 +69,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
       accounts_in += `'${accounts[i]}',`;
     }
     accounts_in = accounts_in.slice(0, -1);
-    const query: string = `select * from transaction t inner join receipt r on t.success_receipt_id =r.receipt_id 
+    const sql = `select * from transaction t inner join receipt r on t.success_receipt_id =r.receipt_id 
       where block_height >= 68000000 and 
       receiver_id in (${accounts_in}) AND
       transaction->'actions' @> '[{"FunctionCall": {}}]' AND  
@@ -91,23 +85,20 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
       order by t.block_height ASC limit 3000;   
     `;
 
-    const txs: Transaction[] = await this.prismaStreamerService.$queryRawUnsafe(
-      query
-    );
-
+    const txs: Transaction[] = await this.transactionRepository.query(sql);
     const result: CommonTx[] = this.transformTxs(txs);
     return result;
   }
 
   async setTxResult(txHash: string, txResult: TxProcessResult): Promise<void> {
     if (txResult.processed || txResult.missing) {
-      await this.prismaStreamerService.transaction.update({
-        where: { hash: txHash },
-        data: {
+
+      await this.transactionRepository.update({ hash: txHash },
+        {
           processed: txResult.processed,
           missing: txResult.missing,
-        },
-      });
+        }
+      );
     }
   }
 

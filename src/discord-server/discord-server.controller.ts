@@ -10,7 +10,9 @@ import {
   UsePipes, 
   ValidationPipe 
 } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Collection } from 'src/entities/Collection';
+import { Repository } from 'typeorm';
 import { CreateDiscordServer } from './interfaces/discord-server.dto';
 import { fetchDiscordServerChannels } from './interfaces/fetch-discord-server-channels.dto'
 import { DiscordHelperService } from './providers/discord-helper.service';
@@ -23,7 +25,8 @@ export class DiscordServerController {
   constructor(
     private discordServerService: DiscordServerService,
     private discordHelper: DiscordHelperService,
-    private readonly prisma: PrismaService
+    @InjectRepository(Collection)
+    private collectionRepository: Repository<Collection>,
   ) { }
 
   @Post('configure')
@@ -58,7 +61,8 @@ export class DiscordServerController {
       }
 
       for (let slug of ch.collections) {
-        let collection = await this.prisma.collection.findUnique({ where: { slug }});
+        // TODO: Move to collection service
+        let collection = await this.collectionRepository.findOneBy({ slug });
         if (!collection) {
           throw new HttpException(`Unable to find this collection: "${slug}"`, HttpStatus.BAD_REQUEST);
         }

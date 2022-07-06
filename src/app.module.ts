@@ -15,7 +15,6 @@ import { TasksModule } from "./tasks/tasks.module";
 import discordConfig from "./config/discord.config";
 import appConfig from "./config/app.config";
 import { TypeOrmModule } from "@nestjs/typeorm";
-// import { TypeormModule } from './typeorm/typeorm.module';
 
 @Module({
   imports: [

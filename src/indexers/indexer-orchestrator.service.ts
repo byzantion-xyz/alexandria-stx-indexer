@@ -58,7 +58,7 @@ export class IndexerOrchestratorService {
       const method_name = transaction.function_name;
 
       const finder = {
-        where: { contract_key: 'asac.near' },
+        where: { contract_key: transaction.receiver },
         relations: { smart_contract_functions: true }
       };
       const smart_contract = await this.smartContractRepository.findOne(finder);

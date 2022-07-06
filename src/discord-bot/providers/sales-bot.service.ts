@@ -1,12 +1,10 @@
 import { InjectDiscordClient } from '@discord-nestjs/core';
 import { Injectable, Logger } from '@nestjs/common';
-import { Action, DiscordChannelType, NftMeta, NftState, SmartContract } from '@prisma/client';
-import { Client, ColorResolvable } from 'discord.js';
+import { ColorResolvable } from 'discord.js';
 import { DiscordBotDto } from 'src/discord-bot/dto/discord-bot.dto';
-import { PrismaService } from 'src/prisma/prisma.service';
 import { BotHelperService } from './bot-helper.service';
 import { DiscordServerService } from 'src/discord-server/providers/discord-server.service';
-
+import { DiscordChannelType } from 'src/indexers/common/helpers/indexer-enums';
 
 @Injectable()
 export class SalesBotService {
@@ -14,7 +12,6 @@ export class SalesBotService {
 
   constructor(
     private botHelper: BotHelperService,
-    private readonly prismaService: PrismaService,
     private discordServerService: DiscordServerService
   ) { }
 

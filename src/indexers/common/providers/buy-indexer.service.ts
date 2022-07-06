@@ -68,10 +68,11 @@ export class BuyIndexerService implements IndexerService {
 
   async createAction(params: CreateBuyActionTO): Promise<ActionEntity> {
     try {
-      const action = await this.actionRepository.create(params);
+      const action = this.actionRepository.create(params);
+      const saved = await this.actionRepository.save(action);
+      this.logger.log(`New action ${params.action}: ${saved.id} `);
 
-      this.logger.log(`New action ${params.action}: ${action.id} `);
-      return action;
+      return saved;
     } catch (err) {
       this.logger.warn(err);
     }

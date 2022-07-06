@@ -1,19 +1,16 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { InjectDiscordClient } from '@discord-nestjs/core';
-import { Client, ColorResolvable, MessageAttachment, MessageEmbed } from 'discord.js';
+import { ColorResolvable } from 'discord.js';
 
 import { BotHelperService } from './bot-helper.service';
 import { DiscordBotDto } from 'src/discord-bot/dto/discord-bot.dto';
-import { Action, DiscordChannelType, NftMeta, NftState, SmartContract } from '@prisma/client';
-import { PrismaService } from 'src/prisma/prisma.service';
 import { DiscordServerService } from 'src/discord-server/providers/discord-server.service';
+import { DiscordChannelType } from 'src/indexers/common/helpers/indexer-enums';
 
 @Injectable()
 export class ListBotService {
   private readonly logger = new Logger(ListBotService.name);
 
   constructor(
-    @InjectDiscordClient() private client: Client,
     private botHelper: BotHelperService,
     private discordServerService: DiscordServerService
   ) { }

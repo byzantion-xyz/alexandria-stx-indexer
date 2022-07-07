@@ -1,17 +1,13 @@
-import { Global, Module } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { Global, Module } from "@nestjs/common";
 
-import { SmartContractService } from './services/smart-contract/smart-contract.service';
+import { TypeOrmModule } from "@nestjs/typeorm";
+import { SmartContract } from "src/database/universal/entities/SmartContract";
+import { SmartContractFunction } from "src/database/universal/entities/SmartContractFunction";
 
 @Global()
 @Module({
-  providers: [
-    SmartContractService,
-    PrismaService
-  ],
-  exports: [
-    SmartContractService, 
-    PrismaService
-  ]
+  providers: [],
+  exports: [],
+  imports: [TypeOrmModule.forFeature([SmartContract, SmartContractFunction])],
 })
-export class CommonModule { }
+export class CommonModule {}

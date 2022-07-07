@@ -1,4 +1,4 @@
-import { DiscordChannelType } from "@prisma/client"
+import { DiscordChannelType } from "src/indexers/common/helpers/indexer-enums"
 
 export interface fetchDiscordServerChannels {
     slug: string

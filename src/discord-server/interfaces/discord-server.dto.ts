@@ -1,6 +1,6 @@
-import { DiscordChannelType } from "@prisma/client"
 import { ArrayMaxSize, ArrayMinSize, ArrayNotEmpty, IsArray, IsEmail, IsEnum, IsIn, IsNotEmpty, IsNumberString, IsOptional, IsString, Length, MaxLength, MinLength, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer'
+import { DiscordChannelType } from 'src/indexers/common/helpers/indexer-enums';
 
 export class CreateDiscordServer {
   @IsNotEmpty()

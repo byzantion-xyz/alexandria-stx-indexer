@@ -1,10 +1,6 @@
-import {
-  TransactionsOutcome,
-  TransactionsTransaction,
-  ReceiptsReceipt,
-  //ReceiptsExecutionOutcome
-} from '@internal/prisma/client';
+
 import { ExecutionOutcomeWithIdView } from 'near-api-js/lib/providers/provider';
+import { ReceiptsReceipt, TransactionsOutcome, TransactionsTransaction } from '../dto/near-transaction-types';
 
 export interface Transaction {
   hash: string;

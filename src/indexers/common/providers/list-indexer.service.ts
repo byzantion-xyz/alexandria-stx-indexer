@@ -90,7 +90,8 @@ export class ListIndexerService implements IndexerService {
       }
       txResult.processed = true;
     } else {
-      this.logger.log(`NftMeta not found by`, { contract_key, token_id });
+      this.logger.log(`NftMeta not found ${contract_key} ${token_id}`);
+
       // this.missingSmartContractService.scrapeMissing({ contract_key, token_id });
       txResult.missing = true;
     }

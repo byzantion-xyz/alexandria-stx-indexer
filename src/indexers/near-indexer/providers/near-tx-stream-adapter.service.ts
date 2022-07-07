@@ -41,18 +41,13 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
 
     const sql = `select * from transaction t inner join receipt r on t.success_receipt_id =r.receipt_id 
       where block_height >= 68000000 and
-      transaction->'actions' @> '[{"FunctionCall": {}}]' AND  
-      (transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_approve"}}]' OR
-      transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_revoke"}}]' OR
-      transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_buy" }}]' OR
-      transaction->'actions' @> '[{"FunctionCall": { "method_name": "buy" }}]' OR
-      transaction->'actions' @> '[{"FunctionCall": { "method_name": "delete_market_data" }}]') AND
       processed = false AND 
       missing = false AND
+      transaction->'actions' @> '[{"FunctionCall": {}}]' AND  
       ((execution_outcome->'outcome'->'status'->'SuccessValue' is not null) 
       or (execution_outcome->'outcome'->'status'->'SuccessReceiptId' is not null))
       order by t.block_height ASC 
-      limit 1000;
+      limit 2000;
     `;
 
     const txs: Transaction[] = await this.transactionRepository.query(sql);
@@ -68,19 +63,19 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
     }
     accounts_in = accounts_in.slice(0, -1);
     const sql = `select * from transaction t inner join receipt r on t.success_receipt_id =r.receipt_id 
-      where block_height >= 68000000 and 
+      where block_height >= 68000000 and
       receiver_id in (${accounts_in}) AND
-      transaction->'actions' @> '[{"FunctionCall": {}}]' AND  
+      processed = false AND 
+      missing = true and
+      transaction->'actions' @> '[{"FunctionCall": {}}]' AND 
       (transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_approve"}}]' OR
       transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_revoke"}}]' OR
       transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_buy" }}]' OR
       transaction->'actions' @> '[{"FunctionCall": { "method_name": "buy" }}]' OR
       transaction->'actions' @> '[{"FunctionCall": { "method_name": "delete_market_data" }}]') AND
       ((execution_outcome->'outcome'->'status'->'SuccessValue' is not null) 
-      or (execution_outcome->'outcome'->'status'->'SuccessReceiptId' is not null)) AND
-      processed = false AND 
-      missing = true
-      order by t.block_height ASC limit 3000;   
+      or (execution_outcome->'outcome'->'status'->'SuccessReceiptId' is not null))
+      order by t.block_height ASC limit 10000;   
     `;
 
     const txs: Transaction[] = await this.transactionRepository.query(sql);

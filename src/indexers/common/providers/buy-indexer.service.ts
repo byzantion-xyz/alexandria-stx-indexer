@@ -56,6 +56,18 @@ export class BuyIndexerService implements IndexerService {
       txResult.processed = true;
     } else if (nftMeta) {
       this.logger.log(`Too Late`);
+
+      // Create missing action
+      const actionCommonArgs: CreateActionCommonArgs = this.txHelper.setCommonActionParams(tx, sc, nftMeta, sc);
+      const buyActionParams: CreateBuyActionTO = {
+        ...actionCommonArgs,
+        action: ActionName.buy,
+        list_price: price || (nftMeta.nft_state?.listed ? nftMeta.nft_state.list_price : undefined),
+        seller: nftMeta.nft_state && nftMeta.nft_state.listed ? nftMeta.nft_state.list_seller : undefined,
+        buyer: tx.signer,
+      };
+
+      await this.createAction(buyActionParams);
       txResult.processed = true;
     } else {
       this.logger.log(`NftMeta not found ${contract_key} ${token_id}`);

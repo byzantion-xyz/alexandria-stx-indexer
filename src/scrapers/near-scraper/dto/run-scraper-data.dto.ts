@@ -6,5 +6,6 @@ export interface runScraperData {
     starting_token_id?: number,
     ending_token_id?: number,
     scrape_non_custodial_from_paras?: boolean,
+    pin_multiple_images?: boolean,
     force_scrape?: boolean
 }

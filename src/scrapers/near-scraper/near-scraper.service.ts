@@ -27,9 +27,11 @@ export class NearScraperService {
   async scrape(data: runScraperData) {
     this.logger.log(`START SCRAPE`);
     const { slug: slugInput, contract_key, token_series_id, token_id, starting_token_id, ending_token_id } = data;
-    const { scrape_non_custodial_from_paras = false, force_scrape = false } = data;
+    const { scrape_non_custodial_from_paras = false, force_scrape = false, pin_multiple_images = false } = data;
     let isParasCustodialCollection = false;
     if (token_series_id || slugInput) isParasCustodialCollection = true;
+    let shouldPinMultipleImages = false;
+    if (pin_multiple_images || isParasCustodialCollection) shouldPinMultipleImages = true;
 
     // get collection slug
     let slug = slugInput;
@@ -131,7 +133,7 @@ export class NearScraperService {
       await this.createCollectionAttributes(slug);
 
       // if Paras custodial collection, pin each distinct token image to our pinata by sending tasks to rate-limited queue service
-      if (isParasCustodialCollection) {
+      if (isParasCustodialCollection || shouldPinMultipleImages) {
         await this.dbHelper.setCollectionScrapeStage(collection.id, CollectionScrapeStage.pinning_multiple_images);
         await this.pinMultipleImages({ slug: slug });
       }

@@ -60,6 +60,17 @@ export class UnlistIndexerService implements IndexerService {
       txResult.processed = true;
     } else if (nftMeta) {
       this.logger.log(`Too Late`);
+      // Create missing action
+      const actionCommonArgs: CreateActionCommonArgs = this.txHelper.setCommonActionParams(tx, sc, nftMeta, market_sc);
+      const unlistActionParams: CreateUnlistActionTO = {
+        ...actionCommonArgs,
+        action: ActionName.unlist,
+        list_price: nftMeta.nft_state && nftMeta.nft_state.list_price ? nftMeta.nft_state.list_price : undefined,
+        seller: nftMeta.nft_state?.list_seller || undefined,
+      };
+
+      await this.createAction(unlistActionParams);
+
       txResult.processed = true;
     } else {
       this.logger.log(`NftMeta not found ${contract_key} ${token_id}`);
@@ -78,8 +89,6 @@ export class UnlistIndexerService implements IndexerService {
       this.logger.log(`New action ${params.action}: ${saved.id} `);
 
       return saved;
-    } catch (err) {
-      this.logger.warn(err);
-    }
+    } catch (err) {}
   }
 }

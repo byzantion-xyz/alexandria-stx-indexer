@@ -84,7 +84,17 @@ export class ListIndexerService implements IndexerService {
     } else if (nftMeta) {
       if (list_action === "sale") {
         this.logger.log(`Too Late`);
-        // TODO: Create possible missing action
+
+        const price = this.txHelper.extractArgumentData(tx.args, scf, "price");
+        const actionCommonArgs: CreateActionCommonArgs = this.txHelper.setCommonActionParams(tx, sc, nftMeta, market_sc);
+        const listActionParams: CreateListActionTO = {
+          ...actionCommonArgs,
+          action: ActionName.list,
+          list_price: price,
+          seller: tx.signer,
+        };
+  
+        await this.createAction(listActionParams);
       } else {
         this.logger.log(`Msg market_type is: ${list_action}. No action required`);
       }
@@ -106,8 +116,6 @@ export class ListIndexerService implements IndexerService {
       const saved = await this.actionRepository.save(action);
       this.logger.log(`New action ${params.action}: ${saved.id} `);
       return saved;
-    } catch (err) {
-      this.logger.warn(err);
-    }
+    } catch (err) {}
   }
 }

@@ -85,8 +85,6 @@ export class BuyIndexerService implements IndexerService {
       this.logger.log(`New action ${params.action}: ${saved.id} `);
 
       return saved;
-    } catch (err) {
-      this.logger.warn(err);
-    }
+    } catch (err) {}
   }
 }

@@ -19,12 +19,13 @@ import { SmartContractFunction } from "src/database/universal/entities/SmartCont
 import { Transaction } from "src/database/near-stream/entities/Transaction";
 import { Receipt } from "src/database/near-stream/entities/Receipt";
 import { StacksTxStreamAdapterService } from './stacks-indexer/providers/stacks-tx-stream-adapter/stacks-tx-stream-adapter.service';
+import { Chain } from "src/database/universal/entities/Chain";
 
 @Module({
   imports: [
     DiscordBotModule,
     ScrapersModule,
-    TypeOrmModule.forFeature([NftMeta, NftState, Action, SmartContract, SmartContractFunction]),
+    TypeOrmModule.forFeature([NftMeta, NftState, Action, SmartContract, SmartContractFunction, Chain]),
     TypeOrmModule.forFeature([Transaction, Receipt], "NEAR-STREAM"),
   ],
   controllers: [NearIndexerController],

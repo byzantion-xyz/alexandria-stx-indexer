@@ -68,7 +68,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
     }
     accounts_in = accounts_in.slice(0, -1);
     const sql = `select * from transaction t inner join receipt r on t.success_receipt_id =r.receipt_id 
-      where block_height >= 68740000 and
+      where block_height >= 68776000 and
       receiver_id in (${accounts_in}) AND
       processed = false AND 
       missing = true and 
@@ -80,7 +80,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
       transaction->'actions' @> '[{"FunctionCall": { "method_name": "delete_market_data" }}]') AND
       ((execution_outcome->'outcome'->'status'->'SuccessValue' is not null) 
       or (execution_outcome->'outcome'->'status'->'SuccessReceiptId' is not null))
-      order by t.block_height ASC limit 10000;   
+      order by t.block_height ASC limit 15000;   
     `;
 
     const txs: Transaction[] = await this.transactionRepository.query(sql);

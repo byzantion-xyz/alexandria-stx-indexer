@@ -14,6 +14,7 @@ import { ConfigService } from "@nestjs/config";
 import { Chain } from "src/database/universal/entities/Chain";
 import { TxStreamAdapter } from "src/indexers/common/interfaces/tx-stream-adapter.interface";
 import { IndexerService } from "./common/interfaces/indexer-service.interface";
+import { IndexerOptions } from "./common/interfaces/indexer-options";
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -35,34 +36,24 @@ export class IndexerOrchestratorService {
     private chainRepository: Repository<Chain>
   ) {}
 
-  async runIndexer() {
-    this.logger.debug("runIndexer() Initialize");
+  async runIndexer(options: IndexerOptions) {
+    this.logger.debug(`runIndexer() Initialize with options: ${options}`);
+    try {
+      await this.setUpChainAndStreamer();
 
-    await this.setUpChainAndStreamer();
+      const txs: CommonTx[] = options.includeMissings ? await this.nearTxStreamAdapter.fetchMissingTxs() : 
+        await this.nearTxStreamAdapter.fetchTxs();
 
-    const txs: CommonTx[] = await this.nearTxStreamAdapter.fetchTxs();
-    await this.processTransactions(txs);
+      for await (const tx of txs) {
+        const txResult: TxProcessResult = await this.processTransaction(tx);
+        await this.nearTxStreamAdapter.setTxResult(tx.hash, txResult);
+      }
 
-    this.logger.debug("runIndexer() Completed");
-  }
-
-  async runIndexerForMissing() {
-    this.logger.debug("runIndexerForMissing() Initialize");
-    await this.setUpChainAndStreamer();
-
-    const txs: CommonTx[] = await this.nearTxStreamAdapter.fetchMissingTxs();
-    await this.processTransactions(txs);
-
-    this.logger.debug("runIndexerForMissing() Completed");
-  }
-
-  async processTransactions(transactions: CommonTx[]) {
-    for await (const tx of transactions) {
-      const txResult: TxProcessResult = await this.processTransaction(tx);
-      await this.nearTxStreamAdapter.setTxResult(tx.hash, txResult);
+      this.logger.debug(`runIndexer() Completed with options ${options}`);
+      await delay(5000); // Wait for any discord post to be sent
+    } catch (err) {
+      this.logger.error(err);
     }
-
-    await delay(5000);
   }
 
   async processTransaction(transaction: CommonTx): Promise<TxProcessResult> {
@@ -70,7 +61,6 @@ export class IndexerOrchestratorService {
 
     try {
       const method_name = transaction.function_name;
-
       const finder = {
         where: { contract_key: transaction.receiver },
         relations: { smart_contract_functions: true },
@@ -110,8 +100,11 @@ export class IndexerOrchestratorService {
 
   async setUpChainAndStreamer() {
     const chain_symbol: string = this.configService.get('app.chainSymbol');
-    const chain = await this.chainRepository.findOneByOrFail({ symbol: chain_symbol });
+    if (!chain_symbol) {
+      throw new Error(`CHAIN_SYMBOL must be provided as environment variable`);
+    }
 
+    const chain = await this.chainRepository.findOneByOrFail({ symbol: chain_symbol });
     this.txStreamAdapter = this[chain.symbol.toLowerCase() + 'TxStreamAdapter'];
     if (!this.txStreamAdapter || !this.isTxStreamAdapter(this.txStreamAdapter)) {
       throw new Error(`No stream adapter defined for chain: ${chain_symbol}`);

@@ -14,7 +14,7 @@ export class NearIndexerController {
   @Post('run')
   async indexTransactions() {
     if (process.env.NODE_ENV !== 'production') {
-      this.nearIndexer.runIndexer();
+      this.nearIndexer.runIndexer({ includeMissings: false });
     }
 
     return 'Ok';
@@ -22,7 +22,7 @@ export class NearIndexerController {
 
   @Post('run-missing')
   async indexMissingTransactions() {
-    this.nearIndexer.runIndexerForMissing();
+    this.nearIndexer.runIndexer({ includeMissings: true });
     
     return 'Ok';
   }

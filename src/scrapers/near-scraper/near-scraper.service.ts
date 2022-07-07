@@ -29,7 +29,7 @@ export class NearScraperService {
     const { slug: slugInput, contract_key, token_series_id, token_id, starting_token_id, ending_token_id } = data;
     const { scrape_non_custodial_from_paras = false, force_scrape = false } = data;
     let isParasCustodialCollection = false;
-    if (token_series_id) isParasCustodialCollection = true;
+    if (token_series_id || slugInput) isParasCustodialCollection = true;
 
     // get collection slug
     let slug = slugInput;

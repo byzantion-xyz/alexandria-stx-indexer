@@ -44,6 +44,11 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
       processed = false AND 
       missing = false AND
       transaction->'actions' @> '[{"FunctionCall": {}}]' AND  
+      (transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_approve"}}]' OR
+      transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_revoke"}}]' OR
+      transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_buy" }}]' OR
+      transaction->'actions' @> '[{"FunctionCall": { "method_name": "buy" }}]' OR
+      transaction->'actions' @> '[{"FunctionCall": { "method_name": "delete_market_data" }}]') AND
       ((execution_outcome->'outcome'->'status'->'SuccessValue' is not null) 
       or (execution_outcome->'outcome'->'status'->'SuccessReceiptId' is not null))
       order by t.block_height ASC 

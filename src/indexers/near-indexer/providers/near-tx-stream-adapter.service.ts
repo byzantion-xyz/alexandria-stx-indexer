@@ -43,7 +43,6 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
       where block_height >= 68000000 and
       processed = false AND 
       missing = false AND
-      transaction->'actions' @> '[{"FunctionCall": {}}]' AND  
       (transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_approve"}}]' OR
       transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_revoke"}}]' OR
       transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_buy" }}]' OR
@@ -68,11 +67,10 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
     }
     accounts_in = accounts_in.slice(0, -1);
     const sql = `select * from transaction t inner join receipt r on t.success_receipt_id =r.receipt_id 
-      where block_height >= 68877000 and
+      where block_height >= 68000000 and
       receiver_id in (${accounts_in}) AND
       processed = false AND 
       missing = true and 
-      transaction->'actions' @> '[{"FunctionCall": {}}]' AND 
       (transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_approve"}}]' OR
       transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_revoke"}}]' OR
       transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_buy" }}]' OR

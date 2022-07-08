@@ -11,7 +11,7 @@ export class TasksService {
         private nearIndexer: IndexerOrchestratorService
     ) {}
 
-    @Cron(CronExpression.EVERY_5_MINUTES)
+    @Cron(CronExpression.EVERY_30_MINUTES)
     handleCron() {
       if (process.env.NODE_ENV === 'production') {
         this.nearIndexer.runIndexer({ includeMissings: false });
@@ -20,7 +20,7 @@ export class TasksService {
       }
     }
 
-    @Cron(CronExpression.EVERY_HOUR)
+    @Cron(CronExpression.EVERY_2_HOURS)
     handleCronMissingTransactions() {
       if (process.env.NODE_ENV === 'production') {
         this.nearIndexer.runIndexer({ includeMissings: true });
@@ -29,7 +29,7 @@ export class TasksService {
       }
     }
 
-    @Timeout(5000)
+    @Timeout(2000)
     handleIndexerSubscription() {
       this.nearIndexer.subscribeToEvents({ event: IndexerEventType.block });
     }

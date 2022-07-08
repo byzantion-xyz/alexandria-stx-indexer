@@ -40,7 +40,7 @@ export class IndexerOrchestratorService {
   ) {}
 
   async runIndexer(options: IndexerOptions) {
-    this.logger.debug(`runIndexer() Initialize ${options}`);
+    this.logger.debug(`runIndexer() Initialize `, options);
     try {
       await this.setUpChainAndStreamer();
 
@@ -56,7 +56,7 @@ export class IndexerOrchestratorService {
   }
 
   async subscribeToEvents(options: IndexerSubscriptionOptions) {
-    this.logger.debug(`subscribeToEvents() Initialize ${options}`);
+    this.logger.debug(`subscribeToEvents() Initialize `, options);
 
     try {
       await this.setUpChainAndStreamer();

@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
+import { Cron, CronExpression, Timeout } from '@nestjs/schedule';
+import { IndexerEventType } from 'src/indexers/common/helpers/indexer-enums';
 import { IndexerOrchestratorService } from 'src/indexers/indexer-orchestrator.service';
 
 @Injectable()
@@ -26,6 +27,11 @@ export class TasksService {
       } else {
         this.logger.debug('Not in production environment. Skip near indexer trigger')
       }
+    }
+
+    @Timeout(5000)
+    handleIndexerSubscription() {
+      this.nearIndexer.subscribeToEvents({ event: IndexerEventType.block });
     }
 
 }

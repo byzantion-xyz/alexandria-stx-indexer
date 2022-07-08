@@ -4,15 +4,17 @@ import { TxProcessResult } from "src/indexers/common/interfaces/tx-process-resul
 import { TxStreamAdapter } from "src/indexers/common/interfaces/tx-stream-adapter.interface";
 import { TxHelperService } from "../../common/helpers/tx-helper.service";
 import * as moment from "moment";
+import { Client } from 'pg';
 import { NearTxHelperService } from "./near-tx-helper.service";
 import { Transaction } from "../interfaces/near-transaction.dto";
 import { ExecutionStatus, ExecutionStatusBasic } from "near-api-js/lib/providers/provider";
 import { SmartContract } from "src/database/universal/entities/SmartContract";
 import { InjectEntityManager, InjectRepository } from "@nestjs/typeorm";
 import { EntityManager, Repository } from "typeorm";
-import { SmartContractType } from "src/indexers/common/helpers/indexer-enums";
+import { IndexerEventType, SmartContractType } from "src/indexers/common/helpers/indexer-enums";
 import { SmartContractFunction } from "src/database/universal/entities/SmartContractFunction";
 import { Transaction as TransactionEntity } from "src/database/near-stream/entities/Transaction";
+import { ConfigService } from "@nestjs/config";
 
 @Injectable()
 export class NearTxStreamAdapterService implements TxStreamAdapter {
@@ -21,6 +23,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
   constructor(
     private txHelper: TxHelperService,
     private nearTxHelper: NearTxHelperService,
+    private configService: ConfigService,
     /* @InjectEntityManager('NEAR-STREAM')
     private entityManager: EntityManager,*/
     @InjectRepository(TransactionEntity, "NEAR-STREAM")
@@ -194,6 +197,38 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
       if (transformed_tx) result.push(transformed_tx);
     }
 
+    return result;
+  }
+
+  subscribeToEvents(): Client {
+    this.logger.log('subscribeToBlocks() subscribe to listen new blocks');
+
+    const client = new Client(this.configService.get('NEAR_STREAMER_SQL_DATABASE_URL'));
+    client.connect();
+  
+    client.query('LISTEN new_receipt;', (err, res) => {
+      this.logger.log('Listening DB transaction notifications');
+    });
+
+    return client;
+  }
+
+  async fetchEventData(event): Promise<CommonTx[]> {
+    const sql = `select * from transaction t inner join receipt r on t.success_receipt_id =r.receipt_id 
+      WHERE r.receipt_id ='${event}' AND
+      (transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_approve"}}]' OR
+      transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_revoke"}}]' OR
+      transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_buy" }}]' OR
+      transaction->'actions' @> '[{"FunctionCall": { "method_name": "buy" }}]' OR
+      transaction->'actions' @> '[{"FunctionCall": { "method_name": "delete_market_data" }}]') AND
+      processed = false AND  missing = false AND
+      ((execution_outcome->'outcome'->'status'->'SuccessValue' is not null) 
+      or (execution_outcome->'outcome'->'status'->'SuccessReceiptId' is not null));
+    `;
+
+    const txs: Transaction[] = await this.transactionRepository.query(sql);
+    const result: CommonTx[] = this.transformTxs(txs);
+  
     return result;
   }
 }

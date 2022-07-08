@@ -119,7 +119,7 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
     return client;
   }
 
-  async fetchEventData(event, eventType: IndexerEventType): Promise<CommonTx[]> {
+  async fetchEventData(event): Promise<CommonTx[]> {
     const sql = `SELECT * from transaction t
       WHERE block_height=${event} 
       tx->>'tx_type' = 'contract_call' AND

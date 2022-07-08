@@ -64,8 +64,7 @@ export class IndexerOrchestratorService {
         const client: Client = this.txStreamAdapter.subscribeToEvents();
 
         client.on("notification", async (event) => {
-          this.logger.log(event);
-          const txs: CommonTx[] = await this.txStreamAdapter.fetchEventData(event, options.event);
+          const txs: CommonTx[] = await this.txStreamAdapter.fetchEventData(event.payload);
           
           await this.processTransactions(txs);
   

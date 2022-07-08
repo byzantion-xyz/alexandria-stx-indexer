@@ -9,5 +9,5 @@ export interface TxStreamAdapter {
   setTxResult(txHash: string, txResult: TxProcessResult): void;
   
   subscribeToEvents?(): Client;
-  fetchEventData?(event: any, eventType: IndexerEventType): Promise<CommonTx[]>;
+  fetchEventData?(event: any): Promise<CommonTx[]>;
 }

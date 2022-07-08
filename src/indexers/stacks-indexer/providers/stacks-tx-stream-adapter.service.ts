@@ -88,7 +88,6 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
         ? true
         : false;
 
-      // TODO: Generate one transaction per tx.transaction.Action?
       return {
         hash: tx.hash,
         block_hash: tx.tx.block_hash,

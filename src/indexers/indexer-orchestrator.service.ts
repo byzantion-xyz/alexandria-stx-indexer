@@ -48,7 +48,7 @@ export class IndexerOrchestratorService {
         : await this.txStreamAdapter.fetchTxs();
       await this.processTransactions(txs);
 
-      this.logger.debug(`runIndexer() Completed with options ${options}`);
+      this.logger.debug(`runIndexer() Completed with options`, options);
       await delay(5000); // Wait for any discord post to be sent
     } catch (err) {
       this.logger.error(err);

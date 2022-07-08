@@ -79,7 +79,7 @@ export class IndexerOrchestratorService {
   async processTransactions(transactions: CommonTx[]) {
     for await (const tx of transactions) {
       const txResult: TxProcessResult = await this.processTransaction(tx);
-      await this.nearTxStreamAdapter.setTxResult(tx.hash, txResult);
+      await this.txStreamAdapter.setTxResult(tx.hash, txResult);
     }
   }
 

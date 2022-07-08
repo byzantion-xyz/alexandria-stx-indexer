@@ -5,6 +5,11 @@
 // Based on
 // https://github.com/microsoft/TypeScript/issues/3192#issuecomment-261720275
 
+export enum IndexerEventType {
+  block = "block",
+  tx = "tx"
+}
+
 export enum SmartContractType {
   non_fungible_tokens = "non_fungible_tokens",
   token_series = "token_series",

@@ -16,17 +16,22 @@ import { NftMeta } from "src/database/universal/entities/NftMeta";
 import { NftState } from "src/database/universal/entities/NftState";
 import { SmartContract } from "src/database/universal/entities/SmartContract";
 import { SmartContractFunction } from "src/database/universal/entities/SmartContractFunction";
-import { Transaction } from "src/database/near-stream/entities/Transaction";
+import { Transaction as NearTransaction } from "src/database/near-stream/entities/Transaction";
 import { Receipt } from "src/database/near-stream/entities/Receipt";
-import { StacksTxStreamAdapterService } from './stacks-indexer/providers/stacks-tx-stream-adapter/stacks-tx-stream-adapter.service';
+import { StacksTxStreamAdapterService } from './stacks-indexer/providers/stacks-tx-stream-adapter.service';
 import { Chain } from "src/database/universal/entities/Chain";
+import { Block } from "src/database/stacks-stream/entities/Block";
+import { Transaction as StacksTransaction } from "src/database/stacks-stream/entities/Transaction";
+import { StacksTxHelperService } from './stacks-indexer/providers/stacks-tx-helper.service';
+
 
 @Module({
   imports: [
     DiscordBotModule,
     ScrapersModule,
     TypeOrmModule.forFeature([NftMeta, NftState, Action, SmartContract, SmartContractFunction, Chain]),
-    TypeOrmModule.forFeature([Transaction, Receipt], "NEAR-STREAM"),
+    TypeOrmModule.forFeature([NearTransaction, Receipt], "NEAR-STREAM"),
+    TypeOrmModule.forFeature([StacksTransaction, Block], "STACKS-STREAM"),
   ],
   controllers: [NearIndexerController],
   providers: [
@@ -38,6 +43,7 @@ import { Chain } from "src/database/universal/entities/Chain";
     NearTxStreamAdapterService,
     NearTxHelperService,
     StacksTxStreamAdapterService,
+    StacksTxHelperService,
   ],
   exports: [IndexerOrchestratorService],
 })

@@ -60,17 +60,21 @@ export class IndexerOrchestratorService {
 
     try {
       await this.setUpChainAndStreamer();
-      const client: Client = this.txStreamAdapter.subscribeToEvents();
+      if (this.isTxStreamAdapterWithSubsriptions(this.txStreamAdapter)) {
+        const client: Client = this.txStreamAdapter.subscribeToEvents();
 
-      client.on("notification", async (event) => {
-        this.logger.log(event);
-        const txs: CommonTx[] = await this.txStreamAdapter.fetchEventData(event, options.event);
-        
-        await this.processTransactions(txs);
-
-        this.logger.debug(`subscribeToEvents() Processed event ${event}`);
-        await delay(5000); // Wait for any discord post to be sent
-      });
+        client.on("notification", async (event) => {
+          this.logger.log(event);
+          const txs: CommonTx[] = await this.txStreamAdapter.fetchEventData(event, options.event);
+          
+          await this.processTransactions(txs);
+  
+          this.logger.debug(`subscribeToEvents() Processed event ${event}`);
+          await delay(5000); // Wait for any discord post to be sent
+        });
+      } else {
+        this.logger.debug('subscribeeToEvents() Current stream adapter does not support subscriptions');
+      }
     } catch (err) {
       this.logger.error(err);
     }
@@ -157,6 +161,13 @@ export class IndexerOrchestratorService {
       (arg as TxStreamAdapter).fetchMissingTxs !== undefined &&
       (arg as TxStreamAdapter).fetchTxs !== undefined &&
       (arg as TxStreamAdapter).setTxResult !== undefined
+    );
+  }
+
+  isTxStreamAdapterWithSubsriptions(arg) {
+    return (this.isTxStreamAdapter(arg) &&
+      (arg as TxStreamAdapter).subscribeToEvents !== undefined &&
+      (arg as TxStreamAdapter).fetchEventData !== undefined
     );
   }
 

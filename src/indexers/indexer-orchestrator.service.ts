@@ -67,9 +67,6 @@ export class IndexerOrchestratorService {
           const txs: CommonTx[] = await this.txStreamAdapter.fetchEventData(event.payload);
           
           await this.processTransactions(txs);
-  
-          this.logger.debug(`subscribeToEvents() Processed event ${event}`);
-          await delay(5000); // Wait for any discord post to be sent
         });
       } else {
         this.logger.debug('subscribeeToEvents() Current stream adapter does not support subscriptions');

@@ -1,6 +1,8 @@
 import { Controller, Post } from '@nestjs/common';
 
 import { Logger } from '@nestjs/common';
+import { Timeout } from '@nestjs/schedule';
+import { IndexerEventType } from '../common/helpers/indexer-enums';
 import { IndexerOrchestratorService } from '../indexer-orchestrator.service';
 
 @Controller('near-indexer')
@@ -25,6 +27,11 @@ export class NearIndexerController {
     this.nearIndexer.runIndexer({ includeMissings: true });
     
     return 'Ok';
+  }
+
+  @Timeout(5000)
+  handleTimeout() {
+    this.nearIndexer.subscribeToEvents({ event: IndexerEventType.block });
   }
 
 }

@@ -8,13 +8,13 @@ export class TasksService {
     private readonly logger = new Logger(TasksService.name);
 
     constructor(
-        private nearIndexer: IndexerOrchestratorService
+        private indexerOrchestrator: IndexerOrchestratorService
     ) {}
 
     @Cron(CronExpression.EVERY_30_MINUTES)
     handleCron() {
       if (process.env.NODE_ENV === 'production') {
-        this.nearIndexer.runIndexer({ includeMissings: false });
+        this.indexerOrchestrator.runIndexer({ includeMissings: false });
       } else {
         this.logger.debug('Not in production environment. Skip near indexer trigger')
       }
@@ -23,7 +23,7 @@ export class TasksService {
     @Cron(CronExpression.EVERY_2_HOURS)
     handleCronMissingTransactions() {
       if (process.env.NODE_ENV === 'production') {
-        this.nearIndexer.runIndexer({ includeMissings: true });
+        this.indexerOrchestrator.runIndexer({ includeMissings: true });
       } else {
         this.logger.debug('Not in production environment. Skip near indexer trigger')
       }
@@ -31,7 +31,7 @@ export class TasksService {
 
     @Timeout(2000)
     handleIndexerSubscription() {
-      this.nearIndexer.subscribeToEvents({ event: IndexerEventType.block });
+      this.indexerOrchestrator.subscribeToEvents({ event: IndexerEventType.block });
     }
 
 }

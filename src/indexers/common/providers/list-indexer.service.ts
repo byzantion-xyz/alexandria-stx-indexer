@@ -42,7 +42,6 @@ export class ListIndexerService implements IndexerService {
 
     const token_id = this.txHelper.extractArgumentData(tx.args, scf, "token_id");
     let contract_key = this.txHelper.extractArgumentData(tx.args, scf, "contract_key");
-    const list_action = this.txHelper.extractArgumentData(tx.args, scf, "list_action");
 
     // Check if custodial
     if (sc.type === SmartContractType.non_fungible_tokens) {
@@ -52,7 +51,7 @@ export class ListIndexerService implements IndexerService {
 
     const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
 
-    if (nftMeta && this.txHelper.isNewNftListOrSale(tx, nftMeta.nft_state) && list_action === "sale") {
+    if (nftMeta && this.txHelper.isNewNftListOrSale(tx, nftMeta.nft_state)) {
       const price = this.txHelper.extractArgumentData(tx.args, scf, "price");
 
       let update = {
@@ -82,22 +81,18 @@ export class ListIndexerService implements IndexerService {
 
       txResult.processed = true;
     } else if (nftMeta) {
-      if (list_action === "sale") {
-        this.logger.log(`Too Late`);
+      this.logger.log(`Too Late`);
 
-        const price = this.txHelper.extractArgumentData(tx.args, scf, "price");
-        const actionCommonArgs: CreateActionCommonArgs = this.txHelper.setCommonActionParams(tx, sc, nftMeta, market_sc);
-        const listActionParams: CreateListActionTO = {
-          ...actionCommonArgs,
-          action: ActionName.list,
-          list_price: price,
-          seller: tx.signer,
-        };
+      const price = this.txHelper.extractArgumentData(tx.args, scf, "price");
+      const actionCommonArgs: CreateActionCommonArgs = this.txHelper.setCommonActionParams(tx, sc, nftMeta, market_sc);
+      const listActionParams: CreateListActionTO = {
+        ...actionCommonArgs,
+        action: ActionName.list,
+        list_price: price,
+        seller: tx.signer,
+      };
   
-        await this.createAction(listActionParams);
-      } else {
-        this.logger.log(`Msg market_type is: ${list_action}. No action required`);
-      }
+      await this.createAction(listActionParams);
       txResult.processed = true;
     } else {
       this.logger.log(`NftMeta not found ${contract_key} ${token_id}`);

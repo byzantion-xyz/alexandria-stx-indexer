@@ -163,6 +163,21 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
         moment().subtract(2, "hours").utc()
           ? true
           : false;
+
+      // In case of nft_approve, there are diferrent market_type: ['sale', 'add_trade']
+      let function_name = tx.transaction.actions[0].FunctionCall?.method_name;
+
+      // Map market_type on nft_approve to specific global function name
+      if (function_name && function_name === 'nft_approve' && 
+        parsed_args && parsed_args['msg']) {
+        const market_type = parsed_args['msg']['market_type'];
+        
+        switch (market_type) {
+          case 'sale': function_name = 'nft_approve'; break;
+          default: function_name = market_type;
+        }
+      }
+
       // TODO: Generate one transaction per tx.transaction.Action?
       return {
         hash: tx.transaction.hash,
@@ -172,12 +187,14 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
         nonce: tx.transaction.nonce,
         signer: tx.transaction.signer_id,
         receiver: tx.transaction.receiver_id,
-        function_name: tx.transaction.actions[0].FunctionCall?.method_name,
+        function_name: function_name,
         args: parsed_args,
         notify,
       };
+
     } catch (err) {
       this.logger.warn(`transormTx() has failed for tx hash: ${tx.hash}`);
+      this.logger.warn(err);
     }
   }
 

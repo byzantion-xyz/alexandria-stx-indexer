@@ -38,21 +38,6 @@ export class NftState {
   list_tx_index: bigint;
 
   @Column("boolean", { default: () => "false" })
-  asking: boolean;
-
-  @Column("bigint", { nullable: true })
-  asking_price: bigint;
-
-  @Column("bigint", { nullable: true })
-  asking_block_height: bigint;
-
-  @Column("bigint", { nullable: true })
-  asking_tx_index: bigint;
-
-  @Column("text", { nullable: true })
-  asking_seller: string | null;
-
-  @Column("boolean", { default: () => "false" })
   bid: boolean;
 
   @Column("bigint", { nullable: true })

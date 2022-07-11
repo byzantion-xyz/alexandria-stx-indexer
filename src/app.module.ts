@@ -73,7 +73,7 @@ import { TypeOrmModule } from "@nestjs/typeorm";
         type: "postgres",
         synchronize: false,
         logging: false,
-        entities: [__dirname + "/database/near-stream/entities/*{.ts,.js}"],
+        entities: [__dirname + "/database/stacks-stream/entities/*{.ts,.js}"],
         migrations: ["src/database/near-stream/migrations/*{.ts,.js}"],
         subscribers: [],
       }),

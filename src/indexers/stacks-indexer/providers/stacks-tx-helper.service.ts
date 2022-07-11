@@ -13,15 +13,12 @@ export class StacksTxHelperService {
 
   parseHexArguments(args: FunctionArgs[]) {
     try {
-      let result: JSON;
+      let result = {};
+
       for (let arg of args) {
-        let value;
         if (arg.hex) {
-          value = cvToJSON(hexToCV(arg.hex));
-          if (arg.type === 'uint') {
-            value = Number(value); 
-          }
-          result[arg.name] = value;
+          let data = cvToJSON(hexToCV(arg.hex));
+          result[arg.name] = data.type === 'uint' ? Number(data.value) : data.value;
         } 
       }
 

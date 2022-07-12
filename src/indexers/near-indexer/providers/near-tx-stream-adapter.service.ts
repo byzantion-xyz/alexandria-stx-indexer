@@ -62,7 +62,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
     return result;
   }
 
-  async fetchMissingTxs(): Promise<CommonTx[]> {
+  async fetchMissingTxs(batch_size: number, skip: number): Promise<CommonTx[]> {
     const accounts = await this.fetchAccounts(true);
     let accounts_in = "";
     for (let i in accounts) {
@@ -81,7 +81,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
       transaction->'actions' @> '[{"FunctionCall": { "method_name": "delete_market_data" }}]') AND
       ((execution_outcome->'outcome'->'status'->'SuccessValue' is not null) 
       or (execution_outcome->'outcome'->'status'->'SuccessReceiptId' is not null))
-      order by t.block_height ASC limit 15000;   
+      order by t.block_height ASC limit ${batch_size} OFFSET ${skip};   
     `;
 
     const txs: Transaction[] = await this.transactionRepository.query(sql);

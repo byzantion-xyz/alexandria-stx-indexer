@@ -19,6 +19,7 @@ import {
   IndexerSubscriptionOptions,
 } from "./common/interfaces/indexer-options";
 
+const BATCH_SIZE = 10000;
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 @Injectable()
@@ -44,9 +45,20 @@ export class IndexerOrchestratorService {
     try {
       await this.setUpChainAndStreamer();
 
-      const txs: CommonTx[] = options.includeMissings ? await this.txStreamAdapter.fetchMissingTxs()
-        : await this.txStreamAdapter.fetchTxs();
-      await this.processTransactions(txs);
+      if (options.includeMissings) {
+        let skip = 0;
+        let txs: CommonTx[];
+        do {
+          this.logger.log(`Querying transactions skip:${skip} batch_size: ${BATCH_SIZE} `)
+          txs = await this.txStreamAdapter.fetchMissingTxs(BATCH_SIZE, skip);
+          this.logger.log(`Found ${txs.length} transactions`);
+          await this.processTransactions(txs);
+          skip += BATCH_SIZE;
+        } while (txs.length >= BATCH_SIZE);
+      } else {
+        const txs: CommonTx[] = await this.txStreamAdapter.fetchTxs();
+        await this.processTransactions(txs);
+      }
 
       this.logger.debug(`runIndexer() Completed with options`, options);
       await delay(5000); // Wait for any discord post to be sent

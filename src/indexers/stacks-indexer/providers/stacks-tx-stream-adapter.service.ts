@@ -38,13 +38,13 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
     return result;
   }
 
-  async fetchMissingTxs(): Promise<CommonTx[]> {
+  async fetchMissingTxs(batch_size: number, skip: number): Promise<CommonTx[]> {
     const sql = `SELECT * from transaction t
       WHERE tx->>'tx_type' = 'contract_call' AND
       tx->>'tx_status' = 'success' AND
       processed = false AND  missing = true
       ORDER BY t.block_height ASC, tx->>'microblock_sequence' asc, tx->>'index' ASC 
-      limit 2000;
+      limit ${batch_size} offset ${skip};
     `;
 
     const txs: StacksTransaction[] = await this.transactionRepository.query(sql);

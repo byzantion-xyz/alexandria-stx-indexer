@@ -179,8 +179,6 @@ export class NearScraperService {
       }
 
       const collectionScrape = await this.dbHelper.findCollectionScrapeByCollectionId(collectionId);
-      console.log("collectionScrape")
-      console.log(collectionScrape)
       if (collectionScrape.outcome == CollectionScrapeOutcome.succeeded && !force_scrape) {
         const errorMsg = `[scraping ${slug}] Scrape skipped, already scraped successfully.`;
         this.logger.log(errorMsg);

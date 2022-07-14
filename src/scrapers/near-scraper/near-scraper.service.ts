@@ -131,7 +131,7 @@ export class NearScraperService {
       await this.createCollectionAttributes(slug);
 
       // if Paras custodial collection, pin each distinct token image to our pinata by sending tasks to rate-limited queue service
-      if (isParasCustodialCollection) {
+      if (isParasCustodialCollection || contract_key == 'tinkerunion_nft.enleap.near') {
         await this.dbHelper.setCollectionScrapeStage(collection.id, CollectionScrapeStage.pinning_multiple_images);
         await this.pinMultipleImages({ slug: slug });
       }

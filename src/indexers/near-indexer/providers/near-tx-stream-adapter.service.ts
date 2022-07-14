@@ -218,7 +218,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
   }
 
   subscribeToEvents(): Client {
-    this.logger.log('subscribeToBlocks() subscribe to listen new blocks');
+    this.logger.log('subscribeToEvents() subscribe to listen new transactions');
 
     const client = new Client(this.configService.get('NEAR_STREAMER_SQL_DATABASE_URL'));
     client.connect();

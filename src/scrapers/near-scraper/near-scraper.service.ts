@@ -687,7 +687,7 @@ export class NearScraperService {
     // const nftMetas = await this.dbHelper.findNftMetasForPinning(collection.id, offset);
 
     for (let i = 0; i < nftMetas.length; i++) {
-      const pinHash = this.ipfsHelperService.getPinHashFromUrl(nftMetas[i].image);
+      const pinHash = this.ipfsHelperService.getPinHashFromUrl(nftMetas[i].metadata.image);
       try {
         const pinJob = await axios.post("https://byz-pinning-service.onrender.com/api/pin-hash", {
           hash: pinHash,

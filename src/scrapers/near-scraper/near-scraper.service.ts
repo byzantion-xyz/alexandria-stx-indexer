@@ -87,6 +87,7 @@ export class NearScraperService {
       // load SmartContract with data from chain
       const smartContract = await this.dbHelper.loadSmartContract(nftContractMetadata, contract_key, slug);
 
+
       // load Collection with data from chain
       let collectionTitle = nftContractMetadata.name;
       if (isParasCustodialCollection) collectionTitle = tokenMetas[0].metadata.collection.trim();
@@ -250,7 +251,7 @@ export class NearScraperService {
     this.logger.log(`[scraping ${slug}] Loading NftMetas and their NftMetaAttributes`);
 
     let tokenIpfsMetas = [];
-    if (!isParasCustodialCollection) {
+    if (!isParasCustodialCollection && slug != "tinkerunion_nft.enleap.near") {
       tokenIpfsMetas = await this.getAllTokenIpfsMetas(tokenMetas, nftContractMetadataBaseUri, slug);
 
       if (tokenIpfsMetas.length != 0 && tokenIpfsMetas.length != tokenMetas.length) {

@@ -84,66 +84,62 @@ export class NearScraperService {
         }
       }
 
-      await this.pinMultipleImages(tokenMetas, slug)
+      // load SmartContract with data from chain
+      const smartContract = await this.dbHelper.loadSmartContract(nftContractMetadata, contract_key, slug);
 
-      console.log("FINISHED PINNING TINKER UNION")
+      // load Collection with data from chain
+      let collectionTitle = nftContractMetadata.name;
+      if (isParasCustodialCollection) collectionTitle = tokenMetas[0].metadata.collection.trim();
+      const loadedCollection = await this.loadCollection(
+        tokenMetas,
+        nftContractMetadata.base_uri,
+        collectionTitle,
+        collectionScrape.id,
+        smartContract.id,
+        slug
+      );
 
-      // // load SmartContract with data from chain
-      // const smartContract = await this.dbHelper.loadSmartContract(nftContractMetadata, contract_key, slug);
+      // create CollectionCreator if not exists
+      let creatorWalletId = contract_key;
+      if (isParasCustodialCollection) creatorWalletId = tokenMetas[0].metadata.creator_id;
+      await this.dbHelper.createCollectionCreator(loadedCollection.id, creatorWalletId, slug);
 
-      // // load Collection with data from chain
-      // let collectionTitle = nftContractMetadata.name;
-      // if (isParasCustodialCollection) collectionTitle = tokenMetas[0].metadata.collection.trim();
-      // const loadedCollection = await this.loadCollection(
-      //   tokenMetas,
-      //   nftContractMetadata.base_uri,
-      //   collectionTitle,
-      //   collectionScrape.id,
-      //   smartContract.id,
-      //   slug
-      // );
+      // If non-custodail, pin the first item's meta as it's the same hash for the whole folder of metas and images
+      if (!isParasCustodialCollection) {
+        await this.dbHelper.setCollectionScrapeStage(collection.id, CollectionScrapeStage.pinning_folder);
+        await this.pinFolderHash(tokenMetas[0], nftContractMetadata.base_uri, slug);
+      }
 
-      // // create CollectionCreator if not exists
-      // let creatorWalletId = contract_key;
-      // if (isParasCustodialCollection) creatorWalletId = tokenMetas[0].metadata.creator_id;
-      // await this.dbHelper.createCollectionCreator(loadedCollection.id, creatorWalletId, slug);
+      // load NftMetas + NftMetaAttributes
+      await this.dbHelper.setCollectionScrapeStage(collection.id, CollectionScrapeStage.loading_nft_metas);
+      await this.loadNftMetasAndTheirAttributes(
+        tokenMetas,
+        nftContractMetadata.base_uri,
+        smartContract.id,
+        slug,
+        loadedCollection,
+        scrape_non_custodial_from_paras,
+        isParasCustodialCollection
+      );
 
-      // // If non-custodail, pin the first item's meta as it's the same hash for the whole folder of metas and images
-      // if (!isParasCustodialCollection) {
-      //   await this.dbHelper.setCollectionScrapeStage(collection.id, CollectionScrapeStage.pinning_folder);
-      //   await this.pinFolderHash(tokenMetas[0], nftContractMetadata.base_uri, slug);
-      // }
+      // update NftMeta + NftMetaAttributes rarities
+      await this.dbHelper.setCollectionScrapeStage(collection.id, CollectionScrapeStage.updating_rarities);
+      await this.updateRarities(slug);
 
-      // // load NftMetas + NftMetaAttributes
-      // await this.dbHelper.setCollectionScrapeStage(collection.id, CollectionScrapeStage.loading_nft_metas);
-      // await this.loadNftMetasAndTheirAttributes(
-      //   tokenMetas,
-      //   nftContractMetadata.base_uri,
-      //   smartContract.id,
-      //   slug,
-      //   loadedCollection,
-      //   scrape_non_custodial_from_paras,
-      //   isParasCustodialCollection
-      // );
+      // create CollectionAttributes
+      await this.dbHelper.setCollectionScrapeStage(collection.id, CollectionScrapeStage.creating_collection_attributes);
+      await this.createCollectionAttributes(slug);
 
-      // // update NftMeta + NftMetaAttributes rarities
-      // await this.dbHelper.setCollectionScrapeStage(collection.id, CollectionScrapeStage.updating_rarities);
-      // await this.updateRarities(slug);
+      // if Paras custodial collection, pin each distinct token image to our pinata by sending tasks to rate-limited queue service
+      if (isParasCustodialCollection || contract_key == 'tinkerunion_nft.enleap.near') {
+        await this.dbHelper.setCollectionScrapeStage(collection.id, CollectionScrapeStage.pinning_multiple_images);
+        await this.pinMultipleImages({ slug: slug });
+      }
 
-      // // create CollectionAttributes
-      // await this.dbHelper.setCollectionScrapeStage(collection.id, CollectionScrapeStage.creating_collection_attributes);
-      // await this.createCollectionAttributes(slug);
-
-      // // if Paras custodial collection, pin each distinct token image to our pinata by sending tasks to rate-limited queue service
-      // if (isParasCustodialCollection || contract_key == 'tinkerunion_nft.enleap.near') {
-      //   await this.dbHelper.setCollectionScrapeStage(collection.id, CollectionScrapeStage.pinning_multiple_images);
-      //   await this.pinMultipleImages({ slug: slug });
-      // }
-
-      // // mark scrape as done and succeeded
-      // await this.markScrapeSuccess(collection.id, slug);
-      // this.logger.log(`[scraping ${slug}] SCRAPING COMPLETE`);
-      // return "Success";
+      // mark scrape as done and succeeded
+      await this.markScrapeSuccess(collection.id, slug);
+      this.logger.log(`[scraping ${slug}] SCRAPING COMPLETE`);
+      return "Success";
     } catch (err) {
       this.logger.error(`[scraping ${slug}] Error while scraping: ${err}`);
       this.logger.debug(err.stack);
@@ -611,6 +607,7 @@ export class NearScraperService {
     let tokenIpfsMetaPromises = [];
     let tokenIpfsMetas = [];
 
+    // for (let i = 0; i < 10; i++) {
     for (let i = 0; i < tokenMetas.length; i++) {
       let tokenIpfsUrl = this.getTokenIpfsUrl(nftContractMetadataBaseUri, tokenMetas[i].metadata.reference);
       if (!tokenIpfsUrl || (tokenIpfsUrl && tokenIpfsUrl == "")) continue;
@@ -678,18 +675,15 @@ export class NearScraperService {
     );
   }
 
-  async pinMultipleImages(nftMetas, slug) {
-    // const { slug, offset = 0 } = data;
+  async pinMultipleImages(data) {
+    const { slug, offset = 0 } = data;
     this.logger.log(`[${slug}] Pinning Multiple Images...`);
 
-    console.log(nftMetas)
-
-    // const collection = await this.dbHelper.findCollectionBy({ slug: slug });
-    // const nftMetas = await this.dbHelper.findNftMetasForPinning(collection.id, offset);
+    const collection = await this.dbHelper.findCollectionBy({ slug: slug });
+    const nftMetas = await this.dbHelper.findNftMetasForPinning(collection.id, offset);
 
     for (let i = 0; i < nftMetas.length; i++) {
-      // const pinHash = this.ipfsHelperService.getPinHashFromUrl(nftMetas[i].metadata.image);
-      const pinHash = nftMetas[i].metadata.reference
+      const pinHash = this.ipfsHelperService.getPinHashFromUrl(nftMetas[i].image);
       try {
         const pinJob = await axios.post("https://byz-pinning-service.onrender.com/api/pin-hash", {
           hash: pinHash,

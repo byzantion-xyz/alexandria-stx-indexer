@@ -611,7 +611,6 @@ export class NearScraperService {
     let tokenIpfsMetaPromises = [];
     let tokenIpfsMetas = [];
 
-    // for (let i = 0; i < 10; i++) {
     for (let i = 0; i < tokenMetas.length; i++) {
       let tokenIpfsUrl = this.getTokenIpfsUrl(nftContractMetadataBaseUri, tokenMetas[i].metadata.reference);
       if (!tokenIpfsUrl || (tokenIpfsUrl && tokenIpfsUrl == "")) continue;
@@ -683,11 +682,14 @@ export class NearScraperService {
     // const { slug, offset = 0 } = data;
     this.logger.log(`[${slug}] Pinning Multiple Images...`);
 
+    console.log(nftMetas)
+
     // const collection = await this.dbHelper.findCollectionBy({ slug: slug });
     // const nftMetas = await this.dbHelper.findNftMetasForPinning(collection.id, offset);
 
     for (let i = 0; i < nftMetas.length; i++) {
-      const pinHash = this.ipfsHelperService.getPinHashFromUrl(nftMetas[i].metadata.image);
+      // const pinHash = this.ipfsHelperService.getPinHashFromUrl(nftMetas[i].metadata.image);
+      const pinHash = nftMetas[i].metadata.reference
       try {
         const pinJob = await axios.post("https://byz-pinning-service.onrender.com/api/pin-hash", {
           hash: pinHash,

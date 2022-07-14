@@ -37,7 +37,8 @@ export class NearScraperController {
   async pinMultipleImages(
     @Body() data: { slug, offset, limit }
   ) {
-    const result = await this.nearScraper.pinMultipleImages(data);
-    return result;
+    // // const result = await this.nearScraper.pinMultipleImages(data);
+    // return result;
+    return "hello"
   }
 }

@@ -87,6 +87,7 @@ export class NearScraperService {
       // load SmartContract with data from chain
       const smartContract = await this.dbHelper.loadSmartContract(nftContractMetadata, contract_key, slug);
 
+
       // load Collection with data from chain
       let collectionTitle = nftContractMetadata.name;
       if (isParasCustodialCollection) collectionTitle = tokenMetas[0].metadata.collection.trim();
@@ -131,7 +132,7 @@ export class NearScraperService {
       await this.createCollectionAttributes(slug);
 
       // if Paras custodial collection, pin each distinct token image to our pinata by sending tasks to rate-limited queue service
-      if (isParasCustodialCollection) {
+      if (isParasCustodialCollection || contract_key == 'tinkerunion_nft.enleap.near') {
         await this.dbHelper.setCollectionScrapeStage(collection.id, CollectionScrapeStage.pinning_multiple_images);
         await this.pinMultipleImages({ slug: slug });
       }
@@ -250,7 +251,7 @@ export class NearScraperService {
     this.logger.log(`[scraping ${slug}] Loading NftMetas and their NftMetaAttributes`);
 
     let tokenIpfsMetas = [];
-    if (!isParasCustodialCollection) {
+    if (!isParasCustodialCollection && slug != "tinkerunion_nft.enleap.near") {
       tokenIpfsMetas = await this.getAllTokenIpfsMetas(tokenMetas, nftContractMetadataBaseUri, slug);
 
       if (tokenIpfsMetas.length != 0 && tokenIpfsMetas.length != tokenMetas.length) {
@@ -689,6 +690,14 @@ export class NearScraperService {
           hash: pinHash,
           name: `${slug} ${nftMetas[i]?.token_id} (Rank ${nftMetas[i]?.ranking}) - Image`,
         });
+
+        console.log("pinJob")
+        console.log("pinJob")
+        console.log("pinJob")
+        console.log("pinJob")
+        console.log(pinJob)
+
+
         if (pinJob.error) {
           throw new Error(`Error: ${pinJob.error}`);
         }

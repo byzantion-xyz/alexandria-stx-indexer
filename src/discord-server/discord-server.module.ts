@@ -3,7 +3,7 @@ import { DiscordServerController } from "./discord-server.controller";
 import { DiscordServerService } from "./providers/discord-server.service";
 import { DiscordHelperService } from "./providers/discord-helper.service";
 import { DiscordModule } from "@discord-nestjs/core";
-import { ApikeyMiddleware } from "src/common/middlewares/apikey.middleware";
+import { ApikeyMiddleware } from "src/common/middleware/apikey.middleware";
 import { DiscordServerChannel } from "src/database/universal/entities/DiscordServerChannel";
 import { Collection } from "src/database/universal/entities/Collection";
 import { DiscordServer } from "src/database/universal/entities/DiscordServer";

@@ -1,0 +1,1 @@
+alter table "public".smart_contract_function add column data jsonb;

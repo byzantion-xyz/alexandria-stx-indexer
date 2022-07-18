@@ -1,4 +1,5 @@
-import { Column, Entity, Index, JoinColumn, OneToOne } from "typeorm";
+import { Column, Entity, Index, JoinColumn, OneToMany, OneToOne } from "typeorm";
+import { NftState } from "./NftState";
 import { SmartContract } from "./SmartContract";
 
 @Index("commission_commission_key_key", ["commission_key"], { unique: true })
@@ -40,4 +41,7 @@ export class Commission {
   })
   @JoinColumn([{ name: "smart_contract_id", referencedColumnName: "id" }])
   smart_contract: SmartContract;
+
+  @OneToMany(() => NftState, (nftState) => nftState.commission)
+  nft_states: NftState[];
 }

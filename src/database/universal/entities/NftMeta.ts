@@ -32,9 +32,6 @@ export class NftMeta {
   @Column("text")
   name: string;
 
-  @Column("text", { nullable: true })
-  namespace: string | null;
-
   @Column("text")
   image: string;
 

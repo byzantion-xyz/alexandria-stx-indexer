@@ -2,6 +2,7 @@ import { Column, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn } 
 import { Collection } from "./Collection";
 import { SmartContract } from "./SmartContract";
 import { NftMeta } from "./NftMeta";
+import { Commission } from "./Commission";
 
 @Index("action_pkey", ["id"], { unique: true })
 @Entity("action", { schema: "public" })
@@ -94,4 +95,14 @@ export class Action {
   })
   @JoinColumn([{ name: "smart_contract_id", referencedColumnName: "id" }])
   smart_contract: SmartContract;
+
+  @Column("uuid")
+  commission_id: string;
+
+  @ManyToOne(() => Commission, (commission) => commission.actions, {
+    onDelete: "RESTRICT",
+    onUpdate: "CASCADE",
+  })
+  @JoinColumn([{ name: "commission_id", referencedColumnName: "id" }])
+  commission: Commission;
 }

@@ -1,4 +1,5 @@
 import { Column, Entity, Index, JoinColumn, OneToMany, OneToOne } from "typeorm";
+import { Action } from "./Action";
 import { NftState } from "./NftState";
 import { SmartContract } from "./SmartContract";
 
@@ -44,4 +45,7 @@ export class Commission {
 
   @OneToMany(() => NftState, (nftState) => nftState.commission)
   nft_states: NftState[];
+
+  @OneToMany(() => Action, (action) => action.commission)
+  actions: Action[];
 }

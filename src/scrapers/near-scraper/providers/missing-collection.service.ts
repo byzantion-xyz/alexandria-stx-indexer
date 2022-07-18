@@ -14,7 +14,8 @@ export class MissingCollectionService {
   ) {}
 
   async scrapeMissing(data: requestMissingCollection) {
-    // check if the transaction reciever (contract_key) is a nft smart contract, return early if it is not
+    // check if the transaction reciever (contract_key) is a nft smart contract (as opposed to tx receivers being from other types of dApps)
+    // return early if it is not
     const contract = await this.contractConnectionService.connectNftContract(data.contract_key);
     let isNftSmartContract = true;
     try {

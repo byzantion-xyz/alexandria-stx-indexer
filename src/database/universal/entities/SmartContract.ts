@@ -70,8 +70,8 @@ export class SmartContract {
   @OneToMany(() => CollectionBid, (collectionBid) => collectionBid.smart_contract)
   collection_bids: CollectionBid[];
 
-  @OneToOne(() => Commission, (commission) => commission.smart_contract)
-  commission: Commission;
+  @OneToMany(() => Commission, (commission) => commission.smart_contract)
+  commission: Commission[];
 
   @OneToMany(() => NftMeta, (nftMeta) => nftMeta.smart_contract)
   nft_metas: NftMeta[];

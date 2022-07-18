@@ -111,8 +111,8 @@ export class DbHelperService {
     const delResult = await this.collectionRepo.query(sqlDelete, [collectionId]);
 
     // insert
-    const sql = `insert into collection_attribute(collection_id, trait_type, value, rarity, total)
-    select nm.collection_id, nma.trait_type, nma.value, nma.rarity, 0 
+    const sql = `insert into collection_attribute(collection_id, trait_type, value, rarity)
+    select nm.collection_id, nma.trait_type, nma.value, nma.rarity
       from nft_meta_attribute nma 
       join nft_meta nm on nma.meta_id = nm.id
       where nm.collection_id = $1

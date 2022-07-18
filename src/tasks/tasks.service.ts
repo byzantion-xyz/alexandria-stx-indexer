@@ -11,23 +11,23 @@ export class TasksService {
         private indexerOrchestrator: IndexerOrchestratorService
     ) {}
 
-    @Cron(CronExpression.EVERY_30_MINUTES)
+    /*@Cron(CronExpression.EVERY_30_MINUTES)
     handleCron() {
       if (process.env.NODE_ENV === 'production') {
         this.indexerOrchestrator.runIndexer({ includeMissings: false });
       } else {
         this.logger.debug('Not in production environment. Skip near indexer trigger')
       }
-    }
+    }*/
 
-    @Cron(CronExpression.EVERY_2_HOURS)
+    /*@Cron(CronExpression.EVERY_2_HOURS)
     handleCronMissingTransactions() {
       if (process.env.NODE_ENV === 'production') {
         this.indexerOrchestrator.runIndexer({ includeMissings: true });
       } else {
         this.logger.debug('Not in production environment. Skip near indexer trigger')
       }
-    }
+    }*/
 
     @Timeout(2000)
     handleIndexerSubscription() {

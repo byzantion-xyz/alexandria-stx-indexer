@@ -15,6 +15,7 @@ export enum SmartContractType {
   token_series = "token_series",
   marketplace = "marketplace",
   staking = "staking",
+  utility = "utility",
   fungible_tokens = "fungible_tokens",
   bridge = "bridge",
 }

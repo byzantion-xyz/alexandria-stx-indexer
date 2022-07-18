@@ -1,0 +1,1 @@
+ALTER TYPE  public."SmartContractType" ADD VALUE 'utility' AFTER 'staking';

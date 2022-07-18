@@ -160,7 +160,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
 
       const notify =
         moment(new Date(this.txHelper.nanoToMiliSeconds(tx.block_timestamp))).utc() >
-        moment().subtract(2, "hours").utc()
+        moment().subtract(12, "hours").utc()
           ? true
           : false;
 

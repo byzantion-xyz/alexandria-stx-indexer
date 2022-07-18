@@ -25,9 +25,9 @@ export class SmartContract {
   scanned_transactions: number;
 
   @Column("enum", {
-    enum: ["non_fungible_tokens", "marketplace", "staking", "fungible_tokens", "bridge", "token_series"],
+    enum: ["non_fungible_tokens", "marketplace", "staking", "utility", "fungible_tokens", "bridge", "token_series"],
   })
-  type: "non_fungible_tokens" | "marketplace" | "staking" | "fungible_tokens" | "bridge" | "token_series";
+  type: "non_fungible_tokens" | "marketplace" | "staking" | "utility" | "fungible_tokens" | "bridge" | "token_series";
 
   @Column("timestamp without time zone", {
     default: () => "CURRENT_TIMESTAMP",

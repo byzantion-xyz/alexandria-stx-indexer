@@ -16,3 +16,4 @@ ALTER TYPE  "public"."ActionName" ADD VALUE 'transfer';
 ALTER TYPE  "public"."ActionName" ADD VALUE 'unlist-bid';
 ALTER TYPE  "public"."ActionName" ADD VALUE 'unlist-collection-bid';
 ALTER TYPE  "public"."ActionName" ADD VALUE 'unstake';
+ALTER TYPE  "public"."ActionName" ADD VALUE 'solo-bid';

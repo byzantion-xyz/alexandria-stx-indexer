@@ -11,16 +11,16 @@ export class Action {
   readonly id: string;
 
   @Column("enum", { enum: ["list", "unlist", "buy", "accept-attribute-bid", "accept-bid", "asking-price", "attribute-bid", "bid", "cancel-attribute-bid", "cancel-collection-bid", "collection-bid", 
-    "mint",  "multi-attribute-bid", "multi-collection-bid", "relist", "stake", "transfer", "unlist-bid", "unlist-collection-bid", "unstake"] })
+    "mint",  "multi-attribute-bid", "multi-collection-bid", "relist", "stake", "transfer", "unlist-bid", "unlist-collection-bid", "unstake", "solo-bid"] })
   action:  "list" | "unlist" | "buy" | "accept-attribute-bid" | "accept-bid" | "asking-price" | "attribute-bid" | "bid" | "cancel-attribute-bid" | "cancel-collection-bid" | "collection-bid"
-  | "mint" | "multi-attribute-bid" | "multi-collection-bid" | "relist" | "stake" | "transfer" | "unlist-bid" | "unlist-collection-bid" | "unstake";
+  | "mint" | "multi-attribute-bid" | "multi-collection-bid" | "relist" | "stake" | "transfer" | "unlist-bid" | "unlist-collection-bid" | "unstake" | "solo-bid";
 
   @Column("jsonb", { nullable: true })
   bid_attribute: object | null;
 
   @Column("numeric", {
     nullable: true,
-    precision: 32,
+    precision: 40,
     scale: 0,
   })
   list_price: bigint;
@@ -31,7 +31,11 @@ export class Action {
   @Column("text", { nullable: true })
   buyer: string | null;
 
-  @Column("bigint", { nullable: true })
+  @Column("numeric", {
+    nullable: true,
+    precision: 40,
+    scale: 0,
+  })
   bid_price: bigint;
 
   @Column("bigint")

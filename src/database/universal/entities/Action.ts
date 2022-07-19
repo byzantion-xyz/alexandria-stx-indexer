@@ -10,9 +10,9 @@ export class Action {
   @PrimaryGeneratedColumn("uuid")
   readonly id: string;
 
-  @Column("enum", { enum: ["list", "unlist", "buy", "unlist", "buy", "accept-bid", "asking-price", "attribute-bid", "bid", "cancel-attribute-bid", "cancel-collection-bid", "collection-bid", 
+  @Column("enum", { enum: ["list", "unlist", "buy", "accept-attribute-bid", "accept-bid", "asking-price", "attribute-bid", "bid", "cancel-attribute-bid", "cancel-collection-bid", "collection-bid", 
     "mint",  "multi-attribute-bid", "multi-collection-bid", "relist", "stake", "transfer", "unlist-bid", "unlist-collection-bid", "unstake"] })
-  action:  "list" | "unlist" | "buy" | "unlist" | "buy" | "accept-bid" | "asking-price" | "attribute-bid" | "bid" | "cancel-attribute-bid" | "cancel-collection-bid" | "collection-bid"
+  action:  "list" | "unlist" | "buy" | "accept-attribute-bid" | "accept-bid" | "asking-price" | "attribute-bid" | "bid" | "cancel-attribute-bid" | "cancel-collection-bid" | "collection-bid"
   | "mint" | "multi-attribute-bid" | "multi-collection-bid" | "relist" | "stake" | "transfer" | "unlist-bid" | "unlist-collection-bid" | "unstake";
 
   @Column("jsonb", { nullable: true })

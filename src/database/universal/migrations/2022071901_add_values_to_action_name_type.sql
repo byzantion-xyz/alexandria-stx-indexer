@@ -1,3 +1,4 @@
+ALTER TYPE  "public"."ActionName" ADD VALUE 'accept-attribute-bid';
 ALTER TYPE  "public"."ActionName" ADD VALUE 'accept-bid';
 ALTER TYPE  "public"."ActionName" ADD VALUE 'accept-collection-bid';
 ALTER TYPE  "public"."ActionName" ADD VALUE 'asking-price';

@@ -19,6 +19,9 @@ export class SmartContractFunction {
   @Column("jsonb")
   args: object;
 
+  @Column("jsonb")
+  data: object
+
   @Column("uuid")
   smart_contract_id: string;
 

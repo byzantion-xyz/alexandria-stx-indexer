@@ -1,6 +1,7 @@
 import { Column, Entity, Index, JoinColumn, ManyToOne, OneToOne, PrimaryGeneratedColumn } from "typeorm";
 import { SmartContract } from "./SmartContract";
 import { NftMeta } from "./NftMeta";
+import { Commission } from "./Commission";
 
 @Index("nft_state_pkey", ["id"], { unique: true })
 @Index("nft_state_meta_id_key", ["meta_id"], { unique: true })
@@ -76,6 +77,9 @@ export class NftState {
   @Column("timestamp without time zone")
   updated_at: Date;
 
+  @Column("uuid")
+  commission_id: string;
+
   @ManyToOne(() => SmartContract, (smartContract) => smartContract.nft_state, {
     onDelete: "SET NULL",
     onUpdate: "CASCADE",
@@ -89,4 +93,11 @@ export class NftState {
   })
   @JoinColumn([{ name: "meta_id", referencedColumnName: "id" }])
   meta: NftMeta;
+
+  @ManyToOne(() => Commission, (commission) => commission.nft_states, {
+    onDelete: "RESTRICT",
+    onUpdate: "CASCADE",
+  })
+  @JoinColumn([{ name: "commission_id", referencedColumnName: "id" }])
+  commission: Commission;
 }

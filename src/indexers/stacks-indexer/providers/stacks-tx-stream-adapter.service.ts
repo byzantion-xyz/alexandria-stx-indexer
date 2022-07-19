@@ -106,7 +106,7 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
   }
 
   subscribeToEvents(): Client {
-    this.logger.log('subscribeToBlocks() subscribe to listen new blocks');
+    this.logger.log('subscribeToEvents() subscribe to listen new blocks');
 
     const client = new Client(this.configService.get('STACKS_STREAMER_SQL_DATABASE_URL'));
     client.connect();

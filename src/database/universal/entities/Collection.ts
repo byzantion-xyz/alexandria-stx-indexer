@@ -17,7 +17,7 @@ export class Collection {
   @Column("uuid", { primary: true })
   id: string;
 
-  @Column("integer", { nullable: true })
+  @Column({type: "numeric", precision: 14, nullable: true})
   collection_size: number | null;
 
   @Column("text", { nullable: true })
@@ -26,7 +26,7 @@ export class Collection {
   @Column("text", { nullable: true })
   external_url: string | null;
 
-  @Column("integer", { default: () => "0" })
+  @Column({type: "numeric", precision: 14, default: 0})
   volume: number;
 
   @Column("integer", { default: () => "0" })

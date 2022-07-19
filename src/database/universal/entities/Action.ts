@@ -2,6 +2,8 @@ import { Column, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn } 
 import { Collection } from "./Collection";
 import { SmartContract } from "./SmartContract";
 import { NftMeta } from "./NftMeta";
+import { Commission } from "./Commission";
+import { ActionName } from "src/indexers/common/helpers/indexer-enums";
 
 @Index("action_pkey", ["id"], { unique: true })
 @Entity("action", { schema: "public" })
@@ -9,15 +11,18 @@ export class Action {
   @PrimaryGeneratedColumn("uuid")
   readonly id: string;
 
-  @Column("enum", { enum: ["list", "unlist", "buy"] })
-  action: "list" | "unlist" | "buy";
-
+  @Column({ 
+    type: "enum", 
+    enum: ActionName
+  })
+  action: ActionName;
+    
   @Column("jsonb", { nullable: true })
   bid_attribute: object | null;
 
   @Column("numeric", {
     nullable: true,
-    precision: 32,
+    precision: 40,
     scale: 0,
   })
   list_price: bigint;
@@ -28,7 +33,11 @@ export class Action {
   @Column("text", { nullable: true })
   buyer: string | null;
 
-  @Column("bigint", { nullable: true })
+  @Column("numeric", {
+    nullable: true,
+    precision: 40,
+    scale: 0,
+  })
   bid_price: bigint;
 
   @Column("bigint")
@@ -94,4 +103,14 @@ export class Action {
   })
   @JoinColumn([{ name: "smart_contract_id", referencedColumnName: "id" }])
   smart_contract: SmartContract;
+
+  @Column("uuid")
+  commission_id: string;
+
+  @ManyToOne(() => Commission, (commission) => commission.actions, {
+    onDelete: "RESTRICT",
+    onUpdate: "CASCADE",
+  })
+  @JoinColumn([{ name: "commission_id", referencedColumnName: "id" }])
+  commission: Commission;
 }

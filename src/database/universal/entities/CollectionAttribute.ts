@@ -16,9 +16,6 @@ export class CollectionAttribute {
   @Column("double precision", { precision: 53 })
   rarity: number;
 
-  @Column("integer")
-  total: number;
-
   @Column("uuid")
   collection_id: string;
 

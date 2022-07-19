@@ -38,7 +38,7 @@ export class DbHelperService {
     this.logger.log(`[scraping ${slug}] Creating SmartContract...`);
     const smartContractData = {
       contract_key: contract_key,
-      type: SmartContractType.non_fungible_tokens,
+      type: [SmartContractType.non_fungible_tokens],
       chain_id: NEAR_PROTOCOL_DB_ID,
     };
 
@@ -57,7 +57,7 @@ export class DbHelperService {
       contract_key: contract_key,
       spec: nftContractMetadata.spec,
       name: nftContractMetadata.name,
-      type: SmartContractType.non_fungible_tokens,
+      type: [SmartContractType.non_fungible_tokens],
       asset_name: contract_key,
       chain_id: NEAR_PROTOCOL_DB_ID,
       json_meta: {
@@ -111,8 +111,8 @@ export class DbHelperService {
     const delResult = await this.collectionRepo.query(sqlDelete, [collectionId]);
 
     // insert
-    const sql = `insert into collection_attribute(collection_id, trait_type, value, rarity, total)
-    select nm.collection_id, nma.trait_type, nma.value, nma.rarity, 0 
+    const sql = `insert into collection_attribute(collection_id, trait_type, value, rarity)
+    select nm.collection_id, nma.trait_type, nma.value, nma.rarity
       from nft_meta_attribute nma 
       join nft_meta nm on nma.meta_id = nm.id
       where nm.collection_id = $1

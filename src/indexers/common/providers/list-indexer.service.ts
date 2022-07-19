@@ -44,7 +44,7 @@ export class ListIndexerService implements IndexerService {
     let contract_key = this.txHelper.extractArgumentData(tx.args, scf, "contract_key");
 
     // Check if custodial
-    if (sc.type === SmartContractType.non_fungible_tokens) {
+    if (sc.type.includes(SmartContractType.non_fungible_tokens)) {
       market_sc = await this.smartContractRepository.findOneBy({ contract_key });
       contract_key = sc.contract_key;
     }

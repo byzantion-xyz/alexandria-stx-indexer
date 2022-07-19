@@ -7,6 +7,7 @@ import { NftMeta } from "./NftMeta";
 import { NftState } from "./NftState";
 import { Chain } from "./Chain";
 import { SmartContractFunction } from "./SmartContractFunction";
+import { SmartContractType } from "src/indexers/common/helpers/indexer-enums";
 
 @Index("smart_contract_contract_key_key", ["contract_key"], { unique: true })
 @Index("smart_contract_pkey", ["id"], { unique: true })
@@ -24,10 +25,12 @@ export class SmartContract {
   @Column("integer", { default: () => "0" })
   scanned_transactions: number;
 
-  @Column("enum", {
-    enum: ["non_fungible_tokens", "marketplace", "staking", "utility", "fungible_tokens", "bridge", "token_series"],
+  @Column({
+    type: "enum",
+    enum: SmartContractType,
+    array: true
   })
-  type: "non_fungible_tokens" | "marketplace" | "staking" | "utility" | "fungible_tokens" | "bridge" | "token_series";
+  type: SmartContractType[];
 
   @Column("timestamp without time zone", {
     default: () => "CURRENT_TIMESTAMP",

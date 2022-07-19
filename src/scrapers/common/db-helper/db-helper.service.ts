@@ -38,7 +38,7 @@ export class DbHelperService {
     this.logger.log(`[scraping ${slug}] Creating SmartContract...`);
     const smartContractData = {
       contract_key: contract_key,
-      type: SmartContractType.non_fungible_tokens,
+      type: [SmartContractType.non_fungible_tokens],
       chain_id: NEAR_PROTOCOL_DB_ID,
     };
 
@@ -57,7 +57,7 @@ export class DbHelperService {
       contract_key: contract_key,
       spec: nftContractMetadata.spec,
       name: nftContractMetadata.name,
-      type: SmartContractType.non_fungible_tokens,
+      type: [SmartContractType.non_fungible_tokens],
       asset_name: contract_key,
       chain_id: NEAR_PROTOCOL_DB_ID,
       json_meta: {

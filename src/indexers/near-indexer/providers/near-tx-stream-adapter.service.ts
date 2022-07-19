@@ -106,7 +106,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
 
     for (let sc of smartContracts) {
       if (
-        sc.type === SmartContractType.non_fungible_tokens &&
+        sc.type.includes(SmartContractType.non_fungible_tokens) &&
         (!sc.smart_contract_functions || !sc.smart_contract_functions.length)
       ) {
         const data = await this.smartContractFunctionRepository.create([

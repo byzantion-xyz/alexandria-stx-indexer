@@ -3,6 +3,7 @@ import { Collection } from "./Collection";
 import { SmartContract } from "./SmartContract";
 import { NftMeta } from "./NftMeta";
 import { Commission } from "./Commission";
+import { ActionName } from "src/indexers/common/helpers/indexer-enums";
 
 @Index("action_pkey", ["id"], { unique: true })
 @Entity("action", { schema: "public" })
@@ -10,11 +11,12 @@ export class Action {
   @PrimaryGeneratedColumn("uuid")
   readonly id: string;
 
-  @Column("enum", { enum: ["list", "unlist", "buy", "accept-attribute-bid", "accept-bid", "asking-price", "attribute-bid", "bid", "cancel-attribute-bid", "cancel-collection-bid", "collection-bid", 
-    "mint",  "multi-attribute-bid", "multi-collection-bid", "relist", "stake", "transfer", "unlist-bid", "unlist-collection-bid", "unstake", "solo-bid"] })
-  action:  "list" | "unlist" | "buy" | "accept-attribute-bid" | "accept-bid" | "asking-price" | "attribute-bid" | "bid" | "cancel-attribute-bid" | "cancel-collection-bid" | "collection-bid"
-  | "mint" | "multi-attribute-bid" | "multi-collection-bid" | "relist" | "stake" | "transfer" | "unlist-bid" | "unlist-collection-bid" | "unstake" | "solo-bid";
-
+  @Column({ 
+    type: "enum", 
+    enum: ActionName
+  })
+  action: ActionName;
+    
   @Column("jsonb", { nullable: true })
   bid_attribute: object | null;
 

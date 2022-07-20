@@ -25,6 +25,7 @@ const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 @Injectable()
 export class IndexerOrchestratorService {
   private txStreamAdapter: TxStreamAdapter;
+  private chainSymbol: string;
   private readonly logger = new Logger(IndexerOrchestratorService.name);
 
   constructor(
@@ -101,7 +102,7 @@ export class IndexerOrchestratorService {
     try {
       const method_name = transaction.function_name;
       const finder = {
-        where: { contract_key: transaction.receiver },
+        where: { contract_key: transaction.receiver, chain: { symbol: this.chainSymbol } },
         relations: { smart_contract_functions: true },
       };
       const smart_contract = await this.smartContractRepository.findOne(finder);
@@ -147,20 +148,20 @@ export class IndexerOrchestratorService {
   }
 
   async setUpChainAndStreamer() {
-    const chain_symbol: string = this.configService.get("app.chainSymbol");
-    if (!chain_symbol) {
+    this.chainSymbol = this.configService.get("app.chainSymbol");
+    if (!this.chainSymbol) {
       throw new Error(`CHAIN_SYMBOL must be provided as environment variable`);
     }
 
     const chain = await this.chainRepository.findOneByOrFail({
-      symbol: chain_symbol,
+      symbol: this.chainSymbol,
     });
     this.txStreamAdapter = this[chain.symbol.toLowerCase() + "TxStreamAdapter"];
     if (
       !this.txStreamAdapter ||
       !this.isTxStreamAdapter(this.txStreamAdapter)
     ) {
-      throw new Error(`No stream adapter defined for chain: ${chain_symbol}`);
+      throw new Error(`No stream adapter defined for chain: ${this.chainSymbol}`);
     }
   }
 

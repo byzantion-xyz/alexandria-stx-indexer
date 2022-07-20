@@ -58,6 +58,9 @@ export class NftMeta {
   })
   created_at: Date;
 
+  @Column("boolean", { default: () => "false" })
+  chain_locked: boolean;
+
   @Column("timestamp without time zone")
   updated_at: Date;
 

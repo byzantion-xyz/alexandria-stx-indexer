@@ -131,11 +131,11 @@ export class NearScraperService {
       await this.dbHelper.setCollectionScrapeStage(collection.id, CollectionScrapeStage.creating_collection_attributes);
       await this.createCollectionAttributes(slug);
 
-      // if Paras custodial collection, pin each distinct token image to our pinata by sending tasks to rate-limited queue service
-      if (isParasCustodialCollection || contract_key == 'tinkerunion_nft.enleap.near') {
-        await this.dbHelper.setCollectionScrapeStage(collection.id, CollectionScrapeStage.pinning_multiple_images);
-        await this.pinMultipleImages({ slug: slug });
-      }
+      // // if Paras custodial collection, pin each distinct token image to our pinata by sending tasks to rate-limited queue service
+      // if (isParasCustodialCollection || contract_key == 'tinkerunion_nft.enleap.near') {
+      //   await this.dbHelper.setCollectionScrapeStage(collection.id, CollectionScrapeStage.pinning_multiple_images);
+      //   await this.pinMultipleImages({ slug: slug });
+      // }
 
       // mark scrape as done and succeeded
       await this.markScrapeSuccess(collection.id, slug);
@@ -690,14 +690,6 @@ export class NearScraperService {
           hash: pinHash,
           name: `${slug} ${nftMetas[i]?.token_id} (Rank ${nftMetas[i]?.ranking}) - Image`,
         });
-
-        console.log("pinJob")
-        console.log("pinJob")
-        console.log("pinJob")
-        console.log("pinJob")
-        console.log(pinJob)
-
-
         if (pinJob.error) {
           throw new Error(`Error: ${pinJob.error}`);
         }

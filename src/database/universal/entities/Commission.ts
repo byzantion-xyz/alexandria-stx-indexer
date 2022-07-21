@@ -51,4 +51,7 @@ export class Commission {
 
   @OneToMany(() => Action, (action) => action.commission)
   actions: Action[];
+
+  @OneToOne(() => NftState, (nftState) => nftState.meta)
+  default_for_smart_contract: SmartContract;
 }

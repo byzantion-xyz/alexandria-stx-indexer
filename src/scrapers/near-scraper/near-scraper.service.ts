@@ -313,7 +313,7 @@ export class NearScraperService {
             ipfs_meta: tokenIpfsMetas[i] ? tokenIpfsMetas[i] : {},
             paras_api_meta: isParasCustodialCollection ? tokenMetas[i] : {},
           };
-          nftMeta.attributes;
+          nftMeta.attributes = attributes;
           nftMetaUpdateOrInsert = this.dbHelper.updateNftMeta(nftMeta);
         } else {
           nftMetaUpdateOrInsert = this.dbHelper.insertNftMeta({

@@ -636,7 +636,6 @@ export class NearScraperService {
     let tokenIpfsMetaPromises = [];
     let tokenIpfsMetas = [];
 
-    // for (let i = 0; i < 10; i++) {
     for (let i = 0; i < tokenMetas.length; i++) {
       let tokenIpfsUrl = this.getTokenIpfsUrl(nftContractMetadataBaseUri, tokenMetas[i].metadata.reference);
       if (!tokenIpfsUrl || (tokenIpfsUrl && tokenIpfsUrl == "")) continue;
@@ -647,7 +646,7 @@ export class NearScraperService {
 
       tokenIpfsMetaPromises.push(this.fetchIpfsMeta(tokenIpfsUrl));
 
-      if (i % 6 === 0) {
+      if (i % 8 === 0) {
         let ipfsMetasBatch;
         try {
           ipfsMetasBatch = await Promise.all(tokenIpfsMetaPromises);
@@ -655,10 +654,8 @@ export class NearScraperService {
           throw new Error(err);
         }
         if (ipfsMetasBatch) {
-          console.log("ipfsMetasBatch.length")
-          console.log(ipfsMetasBatch.length)
-          tokenIpfsMetas.push(...ipfsMetasBatch.filter((r) => r.status == 200).map((r) => r.data));
-          await delay(300);
+          tokenIpfsMetas.push(...ipfsMetasBatch.filter((r) => { if (r.status != 200) console.log(r); return r.status == 200}).map((r) => r.data));
+          await delay(320);
         }
         tokenIpfsMetaPromises = [];
       }

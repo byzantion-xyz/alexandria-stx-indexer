@@ -646,7 +646,7 @@ export class NearScraperService {
 
       tokenIpfsMetaPromises.push(this.fetchIpfsMeta(tokenIpfsUrl));
 
-      if (i % 8 === 0) {
+      if (i % 3 === 0) {
         let ipfsMetasBatch;
         try {
           ipfsMetasBatch = await Promise.all(tokenIpfsMetaPromises);
@@ -655,7 +655,7 @@ export class NearScraperService {
         }
         if (ipfsMetasBatch) {
           tokenIpfsMetas.push(...ipfsMetasBatch.filter((r) => { if (r.status != 200) console.log(r); return r.status == 200}).map((r) => r.data));
-          await delay(320);
+          await delay(300);
         }
         tokenIpfsMetaPromises = [];
       }

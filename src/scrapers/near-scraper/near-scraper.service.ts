@@ -690,14 +690,6 @@ export class NearScraperService {
           hash: pinHash,
           name: `${slug} ${nftMetas[i]?.token_id} (Rank ${nftMetas[i]?.ranking}) - Image`,
         });
-
-        console.log("pinJob")
-        console.log("pinJob")
-        console.log("pinJob")
-        console.log("pinJob")
-        console.log(pinJob)
-
-
         if (pinJob.error) {
           throw new Error(`Error: ${pinJob.error}`);
         }

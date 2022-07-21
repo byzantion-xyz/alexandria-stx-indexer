@@ -28,6 +28,9 @@ export class Commission {
   @Column("uuid")
   smart_contract_id: string;
 
+  @Column({ length: 64 })
+  market_name: string;
+
   @Column("timestamp without time zone", {
     default: () => "CURRENT_TIMESTAMP",
   })

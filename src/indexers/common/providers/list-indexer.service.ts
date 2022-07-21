@@ -68,10 +68,9 @@ export class ListIndexerService implements IndexerService {
       // TODO: Use unified service to update NftMeta and handle NftState changes
       await this.nftStateRepository.upsert({ meta_id: nftMeta.id, ...update }, ["meta_id"]);
 
-      const actionCommonArgs: CreateActionCommonArgs = this.txHelper.setCommonActionParams(tx, sc, nftMeta, market_sc);
+      const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName.list, tx, sc, nftMeta, market_sc);
       const listActionParams: CreateListActionTO = {
         ...actionCommonArgs,
-        action: ActionName.list,
         list_price: price,
         seller: tx.signer,
       };
@@ -86,7 +85,7 @@ export class ListIndexerService implements IndexerService {
       this.logger.log(`Too Late`);
 
       const price = this.txHelper.extractArgumentData(tx.args, scf, "price");
-      const actionCommonArgs: CreateActionCommonArgs = this.txHelper.setCommonActionParams(tx, sc, nftMeta, market_sc);
+      const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName.list, tx, sc, nftMeta, market_sc);
       const listActionParams: CreateListActionTO = {
         ...actionCommonArgs,
         action: ActionName.list,

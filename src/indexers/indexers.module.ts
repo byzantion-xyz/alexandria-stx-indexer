@@ -24,6 +24,7 @@ import { Transaction as StacksTransaction } from "src/database/stacks-stream/ent
 import { StacksTxHelperService } from "./stacks-indexer/providers/stacks-tx-helper.service";
 import { ConfigService } from "@nestjs/config";
 import { TxStreamAdapter } from "./common/interfaces/tx-stream-adapter.interface";
+import { TransferIndexerService } from './stacks-indexer/providers/transfer-indexer.service';
 
 /* Select stream adapter based on chain symbol env variable */
 const TxStreamAdapterProvider = {
@@ -63,10 +64,6 @@ const TxStreamAdapterProvider = {
   controllers: [NearIndexerController],
   providers: [
     IndexerOrchestratorService,
-    /* Micro indexers */
-    BuyIndexerService,
-    ListIndexerService,
-    UnlistIndexerService,
     /* Helpers */
     TxHelperService,
     NearTxHelperService,
@@ -74,7 +71,12 @@ const TxStreamAdapterProvider = {
     /* Stream adapters */
     NearTxStreamAdapterService,
     StacksTxStreamAdapterService,
-    TxStreamAdapterProvider  
+    TxStreamAdapterProvider,
+    /* Micro indexers */
+    BuyIndexerService,
+    ListIndexerService,
+    UnlistIndexerService,
+    TransferIndexerService  
   ],
   exports: [IndexerOrchestratorService],
 })

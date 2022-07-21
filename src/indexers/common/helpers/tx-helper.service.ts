@@ -9,6 +9,7 @@ import { NftMeta } from "src/database/universal/entities/NftMeta";
 import { SmartContract } from "src/database/universal/entities/SmartContract";
 import { SmartContractFunction } from "src/database/universal/entities/SmartContractFunction";
 import { Repository } from "typeorm";
+import { ActionName } from "./indexer-enums";
 
 @Injectable()
 export class TxHelperService {
@@ -79,6 +80,7 @@ export class TxHelperService {
   }
 
   setCommonActionParams(
+    action: ActionName,
     tx: CommonTx,
     sc: SmartContract,
     nftMeta: NftMeta,
@@ -89,6 +91,7 @@ export class TxHelperService {
       smart_contract_id: sc.id,
       collection_id: nftMeta.collection_id,
       block_height: tx.block_height,
+      action: action,
       tx_index: tx.nonce,
       block_time: moment(new Date(this.nanoToMiliSeconds(tx.block_timestamp))).toDate(),
       tx_id: tx.hash,

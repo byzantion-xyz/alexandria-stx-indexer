@@ -16,6 +16,19 @@ import {
   IndexerOptions,
   IndexerSubscriptionOptions,
 } from "./common/interfaces/indexer-options";
+import { SmartContractFunction } from "src/database/universal/entities/SmartContractFunction";
+import { TransferIndexerService } from "./stacks-indexer/providers/transfer-indexer.service";
+
+const genericScf: SmartContractFunction[] = [];
+const scf = new SmartContractFunction();
+scf.name = 'transfer';
+scf.function_name = 'transfer';
+scf.args = {
+  "token_id": 0,
+  "seller": 1,
+  "buyer": 2
+};
+genericScf.push(scf);
 
 const BATCH_SIZE = 10000;
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -29,6 +42,7 @@ export class IndexerOrchestratorService {
     private buyIndexer: BuyIndexerService,
     private listIndexer: ListIndexerService,
     private unlistIndexer: UnlistIndexerService,
+    private transferIndexer: TransferIndexerService,
     private configService: ConfigService,
     @InjectRepository(SmartContract)
     private smartContractRepository: Repository<SmartContract>,
@@ -108,6 +122,11 @@ export class IndexerOrchestratorService {
           smart_contract.smart_contract_functions.find(
             (f) => f.function_name === method_name
           );
+
+        if (!smart_contract_function) {
+          smart_contract_function = genericScf.find((f) => f.function_name === method_name);
+        }
+
         if (smart_contract_function) {
           const txHandler = this.getMicroIndexer(smart_contract_function.name);
           result = await txHandler.process(

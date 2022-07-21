@@ -48,13 +48,13 @@ import { TxStreamAdapter } from "./common/interfaces/tx-stream-adapter.interface
     /* Stream adapters */
     NearTxStreamAdapterService,
     StacksTxStreamAdapterService,
-    /* Dinamyc stream adapter */
+    /* Select stream adapter based on chain symbol env variable */
     {
       provide: 'TxStreamAdapter',
       useFactory: async (
         config: ConfigService, 
         nearTxStreamAdapterService: NearTxStreamAdapterService, 
-        stacksTxStreamAdapterService: StacksTxStreamAdapterService) => {
+        stacksTxStreamAdapterService: StacksTxStreamAdapterService): Promise<TxStreamAdapter> => {
           switch (config.get('app.chainSymbol')) {
             case 'Near': return nearTxStreamAdapterService;
             case 'Stacks': return stacksTxStreamAdapterService;

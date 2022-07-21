@@ -35,6 +35,11 @@ export class TxHelperService {
   }
 
   extractArgumentData(args: JSON, scf: SmartContractFunction, field: string) {
+    if (scf.data && scf.data[field]) {
+      // Any data stored directly in smart_contract_function must override arguments
+      return scf.data[field];
+    }
+
     const index = scf.args[field];
     if (!index) {
       return undefined;

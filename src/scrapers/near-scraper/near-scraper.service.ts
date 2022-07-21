@@ -253,7 +253,7 @@ export class NearScraperService {
     this.logger.log(`[scraping ${slug}] Loading NftMetas and their NftMetaAttributes`);
 
     let tokenIpfsMetas = [];
-    if (!isParasCustodialCollection && slug != "tinkerunion_nft.enleap.near") {
+    if (!isParasCustodialCollection && slug != "tinkerunion_nft.enleap.near" && !scrape_non_custodial_from_paras) {
       tokenIpfsMetas = await this.getAllTokenIpfsMetas(tokenMetas, nftContractMetadataBaseUri, slug);
 
       if (tokenIpfsMetas.length != 0 && tokenIpfsMetas.length != tokenMetas.length) {

@@ -4,7 +4,6 @@ import { IpfsHelperService } from "../providers/ipfs-helper.service";
 import { runScraperData } from "./dto/run-scraper-data.dto";
 import { ContractConnectionService } from "./providers/contract-connection-service";
 import { DbHelperService } from "../common/db-helper/db-helper.service";
-import { NftMeta } from "src/database/universal/entities/NftMeta";
 
 const axios = require("axios").default;
 const https = require("https");
@@ -648,7 +647,7 @@ export class NearScraperService {
 
       tokenIpfsMetaPromises.push(this.fetchIpfsMeta(tokenIpfsUrl));
 
-      if (i % 8 === 0) {
+      if (i % 6 === 0) {
         let ipfsMetasBatch;
         try {
           ipfsMetasBatch = await Promise.all(tokenIpfsMetaPromises);
@@ -656,8 +655,10 @@ export class NearScraperService {
           throw new Error(err);
         }
         if (ipfsMetasBatch) {
+          console.log("ipfsMetasBatch.length")
+          console.log(ipfsMetasBatch.length)
           tokenIpfsMetas.push(...ipfsMetasBatch.filter((r) => r.status == 200).map((r) => r.data));
-          await delay(350);
+          await delay(300);
         }
         tokenIpfsMetaPromises = [];
       }

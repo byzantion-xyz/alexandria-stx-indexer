@@ -81,7 +81,7 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
       const args = tx.tx.contract_call.function_args;
       let parsed_args;
       if (args) {
-        parsed_args = this.stacksTxHelper.parseHexArguments(tx.tx.contract_call.function_args);
+        parsed_args = this.stacksTxHelper.parseHexArguments(args);
       }
 
       const notify = moment(new Date((tx.tx.burn_block_time))).utc() > moment().subtract(2, "hours").utc()

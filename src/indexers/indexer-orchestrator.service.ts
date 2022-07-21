@@ -138,7 +138,7 @@ export class IndexerOrchestratorService {
   getMicroIndexer(name: string) {
     const microIndexer = this[name + "Indexer"];
     if (!microIndexer || !this.isMicroIndexer(microIndexer)) {
-      throw new Error(`No service defined for the context: ${name}`);
+      throw new Error(`No micro indexer defined for the context: ${name}`);
     }
     return microIndexer;
   }

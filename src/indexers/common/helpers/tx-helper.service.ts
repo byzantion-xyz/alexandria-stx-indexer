@@ -41,10 +41,10 @@ export class TxHelperService {
     }
 
     const index = scf.args[field];
-    if (!index) {
+    if (typeof index === 'undefined') {
       return undefined;
-    } else if (index.includes(".")) {
-      const indexArr = index.split(".");
+    } if (index.toString().includes(".")) {
+      const indexArr = index.toString().split(".");
       return args[indexArr[0]][indexArr[1]];
     } else {
       return args[scf.args[field]];

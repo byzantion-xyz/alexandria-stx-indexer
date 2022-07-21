@@ -1,4 +1,3 @@
-
 import { Module } from "@nestjs/common";
 import { NearIndexerController } from "./near-indexer/near-indexer.controller";
 import { IndexerOrchestratorService } from "./indexer-orchestrator.service";
@@ -18,19 +17,46 @@ import { SmartContract } from "src/database/universal/entities/SmartContract";
 import { SmartContractFunction } from "src/database/universal/entities/SmartContractFunction";
 import { Transaction as NearTransaction } from "src/database/near-stream/entities/Transaction";
 import { Receipt } from "src/database/near-stream/entities/Receipt";
-import { StacksTxStreamAdapterService } from './stacks-indexer/providers/stacks-tx-stream-adapter.service';
+import { StacksTxStreamAdapterService } from "./stacks-indexer/providers/stacks-tx-stream-adapter.service";
 import { Chain } from "src/database/universal/entities/Chain";
 import { Block } from "src/database/stacks-stream/entities/Block";
 import { Transaction as StacksTransaction } from "src/database/stacks-stream/entities/Transaction";
-import { StacksTxHelperService } from './stacks-indexer/providers/stacks-tx-helper.service';
+import { StacksTxHelperService } from "./stacks-indexer/providers/stacks-tx-helper.service";
 import { ConfigService } from "@nestjs/config";
 import { TxStreamAdapter } from "./common/interfaces/tx-stream-adapter.interface";
+
+/* Select stream adapter based on chain symbol env variable */
+const TxStreamAdapterProvider = {
+  provide: "TxStreamAdapter",
+  useFactory: async (
+    config: ConfigService,
+    nearTxStreamAdapterService: NearTxStreamAdapterService,
+    stacksTxStreamAdapterService: StacksTxStreamAdapterService
+  ): Promise<TxStreamAdapter> => {
+    switch (config.get("app.chainSymbol")) {
+      case "Near": return nearTxStreamAdapterService;
+      case "Stacks": return stacksTxStreamAdapterService;
+      default:
+        throw new Error(
+          `Unable to find stream adapter for ${config.get("app.chainSymbol")}`
+        );
+    }
+  },
+  inject: [ConfigService, NearTxStreamAdapterService, StacksTxStreamAdapterService]
+};
 
 @Module({
   imports: [
     DiscordBotModule,
     ScrapersModule,
-    TypeOrmModule.forFeature([NftMeta, NftState, Action, SmartContract, SmartContractFunction, Chain]),
+    TypeOrmModule.forFeature([
+      NftMeta,
+      NftState,
+      Action,
+      SmartContract,
+      SmartContractFunction,
+      Chain,
+    ]),
     TypeOrmModule.forFeature([NearTransaction, Receipt], "NEAR-STREAM"),
     TypeOrmModule.forFeature([StacksTransaction, Block], "STACKS-STREAM"),
   ],
@@ -48,21 +74,7 @@ import { TxStreamAdapter } from "./common/interfaces/tx-stream-adapter.interface
     /* Stream adapters */
     NearTxStreamAdapterService,
     StacksTxStreamAdapterService,
-    /* Select stream adapter based on chain symbol env variable */
-    {
-      provide: 'TxStreamAdapter',
-      useFactory: async (
-        config: ConfigService, 
-        nearTxStreamAdapterService: NearTxStreamAdapterService, 
-        stacksTxStreamAdapterService: StacksTxStreamAdapterService): Promise<TxStreamAdapter> => {
-          switch (config.get('app.chainSymbol')) {
-            case 'Near': return nearTxStreamAdapterService;
-            case 'Stacks': return stacksTxStreamAdapterService;
-            default: throw new Error(`Unable to find stream adapter for ${config.get('app.chainSymbol')}`);
-          }
-        },
-      inject: [ConfigService, NearTxStreamAdapterService, StacksTxStreamAdapterService]
-    },
+    TxStreamAdapterProvider  
   ],
   exports: [IndexerOrchestratorService],
 })

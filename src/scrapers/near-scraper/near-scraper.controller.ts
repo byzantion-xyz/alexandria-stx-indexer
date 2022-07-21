@@ -20,6 +20,7 @@ export class NearScraperController {
       scrape_non_custodial_from_paras;
       pin_multiple_images;
       force_scrape;
+      override_token_metadata;
     }
   ) {
     const result = await this.nearScraper.scrape(data);

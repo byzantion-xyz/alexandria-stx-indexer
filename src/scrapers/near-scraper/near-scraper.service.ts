@@ -4,6 +4,7 @@ import { IpfsHelperService } from "../providers/ipfs-helper.service";
 import { runScraperData } from "./dto/run-scraper-data.dto";
 import { ContractConnectionService } from "./providers/contract-connection-service";
 import { DbHelperService } from "../common/db-helper/db-helper.service";
+import { NftMeta } from "src/database/universal/entities/NftMeta";
 
 const axios = require("axios").default;
 const https = require("https");
@@ -27,7 +28,7 @@ export class NearScraperService {
   async scrape(data: runScraperData) {
     this.logger.log(`START SCRAPE`);
     const { slug: slugInput, contract_key, token_series_id, token_id, starting_token_id, ending_token_id } = data;
-    const { scrape_non_custodial_from_paras = false, force_scrape = false } = data;
+    const { scrape_non_custodial_from_paras = false, force_scrape = false, override_metadata = false} = data;
     let isParasCustodialCollection = false;
     if (token_series_id || slugInput) isParasCustodialCollection = true;
 
@@ -120,7 +121,8 @@ export class NearScraperService {
         slug,
         loadedCollection,
         scrape_non_custodial_from_paras,
-        isParasCustodialCollection
+        isParasCustodialCollection,
+        override_metadata
       );
 
       // update NftMeta + NftMetaAttributes rarities
@@ -245,7 +247,8 @@ export class NearScraperService {
     slug,
     collection,
     scrape_non_custodial_from_paras,
-    isParasCustodialCollection
+    isParasCustodialCollection,
+    override_metadata
   ) {
     if (tokenMetas.length == 0) return;
     this.logger.log(`[scraping ${slug}] Loading NftMetas and their NftMetaAttributes`);
@@ -264,9 +267,12 @@ export class NearScraperService {
     // for (let i = 0; i < 10; i++) {
     for (let i = 0; i < tokenMetas.length; i++) {
       const nftMeta = await this.dbHelper.findOneNftMeta(collection.id, tokenMetas[i]?.token_id);
-      if (nftMeta) continue; // if nftMeta already exists, skip loading it
+      
+       // if nftMeta already exists and not overriding token metadata, skip loading it
+      if (nftMeta && !override_metadata) continue;
 
       try {
+        // get attributes
         let attributes = [];
         if (scrape_non_custodial_from_paras || isParasCustodialCollection) {
           attributes = tokenMetas[i].metadata.attributes;
@@ -284,28 +290,51 @@ export class NearScraperService {
           ];
         }
 
+        // get mediaUrl
         let mediaUrl = this.getTokenIpfsMediaUrl(nftContractMetadataBaseUri, tokenMetas[i].metadata.media);
         if (mediaUrl && mediaUrl != "" && mediaUrl.includes("ipfs")) {
           mediaUrl = this.ipfsHelperService.getByzIpfsUrl(mediaUrl);
         }
 
-        const nftMetaInsert = this.dbHelper.insertNftMeta({
-          smart_contract_id: smartContractId,
-          chain_id: NEAR_PROTOCOL_DB_ID,
-          collection_id: collection.id,
-          name: tokenMetas[i].metadata.title,
-          image: mediaUrl,
-          token_id: tokenMetas[i].token_id,
-          rarity: 0,
-          ranking: 0,
-          json_meta: {
+        // if override_token_metadata, update the existing NftMeta, else insert new NftMeta
+        let nftMetaUpdateOrInsert
+        
+        if (nftMeta && override_metadata) {
+          nftMeta.smart_contract_id = smartContractId;
+          nftMeta.chain_id = NEAR_PROTOCOL_DB_ID;
+          nftMeta.collection_id = collection.id;
+          nftMeta.name = tokenMetas[i].metadata.title;
+          nftMeta.image = mediaUrl;
+          nftMeta.token_id = tokenMetas[i].token_id;
+          nftMeta.rarity = 0;
+          nftMeta.ranking = 0;
+          nftMeta.json_meta = {
             chain_meta: isParasCustodialCollection ? {} : tokenMetas[i],
             ipfs_meta: tokenIpfsMetas[i] ? tokenIpfsMetas[i] : {},
             paras_api_meta: isParasCustodialCollection ? tokenMetas[i] : {},
-          },
-          attributes,
-        });
-        nftMetaPromises.push(nftMetaInsert);
+          };
+          nftMeta.attributes;
+          nftMetaUpdateOrInsert = this.dbHelper.updateNftMeta(nftMeta);
+        } else {
+          nftMetaUpdateOrInsert = this.dbHelper.insertNftMeta({
+            smart_contract_id: smartContractId,
+            chain_id: NEAR_PROTOCOL_DB_ID,
+            collection_id: collection.id,
+            name: tokenMetas[i].metadata.title,
+            image: mediaUrl,
+            token_id: tokenMetas[i].token_id,
+            rarity: 0,
+            ranking: 0,
+            json_meta: {
+              chain_meta: isParasCustodialCollection ? {} : tokenMetas[i],
+              ipfs_meta: tokenIpfsMetas[i] ? tokenIpfsMetas[i] : {},
+              paras_api_meta: isParasCustodialCollection ? tokenMetas[i] : {},
+            },
+            attributes
+          });
+        }
+
+        nftMetaPromises.push(nftMetaUpdateOrInsert);
 
         if (i % 100 === 0) {
           await Promise.all(nftMetaPromises);
@@ -619,7 +648,7 @@ export class NearScraperService {
 
       tokenIpfsMetaPromises.push(this.fetchIpfsMeta(tokenIpfsUrl));
 
-      if (i % 10 === 0) {
+      if (i % 8 === 0) {
         let ipfsMetasBatch;
         try {
           ipfsMetasBatch = await Promise.all(tokenIpfsMetaPromises);
@@ -628,7 +657,7 @@ export class NearScraperService {
         }
         if (ipfsMetasBatch) {
           tokenIpfsMetas.push(...ipfsMetasBatch.filter((r) => r.status == 200).map((r) => r.data));
-          await delay(300);
+          await delay(350);
         }
         tokenIpfsMetaPromises = [];
       }

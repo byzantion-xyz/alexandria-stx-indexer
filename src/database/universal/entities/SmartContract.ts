@@ -19,6 +19,9 @@ export class SmartContract {
   @Column("text")
   contract_key: string;
 
+  @Column("text")
+  contract_key_wrapper: string;
+
   @Column("text", { nullable: true })
   name: string | null;
 

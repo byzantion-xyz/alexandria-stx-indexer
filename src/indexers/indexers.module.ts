@@ -23,7 +23,8 @@ import { Chain } from "src/database/universal/entities/Chain";
 import { Block } from "src/database/stacks-stream/entities/Block";
 import { Transaction as StacksTransaction } from "src/database/stacks-stream/entities/Transaction";
 import { StacksTxHelperService } from './stacks-indexer/providers/stacks-tx-helper.service';
-
+import { ConfigService } from "@nestjs/config";
+import { TxStreamAdapter } from "./common/interfaces/tx-stream-adapter.interface";
 
 @Module({
   imports: [
@@ -36,14 +37,32 @@ import { StacksTxHelperService } from './stacks-indexer/providers/stacks-tx-help
   controllers: [NearIndexerController],
   providers: [
     IndexerOrchestratorService,
+    /* Micro indexers */
     BuyIndexerService,
     ListIndexerService,
-    TxHelperService,
     UnlistIndexerService,
-    NearTxStreamAdapterService,
+    /* Helpers */
+    TxHelperService,
     NearTxHelperService,
-    StacksTxStreamAdapterService,
     StacksTxHelperService,
+    /* Stream adapters */
+    NearTxStreamAdapterService,
+    StacksTxStreamAdapterService,
+    /* Dinamyc stream adapter */
+    {
+      provide: 'TxStreamAdapter',
+      useFactory: async (
+        config: ConfigService, 
+        nearTxStreamAdapterService: NearTxStreamAdapterService, 
+        stacksTxStreamAdapterService: StacksTxStreamAdapterService) => {
+          switch (config.get('app.chainSymbol')) {
+            case 'Near': return nearTxStreamAdapterService;
+            case 'Stacks': return stacksTxStreamAdapterService;
+            default: throw new Error(`Unable to find stream adapter for ${config.get('app.chainSymbol')}`);
+          }
+        },
+      inject: [ConfigService, NearTxStreamAdapterService, StacksTxStreamAdapterService]
+    },
   ],
   exports: [IndexerOrchestratorService],
 })

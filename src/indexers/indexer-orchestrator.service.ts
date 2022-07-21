@@ -1,15 +1,13 @@
-import { Logger, Injectable, Provider } from "@nestjs/common";
+import { Logger, Injectable, Provider, Inject } from "@nestjs/common";
 import { BuyIndexerService } from "./common/providers/buy-indexer.service";
 import { ListIndexerService } from "./common/providers/list-indexer.service";
 import { TxProcessResult } from "src/indexers/common/interfaces/tx-process-result.interface";
 import { UnlistIndexerService } from "./common/providers/unlist-indexer.service";
 import { Client } from "pg";
-import { NearTxStreamAdapterService } from "./near-indexer/providers/near-tx-stream-adapter.service";
 import { CommonTx } from "./common/interfaces/common-tx.interface";
 import { SmartContract } from "src/database/universal/entities/SmartContract";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
-import { StacksTxStreamAdapterService } from "./stacks-indexer/providers/stacks-tx-stream-adapter.service";
 import { ConfigService } from "@nestjs/config";
 import { Chain } from "src/database/universal/entities/Chain";
 import { TxStreamAdapter } from "src/indexers/common/interfaces/tx-stream-adapter.interface";
@@ -24,13 +22,10 @@ const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 @Injectable()
 export class IndexerOrchestratorService {
-  private txStreamAdapter: TxStreamAdapter;
   private chainSymbol: string;
   private readonly logger = new Logger(IndexerOrchestratorService.name);
 
   constructor(
-    private nearTxStreamAdapter: NearTxStreamAdapterService,
-    private stacksTxStreamAdapter: StacksTxStreamAdapterService,
     private buyIndexer: BuyIndexerService,
     private listIndexer: ListIndexerService,
     private unlistIndexer: UnlistIndexerService,
@@ -38,7 +33,8 @@ export class IndexerOrchestratorService {
     @InjectRepository(SmartContract)
     private smartContractRepository: Repository<SmartContract>,
     @InjectRepository(Chain)
-    private chainRepository: Repository<Chain>
+    private chainRepository: Repository<Chain>,
+    @Inject('TxStreamAdapter') private txStreamAdapter: TxStreamAdapter,
   ) {}
 
   async runIndexer(options: IndexerOptions) {
@@ -156,7 +152,7 @@ export class IndexerOrchestratorService {
     const chain = await this.chainRepository.findOneByOrFail({
       symbol: this.chainSymbol,
     });
-    this.txStreamAdapter = this[chain.symbol.toLowerCase() + "TxStreamAdapter"];
+  
     if (
       !this.txStreamAdapter ||
       !this.isTxStreamAdapter(this.txStreamAdapter)
@@ -165,19 +161,20 @@ export class IndexerOrchestratorService {
     }
   }
 
-  isTxStreamAdapter(arg) {
+
+
+  isTxStreamAdapter(arg): arg is TxStreamAdapter {
     return (
-      (arg as TxStreamAdapter).fetchMissingTxs !== undefined &&
-      (arg as TxStreamAdapter).fetchTxs !== undefined &&
-      (arg as TxStreamAdapter).setTxResult !== undefined
+      typeof arg.fetchMissingTxs === 'function' &&
+      typeof arg.fetchTxs === 'function' &&
+      typeof arg.setTxResult === 'function'
     );
   }
 
-  isTxStreamAdapterWithSubsriptions(arg) {
-    return (this.isTxStreamAdapter(arg) &&
-      (arg as TxStreamAdapter).subscribeToEvents !== undefined &&
-      (arg as TxStreamAdapter).fetchEventData !== undefined
-    );
+  isTxStreamAdapterWithSubsriptions(arg): arg is TxStreamAdapter {
+    return this.isTxStreamAdapter(arg) &&
+      typeof arg.subscribeToEvents === 'function' &&
+      typeof arg.fetchEventData === 'function';
   }
 
   isMicroIndexer(arg) {

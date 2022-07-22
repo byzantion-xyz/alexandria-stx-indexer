@@ -43,7 +43,7 @@ export class Action {
   @Column("bigint")
   block_height: bigint;
 
-  @Column("bigint")
+  @Column("bigint", { nullable: true })
   tx_index: bigint;
 
   @Column("timestamp without time zone")

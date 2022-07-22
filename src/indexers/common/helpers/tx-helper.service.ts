@@ -9,6 +9,7 @@ import { NftMeta } from "src/database/universal/entities/NftMeta";
 import { SmartContract } from "src/database/universal/entities/SmartContract";
 import { SmartContractFunction } from "src/database/universal/entities/SmartContractFunction";
 import { Repository } from "typeorm";
+import { ActionName } from "./indexer-enums";
 
 @Injectable()
 export class TxHelperService {
@@ -30,16 +31,21 @@ export class TxHelperService {
       !nft_state ||
       !nft_state.list_block_height ||
       tx.block_height > nft_state.list_block_height ||
-      (tx.block_height === nft_state.list_block_height && tx.nonce > nft_state.list_tx_index)
+      (tx.block_height === nft_state.list_block_height && tx.index && tx.index > nft_state.list_tx_index)
     );
   }
 
   extractArgumentData(args: JSON, scf: SmartContractFunction, field: string) {
+    if (scf.data && scf.data[field]) {
+      // Any data stored directly in smart_contract_function must override arguments
+      return scf.data[field];
+    }
+
     const index = scf.args[field];
-    if (!index) {
+    if (typeof index === 'undefined') {
       return undefined;
-    } else if (index.includes(".")) {
-      const indexArr = index.split(".");
+    } if (index.toString().includes(".")) {
+      const indexArr = index.toString().split(".");
       return args[indexArr[0]][indexArr[1]];
     } else {
       return args[scf.args[field]];
@@ -74,18 +80,22 @@ export class TxHelperService {
   }
 
   setCommonActionParams(
+    action: ActionName,
     tx: CommonTx,
     sc: SmartContract,
     nftMeta: NftMeta,
     msc?: SmartContract
   ): CreateActionCommonArgs {
+
     return {
       nft_meta_id: nftMeta.id,
       smart_contract_id: sc.id,
       collection_id: nftMeta.collection_id,
       block_height: tx.block_height,
-      tx_index: tx.nonce,
-      block_time: moment(new Date(this.nanoToMiliSeconds(tx.block_timestamp))).toDate(),
+      action: action,
+      tx_index: tx.index,
+      nonce: tx.nonce,
+      block_time: moment(new Date(tx.block_timestamp)).toDate(),
       tx_id: tx.hash,
       ...(msc && {
         market_name: msc.name,

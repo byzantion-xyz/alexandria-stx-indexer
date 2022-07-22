@@ -38,7 +38,9 @@ export class UnlistIndexerService implements IndexerService {
 
     // Check if custodial
     if (sc.type.includes(SmartContractType.non_fungible_tokens)) {
-      market_sc = await this.smartContractRepository.findOneBy({ contract_key });
+      if (contract_key) {
+        market_sc = await this.smartContractRepository.findOneBy({ contract_key });
+      }
       contract_key = sc.contract_key;
     }
 
@@ -47,10 +49,9 @@ export class UnlistIndexerService implements IndexerService {
     if (nftMeta && this.txHelper.isNewNftListOrSale(tx, nftMeta.nft_state)) {
       await this.txHelper.unlistMeta(nftMeta.id, tx.nonce, tx.block_height);
 
-      const actionCommonArgs: CreateActionCommonArgs = this.txHelper.setCommonActionParams(tx, sc, nftMeta, market_sc);
+      const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName.unlist, tx, sc, nftMeta, market_sc);
       const unlistActionParams: CreateUnlistActionTO = {
         ...actionCommonArgs,
-        action: ActionName.unlist,
         list_price: nftMeta.nft_state && nftMeta.nft_state.list_price ? nftMeta.nft_state.list_price : undefined,
         seller: nftMeta.nft_state?.list_seller || undefined,
       };
@@ -61,10 +62,9 @@ export class UnlistIndexerService implements IndexerService {
     } else if (nftMeta) {
       this.logger.log(`Too Late`);
       // Create missing action
-      const actionCommonArgs: CreateActionCommonArgs = this.txHelper.setCommonActionParams(tx, sc, nftMeta, market_sc);
+      const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName.unlist, tx, sc, nftMeta, market_sc);
       const unlistActionParams: CreateUnlistActionTO = {
         ...actionCommonArgs,
-        action: ActionName.unlist,
         list_price: nftMeta.nft_state && nftMeta.nft_state.list_price ? nftMeta.nft_state.list_price : undefined,
         seller: nftMeta.nft_state?.list_seller || undefined,
       };

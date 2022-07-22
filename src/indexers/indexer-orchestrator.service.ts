@@ -19,23 +19,13 @@ import {
 import { SmartContractFunction } from "src/database/universal/entities/SmartContractFunction";
 import { TransferIndexerService } from "./stacks-indexer/providers/transfer-indexer.service";
 
-const genericScf: SmartContractFunction[] = [];
-const scf = new SmartContractFunction();
-scf.name = 'transfer';
-scf.function_name = 'transfer';
-scf.args = {
-  "token_id": 0,
-  "seller": 1,
-  "buyer": 2
-};
-genericScf.push(scf);
-
 const BATCH_SIZE = 10000;
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 @Injectable()
 export class IndexerOrchestratorService {
   private chainSymbol: string;
+  private genericScf: SmartContractFunction[];
   private readonly logger = new Logger(IndexerOrchestratorService.name);
 
   constructor(
@@ -124,7 +114,7 @@ export class IndexerOrchestratorService {
           );
 
         if (!smart_contract_function) {
-          smart_contract_function = genericScf.find((f) => f.function_name === method_name);
+          smart_contract_function = this.genericScf.find((f) => f.function_name === method_name);
         }
 
         if (smart_contract_function) {
@@ -163,14 +153,11 @@ export class IndexerOrchestratorService {
   }
 
   async setUpChainAndStreamer() {
-    this.chainSymbol = this.configService.get("app.chainSymbol");
+    this.chainSymbol = this.configService.get("indexer.chainSymbol");
     if (!this.chainSymbol) {
       throw new Error(`CHAIN_SYMBOL must be provided as environment variable`);
     }
-
-    const chain = await this.chainRepository.findOneByOrFail({
-      symbol: this.chainSymbol,
-    });
+    const chain = await this.chainRepository.findOneByOrFail({ symbol: this.chainSymbol });
   
     if (
       !this.txStreamAdapter ||
@@ -178,9 +165,17 @@ export class IndexerOrchestratorService {
     ) {
       throw new Error(`No stream adapter defined for chain: ${this.chainSymbol}`);
     }
+
+    // Load generic functinos per chain (i.e transfer)
+    const functions = this.configService.get("indexer.genericFunctions")[this.chainSymbol];
+    for (let genericFunction of functions) {
+      const scf = new SmartContractFunction();
+      scf.function_name = genericFunction.function_name;
+      scf.name = genericFunction.name;
+      scf.args = genericFunction.args;
+      this.genericScf.push(scf);
+    }
   }
-
-
 
   isTxStreamAdapter(arg): arg is TxStreamAdapter {
     return (

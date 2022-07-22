@@ -34,12 +34,12 @@ const TxStreamAdapterProvider = {
     nearTxStreamAdapterService: NearTxStreamAdapterService,
     stacksTxStreamAdapterService: StacksTxStreamAdapterService
   ): Promise<TxStreamAdapter> => {
-    switch (config.get("app.chainSymbol")) {
+    switch (config.get("indexer.chainSymbol")) {
       case "Near": return nearTxStreamAdapterService;
       case "Stacks": return stacksTxStreamAdapterService;
       default:
         throw new Error(
-          `Unable to find stream adapter for ${config.get("app.chainSymbol")}`
+          `Unable to find stream adapter for ${config.get("indexer.chainSymbol")}`
         );
     }
   },

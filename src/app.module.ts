@@ -14,13 +14,14 @@ import { TasksModule } from "./tasks/tasks.module";
 
 import discordConfig from "./config/discord.config";
 import appConfig from "./config/app.config";
+import indexerConfig from "./config/indexer.config";
 import { TypeOrmModule } from "@nestjs/typeorm";
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       envFilePath: ["config.env", ".env"],
-      load: [discordConfig, appConfig],
+      load: [discordConfig, appConfig, indexerConfig],
       isGlobal: true,
     }),
     ScrapersModule,

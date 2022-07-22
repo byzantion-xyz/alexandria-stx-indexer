@@ -33,6 +33,7 @@ export class IndexerOrchestratorService {
     private listIndexer: ListIndexerService,
     private unlistIndexer: UnlistIndexerService,
     private transferIndexer: TransferIndexerService,
+    private relistIndexer: ListIndexerService,
     private configService: ConfigService,
     @InjectRepository(SmartContract)
     private smartContractRepository: Repository<SmartContract>,
@@ -113,7 +114,7 @@ export class IndexerOrchestratorService {
             (f) => f.function_name === method_name
           );
 
-        if (!smart_contract_function) {
+        if (!smart_contract_function && this.genericScf && this.genericScf.length) {
           smart_contract_function = this.genericScf.find((f) => f.function_name === method_name);
         }
 

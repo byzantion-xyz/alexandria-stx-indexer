@@ -84,6 +84,9 @@ export class NftState {
   @Column("uuid")
   commission_id: string;
 
+  @Column("uuid")
+  list_contract_id: string;
+
   @ManyToOne(() => SmartContract, (smartContract) => smartContract.nft_state, {
     onDelete: "SET NULL",
     onUpdate: "CASCADE",

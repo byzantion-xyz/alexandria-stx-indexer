@@ -71,7 +71,7 @@ export class TxHelperService {
       listed: false,
       list_price: undefined,
       list_seller: null,
-      list_contract: undefined,
+      list_contract_id: undefined,
       list_tx_index: nonce,
       list_block_height: block_height,
     };

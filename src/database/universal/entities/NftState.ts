@@ -81,10 +81,10 @@ export class NftState {
   @Column("timestamp without time zone")
   updated_at: Date;
 
-  @Column("uuid")
+  @Column("uuid", { nullable: true })
   commission_id: string;
 
-  @Column("uuid")
+  @Column("uuid", { nullable: true })
   list_contract_id: string;
 
   @ManyToOne(() => SmartContract, (smartContract) => smartContract.nft_state, {

@@ -31,7 +31,7 @@ export class TxHelperService {
       !nft_state ||
       !nft_state.list_block_height ||
       tx.block_height > nft_state.list_block_height ||
-      (tx.block_height === nft_state.list_block_height && tx.nonce > nft_state.list_tx_index)
+      (tx.block_height === nft_state.list_block_height && tx.index && tx.index > nft_state.list_tx_index)
     );
   }
 
@@ -86,14 +86,16 @@ export class TxHelperService {
     nftMeta: NftMeta,
     msc?: SmartContract
   ): CreateActionCommonArgs {
+
     return {
       nft_meta_id: nftMeta.id,
       smart_contract_id: sc.id,
       collection_id: nftMeta.collection_id,
       block_height: tx.block_height,
       action: action,
-      tx_index: tx.nonce,
-      block_time: moment(new Date(this.nanoToMiliSeconds(tx.block_timestamp))).toDate(),
+      tx_index: tx.index,
+      nonce: tx.nonce,
+      block_time: moment(new Date(tx.block_timestamp)).toDate(),
       tx_id: tx.hash,
       ...(msc && {
         market_name: msc.name,

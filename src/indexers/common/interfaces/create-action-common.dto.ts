@@ -7,7 +7,8 @@ export interface CreateActionCommonArgs {
   market_name: string;
   action: ActionNameTO;
   block_height: bigint;
-  tx_index: bigint;
+  tx_index?: bigint;
+  nonce: bigint;
   block_time: Date;
   tx_id: string;
 }

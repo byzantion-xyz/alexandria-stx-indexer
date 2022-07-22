@@ -91,9 +91,10 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
       return {
         hash: tx.hash,
         block_hash: tx.tx.block_hash,
-        block_timestamp: BigInt(tx.tx.burn_block_time),
+        block_timestamp: tx.tx.burn_block_time * 1000,
         block_height: tx.block_height,
         nonce: BigInt(tx.tx.nonce),
+        index: BigInt(tx.tx.tx_index),
         signer: tx.tx.sender_address,
         receiver: tx.tx.contract_call.contract_id,
         function_name: tx.tx.contract_call.function_name,

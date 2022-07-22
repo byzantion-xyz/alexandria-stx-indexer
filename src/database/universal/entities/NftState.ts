@@ -24,7 +24,7 @@ export class NftState {
 
   @Column("numeric", {
     nullable: true,
-    precision: 32,
+    precision: 40,
     scale: 0,
   })
   list_price: bigint;
@@ -41,7 +41,11 @@ export class NftState {
   @Column("boolean", { default: () => "false" })
   bid: boolean;
 
-  @Column("bigint", { nullable: true })
+  @Column("numeric", {
+    nullable: true,
+    precision: 40,
+    scale: 0,
+  })
   bid_price: bigint;
 
   @Column("text", { nullable: true })

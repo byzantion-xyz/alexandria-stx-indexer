@@ -182,7 +182,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
       return {
         hash: tx.transaction.hash,
         block_hash: tx.block_hash,
-        block_timestamp: tx.block_timestamp,
+        block_timestamp: this.txHelper.nanoToMiliSeconds(tx.block_timestamp),
         block_height: tx.block_height,
         nonce: tx.transaction.nonce,
         signer: tx.transaction.signer_id,

@@ -5,16 +5,16 @@ export interface CreateActionCommonArgs {
   collection_id: string;
   smart_contract_id: string;
   market_name: string;
-
+  action: ActionNameTO;
   block_height: bigint;
-  tx_index: bigint;
+  tx_index?: bigint;
+  nonce: bigint;
   block_time: Date;
   tx_id: string;
 }
 
 export interface CreateListActionTO extends CreateActionCommonArgs {
   list_price: bigint;
-  action: ActionNameTO;
   seller: string;
 }
 
@@ -23,4 +23,9 @@ export interface CreateBuyActionTO extends CreateListActionTO {
   buyer: string;
 }
 
-export type CreateActionTO = CreateListActionTO | CreateUnlistActionTO | CreateBuyActionTO;
+export interface CreateTransferActionTO extends CreateActionCommonArgs {
+  buyer: string;
+  seller: string;
+}
+
+export type CreateActionTO = CreateListActionTO | CreateUnlistActionTO | CreateBuyActionTO | CreateTransferActionTO;

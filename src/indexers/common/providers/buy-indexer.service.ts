@@ -39,7 +39,7 @@ export class BuyIndexerService implements IndexerService {
     if (nftMeta && this.txHelper.isNewNftListOrSale(tx, nftMeta.nft_state)) {
       await this.txHelper.unlistMeta(nftMeta.id, tx.nonce, tx.block_height);
 
-      const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName.buy, tx, sc, nftMeta, sc);
+      const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName[scf.name], tx, sc, nftMeta, sc);
       const buyActionParams: CreateBuyActionTO = { 
         ...actionCommonArgs,
         list_price: price || (nftMeta.nft_state?.listed ? nftMeta.nft_state.list_price : undefined),
@@ -57,7 +57,7 @@ export class BuyIndexerService implements IndexerService {
       this.logger.log(`Too Late`);
 
       // Create missing action
-      const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName.buy, tx, sc, nftMeta, sc);
+      const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName[scf.name], tx, sc, nftMeta, sc);
       const buyActionParams: CreateBuyActionTO = {
         ...actionCommonArgs,
         list_price: price || (nftMeta.nft_state?.listed ? nftMeta.nft_state.list_price : undefined),

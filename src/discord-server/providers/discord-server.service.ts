@@ -23,7 +23,7 @@ export class DiscordServerService {
   ) {}
 
   async create(params: CreateDiscordServer) {
-    const discordServer = await this.discordServerRepository.findOne({
+    let discordServer = await this.discordServerRepository.findOne({
       where: { server_id: params.server_id },
       relations: { discord_server_channels: { collection_on_discord_server_channels: true } },
     });
@@ -33,22 +33,23 @@ export class DiscordServerService {
         await this.collectionOnDiscordServerChannelRepository.delete({ discord_server_channel_id: ch.id });
         await this.discordServerChannelRepository.delete({ id: ch.id });
       }
-      await this.discordServerRepository.remove(discordServer);
+    } else {
+      discordServer = this.discordServerRepository.create({
+        server_id: params.server_id,
+        server_name: params.server_name,
+        active: true
+      });
     }
 
-    const discordServerObj = this.discordServerRepository.create({
-      server_id: params.server_id,
-      server_name: params.server_name,
-      active: true,
-      discord_server_channels: params.channels.map((ch) => ({
+    discordServer.discord_server_channels = this.discordServerChannelRepository.create(params.channels.map((ch) => ({
         channel_id: ch.channel_id,
         name: ch.name,
         purpose: ch.purpose,
         collection_on_discord_server_channels: ch.collections.map((collection_id) => ({ collection_id })),
       })),
-    });
+    );
 
-    await this.discordServerRepository.save(discordServerObj, { transaction: true });
+    await this.discordServerRepository.save(discordServer, { transaction: true });
   }
 
   async fetchChannelsBySlug(slug: string, purpose: DiscordChannelType) {

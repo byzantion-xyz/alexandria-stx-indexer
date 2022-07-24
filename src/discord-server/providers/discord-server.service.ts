@@ -33,6 +33,7 @@ export class DiscordServerService {
         await this.collectionOnDiscordServerChannelRepository.delete({ discord_server_channel_id: ch.id });
         await this.discordServerChannelRepository.delete({ id: ch.id });
       }
+      discordServer.server_name = params.server_name;
     } else {
       discordServer = this.discordServerRepository.create({
         server_id: params.server_id,

@@ -81,6 +81,9 @@ export class NftState {
   @Column("timestamp without time zone")
   updated_at: Date;
 
+  @Column("jsonb", { nullable: true })
+  function_args: object | null;
+
   @Column("uuid", { nullable: true })
   commission_id: string;
 

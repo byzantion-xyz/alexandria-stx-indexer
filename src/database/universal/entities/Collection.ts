@@ -1,4 +1,4 @@
-import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany, OneToOne } from "typeorm";
+import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
 import { Action } from "./Action";
 import { CollectionScrape } from "./CollectionScrape";
 import { SmartContract } from "./SmartContract";
@@ -14,7 +14,7 @@ import { NftMeta } from "./NftMeta";
 @Index("collection_slug_key", ["slug"], { unique: true })
 @Entity("collection", { schema: "public" })
 export class Collection {
-  @Column("uuid", { primary: true })
+  @PrimaryGeneratedColumn("uuid")
   id: string;
 
   @Column({type: "numeric", precision: 14, nullable: true})

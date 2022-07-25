@@ -54,6 +54,7 @@ export class UnlistIndexerService implements IndexerService {
         ...actionCommonArgs,
         list_price: nftMeta.nft_state && nftMeta.nft_state.list_price ? nftMeta.nft_state.list_price : undefined,
         seller: nftMeta.nft_state?.list_seller || undefined,
+        commission_id: nftMeta.nft_state?.commission_id
       };
 
       await this.createAction(unlistActionParams);
@@ -67,6 +68,7 @@ export class UnlistIndexerService implements IndexerService {
         ...actionCommonArgs,
         list_price: nftMeta.nft_state && nftMeta.nft_state.list_price ? nftMeta.nft_state.list_price : undefined,
         seller: nftMeta.nft_state?.list_seller || undefined,
+        commission_id: nftMeta.nft_state?.commission?.id
       };
 
       await this.createAction(unlistActionParams);

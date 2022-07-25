@@ -10,6 +10,7 @@ import { SmartContract } from "src/database/universal/entities/SmartContract";
 import { SmartContractFunction } from "src/database/universal/entities/SmartContractFunction";
 import { Repository } from "typeorm";
 import { ActionName } from "./indexer-enums";
+import { Commission } from "src/database/universal/entities/Commission";
 
 @Injectable()
 export class TxHelperService {
@@ -19,7 +20,9 @@ export class TxHelperService {
     @InjectRepository(NftState)
     private nftStateRepository: Repository<NftState>,
     @InjectRepository(SmartContract)
-    private smartContractRepository: Repository<SmartContract>
+    private smartContractRepository: Repository<SmartContract>,
+    @InjectRepository(Commission)
+    private commissionRepository: Repository<Commission>
   ) {}
 
   nanoToMiliSeconds(nanoseconds: bigint) {
@@ -58,11 +61,19 @@ export class TxHelperService {
         contract_key,
         nft_metas: { token_id },
       },
-      relations: { nft_metas: { nft_state: true } },
+      relations: { nft_metas: { nft_state: { list_contract: true } }},
     });
 
     if (nft_smart_contract && nft_smart_contract.nft_metas && nft_smart_contract.nft_metas.length === 1) {
       return nft_smart_contract.nft_metas[0];
+    }
+  }
+
+  async findCommissionByCommissionKey(commission_key: string): Promise<string> {
+    let commission_id: string;
+    if (commission_key) {
+      const commission = await this.commissionRepository.findOneBy({ commission_key });
+      if (commission) return commission.id;
     }
   }
 
@@ -74,6 +85,8 @@ export class TxHelperService {
       list_contract_id: undefined,
       list_tx_index: nonce,
       list_block_height: block_height,
+      function_args: null,
+      commission_id: null
     };
 
     return await this.nftStateRepository.upsert({ meta_id: nftMetaId, ...update }, ["meta_id"]);

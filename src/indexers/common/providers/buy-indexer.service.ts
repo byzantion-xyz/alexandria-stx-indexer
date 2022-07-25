@@ -45,6 +45,7 @@ export class BuyIndexerService implements IndexerService {
         list_price: price || (nftMeta.nft_state?.listed ? nftMeta.nft_state.list_price : undefined),
         seller: nftMeta.nft_state && nftMeta.nft_state.listed ? nftMeta.nft_state.list_seller : undefined,
         buyer: tx.signer,
+        commission_id: nftMeta.nft_state.commission_id
       };
 
       const newAction = await this.createAction(buyActionParams);

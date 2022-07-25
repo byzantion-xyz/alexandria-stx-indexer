@@ -69,10 +69,13 @@ export class TxHelperService {
     }
   }
 
-  async findCommissionByCommissionKey(commission_key: string): Promise<string> {
+  async findCommissionByKey(sc: SmartContract, contract_key: string, key: string): Promise<string> {
     let commission_id: string;
-    if (commission_key) {
-      const commission = await this.commissionRepository.findOneBy({ commission_key });
+    if (!key) {
+      key = `${sc.contract_key}::${contract_key}`;
+    }
+    if (key) {
+      const commission = await this.commissionRepository.findOneBy({ commission_key: key });
       if (commission) return commission.id;
     }
   }

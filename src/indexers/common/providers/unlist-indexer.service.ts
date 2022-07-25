@@ -46,9 +46,7 @@ export class UnlistIndexerService implements IndexerService {
 
     const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
 
-    if (nftMeta && this.txHelper.isNewNftListOrSale(tx, nftMeta.nft_state)) {
-      await this.txHelper.unlistMeta(nftMeta.id, tx.nonce, tx.block_height);
-
+    if (nftMeta) { 
       const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName[scf.name], tx, sc, nftMeta, market_sc);
       const unlistActionParams: CreateUnlistActionTO = {
         ...actionCommonArgs,
@@ -57,22 +55,14 @@ export class UnlistIndexerService implements IndexerService {
         commission_id: nftMeta.nft_state?.commission_id
       };
 
-      await this.createAction(unlistActionParams);
-
-      txResult.processed = true;
-    } else if (nftMeta) {
-      this.logger.log(`Too Late`);
-      // Create missing action
-      const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName[scf.name], tx, sc, nftMeta, market_sc);
-      const unlistActionParams: CreateUnlistActionTO = {
-        ...actionCommonArgs,
-        list_price: nftMeta.nft_state && nftMeta.nft_state.list_price ? nftMeta.nft_state.list_price : undefined,
-        seller: nftMeta.nft_state?.list_seller || undefined,
-        commission_id: nftMeta.nft_state?.commission?.id
-      };
-
-      await this.createAction(unlistActionParams);
-
+      if (this.txHelper.isNewNftListOrSale(tx, nftMeta.nft_state)) {
+        await this.txHelper.unlistMeta(nftMeta.id, tx.nonce, tx.block_height);
+        await this.createAction(unlistActionParams);
+      } else {
+        this.logger.log(`Too Late`);
+        // Create missing action
+        await this.createAction(unlistActionParams);
+      }      
       txResult.processed = true;
     } else {
       this.logger.log(`NftMeta not found ${contract_key} ${token_id}`);

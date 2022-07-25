@@ -635,6 +635,7 @@ export class NearScraperService {
   async getAllTokenIpfsMetas(tokenMetas, nftContractMetadataBaseUri, slug) {
     let tokenIpfsMetaPromises = [];
     let tokenIpfsMetas = [];
+    let failedIpfsFetches = []
 
     for (let i = 0; i < tokenMetas.length; i++) {
       let tokenIpfsUrl = this.getTokenIpfsUrl(nftContractMetadataBaseUri, tokenMetas[i].metadata.reference);
@@ -646,16 +647,26 @@ export class NearScraperService {
 
       tokenIpfsMetaPromises.push(this.fetchIpfsMeta(tokenIpfsUrl));
 
-      if (i % 10 === 0) {
-        let ipfsMetasBatch;
+      if (i % 10 === 0 || i >= (tokenMetas.length - 1)) {
+        let ipfsResults;
         try {
-          ipfsMetasBatch = await Promise.all(tokenIpfsMetaPromises);
+          ipfsResults = await Promise.all(tokenIpfsMetaPromises);
         } catch (err) {
           throw new Error(err);
         }
-        if (ipfsMetasBatch) {
-          tokenIpfsMetas.push(...ipfsMetasBatch.filter((r) => { if (r.status != 200) console.log(r); return r.status == 200}).map((r) => r.data));
+        if (ipfsResults) {
+          tokenIpfsMetas.push(...ipfsResults.filter((r) => { if (r.status != 200) console.log(r); return r.status == 200}).map((r) => r.data));
           await delay(300);
+          
+          const failedIpfsResults = ipfsResults.filter((r) =>  r.status == 404 && r.data.includes('context canceled') || r.status == 502)
+          for(let i = 0; failedIpfsResults.length > i; i++) {
+            let index = failedIpfsResults[i]?.config?.url.split('/json/')[1]
+            index = index.split('.json')[0]
+            failedIpfsFetches.push({
+              index: index,
+              url: failedIpfsResults[i]?.config?.url
+            })
+          }
         }
         tokenIpfsMetaPromises = [];
       }
@@ -664,9 +675,29 @@ export class NearScraperService {
       }
     }
 
-    // process the last batch
-    const ipfsMetasBatch = await Promise.all(tokenIpfsMetaPromises);
-    tokenIpfsMetas.push(...ipfsMetasBatch.filter((r) => r.status == 200).map((r) => r.data));
+    // // process the last batch
+    // const ipfsMetasBatch = await Promise.all(tokenIpfsMetaPromises);
+    // tokenIpfsMetas.push(...ipfsMetasBatch.filter((r) => r.status == 200).map((r) => r.data));
+    
+    const reTryFailedFetched = async (failedFetchesArr) => {
+      for (let i = 0; i < failedFetchesArr.length; i++) {
+        const url = failedFetchesArr[i]?.url
+        console.log("Retry URL",url)
+        try {
+          const result = await this.fetchIpfsMeta(url)
+          if (result){
+            tokenIpfsMetas.splice(failedFetchesArr[i]?.index, 0, result.data)
+          }
+        } catch(err){
+          console.error("!!!ERROR!!!",err)
+          throw new Error(err)
+        }
+      }
+    }
+
+    if (failedIpfsFetches.length > 0) {
+      await reTryFailedFetched(failedIpfsFetches)
+    }
 
     return tokenIpfsMetas;
   }

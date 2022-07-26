@@ -50,7 +50,9 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
       transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_revoke"}}]' OR
       transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_buy" }}]' OR
       transaction->'actions' @> '[{"FunctionCall": { "method_name": "buy" }}]' OR
-      transaction->'actions' @> '[{"FunctionCall": { "method_name": "delete_market_data" }}]') AND
+      transaction->'actions' @> '[{"FunctionCall": { "method_name": "delete_market_data" }}]' OR
+      transaction->'actions' @> '[{"FunctionCall": { "method_name": "unstake" }}]' OR
+      transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_transfer_call" }}]') AND
       ((execution_outcome->'outcome'->'status'->'SuccessValue' is not null) 
       or (execution_outcome->'outcome'->'status'->'SuccessReceiptId' is not null))
       order by t.block_height ASC 
@@ -78,7 +80,9 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
       transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_revoke"}}]' OR
       transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_buy" }}]' OR
       transaction->'actions' @> '[{"FunctionCall": { "method_name": "buy" }}]' OR
-      transaction->'actions' @> '[{"FunctionCall": { "method_name": "delete_market_data" }}]') AND
+      transaction->'actions' @> '[{"FunctionCall": { "method_name": "delete_market_data" }}]' OR
+      transaction->'actions' @> '[{"FunctionCall": { "method_name": "unstake" }}]' OR
+      transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_transfer_call" }}]') AND
       ((execution_outcome->'outcome'->'status'->'SuccessValue' is not null) 
       or (execution_outcome->'outcome'->'status'->'SuccessReceiptId' is not null))
       order by t.block_height ASC limit ${batch_size} OFFSET ${skip};   
@@ -258,7 +262,9 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
       transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_revoke"}}]' OR
       transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_buy" }}]' OR
       transaction->'actions' @> '[{"FunctionCall": { "method_name": "buy" }}]' OR
-      transaction->'actions' @> '[{"FunctionCall": { "method_name": "delete_market_data" }}]') AND
+      transaction->'actions' @> '[{"FunctionCall": { "method_name": "delete_market_data" }}]' OR
+      transaction->'actions' @> '[{"FunctionCall": { "method_name": "unstake" }}]' OR
+      transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_transfer_call" }}]') AND
       processed = false AND  missing = false AND
       ((execution_outcome->'outcome'->'status'->'SuccessValue' is not null) 
       or (execution_outcome->'outcome'->'status'->'SuccessReceiptId' is not null));

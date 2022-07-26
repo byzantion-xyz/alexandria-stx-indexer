@@ -4,6 +4,7 @@ import { Collection } from "src/database/universal/entities/Collection";
 import { CollectionCreator } from "src/database/universal/entities/CollectionCreator";
 import { CollectionScrape } from "src/database/universal/entities/CollectionScrape";
 import { NftMeta } from "src/database/universal/entities/NftMeta";
+import { NftMetaAttribute } from "src/database/universal/entities/NftMetaAttribute";
 import { SmartContract } from "src/database/universal/entities/SmartContract";
 import {
   CollectionScrapeOutcome,
@@ -28,7 +29,9 @@ export class DbHelperService {
     @InjectRepository(CollectionCreator)
     private collectionCreatorRepo: Repository<CollectionCreator>,
     @InjectRepository(NftMeta)
-    private nftMetaRepo: Repository<NftMeta>
+    private nftMetaRepo: Repository<NftMeta>,
+    @InjectRepository(NftMetaAttribute)
+    private nftMetaAttributeRepo: Repository<NftMetaAttribute>
   ) {}
 
   // ##########################################################
@@ -188,7 +191,7 @@ export class DbHelperService {
       where: {
         collection_id: collectionId,
         token_id: tokenId ?? "",
-      },
+      }
     };
     return this.nftMetaRepo.findOne(finder);
   }
@@ -217,5 +220,17 @@ export class DbHelperService {
 
   async updateNftMeta(nftMeta) {
     return this.nftMetaRepo.save(nftMeta, { transaction: true });
+  }
+
+  // ##########################################################
+  // ################################# NftMetaAttribute Functions
+
+  async deleteNftMetaAttributes(meta_id) {
+    return await this.nftMetaAttributeRepo.delete({ meta_id });
+  }
+
+  async insertNftMetaAttributes(dataNftMetaAttributes) {
+    const nftMetaAttribute = this.nftMetaAttributeRepo.create(dataNftMetaAttributes) as unknown as NftMetaAttribute;
+    return await this.nftMetaAttributeRepo.save(nftMetaAttribute, { transaction: true });
   }
 }

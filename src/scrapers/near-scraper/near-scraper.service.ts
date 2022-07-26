@@ -44,7 +44,7 @@ export class NearScraperService {
 
     // // Check if contract should be scraped and return (quit scrape process) if not
     try {
-      await this.checkShouldScrape(scrape_non_custodial_from_paras, force_scrape, collection.id, slug);
+      await this.checkShouldScrape(scrape_non_custodial_from_paras, force_scrape, override_metadata, collection.id, slug);
     } catch (err) {
       return err.toString();
     }
@@ -56,7 +56,6 @@ export class NearScraperService {
     const contract = await this.contractConnectionService.connectNftContract(contract_key);
     const nftContractMetadata = await contract.nft_metadata();
     const collectionSize = await contract.nft_total_supply();
-    // this.logger.debug(collectionSize);
 
     let tokenMetas = [];
     try {
@@ -105,11 +104,12 @@ export class NearScraperService {
       if (isParasCustodialCollection) creatorWalletId = tokenMetas[0].metadata.creator_id;
       await this.dbHelper.createCollectionCreator(loadedCollection.id, creatorWalletId, slug);
 
-      // If non-custodail, pin the first item's meta as it's the same hash for the whole folder of metas and images
-      if (!isParasCustodialCollection) {
-        await this.dbHelper.setCollectionScrapeStage(collection.id, CollectionScrapeStage.pinning_folder);
-        await this.pinFolderHash(tokenMetas[0], nftContractMetadata.base_uri, slug);
-      }
+      // COMMENTED OUT PINNING FOR NOW
+      // // If non-custodail, pin the first item's meta as it's the same hash for the whole folder of metas and images
+      // if (!isParasCustodialCollection) {
+      //   await this.dbHelper.setCollectionScrapeStage(collection.id, CollectionScrapeStage.pinning_folder);
+      //   await this.pinFolderHash(tokenMetas[0], nftContractMetadata.base_uri, slug);
+      // }
 
       // load NftMetas + NftMetaAttributes
       await this.dbHelper.setCollectionScrapeStage(collection.id, CollectionScrapeStage.loading_nft_metas);
@@ -150,6 +150,7 @@ export class NearScraperService {
     }
   }
 
+  
   async getSlug(contract_key, token_series_id) {
     this.logger.log(`[scraping ${contract_key}] Getting Slug...`);
     let slug = contract_key;
@@ -160,9 +161,10 @@ export class NearScraperService {
     return slug;
   }
 
-  async checkShouldScrape(scrape_non_custodial_from_paras, force_scrape, collectionId, slug) {
+
+  async checkShouldScrape(scrape_non_custodial_from_paras, force_scrape, override_metadata, collectionId, slug) {
     this.logger.log(`[scraping ${slug}] Checking if scrape should continue...`);
-    if (scrape_non_custodial_from_paras) return true;
+    if (scrape_non_custodial_from_paras || override_metadata) return true;
     else {
       const numOfCurrentScrapes = await this.dbHelper.countCurrentScrapes();
 
@@ -196,6 +198,7 @@ export class NearScraperService {
     }
   }
 
+
   async pinFolderHash(firstTokenMeta, nftContractMetadataBaseUri, slug) {
     if (!firstTokenMeta) return;
     this.logger.log(`[scraping ${slug}] pin`);
@@ -203,6 +206,7 @@ export class NearScraperService {
     if (!firstTokenIpfsUrl || !firstTokenIpfsUrl.includes("ipfs")) return; // if the metadata is not stored on ipfs return
     await this.ipfsHelperService.pinIpfsFolder(firstTokenIpfsUrl, `${slug}`);
   }
+
 
   async loadCollection(
     tokenMetas,
@@ -239,6 +243,7 @@ export class NearScraperService {
     return loadedCollection;
   }
 
+
   async loadNftMetasAndTheirAttributes(
     tokenMetas,
     nftContractMetadataBaseUri,
@@ -263,10 +268,10 @@ export class NearScraperService {
     }
 
     let nftMetaPromises = [];
-    // for (let i = 0; i < 10; i++) {
     for (let i = 0; i < tokenMetas.length; i++) {
+
       const nftMeta = await this.dbHelper.findOneNftMeta(collection.id, tokenMetas[i]?.token_id);
-      
+
        // if nftMeta already exists and not overriding token metadata, skip loading it
       if (nftMeta && !override_metadata) continue;
 
@@ -297,11 +302,11 @@ export class NearScraperService {
 
         // if override_token_metadata, update the existing NftMeta, else insert new NftMeta
         let nftMetaUpdateOrInsert
-        
         if (nftMeta && override_metadata) {
-          nftMeta.smart_contract_id = smartContractId;
-          nftMeta.chain_id = NEAR_PROTOCOL_DB_ID;
-          nftMeta.collection_id = collection.id;
+        
+          await this.updateNftMetaAttributes(nftMeta.id, attributes);
+
+          // update NftMeta
           nftMeta.name = tokenMetas[i].metadata.title;
           nftMeta.image = mediaUrl;
           nftMeta.token_id = tokenMetas[i].token_id;
@@ -312,8 +317,8 @@ export class NearScraperService {
             ipfs_meta: tokenIpfsMetas[i] ? tokenIpfsMetas[i] : {},
             paras_api_meta: isParasCustodialCollection ? tokenMetas[i] : {},
           };
-          nftMeta.attributes = attributes;
           nftMetaUpdateOrInsert = this.dbHelper.updateNftMeta(nftMeta);
+
         } else {
           nftMetaUpdateOrInsert = this.dbHelper.insertNftMeta({
             smart_contract_id: smartContractId,
@@ -335,7 +340,7 @@ export class NearScraperService {
 
         nftMetaPromises.push(nftMetaUpdateOrInsert);
 
-        if (i % 100 === 0) {
+        if (i % 100 === 0 || i >= (tokenMetas.length - 1)) {
           await Promise.all(nftMetaPromises);
           nftMetaPromises = [];
         }
@@ -350,10 +355,26 @@ export class NearScraperService {
         `);
       }
     }
-    await Promise.all(nftMetaPromises);
-    this.logger.log(`[scraping ${slug}] NftMetas processed: ${tokenMetas.length} of ${tokenMetas.length}`);
-    return nftMetaPromises.length;
   }
+
+
+  async updateNftMetaAttributes(nftMetaId, attributes) {
+    // delete all the NftMeta's NftMetaAttributes
+    await this.dbHelper.deleteNftMetaAttributes(nftMetaId)
+
+    // insert the NftMeta's new NftAttributes
+    let nftMetaAttributePromises = []
+    for (let attr of attributes) {
+      const nftMetaAttributeInsert = this.dbHelper.insertNftMetaAttributes({
+        meta_id: nftMetaId,
+        trait_type: attr.trait_type,
+        value: attr.value
+      })
+      nftMetaAttributePromises.push(nftMetaAttributeInsert);
+    }
+    await Promise.all(nftMetaAttributePromises);
+  }
+
 
   async updateRarities(slug) {
     this.logger.log(`[scraping ${slug}] Running updateRarities()`);
@@ -675,21 +696,16 @@ export class NearScraperService {
       }
     }
 
-    // // process the last batch
-    // const ipfsMetasBatch = await Promise.all(tokenIpfsMetaPromises);
-    // tokenIpfsMetas.push(...ipfsMetasBatch.filter((r) => r.status == 200).map((r) => r.data));
-    
     const reTryFailedFetched = async (failedFetchesArr) => {
       for (let i = 0; i < failedFetchesArr.length; i++) {
         const url = failedFetchesArr[i]?.url
-        console.log("Retry URL",url)
+        this.logger.log("Retry URL",url)
         try {
           const result = await this.fetchIpfsMeta(url)
           if (result){
             tokenIpfsMetas.splice(failedFetchesArr[i]?.index, 0, result.data)
           }
         } catch(err){
-          console.error("!!!ERROR!!!",err)
           throw new Error(err)
         }
       }

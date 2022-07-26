@@ -18,6 +18,7 @@ import { SmartContractFunction } from "src/database/universal/entities/SmartCont
 import { Repository } from "typeorm";
 import { ActionName, SmartContractType } from "../helpers/indexer-enums";
 import { NftState } from "src/database/universal/entities/NftState";
+import { Commission } from "src/database/universal/entities/Commission";
 
 @Injectable()
 export class ListIndexerService implements IndexerService {
@@ -41,6 +42,9 @@ export class ListIndexerService implements IndexerService {
     let market_sc: SmartContract;
 
     const token_id = this.txHelper.extractArgumentData(tx.args, scf, "token_id");
+    const price = this.txHelper.extractArgumentData(tx.args, scf, "price");
+    const collection_map_id = this.txHelper.extractArgumentData(tx.args, scf, "collection_map_id");
+    let commission_key = this.txHelper.extractArgumentData(tx.args, scf, 'commission_trait');
     let contract_key = this.txHelper.extractArgumentData(tx.args, scf, "contract_key");
 
     // Check if custodial
@@ -52,48 +56,40 @@ export class ListIndexerService implements IndexerService {
     }
 
     const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
-
-    if (nftMeta && this.txHelper.isNewNftListOrSale(tx, nftMeta.nft_state)) {
-      const price = this.txHelper.extractArgumentData(tx.args, scf, "price");
-
-      let update = {
-        listed: true,
-        list_price: price,
-        list_contract_id: sc.id,
-        list_tx_index: tx.nonce,
-        list_seller: tx.signer,
-        list_block_height: tx.block_height,
-      };
-
-      // TODO: Use unified service to update NftMeta and handle NftState changes
-      await this.nftStateRepository.upsert({ meta_id: nftMeta.id, ...update }, ["meta_id"]);
-
-      const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName.list, tx, sc, nftMeta, market_sc);
+   
+    if (nftMeta) {
+      const commission_id = await this.txHelper.findCommissionByKey(sc, contract_key, commission_key);
+      const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName[scf.name], tx, sc, nftMeta, market_sc);
       const listActionParams: CreateListActionTO = {
         ...actionCommonArgs,
         list_price: price,
         seller: tx.signer,
+        ... (commission_id && { commission_id })
       };
+    
+      if (this.txHelper.isNewNftListOrSale(tx, nftMeta.nft_state)) {
+        let update: any = {
+          listed: true,
+          list_price: price,
+          list_contract_id: sc.id,
+          list_tx_index: tx.index,
+          list_seller: tx.signer,
+          list_block_height: tx.block_height,
+          ... (collection_map_id && { function_args: { collection_map_id }}),
+          ... (commission_id && { commission_id })
+        };
 
-      const newAction = await this.createAction(listActionParams);
-      if (newAction && tx.notify) {
-        this.listBotService.createAndSend(newAction.id);
+        // TODO: Use unified service to update NftMeta and handle NftState changes
+        await this.nftStateRepository.upsert({ meta_id: nftMeta.id, ...update }, ["meta_id"]);
+
+        const newAction = await this.createAction(listActionParams);
+        if (newAction && tx.notify) {
+          this.listBotService.createAndSend(newAction.id);
+        }
+      } else {
+        this.logger.log(`Too Late`);
+        await this.createAction(listActionParams);
       }
-
-      txResult.processed = true;
-    } else if (nftMeta) {
-      this.logger.log(`Too Late`);
-
-      const price = this.txHelper.extractArgumentData(tx.args, scf, "price");
-      const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName.list, tx, sc, nftMeta, market_sc);
-      const listActionParams: CreateListActionTO = {
-        ...actionCommonArgs,
-        action: ActionName.list,
-        list_price: price,
-        seller: tx.signer,
-      };
-  
-      await this.createAction(listActionParams);
       txResult.processed = true;
     } else {
       this.logger.log(`NftMeta not found ${contract_key} ${token_id}`);

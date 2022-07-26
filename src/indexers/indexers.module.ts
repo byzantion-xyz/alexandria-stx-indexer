@@ -25,6 +25,7 @@ import { StacksTxHelperService } from "./stacks-indexer/providers/stacks-tx-help
 import { ConfigService } from "@nestjs/config";
 import { TxStreamAdapter } from "./common/interfaces/tx-stream-adapter.interface";
 import { TransferIndexerService } from './stacks-indexer/providers/transfer-indexer.service';
+import { Commission } from "src/database/universal/entities/Commission";
 
 /* Select stream adapter based on chain symbol env variable */
 const TxStreamAdapterProvider = {
@@ -57,6 +58,7 @@ const TxStreamAdapterProvider = {
       SmartContract,
       SmartContractFunction,
       Chain,
+      Commission
     ]),
     TypeOrmModule.forFeature([NearTransaction, Receipt], "NEAR-STREAM"),
     TypeOrmModule.forFeature([StacksTransaction, Block], "STACKS-STREAM"),

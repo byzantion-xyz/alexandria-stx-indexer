@@ -25,7 +25,7 @@ const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 @Injectable()
 export class IndexerOrchestratorService {
   private chainSymbol: string;
-  private genericScf: SmartContractFunction[];
+  private genericScf: SmartContractFunction[] = [];
   private readonly logger = new Logger(IndexerOrchestratorService.name);
 
   constructor(

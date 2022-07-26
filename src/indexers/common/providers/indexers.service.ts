@@ -7,6 +7,7 @@ export class Indexers {
     private buyIndexer: IndexerService,
     private listIndexer: IndexerService,
     private unlistIndexer: IndexerService,
-    private transferIndexer?: IndexerService
+    private transferIndexer?: IndexerService,
+    private stakeIndexer?: IndexerService
   ) {} 
 }

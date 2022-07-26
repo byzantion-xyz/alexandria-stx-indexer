@@ -150,6 +150,35 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
     return accounts;
   }
 
+  // In case of nft_approve, there are diferrent market_type: ['sale', 'add_trade']
+  // For nft_transfer_call, there are msg: stake and others
+  transformMethodName(function_name: string, parsed_args: JSON): string {
+    if (function_name && parsed_args && parsed_args["msg"]) {
+      // Map market_type on nft_approve to specific global function name
+      if (function_name === "nft_approve") {
+        const market_type = parsed_args["msg"]["market_type"];
+
+        switch (market_type) {
+          case "sale":
+            function_name = "nft_approve";
+            break;
+          default:
+            function_name = market_type;
+        }
+      // Map msg: stake on nft_transfer_call to stake micro indexer
+      } else if (function_name === 'nft_transfer_call') {
+        const msg = parsed_args["msg"];
+        switch (msg) {
+          case "stake":
+            function_name = "stake";
+            break;
+        }
+      }
+    }
+
+    return function_name;
+  }
+
   transformTx(tx: Transaction): CommonTx {
     try {
       const args = tx.transaction.actions[0].FunctionCall?.args;
@@ -159,24 +188,14 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
       }
 
       const notify =
-        moment(new Date(this.txHelper.nanoToMiliSeconds(tx.block_timestamp))).utc() >
-        moment().subtract(2, "hours").utc()
+        moment(
+          new Date(this.txHelper.nanoToMiliSeconds(tx.block_timestamp))
+        ).utc() > moment().subtract(2, "hours").utc()
           ? true
           : false;
 
-      // In case of nft_approve, there are diferrent market_type: ['sale', 'add_trade']
       let function_name = tx.transaction.actions[0].FunctionCall?.method_name;
-
-      // Map market_type on nft_approve to specific global function name
-      if (function_name && function_name === 'nft_approve' && 
-        parsed_args && parsed_args['msg']) {
-        const market_type = parsed_args['msg']['market_type'];
-        
-        switch (market_type) {
-          case 'sale': function_name = 'nft_approve'; break;
-          default: function_name = market_type;
-        }
-      }
+      function_name = this.transformMethodName(function_name, parsed_args);
 
       // TODO: Generate one transaction per tx.transaction.Action?
       return {

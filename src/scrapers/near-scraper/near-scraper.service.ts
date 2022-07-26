@@ -674,13 +674,16 @@ export class NearScraperService {
           throw new Error(err);
         }
         if (ipfsResults) {
-          tokenIpfsMetas.push(...ipfsResults.filter((r) => { if (r.status != 200) console.log(r); return r.status == 200}).map((r) => r.data));
+          tokenIpfsMetas.push(...ipfsResults.filter((r) => (r.status == 200)).map((r) => r.data));
           await delay(300);
           
           const failedIpfsResults = ipfsResults.filter((r) =>  r.status == 404 && r.data.includes('context canceled') || r.status == 502)
           for(let i = 0; failedIpfsResults.length > i; i++) {
-            let index = failedIpfsResults[i]?.config?.url.split('/json/')[1]
+            console.log(failedIpfsResults)
+            let index = failedIpfsResults[i]?.config?.url.split(`/[0-9]+.json/`)[1]
             index = index.split('.json')[0]
+            console.log("url index", index)
+            console.log("i: ", i)
             failedIpfsFetches.push({
               index: index,
               url: failedIpfsResults[i]?.config?.url

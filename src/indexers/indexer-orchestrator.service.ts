@@ -33,6 +33,7 @@ export class IndexerOrchestratorService {
     private listIndexer: ListIndexerService,
     private unlistIndexer: UnlistIndexerService,
     private transferIndexer: TransferIndexerService,
+    private relistIndexer: ListIndexerService,
     private configService: ConfigService,
     @InjectRepository(SmartContract)
     private smartContractRepository: Repository<SmartContract>,

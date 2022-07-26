@@ -1,4 +1,4 @@
-import { Module } from "@nestjs/common";
+import { Injectable, Module } from "@nestjs/common";
 import { NearIndexerController } from "./near-indexer/near-indexer.controller";
 import { IndexerOrchestratorService } from "./indexer-orchestrator.service";
 import { BuyIndexerService } from "./common/providers/buy-indexer.service";
@@ -47,6 +47,70 @@ const TxStreamAdapterProvider = {
   inject: [ConfigService, NearTxStreamAdapterService, StacksTxStreamAdapterService]
 };
 
+const NearMicroIndexersProvider = {
+  provide: 'NearMicroIndexers',
+  useFactory: (
+    buyIndexer: BuyIndexerService,
+    listIndexer: ListIndexerService,
+    unlistIndexer: UnlistIndexerService
+  ) => {
+    return new NearMicroIndexers(buyIndexer, listIndexer, unlistIndexer);
+  },
+  inject: [BuyIndexerService, ListIndexerService, UnlistIndexerService],
+};
+
+const StacksMicroIndexersProvider = {
+  provide: 'StacksMicroIndexers',
+  useFactory: (
+    buyIndexer: BuyIndexerService,
+    listIndexer: ListIndexerService,
+    unlistIndexer: UnlistIndexerService,
+    transferIndexer: TransferIndexerService
+  ) => {
+    return new StacksMicroIndexers(buyIndexer, listIndexer, unlistIndexer, transferIndexer);
+  },
+  inject: [BuyIndexerService, ListIndexerService, UnlistIndexerService, TransferIndexerService],
+};
+
+@Injectable()
+export class NearMicroIndexers {
+  constructor(
+    private buyIndexer: BuyIndexerService,
+    private listIndexer: ListIndexerService,
+    private unlistIndexer: UnlistIndexerService
+  ) {} 
+}
+
+@Injectable()
+export class StacksMicroIndexers {
+  constructor(
+    private buyIndexer: BuyIndexerService,
+    private listIndexer: ListIndexerService,
+    private unlistIndexer: UnlistIndexerService,
+    private transferIndexer: TransferIndexerService
+  ) {}
+}
+
+/* Select micro indexers based on chain symbol env variable */
+/*const MicroIndexerProvider = {
+  provide: "MicroIndexers",
+  useFactory: async (
+    config: ConfigService,
+    //nearMicroIndexer: NearMicroIndexersProvider,
+    //stacksMicroIndexer: StacksMicroIndexersProvider
+  ): Promise<any> => {
+    switch (config.get("indexer.chainSymbol")) {
+      case "Near": return nearMicroIndexer;
+      case "Stacks": return stacksMicroIndexer;
+      default:
+        throw new Error(
+          `Unable to find stream adapter for ${config.get("indexer.chainSymbol")}`
+        );
+    }
+  },
+  inject: [ConfigService, NearMicroIndexersProvider, StacksMicroIndexersProvider]
+};*/
+
 @Module({
   imports: [
     DiscordBotModule,
@@ -78,7 +142,11 @@ const TxStreamAdapterProvider = {
     BuyIndexerService,
     ListIndexerService,
     UnlistIndexerService,
-    TransferIndexerService  
+    TransferIndexerService,
+
+    NearMicroIndexersProvider,
+    StacksMicroIndexersProvider,
+    //MicroIndexerProvider
   ],
   exports: [IndexerOrchestratorService],
 })

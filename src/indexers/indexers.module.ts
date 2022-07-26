@@ -26,6 +26,8 @@ import { ConfigService } from "@nestjs/config";
 import { TxStreamAdapter } from "./common/interfaces/tx-stream-adapter.interface";
 import { TransferIndexerService } from './stacks-indexer/providers/transfer-indexer.service';
 import { Commission } from "src/database/universal/entities/Commission";
+import { IndexerService } from "./common/interfaces/indexer-service.interface";
+import { Indexers } from "./common/providers/indexers.service";
 
 /* Select stream adapter based on chain symbol env variable */
 const TxStreamAdapterProvider = {
@@ -54,7 +56,7 @@ const NearMicroIndexersProvider = {
     listIndexer: ListIndexerService,
     unlistIndexer: UnlistIndexerService
   ) => {
-    return new NearMicroIndexers(buyIndexer, listIndexer, unlistIndexer);
+    return new Indexers(buyIndexer, listIndexer, unlistIndexer);
   },
   inject: [BuyIndexerService, ListIndexerService, UnlistIndexerService],
 };
@@ -67,29 +69,10 @@ const StacksMicroIndexersProvider = {
     unlistIndexer: UnlistIndexerService,
     transferIndexer: TransferIndexerService
   ) => {
-    return new StacksMicroIndexers(buyIndexer, listIndexer, unlistIndexer, transferIndexer);
+    return new Indexers(buyIndexer, listIndexer, unlistIndexer, transferIndexer);
   },
   inject: [BuyIndexerService, ListIndexerService, UnlistIndexerService, TransferIndexerService],
 };
-
-@Injectable()
-export class NearMicroIndexers {
-  constructor(
-    private buyIndexer: BuyIndexerService,
-    private listIndexer: ListIndexerService,
-    private unlistIndexer: UnlistIndexerService
-  ) {} 
-}
-
-@Injectable()
-export class StacksMicroIndexers {
-  constructor(
-    private buyIndexer: BuyIndexerService,
-    private listIndexer: ListIndexerService,
-    private unlistIndexer: UnlistIndexerService,
-    private transferIndexer: TransferIndexerService
-  ) {}
-}
 
 /* Select micro indexers based on chain symbol env variable */
 /*const MicroIndexerProvider = {

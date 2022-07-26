@@ -16,6 +16,7 @@ export interface CreateActionCommonArgs {
 export interface CreateListActionTO extends CreateActionCommonArgs {
   list_price: bigint;
   seller: string;
+  commission_id?: string;
 }
 
 export interface CreateUnlistActionTO extends CreateListActionTO {}

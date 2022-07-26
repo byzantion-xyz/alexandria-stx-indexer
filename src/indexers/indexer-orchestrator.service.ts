@@ -1,8 +1,5 @@
 import { Logger, Injectable, Provider, Inject } from "@nestjs/common";
-import { BuyIndexerService } from "./common/providers/buy-indexer.service";
-import { ListIndexerService } from "./common/providers/list-indexer.service";
 import { TxProcessResult } from "src/indexers/common/interfaces/tx-process-result.interface";
-import { UnlistIndexerService } from "./common/providers/unlist-indexer.service";
 import { Client } from "pg";
 import { CommonTx } from "./common/interfaces/common-tx.interface";
 import { SmartContract } from "src/database/universal/entities/SmartContract";
@@ -17,7 +14,7 @@ import {
   IndexerSubscriptionOptions,
 } from "./common/interfaces/indexer-options";
 import { SmartContractFunction } from "src/database/universal/entities/SmartContractFunction";
-import { TransferIndexerService } from "./stacks-indexer/providers/transfer-indexer.service";
+import { Indexers } from "./common/providers/indexers.service";
 
 const BATCH_SIZE = 10000;
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -25,15 +22,12 @@ const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 @Injectable()
 export class IndexerOrchestratorService {
   private chainSymbol: string;
-  private genericScf: SmartContractFunction[];
+  private genericScf: SmartContractFunction[] = [];
   private readonly logger = new Logger(IndexerOrchestratorService.name);
 
   constructor(
-    private buyIndexer: BuyIndexerService,
-    private listIndexer: ListIndexerService,
-    private unlistIndexer: UnlistIndexerService,
-    private transferIndexer: TransferIndexerService,
-    private relistIndexer: ListIndexerService,
+    @Inject('NearMicroIndexers') private nearMicroIndexers: Indexers,
+    @Inject('StacksMicroIndexers') private stacksMicroIndexers: Indexers,
     private configService: ConfigService,
     @InjectRepository(SmartContract)
     private smartContractRepository: Repository<SmartContract>,
@@ -146,7 +140,13 @@ export class IndexerOrchestratorService {
   }
 
   getMicroIndexer(name: string) {
-    const microIndexer = this[name + "Indexer"];
+    let microIndexer;
+    switch (this.chainSymbol) {
+      case "Near": microIndexer = this.nearMicroIndexers[name + "Indexer"];
+        break;
+      case "Stacks": microIndexer = this.stacksMicroIndexers[name + "Indexer"];
+        break;
+    }
     if (!microIndexer || !this.isMicroIndexer(microIndexer)) {
       throw new Error(`No micro indexer defined for the context: ${name}`);
     }

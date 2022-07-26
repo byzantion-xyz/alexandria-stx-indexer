@@ -36,36 +36,27 @@ export class BuyIndexerService implements IndexerService {
 
     const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
 
-    if (nftMeta && this.txHelper.isNewNftListOrSale(tx, nftMeta.nft_state)) {
-      await this.txHelper.unlistMeta(nftMeta.id, tx.nonce, tx.block_height);
-
-      const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName.buy, tx, sc, nftMeta, sc);
+    if (nftMeta) {
+      const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName[scf.name], tx, sc, nftMeta, sc);
       const buyActionParams: CreateBuyActionTO = { 
         ...actionCommonArgs,
         list_price: price || (nftMeta.nft_state?.listed ? nftMeta.nft_state.list_price : undefined),
         seller: nftMeta.nft_state && nftMeta.nft_state.listed ? nftMeta.nft_state.list_seller : undefined,
         buyer: tx.signer,
+        commission_id: nftMeta.nft_state?.commission_id
       };
 
-      const newAction = await this.createAction(buyActionParams);
-      if (newAction && tx.notify) {
-        this.salesBotService.createAndSend(newAction.id);
+      if (this.txHelper.isNewNftListOrSale(tx, nftMeta.nft_state)) {
+        await this.txHelper.unlistMeta(nftMeta.id, tx.nonce, tx.block_height);
+        const newAction = await this.createAction(buyActionParams);
+        if (newAction && tx.notify) {
+          this.salesBotService.createAndSend(newAction.id);
+        }
+      } else  {
+        this.logger.log(`Too Late`);
+        // Create missing action
+        await this.createAction(buyActionParams);
       }
-
-      txResult.processed = true;
-    } else if (nftMeta) {
-      this.logger.log(`Too Late`);
-
-      // Create missing action
-      const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName.buy, tx, sc, nftMeta, sc);
-      const buyActionParams: CreateBuyActionTO = {
-        ...actionCommonArgs,
-        list_price: price || (nftMeta.nft_state?.listed ? nftMeta.nft_state.list_price : undefined),
-        seller: nftMeta.nft_state && nftMeta.nft_state.listed ? nftMeta.nft_state.list_seller : undefined,
-        buyer: tx.signer,
-      };
-
-      await this.createAction(buyActionParams);
       txResult.processed = true;
     } else {
       this.logger.log(`NftMeta not found ${contract_key} ${token_id}`);

@@ -113,7 +113,7 @@ export class IndexerOrchestratorService {
         }
 
         if (smart_contract_function) {
-          const txHandler = this.getMicroIndexer(smart_contract_function.name);
+          const txHandler = this.getMicroIndexer(transaction.indexer_name || smart_contract_function.name);
           result = await txHandler.process(
             transaction,
             smart_contract,

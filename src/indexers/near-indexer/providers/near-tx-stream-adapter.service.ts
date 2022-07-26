@@ -152,7 +152,8 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
 
   // In case of nft_approve, there are diferrent market_type: ['sale', 'add_trade']
   // For nft_transfer_call, there are msg: stake and others
-  transformMethodName(function_name: string, parsed_args: JSON): string {
+  findPreselectedIndexer(function_name: string, parsed_args: JSON): string {
+    let force_indexer: string;
     if (function_name && parsed_args && parsed_args["msg"]) {
       // Map market_type on nft_approve to specific global function name
       if (function_name === "nft_approve") {
@@ -160,17 +161,17 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
 
         switch (market_type) {
           case "sale":
-            function_name = "nft_approve";
+            force_indexer = "list";
             break;
           default:
-            function_name = market_type;
+            force_indexer = market_type;
         }
       // Map msg: stake on nft_transfer_call to stake micro indexer
       } else if (function_name === 'nft_transfer_call') {
         const msg = parsed_args["msg"];
         switch (msg) {
           case "stake":
-            function_name = "stake";
+            force_indexer = "stake";
             break;
         }
       }
@@ -195,7 +196,8 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
           : false;
 
       let function_name = tx.transaction.actions[0].FunctionCall?.method_name;
-      function_name = this.transformMethodName(function_name, parsed_args);
+      // Force indexer for special cases.
+      let force_indexer = this.findPreselectedIndexer(function_name, parsed_args);
 
       // TODO: Generate one transaction per tx.transaction.Action?
       return {
@@ -209,8 +211,8 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
         function_name: function_name,
         args: parsed_args,
         notify,
+        indexer_name: force_indexer
       };
-
     } catch (err) {
       this.logger.warn(`transormTx() has failed for tx hash: ${tx.hash}`);
       this.logger.warn(err);

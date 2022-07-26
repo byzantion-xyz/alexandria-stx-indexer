@@ -11,6 +11,7 @@ export interface CommonTx {
     receiver: string;
     
     function_name: string;
+    indexer_name?: string;
     args: JSON;
     events?: JSON;
     

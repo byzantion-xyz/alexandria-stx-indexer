@@ -8,5 +8,5 @@ export interface runScraperData {
     scrape_non_custodial_from_paras?: boolean,
     pin_multiple_images?: boolean,
     force_scrape?: boolean,
-    override_metadata?: boolean
+    rescrape?: boolean
 }

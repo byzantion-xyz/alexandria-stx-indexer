@@ -27,7 +27,7 @@ export class NearScraperService {
   async scrape(data: runScraperData) {
     this.logger.log(`START SCRAPE`);
     const { slug: slugInput, contract_key, token_series_id, token_id, starting_token_id, ending_token_id } = data;
-    const { scrape_non_custodial_from_paras = false, force_scrape = false, override_metadata = false} = data;
+    const { scrape_non_custodial_from_paras = false, force_scrape = false, rescrape = false} = data;
     let isParasCustodialCollection = false;
     if (token_series_id || slugInput) isParasCustodialCollection = true;
 
@@ -44,7 +44,7 @@ export class NearScraperService {
 
     // // Check if contract should be scraped and return (quit scrape process) if not
     try {
-      await this.checkShouldScrape(scrape_non_custodial_from_paras, force_scrape, override_metadata, collection.id, slug);
+      await this.checkShouldScrape(scrape_non_custodial_from_paras, force_scrape, rescrape, collection.id, slug);
     } catch (err) {
       return err.toString();
     }
@@ -121,7 +121,7 @@ export class NearScraperService {
         loadedCollection,
         scrape_non_custodial_from_paras,
         isParasCustodialCollection,
-        override_metadata
+        rescrape
       );
 
       // update NftMeta + NftMetaAttributes rarities
@@ -162,9 +162,9 @@ export class NearScraperService {
   }
 
 
-  async checkShouldScrape(scrape_non_custodial_from_paras, force_scrape, override_metadata, collectionId, slug) {
+  async checkShouldScrape(scrape_non_custodial_from_paras, force_scrape, rescrape, collectionId, slug) {
     this.logger.log(`[scraping ${slug}] Checking if scrape should continue...`);
-    if (scrape_non_custodial_from_paras || override_metadata) return true;
+    if (scrape_non_custodial_from_paras || rescrape) return true;
     else {
       const numOfCurrentScrapes = await this.dbHelper.countCurrentScrapes();
 
@@ -252,7 +252,7 @@ export class NearScraperService {
     collection,
     scrape_non_custodial_from_paras,
     isParasCustodialCollection,
-    override_metadata
+    rescrape
   ) {
     if (tokenMetas.length == 0) return;
     this.logger.log(`[scraping ${slug}] Loading NftMetas and their NftMetaAttributes`);
@@ -272,8 +272,8 @@ export class NearScraperService {
 
       const nftMeta = await this.dbHelper.findOneNftMeta(collection.id, tokenMetas[i]?.token_id);
 
-       // if nftMeta already exists and not overriding token metadata, skip loading it
-      if (nftMeta && !override_metadata) continue;
+       // if nftMeta already exists and not rescraping metadata, skip loading it
+      if (nftMeta && !rescrape) continue;
 
       try {
         // get attributes
@@ -300,9 +300,9 @@ export class NearScraperService {
           mediaUrl = this.ipfsHelperService.getByzIpfsUrl(mediaUrl);
         }
 
-        // if override_token_metadata, update the existing NftMeta, else insert new NftMeta
+        // if rescrape, update the existing NftMeta, else insert new NftMeta
         let nftMetaUpdateOrInsert
-        if (nftMeta && override_metadata) {
+        if (nftMeta && rescrape) {
         
           await this.updateNftMetaAttributes(nftMeta.id, attributes);
 
@@ -621,9 +621,7 @@ export class NearScraperService {
         tokenMetas.length
       } is less than # of tokens in contract ${Number(
         collectionSize
-      )}. This means you need to re-scrape and pass in an ending_token_id that is at least ${Number(
-        collectionSize
-      )}. (So the iterator has a chance to scrape token_ids up to that number). This issue exists because the token supply has changed from the original supply. Check the collection on paras.id to see how high the token ids go.`;
+      )}. This means you need to re-scrape and pass in an ending_token_id that is at least as high as the collections highest token id number (So the iterator has a chance to scrape token_ids up to that number). Check the collection on paras.id to see how high the token ids go.`;
       this.logger.error(errorMsg);
       throw new Error(errorMsg);
     }

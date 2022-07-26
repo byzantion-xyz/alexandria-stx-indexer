@@ -107,7 +107,6 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
 
   async verifySmartContracts(smartContracts: SmartContract[]): Promise<any> {
     // Create smartContractFunctions for listings and unlists.
-
     for (let sc of smartContracts) {
       if (
         sc.type.includes(SmartContractType.non_fungible_tokens) &&
@@ -131,6 +130,17 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
             name: "unlist",
             function_name: "nft_revoke",
           },
+          {
+            smart_contract_id: sc.id,
+            args: { 
+              token_id: "token_id", 
+              contract_key: "receiver_id", 
+              action: "msg", 
+              approval_id: "approval_id" 
+            },
+            name: "stake",
+            function_name: "nft_transfer_call",
+          }
         ]);
 
         await this.smartContractFunctionRepository.save(data);

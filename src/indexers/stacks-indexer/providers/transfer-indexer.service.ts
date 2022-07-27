@@ -49,7 +49,6 @@ export class TransferIndexerService implements IndexerService {
       txResult.missing = true;
     }
 
-    this.logger.debug(`process() completed ${tx.hash}`);
     return txResult;
   }
 

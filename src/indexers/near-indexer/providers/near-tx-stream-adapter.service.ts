@@ -129,17 +129,6 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
             args: { token_id: "token_id", contract_key: "account_id" },
             name: "unlist",
             function_name: "nft_revoke",
-          },
-          {
-            smart_contract_id: sc.id,
-            args: { 
-              token_id: "token_id", 
-              contract_key: "receiver_id", 
-              action: "msg", 
-              approval_id: "approval_id" 
-            },
-            name: "stake",
-            function_name: "nft_transfer_call",
           }
         ]);
 

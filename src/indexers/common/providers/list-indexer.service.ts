@@ -36,7 +36,7 @@ export class ListIndexerService implements IndexerService {
     private smartContractRepository: Repository<SmartContract>
   ) {}
 
-  async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction) {
+  async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {
     this.logger.debug(`process() ${tx.hash}`);
     let txResult: TxProcessResult = { processed: false, missing: false };
     let market_sc: SmartContract;

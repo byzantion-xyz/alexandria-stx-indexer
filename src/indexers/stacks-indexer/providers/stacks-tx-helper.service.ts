@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { hexToCV, cvToJSON } from '@stacks/transactions';
+import { principalCV } from '@stacks/transactions/dist/clarity/types/principalCV';
 interface FunctionArgs {
   hex: string;
   repr: string;
@@ -26,4 +27,13 @@ export class StacksTxHelperService {
       this.logger.warn('parseHexArguments() failed. ', err);
     }
   }
+
+  isValidWalletAddress(address: string) {
+    try {
+      principalCV(address);
+      return true;
+    } catch (err) {
+      return false;
+    }
+  };
 }

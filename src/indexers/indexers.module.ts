@@ -71,10 +71,10 @@ const StacksMicroIndexersProvider = {
     buyIndexer: BuyIndexerService,
     listIndexer: ListIndexerService,
     unlistIndexer: UnlistIndexerService,
+    transferIndexer: TransferIndexerService,
     relistIndexer: ListIndexerService, // Alias for relist to list.
-    transferIndexer: TransferIndexerService
   ) => {
-    return new StacksMicroIndexers(buyIndexer, listIndexer, unlistIndexer, relistIndexer, transferIndexer);
+    return new StacksMicroIndexers(buyIndexer, listIndexer, unlistIndexer, transferIndexer, relistIndexer);
   },
   inject: [BuyIndexerService, ListIndexerService, UnlistIndexerService, TransferIndexerService],
 };

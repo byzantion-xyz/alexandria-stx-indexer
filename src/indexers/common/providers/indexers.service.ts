@@ -12,3 +12,24 @@ export class Indexers {
     private unstakeIndexer?: IndexerService
   ) {} 
 }
+
+@Injectable()
+export class NearMicroIndexers {
+  constructor(
+    private buyIndexer: IndexerService,
+    private listIndexer: IndexerService,
+    private unlistIndexer: IndexerService,
+    private stakeIndexer: IndexerService,
+    private unstakeIndexer: IndexerService
+  ) {} 
+}
+
+@Injectable()
+export class StacksMicroIndexers {
+  constructor(
+    private buyIndexer: IndexerService,
+    private listIndexer: IndexerService,
+    private unlistIndexer: IndexerService,
+    private transferIndexer: IndexerService
+  ) {}
+}

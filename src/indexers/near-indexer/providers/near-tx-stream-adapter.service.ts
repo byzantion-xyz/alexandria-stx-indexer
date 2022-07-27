@@ -171,11 +171,13 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
       // Map market_type on nft_approve to specific global function name
       if (function_name === "nft_approve") {
         const market_type = parsed_args["msg"]["market_type"];
-
+       
         switch (market_type) {
-          case "sale":
-            force_indexer = "list";
+          case "sale": force_indexer = "list";
             break;
+
+          default: 
+            throw new Error(`Indexer not implemented for market_type: ${market_type || 'unknown'}`);
         }
       // Map msg: stake on nft_transfer_call to stake micro indexer
       } else if (function_name === 'nft_transfer_call') {
@@ -184,6 +186,9 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
           case "stake":
             force_indexer = "stake";
             break;
+
+          default: 
+            throw new Error(`Indexer not implemented for msg: ${msg || 'unknown'}`);
         }
       }
     }

@@ -53,8 +53,12 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
       transaction->'actions' @> '[{"FunctionCall": { "method_name": "delete_market_data" }}]' OR
       transaction->'actions' @> '[{"FunctionCall": { "method_name": "unstake" }}]' OR
       transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_transfer_call" }}]') AND
-      ((execution_outcome->'outcome'->'status'->'SuccessValue' is not null) 
-      or (execution_outcome->'outcome'->'status'->'SuccessReceiptId' is not null))
+      (
+        (r.execution_outcome->'outcome'->'status'->'SuccessValue' is not null) OR
+        (r.execution_outcome->'outcome'->'status'->'SuccessReceiptId' is not null) or 
+        (t.outcome->'execution_outcome'->'outcome'->'status'->'SuccessValue' is not null) or 
+        (t.outcome->'execution_outcome'->'outcome'->'status'->'SuccessReceiptId' is not null)
+      )
       order by t.block_height ASC 
       limit 2000;
     `;
@@ -83,8 +87,12 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
       transaction->'actions' @> '[{"FunctionCall": { "method_name": "delete_market_data" }}]' OR
       transaction->'actions' @> '[{"FunctionCall": { "method_name": "unstake" }}]' OR
       transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_transfer_call" }}]') AND
-      ((execution_outcome->'outcome'->'status'->'SuccessValue' is not null) 
-      or (execution_outcome->'outcome'->'status'->'SuccessReceiptId' is not null))
+      (
+        (r.execution_outcome->'outcome'->'status'->'SuccessValue' is not null) OR
+        (r.execution_outcome->'outcome'->'status'->'SuccessReceiptId' is not null) or 
+        (t.outcome->'execution_outcome'->'outcome'->'status'->'SuccessValue' is not null) or 
+        (t.outcome->'execution_outcome'->'outcome'->'status'->'SuccessReceiptId' is not null)
+      )
       order by t.block_height ASC limit ${batch_size} OFFSET ${skip};   
     `;
 
@@ -263,8 +271,12 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
       transaction->'actions' @> '[{"FunctionCall": { "method_name": "unstake" }}]' OR
       transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_transfer_call" }}]') AND
       processed = false AND  missing = false AND
-      ((execution_outcome->'outcome'->'status'->'SuccessValue' is not null) 
-      or (execution_outcome->'outcome'->'status'->'SuccessReceiptId' is not null));
+      (
+        (r.execution_outcome->'outcome'->'status'->'SuccessValue' is not null) OR
+        (r.execution_outcome->'outcome'->'status'->'SuccessReceiptId' is not null) or 
+        (t.outcome->'execution_outcome'->'outcome'->'status'->'SuccessValue' is not null) or 
+        (t.outcome->'execution_outcome'->'outcome'->'status'->'SuccessReceiptId' is not null)
+      );
     `;
 
     const txs: Transaction[] = await this.transactionRepository.query(sql);

@@ -8,6 +8,7 @@ export class Indexers {
     private listIndexer: IndexerService,
     private unlistIndexer: IndexerService,
     private transferIndexer?: IndexerService,
-    private stakeIndexer?: IndexerService
+    private stakeIndexer?: IndexerService,
+    private unstakeIndexer?: IndexerService
   ) {} 
 }

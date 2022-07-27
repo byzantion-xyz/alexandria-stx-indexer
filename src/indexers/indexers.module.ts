@@ -29,6 +29,7 @@ import { Commission } from "src/database/universal/entities/Commission";
 import { Indexers } from "./common/providers/indexers.service";
 import { StakeIndexerService } from "./near-indexer/providers/stake-indexer.service";
 import { TxStakingHelperService } from './common/helpers/tx-staking-helper.service';
+import { UnstakeIndexerService } from './near-indexer/providers/unstake-indexer.service';
 
 /* Select stream adapter based on chain symbol env variable */
 const TxStreamAdapterProvider = {
@@ -56,11 +57,12 @@ const NearMicroIndexersProvider = {
     buyIndexer: BuyIndexerService,
     listIndexer: ListIndexerService,
     unlistIndexer: UnlistIndexerService,
-    stakeIndexer: StakeIndexerService
+    stakeIndexer: StakeIndexerService,
+    unstakeIndexer: UnstakeIndexerService
   ) => {
-    return new Indexers(buyIndexer, listIndexer, unlistIndexer, undefined, stakeIndexer);
+    return new Indexers(buyIndexer, listIndexer, unlistIndexer, undefined, stakeIndexer, unstakeIndexer);
   },
-  inject: [BuyIndexerService, ListIndexerService, UnlistIndexerService, StakeIndexerService],
+  inject: [BuyIndexerService, ListIndexerService, UnlistIndexerService, StakeIndexerService, UnstakeIndexerService],
 };
 
 const StacksMicroIndexersProvider = {
@@ -133,6 +135,7 @@ const StacksMicroIndexersProvider = {
     NearMicroIndexersProvider,
     StacksMicroIndexersProvider,
     TxStakingHelperService,
+    UnstakeIndexerService,
     //MicroIndexerProvider
   ],
   exports: [IndexerOrchestratorService],

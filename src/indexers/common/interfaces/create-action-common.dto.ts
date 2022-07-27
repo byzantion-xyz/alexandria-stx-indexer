@@ -32,6 +32,7 @@ export interface CreateTransferActionTO extends CreateActionCommonArgs {
 export interface CreateStakeActionTO extends CreateActionCommonArgs {
   seller: string;
 }
+export interface CreateUnstakeActionTO extends CreateStakeActionTO {}
 
 export type CreateActionTO = CreateListActionTO | 
   CreateUnlistActionTO | 

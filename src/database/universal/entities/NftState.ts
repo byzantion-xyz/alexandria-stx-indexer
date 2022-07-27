@@ -64,9 +64,6 @@ export class NftState {
   staked: boolean;
 
   @Column("text", { nullable: true })
-  staking_contract: string | null;
-
-  @Column("text", { nullable: true })
   staked_owner: string | null;
 
   @Column("bigint", { nullable: true })

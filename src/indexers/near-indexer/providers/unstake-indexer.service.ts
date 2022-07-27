@@ -38,8 +38,9 @@ export class UnstakeIndexerService implements IndexerService {
     const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
 
     if (nftMeta) {
-      const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName[scf.name], tx, sc, nftMeta);
-      const stakeActionParams: CreateUnstakeActionTO = {
+      const stake_sc = await this.smartContractRepository.findOne({ where: { contract_key: sc.contract_key }});
+      const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName[scf.name], tx, sc, nftMeta, stake_sc);
+      const unstakeActionParams: CreateUnstakeActionTO = {
         ...actionCommonArgs,
         seller: tx.signer,
       };
@@ -54,10 +55,10 @@ export class UnstakeIndexerService implements IndexerService {
         }
         await this.nftStateRepository.upsert({ meta_id: nftMeta.id, ...update }, ["meta_id"]);
 
-        await this.createAction(stakeActionParams);
+        await this.createAction(unstakeActionParams);
       } else {
         this.logger.log(`Too Late`);
-        await this.createAction(stakeActionParams);
+        await this.createAction(unstakeActionParams);
       }
       txResult.processed = true;
     } else {

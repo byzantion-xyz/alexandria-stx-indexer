@@ -41,7 +41,7 @@ export class StakeIndexerService implements IndexerService {
     if (nftMeta) {
       const stake_sc = await this.smartContractRepository.findOne({ where: { contract_key: stake_contract }});
 
-      const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName[scf.name], tx, sc, nftMeta);
+      const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName[scf.name], tx, sc, nftMeta, stake_sc);
       const stakeActionParams: CreateStakeActionTO = {
         ...actionCommonArgs,
         seller: tx.signer,

@@ -26,8 +26,10 @@ import { ConfigService } from "@nestjs/config";
 import { TxStreamAdapter } from "./common/interfaces/tx-stream-adapter.interface";
 import { TransferIndexerService } from './stacks-indexer/providers/transfer-indexer.service';
 import { Commission } from "src/database/universal/entities/Commission";
-import { IndexerService } from "./common/interfaces/indexer-service.interface";
 import { Indexers } from "./common/providers/indexers.service";
+import { StakeIndexerService } from "./near-indexer/providers/stake-indexer.service";
+import { TxStakingHelperService } from './common/helpers/tx-staking-helper.service';
+import { UnstakeIndexerService } from './near-indexer/providers/unstake-indexer.service';
 
 /* Select stream adapter based on chain symbol env variable */
 const TxStreamAdapterProvider = {
@@ -54,11 +56,13 @@ const NearMicroIndexersProvider = {
   useFactory: (
     buyIndexer: BuyIndexerService,
     listIndexer: ListIndexerService,
-    unlistIndexer: UnlistIndexerService
+    unlistIndexer: UnlistIndexerService,
+    stakeIndexer: StakeIndexerService,
+    unstakeIndexer: UnstakeIndexerService
   ) => {
-    return new Indexers(buyIndexer, listIndexer, unlistIndexer);
+    return new Indexers(buyIndexer, listIndexer, unlistIndexer, undefined, stakeIndexer, unstakeIndexer);
   },
-  inject: [BuyIndexerService, ListIndexerService, UnlistIndexerService],
+  inject: [BuyIndexerService, ListIndexerService, UnlistIndexerService, StakeIndexerService, UnstakeIndexerService],
 };
 
 const StacksMicroIndexersProvider = {
@@ -126,9 +130,12 @@ const StacksMicroIndexersProvider = {
     ListIndexerService,
     UnlistIndexerService,
     TransferIndexerService,
+    StakeIndexerService,
 
     NearMicroIndexersProvider,
     StacksMicroIndexersProvider,
+    TxStakingHelperService,
+    UnstakeIndexerService,
     //MicroIndexerProvider
   ],
   exports: [IndexerOrchestratorService],

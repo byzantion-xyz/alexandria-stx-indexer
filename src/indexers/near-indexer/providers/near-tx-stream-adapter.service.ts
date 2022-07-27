@@ -50,7 +50,9 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
       transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_revoke"}}]' OR
       transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_buy" }}]' OR
       transaction->'actions' @> '[{"FunctionCall": { "method_name": "buy" }}]' OR
-      transaction->'actions' @> '[{"FunctionCall": { "method_name": "delete_market_data" }}]') AND
+      transaction->'actions' @> '[{"FunctionCall": { "method_name": "delete_market_data" }}]' OR
+      transaction->'actions' @> '[{"FunctionCall": { "method_name": "unstake" }}]' OR
+      transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_transfer_call" }}]') AND
       ((execution_outcome->'outcome'->'status'->'SuccessValue' is not null) 
       or (execution_outcome->'outcome'->'status'->'SuccessReceiptId' is not null))
       order by t.block_height ASC 
@@ -78,7 +80,9 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
       transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_revoke"}}]' OR
       transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_buy" }}]' OR
       transaction->'actions' @> '[{"FunctionCall": { "method_name": "buy" }}]' OR
-      transaction->'actions' @> '[{"FunctionCall": { "method_name": "delete_market_data" }}]') AND
+      transaction->'actions' @> '[{"FunctionCall": { "method_name": "delete_market_data" }}]' OR
+      transaction->'actions' @> '[{"FunctionCall": { "method_name": "unstake" }}]' OR
+      transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_transfer_call" }}]') AND
       ((execution_outcome->'outcome'->'status'->'SuccessValue' is not null) 
       or (execution_outcome->'outcome'->'status'->'SuccessReceiptId' is not null))
       order by t.block_height ASC limit ${batch_size} OFFSET ${skip};   
@@ -103,7 +107,6 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
 
   async verifySmartContracts(smartContracts: SmartContract[]): Promise<any> {
     // Create smartContractFunctions for listings and unlists.
-
     for (let sc of smartContracts) {
       if (
         sc.type.includes(SmartContractType.non_fungible_tokens) &&
@@ -127,6 +130,17 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
             name: "unlist",
             function_name: "nft_revoke",
           },
+          {
+            smart_contract_id: sc.id,
+            args: { 
+              token_id: "token_id", 
+              contract_key: "receiver_id", 
+              action: "msg", 
+              approval_id: "approval_id" 
+            },
+            name: "stake",
+            function_name: "nft_transfer_call",
+          }
         ]);
 
         await this.smartContractFunctionRepository.save(data);
@@ -150,6 +164,34 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
     return accounts;
   }
 
+  // In case of nft_approve, there are diferrent market_type: ['sale', 'add_trade']
+  // For nft_transfer_call, there are msg: stake and others
+  findPreselectedIndexer(function_name: string, parsed_args: JSON): string {
+    let force_indexer: string;
+    if (function_name && parsed_args && parsed_args["msg"]) {
+      // Map market_type on nft_approve to specific global function name
+      if (function_name === "nft_approve") {
+        const market_type = parsed_args["msg"]["market_type"];
+
+        switch (market_type) {
+          case "sale":
+            force_indexer = "list";
+            break;
+        }
+      // Map msg: stake on nft_transfer_call to stake micro indexer
+      } else if (function_name === 'nft_transfer_call') {
+        const msg = parsed_args["msg"];
+        switch (msg) {
+          case "stake":
+            force_indexer = "stake";
+            break;
+        }
+      }
+    }
+
+    return force_indexer;
+  }
+
   transformTx(tx: Transaction): CommonTx {
     try {
       const args = tx.transaction.actions[0].FunctionCall?.args;
@@ -159,24 +201,15 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
       }
 
       const notify =
-        moment(new Date(this.txHelper.nanoToMiliSeconds(tx.block_timestamp))).utc() >
-        moment().subtract(2, "hours").utc()
+        moment(
+          new Date(this.txHelper.nanoToMiliSeconds(tx.block_timestamp))
+        ).utc() > moment().subtract(2, "hours").utc()
           ? true
           : false;
 
-      // In case of nft_approve, there are diferrent market_type: ['sale', 'add_trade']
       let function_name = tx.transaction.actions[0].FunctionCall?.method_name;
-
-      // Map market_type on nft_approve to specific global function name
-      if (function_name && function_name === 'nft_approve' && 
-        parsed_args && parsed_args['msg']) {
-        const market_type = parsed_args['msg']['market_type'];
-        
-        switch (market_type) {
-          case 'sale': function_name = 'nft_approve'; break;
-          default: function_name = market_type;
-        }
-      }
+      // Force indexer for special cases.
+      let force_indexer = this.findPreselectedIndexer(function_name, parsed_args);
 
       // TODO: Generate one transaction per tx.transaction.Action?
       return {
@@ -190,8 +223,8 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
         function_name: function_name,
         args: parsed_args,
         notify,
+        indexer_name: force_indexer
       };
-
     } catch (err) {
       this.logger.warn(`transormTx() has failed for tx hash: ${tx.hash}`);
       this.logger.warn(err);
@@ -237,7 +270,9 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
       transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_revoke"}}]' OR
       transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_buy" }}]' OR
       transaction->'actions' @> '[{"FunctionCall": { "method_name": "buy" }}]' OR
-      transaction->'actions' @> '[{"FunctionCall": { "method_name": "delete_market_data" }}]') AND
+      transaction->'actions' @> '[{"FunctionCall": { "method_name": "delete_market_data" }}]' OR
+      transaction->'actions' @> '[{"FunctionCall": { "method_name": "unstake" }}]' OR
+      transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_transfer_call" }}]') AND
       processed = false AND  missing = false AND
       ((execution_outcome->'outcome'->'status'->'SuccessValue' is not null) 
       or (execution_outcome->'outcome'->'status'->'SuccessReceiptId' is not null));

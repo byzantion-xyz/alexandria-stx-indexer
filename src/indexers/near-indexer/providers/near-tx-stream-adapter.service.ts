@@ -177,8 +177,6 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
           case "sale":
             force_indexer = "list";
             break;
-          default:
-            force_indexer = market_type;
         }
       // Map msg: stake on nft_transfer_call to stake micro indexer
       } else if (function_name === 'nft_transfer_call') {
@@ -191,7 +189,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
       }
     }
 
-    return function_name;
+    return force_indexer;
   }
 
   transformTx(tx: Transaction): CommonTx {

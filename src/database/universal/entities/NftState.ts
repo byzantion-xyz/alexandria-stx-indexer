@@ -90,12 +90,22 @@ export class NftState {
   @Column("uuid", { nullable: true })
   list_contract_id: string;
 
+  @Column("uuid", { nullable: true })
+  staked_contract_id: string;
+
   @ManyToOne(() => SmartContract, (smartContract) => smartContract.nft_state, {
-    onDelete: "SET NULL",
+    onDelete: "RESTRICT",
     onUpdate: "CASCADE",
   })
   @JoinColumn([{ name: "list_contract_id", referencedColumnName: "id" }])
   list_contract: SmartContract;
+
+  @ManyToOne(() => SmartContract, (smartContract) => smartContract.nft_state, {
+    onDelete: "RESTRICT",
+    onUpdate: "CASCADE",
+  })
+  @JoinColumn([{ name: "staked_contract_id", referencedColumnName: "id" }])
+  staked_contract: SmartContract;
 
   @OneToOne(() => NftMeta, (nftMeta) => nftMeta.nft_state, {
     onDelete: "RESTRICT",

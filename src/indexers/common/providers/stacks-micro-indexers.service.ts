@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { StakeIndexerService } from "src/indexers/common/providers/stake-indexer.service";
 import { UnstakeIndexerService } from "src/indexers/common/providers/unstake-indexer.service";
+import { BnsRegisterIndexerService } from "src/indexers/stacks-indexer/providers/bns-register-indexer.service";
 import { ChangePriceIndexerService } from "src/indexers/stacks-indexer/providers/change-price-indexer.service";
 import { TransferIndexerService } from "src/indexers/stacks-indexer/providers/transfer-indexer.service";
 import { IndexerService } from "../interfaces/indexer-service.interface";
@@ -18,6 +19,7 @@ export class StacksMicroIndexers {
     private changePriceIndexer: IndexerService,
     private stakeIndexer: IndexerService,
     private unstakeIndexer: IndexerService,
+    private bnsRegisterIndexer: IndexerService,
     private relistIndexer: IndexerService,
   ) {}
 }
@@ -32,9 +34,10 @@ export const StacksMicroIndexersProvider = {
     changePrice: ChangePriceIndexerService,
     stakeIndexer: StakeIndexerService,
     unstakeIndexer: UnstakeIndexerService,
+    bnsRegisterIndexer: BnsRegisterIndexerService,
     relistIndexer: ListIndexerService, // Alias for relist to list.
   ) => {
-    return new StacksMicroIndexers(buyIndexer, listIndexer, unlistIndexer, transferIndexer, changePrice, stakeIndexer, unstakeIndexer, relistIndexer);
+    return new StacksMicroIndexers(buyIndexer, listIndexer, unlistIndexer, transferIndexer, changePrice, stakeIndexer, unstakeIndexer, bnsRegisterIndexer, relistIndexer);
   },
   inject: [
     BuyIndexerService, 
@@ -43,6 +46,7 @@ export const StacksMicroIndexersProvider = {
     TransferIndexerService, 
     ChangePriceIndexerService,
     StakeIndexerService, 
-    UnstakeIndexerService
+    UnstakeIndexerService,
+    BnsRegisterIndexerService
   ]
 };

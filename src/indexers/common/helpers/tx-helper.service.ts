@@ -119,6 +119,17 @@ export class TxHelperService {
     await this.nftStateRepository.upsert({ meta_id: nftMetaId, ...update }, ["meta_id"]);
   }
 
+  async stakeMeta (nftMetaId: string, tx: CommonTx, sc: SmartContract, stake_sc: SmartContract) {
+    let update: any = {
+      staked: true,
+      staked_contract_id: stake_sc?.id || null,
+      staked_owner: tx.signer,
+      staked_block_height: tx.block_height,
+      staked_tx_index: tx.index
+    };
+    await this.nftStateRepository.upsert({ meta_id: nftMetaId, ...update }, ["meta_id"]);
+  }
+
   setCommonActionParams(
     action: ActionName,
     tx: CommonTx,

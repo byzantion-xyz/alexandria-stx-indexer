@@ -75,7 +75,6 @@ const StacksMicroIndexersProvider = {
     transferIndexer: TransferIndexerService,
     changePrice: ChangePriceIndexerService,
     relistIndexer: ListIndexerService, // Alias for relist to list.
-
   ) => {
     return new StacksMicroIndexers(buyIndexer, listIndexer, unlistIndexer, transferIndexer, changePrice, relistIndexer);
   },

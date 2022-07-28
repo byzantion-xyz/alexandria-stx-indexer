@@ -36,6 +36,7 @@ export class ChangePriceIndexerService implements IndexerService {
     const token_id = this.txHelper.extractArgumentData(tx.args, scf, "token_id");
     const price = this.txHelper.extractArgumentData(tx.args, scf, "price");
     const contract_key = this.txHelper.extractArgumentData(tx.args, scf, "contract_key");
+    const collection_map_id = this.txHelper.extractArgumentData(tx.args, scf, "collection_map_id");
 
     const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
 
@@ -52,7 +53,7 @@ export class ChangePriceIndexerService implements IndexerService {
 
       if (this.txHelper.isNewNftListOrSale(tx, nftMeta.nft_state)) {
         const args: NftStateArguments = {
-          collection_map_id: contract_key || null
+          collection_map_id: collection_map_id || contract_key || null
         };
         await this.txHelper.listMeta(nftMeta.id, tx, list_sc, price, commission_id, args);
 

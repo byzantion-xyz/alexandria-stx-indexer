@@ -14,8 +14,9 @@ import {
   IndexerSubscriptionOptions,
 } from "./common/interfaces/indexer-options";
 import { SmartContractFunction } from "src/database/universal/entities/SmartContractFunction";
-import { Indexers } from "./common/providers/indexers.service";
 import { CommonUtilService } from "src/common/helpers/common-util/common-util.service";
+import { NearMicroIndexers } from "./common/providers/near-micro-indexers.service";
+import { StacksMicroIndexers } from "./common/providers/stacks-micro-indexers.service";
 
 const BATCH_SIZE = 10000;
 
@@ -26,8 +27,8 @@ export class IndexerOrchestratorService {
   private readonly logger = new Logger(IndexerOrchestratorService.name);
 
   constructor(
-    @Inject('NearMicroIndexers') private nearMicroIndexers: Indexers,
-    @Inject('StacksMicroIndexers') private stacksMicroIndexers: Indexers,
+    @Inject('NearMicroIndexers') private nearMicroIndexers: NearMicroIndexers,
+    @Inject('StacksMicroIndexers') private stacksMicroIndexers: StacksMicroIndexers,
     private configService: ConfigService,
     @InjectRepository(SmartContract)
     private smartContractRepository: Repository<SmartContract>,

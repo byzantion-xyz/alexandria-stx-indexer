@@ -26,11 +26,14 @@ import { ConfigService } from "@nestjs/config";
 import { TxStreamAdapter } from "./common/interfaces/tx-stream-adapter.interface";
 import { TransferIndexerService } from './stacks-indexer/providers/transfer-indexer.service';
 import { Commission } from "src/database/universal/entities/Commission";
-import { Indexers, NearMicroIndexers, StacksMicroIndexers } from "./common/providers/indexers.service";
+
 import { StakeIndexerService } from "./near-indexer/providers/stake-indexer.service";
 import { TxStakingHelperService } from './common/helpers/tx-staking-helper.service';
 import { UnstakeIndexerService } from './near-indexer/providers/unstake-indexer.service';
 import { ChangePriceIndexerService } from './stacks-indexer/providers/change-price-indexer.service';
+import { BnsRegisterService } from './stacks-indexer/providers/bns-register.service';
+import { NearMicroIndexersProvider } from "./common/providers/near-micro-indexers.service";
+import { StacksMicroIndexersProvider } from "./common/providers/stacks-micro-indexers.service";
 
 /* Select stream adapter based on chain symbol env variable */
 const TxStreamAdapterProvider = {
@@ -51,65 +54,6 @@ const TxStreamAdapterProvider = {
   },
   inject: [ConfigService, NearTxStreamAdapterService, StacksTxStreamAdapterService]
 };
-
-const NearMicroIndexersProvider = {
-  provide: 'NearMicroIndexers',
-  useFactory: (
-    buyIndexer: BuyIndexerService,
-    listIndexer: ListIndexerService,
-    unlistIndexer: UnlistIndexerService,
-    stakeIndexer: StakeIndexerService,
-    unstakeIndexer: UnstakeIndexerService
-  ) => {
-    return new NearMicroIndexers(buyIndexer, listIndexer, unlistIndexer, stakeIndexer, unstakeIndexer);
-  },
-  inject: [BuyIndexerService, ListIndexerService, UnlistIndexerService, StakeIndexerService, UnstakeIndexerService],
-};
-
-const StacksMicroIndexersProvider = {
-  provide: 'StacksMicroIndexers',
-  useFactory: (
-    buyIndexer: BuyIndexerService,
-    listIndexer: ListIndexerService,
-    unlistIndexer: UnlistIndexerService,
-    transferIndexer: TransferIndexerService,
-    changePrice: ChangePriceIndexerService,
-    stakeIndexer: StakeIndexerService,
-    unstakeIndexer: UnstakeIndexerService,
-    relistIndexer: ListIndexerService, // Alias for relist to list.
-  ) => {
-    return new StacksMicroIndexers(buyIndexer, listIndexer, unlistIndexer, transferIndexer, changePrice, stakeIndexer, unstakeIndexer, relistIndexer);
-  },
-  inject: [
-    BuyIndexerService, 
-    ListIndexerService,
-    UnlistIndexerService, 
-    TransferIndexerService, 
-    ChangePriceIndexerService,
-    StakeIndexerService, 
-    UnstakeIndexerService
-  ]
-};
-
-/* Select micro indexers based on chain symbol env variable */
-/*const MicroIndexerProvider = {
-  provide: "MicroIndexers",
-  useFactory: async (
-    config: ConfigService,
-    //nearMicroIndexer: NearMicroIndexersProvider,
-    //stacksMicroIndexer: StacksMicroIndexersProvider
-  ): Promise<any> => {
-    switch (config.get("indexer.chainSymbol")) {
-      case "Near": return nearMicroIndexer;
-      case "Stacks": return stacksMicroIndexer;
-      default:
-        throw new Error(
-          `Unable to find stream adapter for ${config.get("indexer.chainSymbol")}`
-        );
-    }
-  },
-  inject: [ConfigService, NearMicroIndexersProvider, StacksMicroIndexersProvider]
-};*/
 
 @Module({
   imports: [

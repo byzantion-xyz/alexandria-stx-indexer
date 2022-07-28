@@ -66,7 +66,11 @@ export class TxHelperService {
         contract_key,
         nft_metas: { token_id },
       },
-      relations: { nft_metas: { nft_state: { list_contract: true } }},
+      relations: { 
+        nft_metas: { 
+          nft_state: { list_contract: true, staked_contract: true }, 
+          smart_contract: true 
+      }}
     });
 
     if (nft_smart_contract && nft_smart_contract.nft_metas && nft_smart_contract.nft_metas.length === 1) {

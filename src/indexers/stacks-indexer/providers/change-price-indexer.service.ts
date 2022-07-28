@@ -40,9 +40,11 @@ export class ChangePriceIndexerService implements IndexerService {
     const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
 
     if (nftMeta) {
-      const market_sc = await this.smartContractRepository.findOne({ where: { contract_key: second_market }});
-      const commission_id = await this.txHelper.findCommissionByKey(market_sc, contract_key);
-      const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName.relist, tx, sc, nftMeta, market_sc);
+      const list_sc = await this.smartContractRepository.findOne({ where: { contract_key: second_market }});
+      nftMeta.smart_contract
+
+      const commission_id = await this.txHelper.findCommissionByKey(list_sc, contract_key);
+      const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName.relist, tx, nftMeta.smart_contract, nftMeta, sc);
       const relistActionParams: CreateRelistActionTO = {
         ...actionCommonArgs,
         list_price: price,
@@ -52,9 +54,9 @@ export class ChangePriceIndexerService implements IndexerService {
 
       if (this.txHelper.isNewNftListOrSale(tx, nftMeta.nft_state)) {
         const args: NftStateArguments = {
-          ... (contract_key && { collection_map_id: contract_key })
+          collection_map_id: contract_key || null
         };
-        await this.txHelper.listMeta(nftMeta.id, tx, sc, price, commission_id, args);
+        await this.txHelper.listMeta(nftMeta.id, tx, list_sc, price, commission_id, args);
 
         await this.createAction(relistActionParams);
       } else {
@@ -79,7 +81,5 @@ export class ChangePriceIndexerService implements IndexerService {
       return saved;
     } catch (err) {}
   }
-
-
 
 }

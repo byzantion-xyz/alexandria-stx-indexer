@@ -78,6 +78,7 @@ const TxStreamAdapterProvider = {
     TxHelperService,
     NearTxHelperService,
     StacksTxHelperService,
+    TxStakingHelperService,
     /* Stream adapters */
     NearTxStreamAdapterService,
     StacksTxStreamAdapterService,
@@ -88,13 +89,11 @@ const TxStreamAdapterProvider = {
     UnlistIndexerService,
     TransferIndexerService,
     StakeIndexerService,
-
-    NearMicroIndexersProvider,
-    StacksMicroIndexersProvider,
-    TxStakingHelperService,
     UnstakeIndexerService,
     ChangePriceIndexerService,
-    //MicroIndexerProvider
+
+    NearMicroIndexersProvider,
+    StacksMicroIndexersProvider
   ],
   exports: [IndexerOrchestratorService],
 })

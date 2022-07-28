@@ -4,7 +4,7 @@ import { Action } from 'src/database/universal/entities/Action';
 import { NftState } from 'src/database/universal/entities/NftState';
 import { SmartContract } from 'src/database/universal/entities/SmartContract';
 import { SmartContractFunction } from 'src/database/universal/entities/SmartContractFunction';
-import { ActionName } from 'src/indexers/common/helpers/indexer-enums';
+import { ActionName, SmartContractType } from 'src/indexers/common/helpers/indexer-enums';
 import { TxHelperService } from 'src/indexers/common/helpers/tx-helper.service';
 import { TxStakingHelperService } from 'src/indexers/common/helpers/tx-staking-helper.service';
 import { CommonTx } from 'src/indexers/common/interfaces/common-tx.interface';
@@ -33,8 +33,17 @@ export class StakeIndexerService implements IndexerService {
     let txResult: TxProcessResult = { processed: false, missing: false };
 
     const token_id = this.txHelper.extractArgumentData(tx.args, scf, "token_id");
-    const stake_contract = this.txHelper.extractArgumentData(tx.args, scf, "contract_key");
-    const contract_key = sc.contract_key;
+    let stake_contract;
+    let contract_key;
+
+    // Check when staking is executed directly on nft contract (near)
+    if (sc.type.includes(SmartContractType.staking)) {
+      stake_contract = sc.contract_key;
+      contract_key = this.txHelper.extractArgumentData(tx.args, scf, "contract_key");
+    } else {
+      stake_contract = this.txHelper.extractArgumentData(tx.args, scf, "contract_key");
+      contract_key = sc.contract_key;
+    }
 
     const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
 

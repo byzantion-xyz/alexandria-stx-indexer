@@ -1,6 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
 import { hexToCV, cvToJSON } from '@stacks/transactions';
 import { principalCV } from '@stacks/transactions/dist/clarity/types/principalCV';
+import { NftMeta } from 'src/database/universal/entities/NftMeta';
+import { SmartContract } from 'src/database/universal/entities/SmartContract';
+import { Repository } from 'typeorm';
 interface FunctionArgs {
   hex: string;
   repr: string;
@@ -11,6 +15,11 @@ interface FunctionArgs {
 @Injectable()
 export class StacksTxHelperService {
   private readonly logger = new Logger(StacksTxHelperService.name);
+
+  constructor(
+    @InjectRepository(SmartContract)
+    private nftMetaRepository: Repository<NftMeta>,
+  ) {}
 
   parseHexArguments(args: FunctionArgs[]) {
     try {
@@ -36,4 +45,21 @@ export class StacksTxHelperService {
       return false;
     }
   };
+
+  async findMetaBns(sc_id: string, name: string, namespace: string): Promise<NftMeta> {
+    const nft_meta = await this.nftMetaRepository.findOne({
+      where: {
+        smart_contract_id: sc_id,
+        nft_meta_bns: { name, namespace },
+      },
+      relations: { 
+        nft_meta_bns: true, 
+        nft_state: true
+      }
+    });
+
+    if (nft_meta && nft_meta.nft_meta_bns) {
+      return nft_meta;
+    }
+  }
 }

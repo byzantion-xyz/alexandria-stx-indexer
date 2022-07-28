@@ -34,6 +34,7 @@ import { ChangePriceIndexerService } from './stacks-indexer/providers/change-pri
 import { BnsRegisterIndexerService } from './stacks-indexer/providers/bns-register-indexer.service';
 import { NearMicroIndexersProvider } from "./common/providers/near-micro-indexers.service";
 import { StacksMicroIndexersProvider } from "./common/providers/stacks-micro-indexers.service";
+import { Collection } from "src/database/universal/entities/Collection";
 
 /* Select stream adapter based on chain symbol env variable */
 const TxStreamAdapterProvider = {
@@ -66,7 +67,8 @@ const TxStreamAdapterProvider = {
       SmartContract,
       SmartContractFunction,
       Chain,
-      Commission
+      Commission,
+      Collection
     ]),
     TypeOrmModule.forFeature([NearTransaction, Receipt], "NEAR-STREAM"),
     TypeOrmModule.forFeature([StacksTransaction, Block], "STACKS-STREAM"),

@@ -10,6 +10,11 @@ import { CreateActionTO } from 'src/indexers/common/interfaces/create-action-com
 import { IndexerService } from 'src/indexers/common/interfaces/indexer-service.interface';
 import { TxProcessResult } from 'src/indexers/common/interfaces/tx-process-result.interface';
 import { Repository } from 'typeorm';
+import { StacksTxHelperService } from "src/indexers/stacks-indexer/providers/stacks-tx-helper.service";
+import { NftMeta } from 'src/database/universal/entities/NftMeta';
+import { Collection } from 'src/database/universal/entities/Collection';
+
+const bnsImageUrl = 'https://byzantion.mypinata.cloud/ipfs/QmVbJqPStxPkpUgCcPBQE1V1SRehceTFjVSzofKp9yUC1x';
 
 @Injectable()
 export class BnsRegisterIndexerService implements IndexerService {
@@ -17,18 +22,41 @@ export class BnsRegisterIndexerService implements IndexerService {
   
   constructor(
     private txHelper: TxHelperService,
+    private stacksTxHelper: StacksTxHelperService,
     @InjectRepository(Action)
     private actionRepository: Repository<Action>,
-    @InjectRepository(NftState)
-    private nftStateRepository: Repository<NftState>,
-    @InjectRepository(SmartContract)
-    private smartContractRepository: Repository<SmartContract>
+    @InjectRepository(NftMeta)
+    private nftMetaRepository: Repository<NftMeta>,
+    @InjectRepository(Collection)
+    private collectionRepository: Repository<Collection>
   ) {}
 
   async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {
     this.logger.debug(`process() ${tx.hash}`);
     let txResult: TxProcessResult = { processed: false, missing: false };
 
+    const namespace: string = this.txHelper.extractArgumentData(tx.args, scf, 'namespace');
+    const name: string  = this.txHelper.extractArgumentData(tx.args, scf, 'name'); 
+    const bns_name: string = `${name}.${namespace}`;
+
+    const nftMeta = await this.stacksTxHelper.findMetaBns(sc.id, name, namespace);
+
+    if (!nftMeta) {
+      const collection = await this.collectionRepository.findOne({ where: { smart_contract_id: sc.id } });
+      const bns = this.nftMetaRepository.create({
+        collection_id: collection.id,
+        name: name,
+        token_id: tx.block_height.toString() + tx.index.toString(),
+        asset_name: 'names',
+        image: bnsImageUrl,
+        nft_state: { minted: true },
+        nft_meta_bns: { name: bns_name, namespace: namespace }
+      });
+      
+      await this.nftMetaRepository.save(bns); 
+    }
+
+    txResult.processed = true;
 
     return txResult;
   }

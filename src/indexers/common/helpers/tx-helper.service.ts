@@ -16,6 +16,7 @@ export interface NftStateArguments {
   collection_map_id?: string
 }
 
+// TODO: Refactor nft_state changes into unified service
 
 @Injectable()
 export class TxHelperService {

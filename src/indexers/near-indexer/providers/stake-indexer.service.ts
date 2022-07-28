@@ -36,7 +36,7 @@ export class StakeIndexerService implements IndexerService {
     let stake_contract;
     let contract_key;
 
-    // Check when staking is executed directly on nft contract (near)
+    // Check when staking is executed on staking sc or in nft contract.
     if (sc.type.includes(SmartContractType.staking)) {
       stake_contract = sc.contract_key;
       contract_key = this.txHelper.extractArgumentData(tx.args, scf, "contract_key");

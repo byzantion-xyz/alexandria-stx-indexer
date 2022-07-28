@@ -45,14 +45,7 @@ export class UnstakeIndexerService implements IndexerService {
       };
 
       if (this.txStakingHelper.isNewStakingBlock(tx, nftMeta.nft_state)) {
-        let update: any = {
-          staked: false,
-          staked_contract_id: null,
-          staked_owner: null,
-          staked_block_height: tx.block_height,
-          staked_tx_index: tx.index
-        }
-        await this.nftStateRepository.upsert({ meta_id: nftMeta.id, ...update }, ["meta_id"]);
+        await this.txHelper.unstakeMeta(nftMeta.id, tx);
 
         await this.createAction(unstakeActionParams);
       } else {

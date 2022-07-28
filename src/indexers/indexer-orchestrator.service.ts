@@ -15,9 +15,9 @@ import {
 } from "./common/interfaces/indexer-options";
 import { SmartContractFunction } from "src/database/universal/entities/SmartContractFunction";
 import { Indexers } from "./common/providers/indexers.service";
+import { CommonUtilService } from "src/common/helpers/common-util/common-util.service";
 
 const BATCH_SIZE = 10000;
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 @Injectable()
 export class IndexerOrchestratorService {
@@ -34,6 +34,7 @@ export class IndexerOrchestratorService {
     @InjectRepository(Chain)
     private chainRepository: Repository<Chain>,
     @Inject('TxStreamAdapter') private txStreamAdapter: TxStreamAdapter,
+    private commonUtil: CommonUtilService
   ) {}
 
   async runIndexer(options: IndexerOptions) {
@@ -57,7 +58,7 @@ export class IndexerOrchestratorService {
       }
 
       this.logger.debug(`runIndexer() Completed with options includeMissings:${options.includeMissings}`);
-      await delay(5000); // Wait for any discord post to be sent
+      await this.commonUtil.delay(5000); // Wait for any discord post to be sent
     } catch (err) {
       this.logger.error(err);
     }
@@ -140,11 +141,12 @@ export class IndexerOrchestratorService {
   }
 
   getMicroIndexer(name: string) {
+    const indexerName = this.commonUtil.toCamelCase(name) + "Indexer";
     let microIndexer;
     switch (this.chainSymbol) {
-      case "Near": microIndexer = this.nearMicroIndexers[name + "Indexer"];
+      case "Near": microIndexer = this.nearMicroIndexers[indexerName];
         break;
-      case "Stacks": microIndexer = this.stacksMicroIndexers[name + "Indexer"];
+      case "Stacks": microIndexer = this.stacksMicroIndexers[indexerName];
         break;
     }
     if (!microIndexer || !this.isMicroIndexer(microIndexer)) {

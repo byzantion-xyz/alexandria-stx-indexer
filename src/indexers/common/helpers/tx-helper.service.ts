@@ -12,6 +12,11 @@ import { Repository } from "typeorm";
 import { ActionName } from "./indexer-enums";
 import { Commission } from "src/database/universal/entities/Commission";
 
+export interface NftStateArguments {
+  collection_map_id?: string
+}
+
+
 @Injectable()
 export class TxHelperService {
   private readonly logger = new Logger(TxHelperService.name);
@@ -69,7 +74,7 @@ export class TxHelperService {
     }
   }
 
-  async findCommissionByKey(sc: SmartContract, contract_key: string, key: string): Promise<string> {
+  async findCommissionByKey(sc: SmartContract, contract_key: string, key?: string): Promise<string> {
     let commission_id: string;
     if (!key) {
       key = `${sc.contract_key}::${contract_key}`;
@@ -93,6 +98,21 @@ export class TxHelperService {
     };
 
     return await this.nftStateRepository.upsert({ meta_id: nftMetaId, ...update }, ["meta_id"]);
+  }
+
+  async listMeta (nftMetaId: string, tx: CommonTx, sc: SmartContract,  price: bigint, commission_id?: string, args?: NftStateArguments) {
+    let update: any = {
+      listed: true,
+      list_price: price,
+      list_contract_id: sc.id,
+      list_tx_index: tx.index,
+      list_seller: tx.signer,
+      list_block_height: tx.block_height,
+      ... (commission_id && { commission_id }),
+      ... (args && { function_args: args }),
+    };
+
+    await this.nftStateRepository.upsert({ meta_id: nftMetaId, ...update }, ["meta_id"]);
   }
 
   setCommonActionParams(

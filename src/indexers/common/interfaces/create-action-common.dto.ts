@@ -19,6 +19,7 @@ export interface CreateListActionTO extends CreateActionCommonArgs {
   commission_id?: string;
 }
 export interface CreateUnlistActionTO extends CreateListActionTO {}
+export interface CreateRelistActionTO extends CreateListActionTO {}
 
 export interface CreateBuyActionTO extends CreateListActionTO {
   buyer: string;
@@ -38,4 +39,6 @@ export type CreateActionTO = CreateListActionTO |
   CreateUnlistActionTO | 
   CreateBuyActionTO | 
   CreateTransferActionTO |
-  CreateStakeActionTO;
+  CreateStakeActionTO |
+  CreateUnstakeActionTO |
+  CreateRelistActionTO;

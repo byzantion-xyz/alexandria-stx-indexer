@@ -30,6 +30,7 @@ import { Indexers, NearMicroIndexers, StacksMicroIndexers } from "./common/provi
 import { StakeIndexerService } from "./near-indexer/providers/stake-indexer.service";
 import { TxStakingHelperService } from './common/helpers/tx-staking-helper.service';
 import { UnstakeIndexerService } from './near-indexer/providers/unstake-indexer.service';
+import { ChangePriceIndexerService } from './stacks-indexer/providers/change-price-indexer.service';
 
 /* Select stream adapter based on chain symbol env variable */
 const TxStreamAdapterProvider = {
@@ -137,6 +138,7 @@ const StacksMicroIndexersProvider = {
     StacksMicroIndexersProvider,
     TxStakingHelperService,
     UnstakeIndexerService,
+    ChangePriceIndexerService,
     //MicroIndexerProvider
   ],
   exports: [IndexerOrchestratorService],

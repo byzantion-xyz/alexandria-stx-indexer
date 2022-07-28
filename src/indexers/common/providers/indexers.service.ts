@@ -32,6 +32,7 @@ export class StacksMicroIndexers {
     private listIndexer: IndexerService,
     private unlistIndexer: IndexerService,
     private transferIndexer: IndexerService,
+    private changePriceIndexer: IndexerService,
     private relistIndexer: IndexerService,
   ) {}
 }

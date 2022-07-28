@@ -1,7 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Action } from 'src/database/universal/entities/Action';
-import { NftState } from 'src/database/universal/entities/NftState';
 import { SmartContract } from 'src/database/universal/entities/SmartContract';
 import { SmartContractFunction } from 'src/database/universal/entities/SmartContractFunction';
 import { TxHelperService } from 'src/indexers/common/helpers/tx-helper.service';
@@ -37,7 +36,6 @@ export class BnsRegisterIndexerService implements IndexerService {
 
     const namespace: string = this.txHelper.extractArgumentData(tx.args, scf, 'namespace');
     const name: string  = this.txHelper.extractArgumentData(tx.args, scf, 'name'); 
-    const bns_name: string = `${name}.${namespace}`;
 
     const nftMeta = await this.stacksTxHelper.findMetaBns(sc.id, name, namespace);
 
@@ -50,12 +48,13 @@ export class BnsRegisterIndexerService implements IndexerService {
         asset_name: 'names',
         image: bnsImageUrl,
         nft_state: { minted: true },
-        nft_meta_bns: { name: bns_name, namespace: namespace }
-      });
-      
+        nft_meta_bns: { 
+          name: `${name}.${namespace}`, 
+          namespace: namespace 
+        }
+      }); 
       await this.nftMetaRepository.save(bns); 
     }
-
     txResult.processed = true;
 
     return txResult;

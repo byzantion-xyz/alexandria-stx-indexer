@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
-import { StakeIndexerService } from "src/indexers/near-indexer/providers/stake-indexer.service";
-import { UnstakeIndexerService } from "src/indexers/near-indexer/providers/unstake-indexer.service";
+import { StakeIndexerService } from "src/indexers/common/providers/stake-indexer.service";
+import { UnstakeIndexerService } from "src/indexers/common/providers/unstake-indexer.service";
 import { ChangePriceIndexerService } from "src/indexers/stacks-indexer/providers/change-price-indexer.service";
 import { TransferIndexerService } from "src/indexers/stacks-indexer/providers/transfer-indexer.service";
 import { IndexerService } from "../interfaces/indexer-service.interface";

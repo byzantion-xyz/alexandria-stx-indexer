@@ -27,9 +27,9 @@ import { TxStreamAdapter } from "./common/interfaces/tx-stream-adapter.interface
 import { TransferIndexerService } from './stacks-indexer/providers/transfer-indexer.service';
 import { Commission } from "src/database/universal/entities/Commission";
 
-import { StakeIndexerService } from "./near-indexer/providers/stake-indexer.service";
+import { StakeIndexerService } from "./common/providers/stake-indexer.service";
 import { TxStakingHelperService } from './common/helpers/tx-staking-helper.service';
-import { UnstakeIndexerService } from './near-indexer/providers/unstake-indexer.service';
+import { UnstakeIndexerService } from './common/providers/unstake-indexer.service';
 import { ChangePriceIndexerService } from './stacks-indexer/providers/change-price-indexer.service';
 import { BnsRegisterService } from './stacks-indexer/providers/bns-register.service';
 import { NearMicroIndexersProvider } from "./common/providers/near-micro-indexers.service";

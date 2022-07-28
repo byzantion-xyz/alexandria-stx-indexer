@@ -41,8 +41,6 @@ export class ChangePriceIndexerService implements IndexerService {
 
     if (nftMeta) {
       const list_sc = await this.smartContractRepository.findOne({ where: { contract_key: second_market }});
-      nftMeta.smart_contract
-
       const commission_id = await this.txHelper.findCommissionByKey(list_sc, contract_key);
       const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName.relist, tx, nftMeta.smart_contract, nftMeta, sc);
       const relistActionParams: CreateRelistActionTO = {

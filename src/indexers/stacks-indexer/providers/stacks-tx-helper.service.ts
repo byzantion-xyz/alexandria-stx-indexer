@@ -50,7 +50,8 @@ export class StacksTxHelperService {
     const nft_meta = await this.nftMetaRepository.findOne({
       where: {
         ... (sc_id && { smart_contract_id: sc_id }),
-        nft_meta_bns: { name, namespace },
+        name: name,
+        nft_meta_bns: { namespace },
       },
       relations: { 
         nft_meta_bns: true, 

@@ -43,6 +43,8 @@ export class BnsRegisterIndexerService implements IndexerService {
       const collection = await this.collectionRepository.findOne({ where: { smart_contract_id: sc.id } });
       const bns = this.nftMetaRepository.create({
         collection_id: collection.id,
+        chain_id: sc.chain_id,
+        smart_contract_id: sc.id,
         name: name,
         token_id: tx.block_height.toString() + tx.index.toString(),
         asset_name: 'names',

@@ -31,7 +31,6 @@ import { StakeIndexerService } from "./common/providers/stake-indexer.service";
 import { TxStakingHelperService } from './common/helpers/tx-staking-helper.service';
 import { UnstakeIndexerService } from './common/providers/unstake-indexer.service';
 import { ChangePriceIndexerService } from './stacks-indexer/providers/change-price-indexer.service';
-import { BnsRegisterService } from './stacks-indexer/providers/bns-register.service';
 import { NearMicroIndexersProvider } from "./common/providers/near-micro-indexers.service";
 import { StacksMicroIndexersProvider } from "./common/providers/stacks-micro-indexers.service";
 

@@ -17,7 +17,7 @@ export class StacksTxHelperService {
   private readonly logger = new Logger(StacksTxHelperService.name);
 
   constructor(
-    @InjectRepository(SmartContract)
+    @InjectRepository(NftMeta)
     private nftMetaRepository: Repository<NftMeta>,
   ) {}
 

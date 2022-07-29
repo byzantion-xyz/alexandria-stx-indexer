@@ -34,13 +34,22 @@ export class TxHelperService {
   nanoToMiliSeconds(nanoseconds: bigint) {
     return Number(BigInt(nanoseconds) / BigInt(1e6));
   }
-
+  
   isNewNftListOrSale(tx: CommonTx, nft_state: NftState) {
     return (
       !nft_state ||
       !nft_state.list_block_height ||
       tx.block_height > nft_state.list_block_height ||
       (tx.block_height === nft_state.list_block_height && tx.index && tx.index > nft_state.list_tx_index)
+    );
+  }
+
+  isNewBid(tx: CommonTx, nft_state: NftState) {
+    return (
+      !nft_state ||
+      !nft_state.bid_block_height ||
+      tx.block_height > nft_state.bid_block_height ||
+      (tx.block_height === nft_state.bid_block_height && tx.index && tx.index > nft_state.bid_tx_index)
     );
   }
 
@@ -115,6 +124,19 @@ export class TxHelperService {
       list_block_height: tx.block_height,
       ... (commission_id && { commission_id }),
       ... (args && { function_args: args }),
+    };
+
+    await this.nftStateRepository.upsert({ meta_id: nftMetaId, ...update }, ["meta_id"]);
+  }
+
+  async bidMeta (nftMetaId: string, tx: CommonTx, sc: SmartContract, price: bigint) {
+    let update: any = {
+      bid: true,
+      bid_price: price, 
+      bid_contract_id: sc.id,
+      bid_buyer: tx.signer,
+      bid_block_height: tx.block_height,
+      bid_tx_index: tx.index
     };
 
     await this.nftStateRepository.upsert({ meta_id: nftMetaId, ...update }, ["meta_id"]);

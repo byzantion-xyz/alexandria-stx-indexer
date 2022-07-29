@@ -35,10 +35,17 @@ export interface CreateStakeActionTO extends CreateActionCommonArgs {
 }
 export interface CreateUnstakeActionTO extends CreateStakeActionTO {}
 
+export interface CreateBidActionTO extends CreateActionCommonArgs {
+  bid_price: bigint;
+  buyer: string;
+}
+
+
 export type CreateActionTO = CreateListActionTO | 
   CreateUnlistActionTO | 
   CreateBuyActionTO | 
   CreateTransferActionTO |
   CreateStakeActionTO |
   CreateUnstakeActionTO |
-  CreateRelistActionTO;
+  CreateRelistActionTO |
+  CreateBidActionTO;

@@ -46,15 +46,16 @@ export class StacksTxHelperService {
     }
   };
 
-  async findMetaBns(sc_id: string, name: string, namespace: string): Promise<NftMeta> {
+  async findMetaBns(name: string, namespace: string, sc_id?: string): Promise<NftMeta> {
     const nft_meta = await this.nftMetaRepository.findOne({
       where: {
-        smart_contract_id: sc_id,
+        ... (sc_id && { smart_contract_id: sc_id }),
         nft_meta_bns: { name, namespace },
       },
       relations: { 
         nft_meta_bns: true, 
-        nft_state: true
+        nft_state: true,
+        smart_contract: true
       }
     });
 

@@ -1,24 +1,23 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Action } from 'src/database/universal/entities/Action';
+import { Collection } from 'src/database/universal/entities/Collection';
+import { NftMeta } from 'src/database/universal/entities/NftMeta';
 import { SmartContract } from 'src/database/universal/entities/SmartContract';
 import { SmartContractFunction } from 'src/database/universal/entities/SmartContractFunction';
+import { ActionName } from 'src/indexers/common/helpers/indexer-enums';
 import { TxHelperService } from 'src/indexers/common/helpers/tx-helper.service';
 import { CommonTx } from 'src/indexers/common/interfaces/common-tx.interface';
-import { CreateActionTO } from 'src/indexers/common/interfaces/create-action-common.dto';
+import { CreateActionTO, CreateBidActionTO } from 'src/indexers/common/interfaces/create-action-common.dto';
 import { IndexerService } from 'src/indexers/common/interfaces/indexer-service.interface';
 import { TxProcessResult } from 'src/indexers/common/interfaces/tx-process-result.interface';
 import { Repository } from 'typeorm';
-import { StacksTxHelperService } from "src/indexers/stacks-indexer/providers/stacks-tx-helper.service";
-import { NftMeta } from 'src/database/universal/entities/NftMeta';
-import { Collection } from 'src/database/universal/entities/Collection';
-
-const bnsImageUrl = 'https://byzantion.mypinata.cloud/ipfs/QmVbJqPStxPkpUgCcPBQE1V1SRehceTFjVSzofKp9yUC1x';
+import { StacksTxHelperService } from './stacks-tx-helper.service';
 
 @Injectable()
-export class BnsRegisterIndexerService implements IndexerService {
-  private readonly logger = new Logger(BnsRegisterIndexerService.name);
-  
+export class BnsBidIndexerService implements IndexerService {
+  private readonly logger = new Logger(BnsBidIndexerService.name);
+
   constructor(
     private txHelper: TxHelperService,
     private stacksTxHelper: StacksTxHelperService,
@@ -36,31 +35,40 @@ export class BnsRegisterIndexerService implements IndexerService {
 
     const namespace: string = this.txHelper.extractArgumentData(tx.args, scf, 'namespace');
     const name: string  = this.txHelper.extractArgumentData(tx.args, scf, 'name'); 
+    const price = this.txHelper.extractArgumentData(tx.args, scf, 'bid_price');
 
-    const nftMeta = await this.stacksTxHelper.findMetaBns(name, namespace, sc.id);
+    const nftMeta = await this.stacksTxHelper.findMetaBns(name, namespace);
 
-    if (!nftMeta) {
-      const collection = await this.collectionRepository.findOne({ where: { smart_contract_id: sc.id } });
-      const bns = this.nftMetaRepository.create({
-        collection_id: collection.id,
-        name: name,
-        token_id: tx.block_height.toString() + tx.index.toString(),
-        asset_name: 'names',
-        image: bnsImageUrl,
-        nft_state: { minted: true },
-        nft_meta_bns: { 
-          name: `${name}.${namespace}`, 
-          namespace: namespace 
-        }
-      });
-      await this.nftMetaRepository.save(bns); 
+    if (nftMeta) {
+      const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName.bid, tx, nftMeta.smart_contract, nftMeta, sc);
+      const bidActionParams: CreateBidActionTO = {
+        ...actionCommonArgs,
+        bid_price: price,
+        buyer: tx.signer
+      };
+
+      if (this.txHelper.isNewBid(tx, nftMeta.nft_state)) {
+        await this.txHelper.bidMeta(nftMeta.id, tx, sc, price);
+      } else {
+        this.logger.log(`Too Late`);        
+      }
+      await this.createAction(bidActionParams);
+
+      txResult.processed = true;
+    } else {
+      this.logger.log(`Missing bns Bid ${tx.hash}`);
+      txResult.missing = true;
     }
-    txResult.processed = true;
 
     return txResult;
   }
 
   async createAction(params: CreateActionTO): Promise<Action> {
-    return;
+    try {
+      const action = this.actionRepository.create(params);
+      const saved = await this.actionRepository.save(action);
+      this.logger.log(`New action ${params.action}: ${saved.id} `);
+      return saved;
+    } catch (err) {}
   }
 }

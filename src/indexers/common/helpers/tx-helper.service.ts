@@ -142,6 +142,19 @@ export class TxHelperService {
     await this.nftStateRepository.upsert({ meta_id: nftMetaId, ...update }, ["meta_id"]);
   }
 
+  async unlistBidMeta(nftMetaId: string, tx: CommonTx) {
+    let update = {
+      bid: false,
+      bid_price: null,
+      bid_buyer: null,
+      bid_contract_id: null,
+      bid_tx_index: tx.index,
+      bid_block_height: tx.block_height
+    };
+
+    return await this.nftStateRepository.upsert({ meta_id: nftMetaId, ...update }, ["meta_id"]);
+  }
+
   async stakeMeta (nftMetaId: string, tx: CommonTx, sc: SmartContract, stake_sc: SmartContract) {
     let update: any = {
       staked: true,

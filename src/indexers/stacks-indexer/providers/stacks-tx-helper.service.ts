@@ -1,9 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { hexToCV, cvToJSON } from '@stacks/transactions';
+import { hexToCV, cvToJSON, BufferCV } from '@stacks/transactions';
 import { principalCV } from '@stacks/transactions/dist/clarity/types/principalCV';
 import { NftMeta } from 'src/database/universal/entities/NftMeta';
-import { SmartContract } from 'src/database/universal/entities/SmartContract';
+import { TxHelperService } from 'src/indexers/common/helpers/tx-helper.service';
 import { Repository } from 'typeorm';
 interface FunctionArgs {
   hex: string;
@@ -26,8 +26,13 @@ export class StacksTxHelperService {
       let result = {};
       for (let arg of args) {
         if (arg.hex) {
-          let data = cvToJSON(hexToCV(arg.hex));
-          result[arg.name] = data.type === 'uint' ? Number(data.value) : data.value;
+          let data = hexToCV(arg.hex);
+          if (Object.keys(data).includes('buffer')) {
+            result[arg.name] = (data as BufferCV).buffer.toString();
+          } else {
+            let json = cvToJSON(data);
+            result[arg.name] = json.type === 'uint' ? Number(json.value) : json.value;
+          }
         }
       }
 

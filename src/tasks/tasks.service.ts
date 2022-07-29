@@ -11,7 +11,7 @@ export class TasksService {
         private indexerOrchestrator: IndexerOrchestratorService
     ) {}
 
-    @Cron(CronExpression.EVERY_30_MINUTES)
+    @Timeout(10000)
     handleCron() {
       if (process.env.NODE_ENV === 'production') {
         this.indexerOrchestrator.runIndexer({ includeMissings: false });

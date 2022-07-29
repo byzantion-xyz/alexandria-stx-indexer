@@ -13,6 +13,7 @@ export class NearScraperController {
     data: {
       slug;
       contract_key;
+      token_series_id;
       token_id;
       starting_token_id;
       ending_token_id;

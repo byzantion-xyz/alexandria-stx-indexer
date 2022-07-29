@@ -67,7 +67,7 @@ export class NearScraperService {
         const tokens = await this.getTokensFromParas(slug, collectionSize);
         tokenMetas = tokens;
       } else {
-        if (token_id != null || token_id != undefined) {
+        if (!isParasCustodialCollection && (token_id != null || token_id != undefined)) {
           const token = await this.getTokenMetaFromContract(contract, token_id, slug);
           tokenMetas.push(token);
         }

@@ -26,15 +26,18 @@ export class NearScraperService {
 
   async scrape(data: runScraperData) {
     this.logger.log(`START SCRAPE`);
-    const { slug: slugInput, contract_key, token_series_id, token_id, starting_token_id, ending_token_id } = data;
+    const { slug: slugInput, contract_key, token_id, starting_token_id, ending_token_id } = data;
     const { scrape_non_custodial_from_paras = false, force_scrape = false, rescrape = false} = data;
     let isParasCustodialCollection = false;
-    if (token_series_id || slugInput) isParasCustodialCollection = true;
+    if (contract_key == "x.paras.near" || slugInput) isParasCustodialCollection = true;
 
     // get collection slug
     let slug = slugInput;
     if (!slug) {
-      slug = await this.getSlug(contract_key, token_series_id);
+      slug = contract_key;
+      if (isParasCustodialCollection && token_id) {
+        slug = await this.getSlugFromParas(contract_key, token_id);
+      }
     }
 
     // create SmartContract, Collection, and CollectionScrape records if they don't exist
@@ -152,12 +155,16 @@ export class NearScraperService {
   }
 
   
-  async getSlug(contract_key, token_series_id) {
+  async getSlugFromParas(contract_key, token_id) {
     this.logger.log(`[scraping ${contract_key}] Getting Slug...`);
-    let slug = contract_key;
-    if (token_series_id) {
-      const res = await axios.get(`https://api-v2-mainnet.paras.id/token/${contract_key}::${token_series_id}`);
-      slug = res.data.metadata.collection_id;
+    let slug
+    if (token_id) {
+      try {
+        const res = await axios.get(`https://api-v2-mainnet.paras.id/token?contract_id=${contract_key}&token_id=${token_id}`);
+        slug = res.data.data.results[0].metadata.collection_id;
+      } catch(err) {
+        this.logger.error(err)
+      }
     }
     return slug;
   }

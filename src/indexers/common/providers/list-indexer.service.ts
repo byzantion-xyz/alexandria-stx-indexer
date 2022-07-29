@@ -1,6 +1,6 @@
 import { Logger, Injectable } from "@nestjs/common";
 import { TxProcessResult } from "src/indexers/common/interfaces/tx-process-result.interface";
-import { TxHelperService } from "../helpers/tx-helper.service";
+import { NftStateArguments, TxHelperService } from "../helpers/tx-helper.service";
 import { ListBotService } from "src/discord-bot/providers/list-bot.service";
 import { MissingCollectionService } from "src/scrapers/near-scraper/providers/missing-collection.service";
 import {
@@ -36,7 +36,7 @@ export class ListIndexerService implements IndexerService {
     private smartContractRepository: Repository<SmartContract>
   ) {}
 
-  async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction) {
+  async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {
     this.logger.debug(`process() ${tx.hash}`);
     let txResult: TxProcessResult = { processed: false, missing: false };
     let market_sc: SmartContract;
@@ -68,19 +68,11 @@ export class ListIndexerService implements IndexerService {
       };
     
       if (this.txHelper.isNewNftListOrSale(tx, nftMeta.nft_state)) {
-        let update: any = {
-          listed: true,
-          list_price: price,
-          list_contract_id: sc.id,
-          list_tx_index: tx.index,
-          list_seller: tx.signer,
-          list_block_height: tx.block_height,
-          ... (collection_map_id && { function_args: { collection_map_id }}),
-          ... (commission_id && { commission_id })
+        const args: NftStateArguments = {
+          ... (collection_map_id && { collection_map_id })
         };
-
+        await this.txHelper.listMeta(nftMeta.id, tx, sc, price, commission_id, args);
         // TODO: Use unified service to update NftMeta and handle NftState changes
-        await this.nftStateRepository.upsert({ meta_id: nftMeta.id, ...update }, ["meta_id"]);
 
         const newAction = await this.createAction(listActionParams);
         if (newAction && tx.notify) {
@@ -98,7 +90,6 @@ export class ListIndexerService implements IndexerService {
       txResult.missing = true;
     }
 
-    this.logger.debug(`process() completed ${tx.hash}`);
     return txResult;
   }
 

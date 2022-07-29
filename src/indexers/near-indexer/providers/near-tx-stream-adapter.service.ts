@@ -1,7 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { CommonTx } from "src/indexers/common/interfaces/common-tx.interface";
 import { TxProcessResult } from "src/indexers/common/interfaces/tx-process-result.interface";
-import { TxStreamAdapter } from "src/indexers/common/interfaces/tx-stream-adapter.interface";
+import { CommonTxResult, TxStreamAdapter } from "src/indexers/common/interfaces/tx-stream-adapter.interface";
 import { TxHelperService } from "../../common/helpers/tx-helper.service";
 import * as moment from "moment";
 import { Client } from 'pg';
@@ -16,6 +16,16 @@ import { SmartContractFunction } from "src/database/universal/entities/SmartCont
 import { Transaction as TransactionEntity } from "src/database/near-stream/entities/Transaction";
 import { ConfigService } from "@nestjs/config";
 
+const WHITELISTED_ACTIONS = [
+  'nft_approve', 
+  'nft_revoke', 
+  'nft_buy', 
+  'buy', 
+  'delete_market_data', 
+  'unstake',
+  'nft_transfer_call'
+];
+
 @Injectable()
 export class NearTxStreamAdapterService implements TxStreamAdapter {
   private readonly logger = new Logger(NearTxStreamAdapterService.name);
@@ -24,8 +34,6 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
     private txHelper: TxHelperService,
     private nearTxHelper: NearTxHelperService,
     private configService: ConfigService,
-    /* @InjectEntityManager('NEAR-STREAM')
-    private entityManager: EntityManager,*/
     @InjectRepository(TransactionEntity, "NEAR-STREAM")
     private transactionRepository: Repository<TransactionEntity>,
     @InjectRepository(SmartContract)
@@ -34,7 +42,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
     private smartContractFunctionRepository: Repository<SmartContractFunction>
   ) {}
 
-  async fetchTxs(): Promise<CommonTx[]> {
+  async fetchTxs(batch_size: number, skip: number): Promise<CommonTxResult> {
     const accounts = await this.fetchAccounts();
     let accounts_in = "";
     for (let i in accounts) {
@@ -42,27 +50,33 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
     }
     accounts_in = accounts_in.slice(0, -1);
 
-    const sql = `select * from transaction t inner join receipt r on t.success_receipt_id =r.receipt_id 
-      where block_height >= 68000000 and
-      processed = false AND 
+    const sql = `select * from transaction t inner join receipt r on t.success_receipt_id=r.receipt_id 
+      where block_height >= 68000000 AND
+      receiver_id in (${accounts_in}) AND
+      processed = false AND
       missing = false AND
-      (transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_approve"}}]' OR
-      transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_revoke"}}]' OR
-      transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_buy" }}]' OR
-      transaction->'actions' @> '[{"FunctionCall": { "method_name": "buy" }}]' OR
-      transaction->'actions' @> '[{"FunctionCall": { "method_name": "delete_market_data" }}]') AND
-      ((execution_outcome->'outcome'->'status'->'SuccessValue' is not null) 
-      or (execution_outcome->'outcome'->'status'->'SuccessReceiptId' is not null))
+      (
+        ((r.execution_outcome->'outcome'->'status'->'SuccessValue' is not null) OR
+        (r.execution_outcome->'outcome'->'status'->'SuccessReceiptId' is not null)) 
+        AND 
+        ((t.outcome->'execution_outcome'->'outcome'->'status'->'SuccessValue' is not null) OR 
+        (t.outcome->'execution_outcome'->'outcome'->'status'->'SuccessReceiptId' is not null))
+      )
       order by t.block_height ASC 
-      limit 2000;
+      limit ${batch_size} OFFSET ${skip};
     `;
 
     const txs: Transaction[] = await this.transactionRepository.query(sql);
-    const result: CommonTx[] = this.transformTxs(txs);
+    const common_txs: CommonTx[] = this.transformTxs(txs);
+    
+    const result: CommonTxResult = {
+      txs: common_txs,
+      total: txs ? txs.length : 0
+    };
     return result;
   }
 
-  async fetchMissingTxs(batch_size: number, skip: number): Promise<CommonTx[]> {
+  async fetchMissingTxs(batch_size: number, skip: number): Promise<CommonTxResult> {
     const accounts = await this.fetchAccounts(true);
     let accounts_in = "";
     for (let i in accounts) {
@@ -70,22 +84,27 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
     }
     accounts_in = accounts_in.slice(0, -1);
     const sql = `select * from transaction t inner join receipt r on t.success_receipt_id =r.receipt_id 
-      where block_height >= 68000000 and
+      where block_height >= 68000000 AND
       receiver_id in (${accounts_in}) AND
       processed = false AND 
-      missing = true and 
-      (transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_approve"}}]' OR
-      transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_revoke"}}]' OR
-      transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_buy" }}]' OR
-      transaction->'actions' @> '[{"FunctionCall": { "method_name": "buy" }}]' OR
-      transaction->'actions' @> '[{"FunctionCall": { "method_name": "delete_market_data" }}]') AND
-      ((execution_outcome->'outcome'->'status'->'SuccessValue' is not null) 
-      or (execution_outcome->'outcome'->'status'->'SuccessReceiptId' is not null))
+      missing = true AND
+      (
+        ((r.execution_outcome->'outcome'->'status'->'SuccessValue' is not null) OR
+        (r.execution_outcome->'outcome'->'status'->'SuccessReceiptId' is not null)) 
+        AND 
+        ((t.outcome->'execution_outcome'->'outcome'->'status'->'SuccessValue' is not null) OR 
+        (t.outcome->'execution_outcome'->'outcome'->'status'->'SuccessReceiptId' is not null))
+      )
       order by t.block_height ASC limit ${batch_size} OFFSET ${skip};   
     `;
 
     const txs: Transaction[] = await this.transactionRepository.query(sql);
-    const result: CommonTx[] = this.transformTxs(txs);
+    const common_txs: CommonTx[] = this.transformTxs(txs);
+    
+    const result: CommonTxResult = {
+      txs: common_txs,
+      total: txs ? txs.length : 0
+    };
     return result;
   }
 
@@ -103,7 +122,6 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
 
   async verifySmartContracts(smartContracts: SmartContract[]): Promise<any> {
     // Create smartContractFunctions for listings and unlists.
-
     for (let sc of smartContracts) {
       if (
         sc.type.includes(SmartContractType.non_fungible_tokens) &&
@@ -126,7 +144,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
             args: { token_id: "token_id", contract_key: "account_id" },
             name: "unlist",
             function_name: "nft_revoke",
-          },
+          }
         ]);
 
         await this.smartContractFunctionRepository.save(data);
@@ -150,8 +168,46 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
     return accounts;
   }
 
+  // In case of nft_approve, there are diferrent market_type: ['sale', 'add_trade']
+  // For nft_transfer_call, there are msg: stake and others
+  findPreselectedIndexer(function_name: string, parsed_args: JSON): string {
+    let force_indexer: string;
+    if (function_name && parsed_args && parsed_args["msg"]) {
+      // Map market_type on nft_approve to specific global function name
+      if (function_name === "nft_approve") {
+        const market_type = parsed_args["msg"]["market_type"];
+       
+        switch (market_type) {
+          case "sale": force_indexer = "list";
+            break;
+
+          default: 
+            throw new Error(`Indexer not implemented for market_type: ${market_type || 'unknown'}`);
+        }
+      // Map msg: stake on nft_transfer_call to stake micro indexer
+      } else if (function_name === 'nft_transfer_call') {
+        const msg = parsed_args["msg"];
+        switch (msg) {
+          case "stake":
+            force_indexer = "stake";
+            break;
+
+          default: 
+            throw new Error(`Indexer not implemented for msg: ${msg || 'unknown'}`);
+        }
+      }
+    }
+
+    return force_indexer;
+  }
+
   transformTx(tx: Transaction): CommonTx {
     try {
+      let function_name = tx.transaction.actions[0].FunctionCall?.method_name;
+      if (!WHITELISTED_ACTIONS.includes(function_name)) {
+        return; // Do not process transaction
+      }
+
       const args = tx.transaction.actions[0].FunctionCall?.args;
       let parsed_args;
       if (args) {
@@ -159,24 +215,14 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
       }
 
       const notify =
-        moment(new Date(this.txHelper.nanoToMiliSeconds(tx.block_timestamp))).utc() >
-        moment().subtract(2, "hours").utc()
+        moment(
+          new Date(this.txHelper.nanoToMiliSeconds(tx.block_timestamp))
+        ).utc() > moment().subtract(2, "hours").utc()
           ? true
           : false;
 
-      // In case of nft_approve, there are diferrent market_type: ['sale', 'add_trade']
-      let function_name = tx.transaction.actions[0].FunctionCall?.method_name;
-
-      // Map market_type on nft_approve to specific global function name
-      if (function_name && function_name === 'nft_approve' && 
-        parsed_args && parsed_args['msg']) {
-        const market_type = parsed_args['msg']['market_type'];
-        
-        switch (market_type) {
-          case 'sale': function_name = 'nft_approve'; break;
-          default: function_name = market_type;
-        }
-      }
+      // Force indexer for special cases.
+      let force_indexer = this.findPreselectedIndexer(function_name, parsed_args);
 
       // TODO: Generate one transaction per tx.transaction.Action?
       return {
@@ -190,8 +236,8 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
         function_name: function_name,
         args: parsed_args,
         notify,
+        indexer_name: force_indexer
       };
-
     } catch (err) {
       this.logger.warn(`transormTx() has failed for tx hash: ${tx.hash}`);
       this.logger.warn(err);
@@ -233,14 +279,15 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
   async fetchEventData(event): Promise<CommonTx[]> {
     const sql = `select * from transaction t inner join receipt r on t.success_receipt_id =r.receipt_id 
       WHERE r.receipt_id ='${event}' AND
-      (transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_approve"}}]' OR
-      transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_revoke"}}]' OR
-      transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_buy" }}]' OR
-      transaction->'actions' @> '[{"FunctionCall": { "method_name": "buy" }}]' OR
-      transaction->'actions' @> '[{"FunctionCall": { "method_name": "delete_market_data" }}]') AND
-      processed = false AND  missing = false AND
-      ((execution_outcome->'outcome'->'status'->'SuccessValue' is not null) 
-      or (execution_outcome->'outcome'->'status'->'SuccessReceiptId' is not null));
+      processed = false AND 
+      missing = false AND
+      (
+        ((r.execution_outcome->'outcome'->'status'->'SuccessValue' is not null) OR
+        (r.execution_outcome->'outcome'->'status'->'SuccessReceiptId' is not null)) 
+        AND 
+        ((t.outcome->'execution_outcome'->'outcome'->'status'->'SuccessValue' is not null) OR 
+        (t.outcome->'execution_outcome'->'outcome'->'status'->'SuccessReceiptId' is not null))
+      );
     `;
 
     const txs: Transaction[] = await this.transactionRepository.query(sql);

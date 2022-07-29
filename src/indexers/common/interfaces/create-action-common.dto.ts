@@ -18,8 +18,9 @@ export interface CreateListActionTO extends CreateActionCommonArgs {
   seller: string;
   commission_id?: string;
 }
-
 export interface CreateUnlistActionTO extends CreateListActionTO {}
+export interface CreateRelistActionTO extends CreateListActionTO {}
+
 export interface CreateBuyActionTO extends CreateListActionTO {
   buyer: string;
 }
@@ -29,4 +30,22 @@ export interface CreateTransferActionTO extends CreateActionCommonArgs {
   seller: string;
 }
 
-export type CreateActionTO = CreateListActionTO | CreateUnlistActionTO | CreateBuyActionTO | CreateTransferActionTO;
+export interface CreateStakeActionTO extends CreateActionCommonArgs {
+  seller: string;
+}
+export interface CreateUnstakeActionTO extends CreateStakeActionTO {}
+
+export interface CreateBidActionTO extends CreateActionCommonArgs {
+  bid_price: bigint;
+  buyer: string;
+}
+
+
+export type CreateActionTO = CreateListActionTO | 
+  CreateUnlistActionTO | 
+  CreateBuyActionTO | 
+  CreateTransferActionTO |
+  CreateStakeActionTO |
+  CreateUnstakeActionTO |
+  CreateRelistActionTO |
+  CreateBidActionTO;

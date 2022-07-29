@@ -7,17 +7,18 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { ConfigService } from "@nestjs/config";
 import { Chain } from "src/database/universal/entities/Chain";
-import { TxStreamAdapter } from "src/indexers/common/interfaces/tx-stream-adapter.interface";
+import { CommonTxResult, TxStreamAdapter } from "src/indexers/common/interfaces/tx-stream-adapter.interface";
 import { IndexerService } from "./common/interfaces/indexer-service.interface";
 import {
   IndexerOptions,
   IndexerSubscriptionOptions,
 } from "./common/interfaces/indexer-options";
 import { SmartContractFunction } from "src/database/universal/entities/SmartContractFunction";
-import { Indexers } from "./common/providers/indexers.service";
+import { CommonUtilService } from "src/common/helpers/common-util/common-util.service";
+import { NearMicroIndexers } from "./common/providers/near-micro-indexers.service";
+import { StacksMicroIndexers } from "./common/providers/stacks-micro-indexers.service";
 
 const BATCH_SIZE = 10000;
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 @Injectable()
 export class IndexerOrchestratorService {
@@ -26,45 +27,44 @@ export class IndexerOrchestratorService {
   private readonly logger = new Logger(IndexerOrchestratorService.name);
 
   constructor(
-    @Inject('NearMicroIndexers') private nearMicroIndexers: Indexers,
-    @Inject('StacksMicroIndexers') private stacksMicroIndexers: Indexers,
+    @Inject('NearMicroIndexers') private nearMicroIndexers: NearMicroIndexers,
+    @Inject('StacksMicroIndexers') private stacksMicroIndexers: StacksMicroIndexers,
     private configService: ConfigService,
     @InjectRepository(SmartContract)
     private smartContractRepository: Repository<SmartContract>,
     @InjectRepository(Chain)
     private chainRepository: Repository<Chain>,
     @Inject('TxStreamAdapter') private txStreamAdapter: TxStreamAdapter,
+    private commonUtil: CommonUtilService
   ) {}
 
   async runIndexer(options: IndexerOptions) {
-    this.logger.debug(`runIndexer() Initialize `, options);
+    this.logger.debug(`runIndexer() Initialize with options includeMissings:${options.includeMissings}`);
     try {
       await this.setUpChainAndStreamer();
 
-      if (options.includeMissings) {
-        let skip = 0;
-        let txs: CommonTx[];
-        do {
-          this.logger.log(`Querying transactions skip:${skip} batch_size: ${BATCH_SIZE} `)
-          txs = await this.txStreamAdapter.fetchMissingTxs(BATCH_SIZE, skip);
-          this.logger.log(`Found ${txs.length} transactions`);
-          await this.processTransactions(txs);
-          skip += BATCH_SIZE;
-        } while (txs.length >= BATCH_SIZE);
-      } else {
-        const txs: CommonTx[] = await this.txStreamAdapter.fetchTxs();
-        await this.processTransactions(txs);
-      }
+      let skip = 0;
+      let result: CommonTxResult;
+      do {
+        this.logger.log(`Querying transactions skip:${skip} batch_size: ${BATCH_SIZE} `);
+        result = options.includeMissings
+          ? await this.txStreamAdapter.fetchMissingTxs(BATCH_SIZE, skip)
+          : await this.txStreamAdapter.fetchTxs(BATCH_SIZE, skip);
 
-      this.logger.debug(`runIndexer() Completed with options`, options);
-      await delay(5000); // Wait for any discord post to be sent
+        this.logger.log(`Found ${result.total} transactions`);
+        await this.processTransactions(result.txs);
+        skip += BATCH_SIZE;
+      } while (result.total >= BATCH_SIZE);
+
+      this.logger.debug(`runIndexer() Completed with options includeMissings:${options.includeMissings}`);
+      await this.commonUtil.delay(5000); // Wait for any discord post to be sent
     } catch (err) {
       this.logger.error(err);
     }
   }
 
   async subscribeToEvents(options: IndexerSubscriptionOptions) {
-    this.logger.debug(`subscribeToEvents() Initialize `, options);
+    this.logger.debug(`subscribeToEvents() Initialize`);
 
     try {
       await this.setUpChainAndStreamer();
@@ -113,7 +113,7 @@ export class IndexerOrchestratorService {
         }
 
         if (smart_contract_function) {
-          const txHandler = this.getMicroIndexer(smart_contract_function.name);
+          const txHandler = this.getMicroIndexer(transaction.indexer_name || smart_contract_function.name);
           result = await txHandler.process(
             transaction,
             smart_contract,
@@ -140,11 +140,12 @@ export class IndexerOrchestratorService {
   }
 
   getMicroIndexer(name: string) {
+    const indexerName = this.commonUtil.toCamelCase(name) + "Indexer";
     let microIndexer;
     switch (this.chainSymbol) {
-      case "Near": microIndexer = this.nearMicroIndexers[name + "Indexer"];
+      case "Near": microIndexer = this.nearMicroIndexers[indexerName];
         break;
-      case "Stacks": microIndexer = this.stacksMicroIndexers[name + "Indexer"];
+      case "Stacks": microIndexer = this.stacksMicroIndexers[indexerName];
         break;
     }
     if (!microIndexer || !this.isMicroIndexer(microIndexer)) {

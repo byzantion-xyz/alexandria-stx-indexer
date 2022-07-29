@@ -1,4 +1,5 @@
-import { Column, Entity, Index } from "typeorm";
+import { Column, Entity, Index, JoinColumn, ManyToOne } from "typeorm";
+import { Chain } from "./Chain";
 
 @Index("crypto_rates_uk_fiat_crypto", ["crypto_currency", "fiat_currency"], {
   unique: true,
@@ -29,4 +30,14 @@ export class CryptoRate {
     default: () => "CURRENT_TIMESTAMP",
   })
   updated_at: Date | null;
+
+  @Column("uuid")
+  chain_id: string;
+
+  @ManyToOne(() => Chain, (chain) => chain.crypto_rates, {
+    onDelete: "RESTRICT",
+    onUpdate: "CASCADE",
+  })
+  @JoinColumn([{ name: "chain_id", referencedColumnName: "id" }])
+  chain: Chain;
 }

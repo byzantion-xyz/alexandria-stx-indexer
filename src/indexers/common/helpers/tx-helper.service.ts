@@ -12,6 +12,12 @@ import { Repository } from "typeorm";
 import { ActionName } from "./indexer-enums";
 import { Commission } from "src/database/universal/entities/Commission";
 
+export interface NftStateArguments {
+  collection_map_id?: string
+}
+
+// TODO: Refactor nft_state changes into unified service
+
 @Injectable()
 export class TxHelperService {
   private readonly logger = new Logger(TxHelperService.name);
@@ -28,13 +34,22 @@ export class TxHelperService {
   nanoToMiliSeconds(nanoseconds: bigint) {
     return Number(BigInt(nanoseconds) / BigInt(1e6));
   }
-
+  
   isNewNftListOrSale(tx: CommonTx, nft_state: NftState) {
     return (
       !nft_state ||
       !nft_state.list_block_height ||
       tx.block_height > nft_state.list_block_height ||
       (tx.block_height === nft_state.list_block_height && tx.index && tx.index > nft_state.list_tx_index)
+    );
+  }
+
+  isNewBid(tx: CommonTx, nft_state: NftState) {
+    return (
+      !nft_state ||
+      !nft_state.bid_block_height ||
+      tx.block_height > nft_state.bid_block_height ||
+      (tx.block_height === nft_state.bid_block_height && tx.index && tx.index > nft_state.bid_tx_index)
     );
   }
 
@@ -61,7 +76,11 @@ export class TxHelperService {
         contract_key,
         nft_metas: { token_id },
       },
-      relations: { nft_metas: { nft_state: { list_contract: true } }},
+      relations: { 
+        nft_metas: { 
+          nft_state: { list_contract: true, staked_contract: true }, 
+          smart_contract: true 
+      }}
     });
 
     if (nft_smart_contract && nft_smart_contract.nft_metas && nft_smart_contract.nft_metas.length === 1) {
@@ -69,7 +88,7 @@ export class TxHelperService {
     }
   }
 
-  async findCommissionByKey(sc: SmartContract, contract_key: string, key: string): Promise<string> {
+  async findCommissionByKey(sc: SmartContract, contract_key: string, key?: string): Promise<string> {
     let commission_id: string;
     if (!key) {
       key = `${sc.contract_key}::${contract_key}`;
@@ -83,9 +102,9 @@ export class TxHelperService {
   async unlistMeta(nftMetaId: string, nonce: bigint, block_height: bigint) {
     let update = {
       listed: false,
-      list_price: undefined,
+      list_price: null,
       list_seller: null,
-      list_contract_id: undefined,
+      list_contract_id: null,
       list_tx_index: nonce,
       list_block_height: block_height,
       function_args: null,
@@ -93,6 +112,56 @@ export class TxHelperService {
     };
 
     return await this.nftStateRepository.upsert({ meta_id: nftMetaId, ...update }, ["meta_id"]);
+  }
+
+  async listMeta (nftMetaId: string, tx: CommonTx, sc: SmartContract,  price: bigint, commission_id?: string, args?: NftStateArguments) {
+    let update: any = {
+      listed: true,
+      list_price: price,
+      list_contract_id: sc.id,
+      list_tx_index: tx.index,
+      list_seller: tx.signer,
+      list_block_height: tx.block_height,
+      ... (commission_id && { commission_id }),
+      ... (args && { function_args: args }),
+    };
+
+    await this.nftStateRepository.upsert({ meta_id: nftMetaId, ...update }, ["meta_id"]);
+  }
+
+  async bidMeta (nftMetaId: string, tx: CommonTx, sc: SmartContract, price: bigint) {
+    let update: any = {
+      bid: true,
+      bid_price: price, 
+      bid_contract_id: sc.id,
+      bid_buyer: tx.signer,
+      bid_block_height: tx.block_height,
+      bid_tx_index: tx.index
+    };
+
+    await this.nftStateRepository.upsert({ meta_id: nftMetaId, ...update }, ["meta_id"]);
+  }
+
+  async stakeMeta (nftMetaId: string, tx: CommonTx, sc: SmartContract, stake_sc: SmartContract) {
+    let update: any = {
+      staked: true,
+      staked_contract_id: stake_sc?.id || null,
+      staked_owner: tx.signer,
+      staked_block_height: tx.block_height,
+      staked_tx_index: tx.index
+    };
+    await this.nftStateRepository.upsert({ meta_id: nftMetaId, ...update }, ["meta_id"]);
+  }
+
+  async unstakeMeta(nftMetaId: string, tx: CommonTx) {
+    let update: any = {
+      staked: false,
+      staked_contract_id: null,
+      staked_owner: null,
+      staked_block_height: tx.block_height,
+      staked_tx_index: tx.index
+    };
+    await this.nftStateRepository.upsert({ meta_id: nftMetaId, ...update }, ["meta_id"]);
   }
 
   setCommonActionParams(

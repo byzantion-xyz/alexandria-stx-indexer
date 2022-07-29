@@ -50,6 +50,7 @@ export const StacksMicroIndexersProvider = {
     ChangePriceIndexerService,
     StakeIndexerService, 
     UnstakeIndexerService,
-    BnsRegisterIndexerService
+    BnsRegisterIndexerService,
+    BnsBidIndexerService
   ]
 };

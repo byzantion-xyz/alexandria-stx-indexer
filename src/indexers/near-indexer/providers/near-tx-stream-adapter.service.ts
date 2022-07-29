@@ -1,7 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { CommonTx } from "src/indexers/common/interfaces/common-tx.interface";
 import { TxProcessResult } from "src/indexers/common/interfaces/tx-process-result.interface";
-import { TxStreamAdapter } from "src/indexers/common/interfaces/tx-stream-adapter.interface";
+import { CommonTxResult, TxStreamAdapter } from "src/indexers/common/interfaces/tx-stream-adapter.interface";
 import { TxHelperService } from "../../common/helpers/tx-helper.service";
 import * as moment from "moment";
 import { Client } from 'pg';
@@ -42,7 +42,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
     private smartContractFunctionRepository: Repository<SmartContractFunction>
   ) {}
 
-  async fetchTxs(batch_size: number, skip: number): Promise<CommonTx[]> {
+  async fetchTxs(batch_size: number, skip: number): Promise<CommonTxResult> {
     const accounts = await this.fetchAccounts();
     let accounts_in = "";
     for (let i in accounts) {
@@ -66,11 +66,16 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
     `;
 
     const txs: Transaction[] = await this.transactionRepository.query(sql);
-    const result: CommonTx[] = this.transformTxs(txs);
+    const common_txs: CommonTx[] = this.transformTxs(txs);
+    
+    const result: CommonTxResult = {
+      txs: common_txs,
+      total: txs ? txs.length : 0
+    };
     return result;
   }
 
-  async fetchMissingTxs(batch_size: number, skip: number): Promise<CommonTx[]> {
+  async fetchMissingTxs(batch_size: number, skip: number): Promise<CommonTxResult> {
     const accounts = await this.fetchAccounts(true);
     let accounts_in = "";
     for (let i in accounts) {
@@ -93,7 +98,12 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
     `;
 
     const txs: Transaction[] = await this.transactionRepository.query(sql);
-    const result: CommonTx[] = this.transformTxs(txs);
+    const common_txs: CommonTx[] = this.transformTxs(txs);
+    
+    const result: CommonTxResult = {
+      txs: common_txs,
+      total: txs ? txs.length : 0
+    };
     return result;
   }
 

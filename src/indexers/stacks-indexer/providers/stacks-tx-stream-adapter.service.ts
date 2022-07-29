@@ -7,7 +7,7 @@ import { Transaction as TransactionEntity } from 'src/database/stacks-stream/ent
 import { IndexerEventType } from 'src/indexers/common/helpers/indexer-enums';
 import { CommonTx } from 'src/indexers/common/interfaces/common-tx.interface';
 import { TxProcessResult } from 'src/indexers/common/interfaces/tx-process-result.interface';
-import { TxStreamAdapter } from 'src/indexers/common/interfaces/tx-stream-adapter.interface';
+import { CommonTxResult, TxStreamAdapter } from 'src/indexers/common/interfaces/tx-stream-adapter.interface';
 import { Repository } from 'typeorm';
 import { StacksTransaction } from '../dto/stacks-transaction.dto';
 import { StacksTxHelperService } from './stacks-tx-helper.service';
@@ -23,7 +23,7 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
     private transactionRepository: Repository<TransactionEntity>,
   ) {}
 
-  async fetchTxs(batch_size: number, skip: number): Promise<CommonTx[]> {
+  async fetchTxs(batch_size: number, skip: number): Promise<CommonTxResult> {
     const sql = `SELECT * from transaction t
       WHERE tx->>'tx_type' = 'contract_call' AND
       tx->>'tx_status' = 'success' AND
@@ -33,12 +33,16 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
     `;
 
     const txs: StacksTransaction[] = await this.transactionRepository.query(sql);
-    const result: CommonTx[] = this.transformTxs(txs);
+    const common_txs: CommonTx[] = this.transformTxs(txs);
     
+    const result: CommonTxResult = {
+      txs: common_txs,
+      total: txs ? txs.length : 0
+    };
     return result;
   }
 
-  async fetchMissingTxs(batch_size: number, skip: number): Promise<CommonTx[]> {
+  async fetchMissingTxs(batch_size: number, skip: number): Promise<CommonTxResult> {
     const sql = `SELECT * from transaction t
       WHERE tx->>'tx_type' = 'contract_call' AND
       tx->>'tx_status' = 'success' AND
@@ -48,8 +52,12 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
     `;
 
     const txs: StacksTransaction[] = await this.transactionRepository.query(sql);
-    const result: CommonTx[] = this.transformTxs(txs);
+    const common_txs: CommonTx[] = this.transformTxs(txs);
     
+    const result: CommonTxResult = {
+      txs: common_txs,
+      total: txs ? txs.length : 0
+    };
     return result;
   }
 

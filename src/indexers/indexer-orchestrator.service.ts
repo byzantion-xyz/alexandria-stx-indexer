@@ -7,7 +7,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { ConfigService } from "@nestjs/config";
 import { Chain } from "src/database/universal/entities/Chain";
-import { TxStreamAdapter } from "src/indexers/common/interfaces/tx-stream-adapter.interface";
+import { CommonTxResult, TxStreamAdapter } from "src/indexers/common/interfaces/tx-stream-adapter.interface";
 import { IndexerService } from "./common/interfaces/indexer-service.interface";
 import {
   IndexerOptions,
@@ -44,17 +44,17 @@ export class IndexerOrchestratorService {
       await this.setUpChainAndStreamer();
 
       let skip = 0;
-      let txs: CommonTx[];
+      let result: CommonTxResult;
       do {
         this.logger.log(`Querying transactions skip:${skip} batch_size: ${BATCH_SIZE} `);
-        txs = options.includeMissings
+        result = options.includeMissings
           ? await this.txStreamAdapter.fetchMissingTxs(BATCH_SIZE, skip)
           : await this.txStreamAdapter.fetchTxs(BATCH_SIZE, skip);
 
-        this.logger.log(`Found ${txs.length} transactions`);
-        await this.processTransactions(txs);
+        this.logger.log(`Found ${result.total} transactions`);
+        await this.processTransactions(result.txs);
         skip += BATCH_SIZE;
-      } while (txs.length >= BATCH_SIZE);
+      } while (result.total >= BATCH_SIZE);
 
       this.logger.debug(`runIndexer() Completed with options includeMissings:${options.includeMissings}`);
       await this.commonUtil.delay(5000); // Wait for any discord post to be sent

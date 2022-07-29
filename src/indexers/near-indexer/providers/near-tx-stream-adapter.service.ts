@@ -16,6 +16,16 @@ import { SmartContractFunction } from "src/database/universal/entities/SmartCont
 import { Transaction as TransactionEntity } from "src/database/near-stream/entities/Transaction";
 import { ConfigService } from "@nestjs/config";
 
+const WHITELISTED_ACTIONS = [
+  'nft_approve', 
+  'nft_revoke', 
+  'nft_buy', 
+  'buy', 
+  'delete_market_data', 
+  'unstake',
+  'nft_transfer_call'
+];
+
 @Injectable()
 export class NearTxStreamAdapterService implements TxStreamAdapter {
   private readonly logger = new Logger(NearTxStreamAdapterService.name);
@@ -24,8 +34,6 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
     private txHelper: TxHelperService,
     private nearTxHelper: NearTxHelperService,
     private configService: ConfigService,
-    /* @InjectEntityManager('NEAR-STREAM')
-    private entityManager: EntityManager,*/
     @InjectRepository(TransactionEntity, "NEAR-STREAM")
     private transactionRepository: Repository<TransactionEntity>,
     @InjectRepository(SmartContract)
@@ -34,7 +42,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
     private smartContractFunctionRepository: Repository<SmartContractFunction>
   ) {}
 
-  async fetchTxs(): Promise<CommonTx[]> {
+  async fetchTxs(batch_size: number, skip: number): Promise<CommonTx[]> {
     const accounts = await this.fetchAccounts();
     let accounts_in = "";
     for (let i in accounts) {
@@ -42,17 +50,10 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
     }
     accounts_in = accounts_in.slice(0, -1);
 
-    const sql = `select * from transaction t inner join receipt r on t.success_receipt_id =r.receipt_id 
-      where block_height >= 68000000 and
-      processed = false AND 
+    const sql = `select * from transaction t inner join receipt r on t.success_receipt_id=r.receipt_id 
+      where block_height >= 68000000 AND
+      processed = false AND
       missing = false AND
-      (transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_approve"}}]' OR
-      transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_revoke"}}]' OR
-      transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_buy" }}]' OR
-      transaction->'actions' @> '[{"FunctionCall": { "method_name": "buy" }}]' OR
-      transaction->'actions' @> '[{"FunctionCall": { "method_name": "delete_market_data" }}]' OR
-      transaction->'actions' @> '[{"FunctionCall": { "method_name": "unstake" }}]' OR
-      transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_transfer_call" }}]') AND
       (
         ((r.execution_outcome->'outcome'->'status'->'SuccessValue' is not null) OR
         (r.execution_outcome->'outcome'->'status'->'SuccessReceiptId' is not null)) 
@@ -61,7 +62,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
         (t.outcome->'execution_outcome'->'outcome'->'status'->'SuccessReceiptId' is not null))
       )
       order by t.block_height ASC 
-      limit 2000;
+      limit ${batch_size} OFFSET ${skip};
     `;
 
     const txs: Transaction[] = await this.transactionRepository.query(sql);
@@ -77,17 +78,10 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
     }
     accounts_in = accounts_in.slice(0, -1);
     const sql = `select * from transaction t inner join receipt r on t.success_receipt_id =r.receipt_id 
-      where block_height >= 68000000 and
+      where block_height >= 68000000 AND
       receiver_id in (${accounts_in}) AND
       processed = false AND 
-      missing = true and 
-      (transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_approve"}}]' OR
-      transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_revoke"}}]' OR
-      transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_buy" }}]' OR
-      transaction->'actions' @> '[{"FunctionCall": { "method_name": "buy" }}]' OR
-      transaction->'actions' @> '[{"FunctionCall": { "method_name": "delete_market_data" }}]' OR
-      transaction->'actions' @> '[{"FunctionCall": { "method_name": "unstake" }}]' OR
-      transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_transfer_call" }}]') AND
+      missing = true AND
       (
         ((r.execution_outcome->'outcome'->'status'->'SuccessValue' is not null) OR
         (r.execution_outcome->'outcome'->'status'->'SuccessReceiptId' is not null)) 
@@ -198,6 +192,11 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
 
   transformTx(tx: Transaction): CommonTx {
     try {
+      let function_name = tx.transaction.actions[0].FunctionCall?.method_name;
+      if (!WHITELISTED_ACTIONS.includes(function_name)) {
+        return; // Do not process transaction
+      }
+
       const args = tx.transaction.actions[0].FunctionCall?.args;
       let parsed_args;
       if (args) {
@@ -211,7 +210,6 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
           ? true
           : false;
 
-      let function_name = tx.transaction.actions[0].FunctionCall?.method_name;
       // Force indexer for special cases.
       let force_indexer = this.findPreselectedIndexer(function_name, parsed_args);
 
@@ -270,14 +268,8 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
   async fetchEventData(event): Promise<CommonTx[]> {
     const sql = `select * from transaction t inner join receipt r on t.success_receipt_id =r.receipt_id 
       WHERE r.receipt_id ='${event}' AND
-      (transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_approve"}}]' OR
-      transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_revoke"}}]' OR
-      transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_buy" }}]' OR
-      transaction->'actions' @> '[{"FunctionCall": { "method_name": "buy" }}]' OR
-      transaction->'actions' @> '[{"FunctionCall": { "method_name": "delete_market_data" }}]' OR
-      transaction->'actions' @> '[{"FunctionCall": { "method_name": "unstake" }}]' OR
-      transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_transfer_call" }}]') AND
-      processed = false AND  missing = false AND
+      processed = false AND 
+      missing = false AND
       (
         ((r.execution_outcome->'outcome'->'status'->'SuccessValue' is not null) OR
         (r.execution_outcome->'outcome'->'status'->'SuccessReceiptId' is not null)) 

@@ -18,7 +18,7 @@ import { CommonUtilService } from "src/common/helpers/common-util/common-util.se
 import { NearMicroIndexers } from "./common/providers/near-micro-indexers.service";
 import { StacksMicroIndexers } from "./common/providers/stacks-micro-indexers.service";
 
-const BATCH_SIZE = 10;
+const BATCH_SIZE = 10000;
 
 @Injectable()
 export class IndexerOrchestratorService {

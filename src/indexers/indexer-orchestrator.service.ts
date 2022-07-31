@@ -48,8 +48,8 @@ export class IndexerOrchestratorService {
       do {
         this.logger.log(`Querying transactions skip:${skip} batch_size: ${BATCH_SIZE} `);
         result = options.includeMissings
-          ? await this.txStreamAdapter.fetchMissingTxs(BATCH_SIZE, skip)
-          : await this.txStreamAdapter.fetchTxs(BATCH_SIZE, skip);
+          ? await this.txStreamAdapter.fetchMissingTxs(BATCH_SIZE, skip, options.contract_key)
+          : await this.txStreamAdapter.fetchTxs(BATCH_SIZE, skip, options.contract_key);
 
         this.logger.log(`Found ${result.total} transactions`);
         await this.processTransactions(result.txs);

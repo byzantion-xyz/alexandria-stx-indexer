@@ -23,9 +23,10 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
     private transactionRepository: Repository<TransactionEntity>,
   ) {}
 
-  async fetchTxs(batch_size: number, skip: number): Promise<CommonTxResult> {
+  async fetchTxs(batch_size: number, skip: number, contract_key?: string): Promise<CommonTxResult> {
     const sql = `SELECT * from transaction t
       WHERE tx->>'tx_type' = 'contract_call' AND
+      ${ contract_key ? `tx->'contract_call'->>'contract_id' = ${contract_key} AND` : '' }
       tx->>'tx_status' = 'success' AND
       processed = false AND  missing = false
       ORDER BY t.block_height ASC, tx->>'microblock_sequence' asc, tx->>'index' ASC 
@@ -42,9 +43,10 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
     return result;
   }
 
-  async fetchMissingTxs(batch_size: number, skip: number): Promise<CommonTxResult> {
+  async fetchMissingTxs(batch_size: number, skip: number, contract_key?: string): Promise<CommonTxResult> {
     const sql = `SELECT * from transaction t
       WHERE tx->>'tx_type' = 'contract_call' AND
+      ${ contract_key ? `tx->'contract_call'->>'contract_id' = ${contract_key} AND` : '' }
       tx->>'tx_status' = 'success' AND
       processed = false AND  missing = true
       ORDER BY t.block_height ASC, tx->>'microblock_sequence' asc, tx->>'index' ASC 

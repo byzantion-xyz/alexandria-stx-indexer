@@ -42,13 +42,17 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
     private smartContractFunctionRepository: Repository<SmartContractFunction>
   ) {}
 
-  async fetchTxs(batch_size: number, skip: number): Promise<CommonTxResult> {
-    const accounts = await this.fetchAccounts();
+  async fetchTxs(batch_size: number, skip: number, contract_key?: string): Promise<CommonTxResult> {
     let accounts_in = "";
-    for (let i in accounts) {
-      accounts_in += `'${accounts[i]}',`;
+    if (contract_key) {
+      accounts_in = `'${contract_key}'`;
+    } else {
+      const accounts = await this.fetchAccounts();
+      for (let i in accounts) {
+        accounts_in += `'${accounts[i]}',`;
+      }
+      accounts_in = accounts_in.slice(0, -1);
     }
-    accounts_in = accounts_in.slice(0, -1);
 
     const sql = `select * from transaction t inner join receipt r on t.success_receipt_id=r.receipt_id 
       where block_height >= 68000000 AND
@@ -76,13 +80,18 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
     return result;
   }
 
-  async fetchMissingTxs(batch_size: number, skip: number): Promise<CommonTxResult> {
-    const accounts = await this.fetchAccounts(true);
+  async fetchMissingTxs(batch_size: number, skip: number, contract_key?: string): Promise<CommonTxResult> {
     let accounts_in = "";
-    for (let i in accounts) {
-      accounts_in += `'${accounts[i]}',`;
+    if (contract_key) {
+      accounts_in = `'${contract_key}'`;
+    } else {
+      const accounts = await this.fetchAccounts();
+      for (let i in accounts) {
+        accounts_in += `'${accounts[i]}',`;
+      }
+      accounts_in = accounts_in.slice(0, -1);
     }
-    accounts_in = accounts_in.slice(0, -1);
+
     const sql = `select * from transaction t inner join receipt r on t.success_receipt_id =r.receipt_id 
       where block_height >= 68000000 AND
       receiver_id in (${accounts_in}) AND

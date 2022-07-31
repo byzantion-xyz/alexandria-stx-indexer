@@ -8,8 +8,8 @@ export interface CommonTxResult {
 };
 
 export interface TxStreamAdapter {
-  fetchTxs(batch_size: number, skip: number): Promise<CommonTxResult>;
-  fetchMissingTxs(batch_size: number, skip: number): Promise<CommonTxResult>;
+  fetchTxs(batch_size: number, skip: number, contract_key?: string): Promise<CommonTxResult>;
+  fetchMissingTxs(batch_size: number, skip: number, contract_key?: string): Promise<CommonTxResult>;
   setTxResult(txHash: string, txResult: TxProcessResult): void;
 
   subscribeToEvents?(): Client;

@@ -1,7 +1,13 @@
-import { Controller, Post } from '@nestjs/common';
+import { Body, Controller, Post, UsePipes, ValidationPipe } from '@nestjs/common';
 
 import { Logger } from '@nestjs/common';
+import { IndexerOptions } from '../common/interfaces/indexer-options';
 import { IndexerOrchestratorService } from '../indexer-orchestrator.service';
+
+interface MissingTransactionsDto {
+  contract_key: string;
+}
+
 
 @Controller('near-indexer')
 export class NearIndexerController {
@@ -21,9 +27,14 @@ export class NearIndexerController {
   }
 
   @Post('run-missing')
-  async indexMissingTransactions() {
-    this.nearIndexer.runIndexer({ includeMissings: true });
-    
+  @UsePipes(new ValidationPipe({ transform: true }))
+  async indexMissingTransactions(@Body() params: MissingTransactionsDto) {
+    const indexerOptions: IndexerOptions = {
+      includeMissings: true, 
+      ... (params.contract_key && { contract_key: params.contract_key })
+    }
+    this.nearIndexer.runIndexer(indexerOptions);
+
     return 'Ok';
   }
 

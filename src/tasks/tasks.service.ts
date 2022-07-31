@@ -20,7 +20,7 @@ export class TasksService {
       }
     }
 
-    @Cron(CronExpression.EVERY_2_HOURS)
+    @Cron(CronExpression.EVERY_DAY_AT_6AM)
     handleCronMissingTransactions() {
       if (process.env.NODE_ENV === 'production') {
         this.indexerOrchestrator.runIndexer({ includeMissings: true });

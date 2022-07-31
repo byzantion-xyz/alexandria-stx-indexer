@@ -7,7 +7,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { ConfigService } from "@nestjs/config";
 import { Chain } from "src/database/universal/entities/Chain";
-import { CommonTxResult, TxStreamAdapter } from "src/indexers/common/interfaces/tx-stream-adapter.interface";
+import { CommonTxResult, ProcessedTxsResult, TxStreamAdapter } from "src/indexers/common/interfaces/tx-stream-adapter.interface";
 import { IndexerService } from "./common/interfaces/indexer-service.interface";
 import {
   IndexerOptions,
@@ -18,7 +18,7 @@ import { CommonUtilService } from "src/common/helpers/common-util/common-util.se
 import { NearMicroIndexers } from "./common/providers/near-micro-indexers.service";
 import { StacksMicroIndexers } from "./common/providers/stacks-micro-indexers.service";
 
-const BATCH_SIZE = 10000;
+const BATCH_SIZE = 10;
 
 @Injectable()
 export class IndexerOrchestratorService {
@@ -52,8 +52,8 @@ export class IndexerOrchestratorService {
           : await this.txStreamAdapter.fetchTxs(BATCH_SIZE, skip, options.contract_key);
 
         this.logger.log(`Found ${result.total} transactions`);
-        await this.processTransactions(result.txs);
-        skip += BATCH_SIZE;
+        const processedTxs: ProcessedTxsResult = await this.processTransactions(result.txs);
+        skip += BATCH_SIZE - processedTxs.total;
       } while (result.total >= BATCH_SIZE);
 
       this.logger.debug(`runIndexer() Completed with options includeMissings:${options.includeMissings}`);
@@ -84,11 +84,15 @@ export class IndexerOrchestratorService {
     }
   }
 
-  async processTransactions(transactions: CommonTx[]) {
+  async processTransactions(transactions: CommonTx[]): Promise<ProcessedTxsResult> {
+    let processed = 0;
     for await (const tx of transactions) {
       const txResult: TxProcessResult = await this.processTransaction(tx);
+      if (txResult.processed) processed++;
       await this.txStreamAdapter.setTxResult(tx.hash, txResult);
     }
+
+    return { total: processed };
   }
 
   async processTransaction(transaction: CommonTx): Promise<TxProcessResult> {

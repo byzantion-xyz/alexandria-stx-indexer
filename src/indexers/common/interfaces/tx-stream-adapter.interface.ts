@@ -7,6 +7,10 @@ export interface CommonTxResult {
   total: number
 };
 
+export interface ProcessedTxsResult {
+  total: number;
+}
+
 export interface TxStreamAdapter {
   fetchTxs(batch_size: number, skip: number, contract_key?: string): Promise<CommonTxResult>;
   fetchMissingTxs(batch_size: number, skip: number, contract_key?: string): Promise<CommonTxResult>;

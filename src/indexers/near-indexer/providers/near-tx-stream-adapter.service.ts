@@ -209,7 +209,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
             break;
 
           default: 
-            throw new Error(`Indexer not implemented for msg: ${msg || 'unknown'}`);
+            force_indexer = 'unknown';
         }
       }
     }

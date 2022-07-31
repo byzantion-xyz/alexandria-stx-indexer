@@ -58,14 +58,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
       where block_height >= 68000000 AND
       receiver_id in (${accounts_in}) AND
       processed = false AND
-      missing = false AND
-      (
-        ((r.execution_outcome->'outcome'->'status'->'SuccessValue' is not null) OR
-        (r.execution_outcome->'outcome'->'status'->'SuccessReceiptId' is not null)) 
-        AND 
-        ((t.outcome->'execution_outcome'->'outcome'->'status'->'SuccessValue' is not null) OR 
-        (t.outcome->'execution_outcome'->'outcome'->'status'->'SuccessReceiptId' is not null))
-      )
+      missing = false
       order by t.block_height ASC 
       limit ${batch_size} OFFSET ${skip};
     `;
@@ -96,14 +89,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
       where block_height >= 68000000 AND
       receiver_id in (${accounts_in}) AND
       processed = false AND 
-      missing = true AND
-      (
-        ((r.execution_outcome->'outcome'->'status'->'SuccessValue' is not null) OR
-        (r.execution_outcome->'outcome'->'status'->'SuccessReceiptId' is not null)) 
-        AND 
-        ((t.outcome->'execution_outcome'->'outcome'->'status'->'SuccessValue' is not null) OR 
-        (t.outcome->'execution_outcome'->'outcome'->'status'->'SuccessReceiptId' is not null))
-      )
+      missing = true
       order by t.block_height ASC limit ${batch_size} OFFSET ${skip};   
     `;
 
@@ -261,7 +247,8 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
   }
 
   determineIfSuccessTx(status: ExecutionStatus | ExecutionStatusBasic): boolean {
-    if ((status as ExecutionStatus).SuccessReceiptId || (status as ExecutionStatus).SuccessValue) {
+    if (typeof (status as ExecutionStatus).SuccessReceiptId !== 'undefined' || 
+      typeof (status as ExecutionStatus).SuccessValue !== 'undefined') {
       return true;
     } else {
       return false;
@@ -270,12 +257,13 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
 
   transformTxs(txs: Transaction[]): CommonTx[] {
     let result: CommonTx[] = [];
-
     for (let tx of txs) {
-      const transformed_tx = this.transformTx(tx);
-      if (transformed_tx) result.push(transformed_tx);
-    }
-
+      if (this.determineIfSuccessTx(tx.execution_outcome.outcome.status) && 
+        this.determineIfSuccessTx(tx.outcome.execution_outcome.outcome.status)) {
+        const transformed_tx = this.transformTx(tx);
+        if (transformed_tx) result.push(transformed_tx);
+      }
+    }    
     return result;
   }
 
@@ -296,14 +284,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
     const sql = `select * from transaction t inner join receipt r on t.success_receipt_id =r.receipt_id 
       WHERE r.receipt_id ='${event}' AND
       processed = false AND 
-      missing = false AND
-      (
-        ((r.execution_outcome->'outcome'->'status'->'SuccessValue' is not null) OR
-        (r.execution_outcome->'outcome'->'status'->'SuccessReceiptId' is not null)) 
-        AND 
-        ((t.outcome->'execution_outcome'->'outcome'->'status'->'SuccessValue' is not null) OR 
-        (t.outcome->'execution_outcome'->'outcome'->'status'->'SuccessReceiptId' is not null))
-      );
+      missing = false;
     `;
 
     const txs: Transaction[] = await this.transactionRepository.query(sql);

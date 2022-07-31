@@ -180,9 +180,6 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
           case "accept_trade":
           case "accept_offer":
           case "accept_offer_paras_series":
-            force_indexer = market_type;
-            break;
-
           default: 
             force_indexer = 'unknown';
         }
@@ -225,6 +222,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
 
       // Force indexer for special cases.
       let force_indexer = this.findPreselectedIndexer(function_name, parsed_args);
+      if (force_indexer === 'unknown') return; // Do not process unkonwn transactions
 
       // TODO: Generate one transaction per tx.transaction.Action?
       return {

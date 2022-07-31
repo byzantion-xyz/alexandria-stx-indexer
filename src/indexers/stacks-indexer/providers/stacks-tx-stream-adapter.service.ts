@@ -1,7 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Client } from 'pg';
+import { Client, Pool } from 'pg';
+import * as Cursor from 'pg-cursor';
 import * as moment from "moment";
 import { Transaction as TransactionEntity } from 'src/database/stacks-stream/entities/Transaction';
 import { IndexerEventType } from 'src/indexers/common/helpers/indexer-enums';
@@ -23,44 +24,40 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
     private transactionRepository: Repository<TransactionEntity>,
   ) {}
 
-  async fetchTxs(batch_size: number, skip: number, contract_key?: string): Promise<CommonTxResult> {
+  async fetchTxs(contract_key?: string): Promise<any> {
     const sql = `SELECT * from transaction t
       WHERE tx->>'tx_type' = 'contract_call' AND
       ${ contract_key ? `tx->'contract_call'->>'contract_id' = ${contract_key} AND` : '' }
       tx->>'tx_status' = 'success' AND
       processed = false AND  missing = false
       ORDER BY t.block_height ASC, tx->>'microblock_sequence' asc, tx->>'index' ASC 
-      limit ${batch_size} offset ${skip};
     `;
 
-    const txs: StacksTransaction[] = await this.transactionRepository.query(sql);
-    const common_txs: CommonTx[] = this.transformTxs(txs);
-    
-    const result: CommonTxResult = {
-      txs: common_txs,
-      total: txs ? txs.length : 0
-    };
-    return result;
+    const pool = new Pool({
+      connectionString: this.configService.get('STACKS_STREAMER_SQL_DATABASE_URL')
+    });
+    const client = await pool.connect();
+
+    const cursor = client.query(new Cursor(sql));
+    return cursor;
   }
 
-  async fetchMissingTxs(batch_size: number, skip: number, contract_key?: string): Promise<CommonTxResult> {
+  async fetchMissingTxs(contract_key?: string): Promise<any> {
     const sql = `SELECT * from transaction t
       WHERE tx->>'tx_type' = 'contract_call' AND
       ${ contract_key ? `tx->'contract_call'->>'contract_id' = ${contract_key} AND` : '' }
       tx->>'tx_status' = 'success' AND
       processed = false AND  missing = true
       ORDER BY t.block_height ASC, tx->>'microblock_sequence' asc, tx->>'index' ASC 
-      limit ${batch_size} offset ${skip};
     `;
 
-    const txs: StacksTransaction[] = await this.transactionRepository.query(sql);
-    const common_txs: CommonTx[] = this.transformTxs(txs);
-    
-    const result: CommonTxResult = {
-      txs: common_txs,
-      total: txs ? txs.length : 0
-    };
-    return result;
+    const pool = new Pool({
+      connectionString: this.configService.get('STACKS_STREAMER_SQL_DATABASE_URL')
+    });
+    const client = await pool.connect();
+
+    const cursor = client.query(new Cursor(sql));
+    return cursor;
   }
 
   async setTxResult(txHash: string, txResult: TxProcessResult): Promise<void> {

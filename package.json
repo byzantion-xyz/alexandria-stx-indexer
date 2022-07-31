@@ -46,6 +46,7 @@
     "moment": "^2.29.3",
     "near-api-js": "^0.44.2",
     "pg": "^8.7.3",
+    "pg-cursor": "^2.7.3",
     "reflect-metadata": "^0.1.13",
     "rimraf": "^3.0.2",
     "rxjs": "^7.2.0",

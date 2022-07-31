@@ -4,7 +4,8 @@ import { TxProcessResult } from "src/indexers/common/interfaces/tx-process-resul
 import { CommonTxResult, TxStreamAdapter } from "src/indexers/common/interfaces/tx-stream-adapter.interface";
 import { TxHelperService } from "../../common/helpers/tx-helper.service";
 import * as moment from "moment";
-import { Client } from 'pg';
+import { Client, Pool } from 'pg';
+import * as Cursor from 'pg-cursor';
 import { NearTxHelperService } from "./near-tx-helper.service";
 import { Transaction } from "../interfaces/near-transaction.dto";
 import { ExecutionStatus, ExecutionStatusBasic } from "near-api-js/lib/providers/provider";
@@ -42,7 +43,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
     private smartContractFunctionRepository: Repository<SmartContractFunction>
   ) {}
 
-  async fetchTxs(batch_size: number, skip: number, contract_key?: string): Promise<CommonTxResult> {
+  async fetchTxs(contract_key?: string): Promise<any> {
     let accounts_in = "";
     if (contract_key) {
       accounts_in = `'${contract_key}'`;
@@ -56,31 +57,21 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
 
     const sql = `select * from transaction t inner join receipt r on t.success_receipt_id=r.receipt_id 
       where block_height >= 68000000 AND
-      receiver_id in (${accounts_in}) AND
       processed = false AND
-      missing = false AND
-      (
-        ((r.execution_outcome->'outcome'->'status'->'SuccessValue' is not null) OR
-        (r.execution_outcome->'outcome'->'status'->'SuccessReceiptId' is not null)) 
-        AND 
-        ((t.outcome->'execution_outcome'->'outcome'->'status'->'SuccessValue' is not null) OR 
-        (t.outcome->'execution_outcome'->'outcome'->'status'->'SuccessReceiptId' is not null))
-      )
-      order by t.block_height ASC 
-      limit ${batch_size} OFFSET ${skip};
+      missing = false
+      order by t.block_height ASC
     `;
 
-    const txs: Transaction[] = await this.transactionRepository.query(sql);
-    const common_txs: CommonTx[] = this.transformTxs(txs);
-    
-    const result: CommonTxResult = {
-      txs: common_txs,
-      total: txs ? txs.length : 0
-    };
-    return result;
+    const pool = new Pool({
+      connectionString: this.configService.get('NEAR_STREAMER_SQL_DATABASE_URL')
+    });
+    const client = await pool.connect();
+
+    const cursor = client.query(new Cursor(sql));
+    return cursor;
   }
 
-  async fetchMissingTxs(batch_size: number, skip: number, contract_key?: string): Promise<CommonTxResult> {
+  async fetchMissingTxs(contract_key?: string): Promise<any> {
     let accounts_in = "";
     if (contract_key) {
       accounts_in = `'${contract_key}'`;
@@ -96,25 +87,17 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
       where block_height >= 68000000 AND
       receiver_id in (${accounts_in}) AND
       processed = false AND 
-      missing = true AND
-      (
-        ((r.execution_outcome->'outcome'->'status'->'SuccessValue' is not null) OR
-        (r.execution_outcome->'outcome'->'status'->'SuccessReceiptId' is not null)) 
-        AND 
-        ((t.outcome->'execution_outcome'->'outcome'->'status'->'SuccessValue' is not null) OR 
-        (t.outcome->'execution_outcome'->'outcome'->'status'->'SuccessReceiptId' is not null))
-      )
-      order by t.block_height ASC limit ${batch_size} OFFSET ${skip};   
+      missing = true
+      order by t.block_height ASC;  
     `;
 
-    const txs: Transaction[] = await this.transactionRepository.query(sql);
-    const common_txs: CommonTx[] = this.transformTxs(txs);
-    
-    const result: CommonTxResult = {
-      txs: common_txs,
-      total: txs ? txs.length : 0
-    };
-    return result;
+    const pool = new Pool({
+      connectionString: this.configService.get('NEAR_STREAMER_SQL_DATABASE_URL')
+    });
+    const client = await pool.connect();
+
+    const cursor = client.query(new Cursor(sql));
+    return cursor;
   }
 
   async setTxResult(txHash: string, txResult: TxProcessResult): Promise<void> {
@@ -185,13 +168,17 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
       // Map market_type on nft_approve to specific global function name
       if (function_name === "nft_approve") {
         const market_type = parsed_args["msg"]["market_type"];
-       
+
         switch (market_type) {
           case "sale": force_indexer = "list";
             break;
 
+          case "add_trade":
+          case "accept_trade":
+          case "accept_offer":
+          case "accept_offer_paras_series":
           default: 
-            throw new Error(`Indexer not implemented for market_type: ${market_type || 'unknown'}`);
+            force_indexer = 'unknown';
         }
       // Map msg: stake on nft_transfer_call to stake micro indexer
       } else if (function_name === 'nft_transfer_call') {
@@ -202,7 +189,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
             break;
 
           default: 
-            throw new Error(`Indexer not implemented for msg: ${msg || 'unknown'}`);
+            force_indexer = 'unknown';
         }
       }
     }
@@ -232,6 +219,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
 
       // Force indexer for special cases.
       let force_indexer = this.findPreselectedIndexer(function_name, parsed_args);
+      if (force_indexer === 'unknown') return; // Do not process unkonwn transactions
 
       // TODO: Generate one transaction per tx.transaction.Action?
       return {
@@ -254,7 +242,8 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
   }
 
   determineIfSuccessTx(status: ExecutionStatus | ExecutionStatusBasic): boolean {
-    if ((status as ExecutionStatus).SuccessReceiptId || (status as ExecutionStatus).SuccessValue) {
+    if (typeof (status as ExecutionStatus).SuccessReceiptId !== 'undefined' || 
+      typeof (status as ExecutionStatus).SuccessValue !== 'undefined') {
       return true;
     } else {
       return false;
@@ -263,12 +252,13 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
 
   transformTxs(txs: Transaction[]): CommonTx[] {
     let result: CommonTx[] = [];
-
     for (let tx of txs) {
-      const transformed_tx = this.transformTx(tx);
-      if (transformed_tx) result.push(transformed_tx);
-    }
-
+      if (this.determineIfSuccessTx(tx.execution_outcome.outcome.status) && 
+        this.determineIfSuccessTx(tx.outcome.execution_outcome.outcome.status)) {
+        const transformed_tx = this.transformTx(tx);
+        if (transformed_tx) result.push(transformed_tx);
+      }
+    }    
     return result;
   }
 
@@ -289,14 +279,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
     const sql = `select * from transaction t inner join receipt r on t.success_receipt_id =r.receipt_id 
       WHERE r.receipt_id ='${event}' AND
       processed = false AND 
-      missing = false AND
-      (
-        ((r.execution_outcome->'outcome'->'status'->'SuccessValue' is not null) OR
-        (r.execution_outcome->'outcome'->'status'->'SuccessReceiptId' is not null)) 
-        AND 
-        ((t.outcome->'execution_outcome'->'outcome'->'status'->'SuccessValue' is not null) OR 
-        (t.outcome->'execution_outcome'->'outcome'->'status'->'SuccessReceiptId' is not null))
-      );
+      missing = false;
     `;
 
     const txs: Transaction[] = await this.transactionRepository.query(sql);

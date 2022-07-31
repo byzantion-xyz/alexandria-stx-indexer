@@ -86,7 +86,7 @@ export class ListIndexerService implements IndexerService {
     } else {
       this.logger.log(`NftMeta not found ${contract_key} ${token_id}`);
 
-      this.missingCollectionService.scrapeMissing({ contract_key, token_id });
+      //this.missingCollectionService.scrapeMissing({ contract_key, token_id });
       txResult.missing = true;
     }
 

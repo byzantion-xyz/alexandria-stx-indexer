@@ -4,7 +4,8 @@ import { TxProcessResult } from "src/indexers/common/interfaces/tx-process-resul
 import { CommonTxResult, TxStreamAdapter } from "src/indexers/common/interfaces/tx-stream-adapter.interface";
 import { TxHelperService } from "../../common/helpers/tx-helper.service";
 import * as moment from "moment";
-import { Client } from 'pg';
+import { Client, Pool } from 'pg';
+import * as Cursor from 'pg-cursor';
 import { NearTxHelperService } from "./near-tx-helper.service";
 import { Transaction } from "../interfaces/near-transaction.dto";
 import { ExecutionStatus, ExecutionStatusBasic } from "near-api-js/lib/providers/provider";
@@ -42,7 +43,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
     private smartContractFunctionRepository: Repository<SmartContractFunction>
   ) {}
 
-  async fetchTxs(batch_size: number, skip: number, contract_key?: string): Promise<CommonTxResult> {
+  async fetchTxs(contract_key?: string): Promise<any> {
     let accounts_in = "";
     if (contract_key) {
       accounts_in = `'${contract_key}'`;
@@ -58,21 +59,19 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
       where block_height >= 68000000 AND
       processed = false AND
       missing = false
-      order by t.block_height ASC 
-      limit ${batch_size} OFFSET ${skip};
+      order by t.block_height ASC;
     `;
 
-    const txs: Transaction[] = await this.transactionRepository.query(sql);
-    const common_txs: CommonTx[] = this.transformTxs(txs);
-    
-    const result: CommonTxResult = {
-      txs: common_txs,
-      total: txs ? txs.length : 0
-    };
-    return result;
+    const pool = new Pool({
+      connectionString: this.configService.get('NEAR_STREAMER_SQL_DATABASE_URL')
+    });
+    const client = await pool.connect();
+
+    const cursor = client.query(new Cursor(sql));
+    return cursor;
   }
 
-  async fetchMissingTxs(batch_size: number, skip: number, contract_key?: string): Promise<CommonTxResult> {
+  async fetchMissingTxs(contract_key?: string): Promise<any> {
     let accounts_in = "";
     if (contract_key) {
       accounts_in = `'${contract_key}'`;
@@ -89,17 +88,16 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
       receiver_id in (${accounts_in}) AND
       processed = false AND 
       missing = true
-      order by t.block_height ASC limit ${batch_size} OFFSET ${skip};   
+      order by t.block_height ASC;
     `;
 
-    const txs: Transaction[] = await this.transactionRepository.query(sql);
-    const common_txs: CommonTx[] = this.transformTxs(txs);
-    
-    const result: CommonTxResult = {
-      txs: common_txs,
-      total: txs ? txs.length : 0
-    };
-    return result;
+    const pool = new Pool({
+      connectionString: this.configService.get('NEAR_STREAMER_SQL_DATABASE_URL')
+    });
+    const client = await pool.connect();
+
+    const cursor = client.query(new Cursor(sql));
+    return cursor;
   }
 
   async setTxResult(txHash: string, txResult: TxProcessResult): Promise<void> {

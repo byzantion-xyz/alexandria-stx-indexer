@@ -18,7 +18,7 @@ import { CommonUtilService } from "src/common/helpers/common-util/common-util.se
 import { NearMicroIndexers } from "./common/providers/near-micro-indexers.service";
 import { StacksMicroIndexers } from "./common/providers/stacks-micro-indexers.service";
 
-const BATCH_SIZE = 10000;
+const BATCH_SIZE = 1000;
 
 @Injectable()
 export class IndexerOrchestratorService {
@@ -43,18 +43,20 @@ export class IndexerOrchestratorService {
     try {
       await this.setUpChainAndStreamer();
 
-      let skip = 0;
-      let result: CommonTxResult;
-      do {
-        this.logger.log(`Querying transactions skip:${skip} batch_size: ${BATCH_SIZE} `);
-        result = options.includeMissings
-          ? await this.txStreamAdapter.fetchMissingTxs(BATCH_SIZE, skip, options.contract_key)
-          : await this.txStreamAdapter.fetchTxs(BATCH_SIZE, skip, options.contract_key);
+      const cursor = options.includeMissings
+      ? await this.txStreamAdapter.fetchMissingTxs(options.contract_key)
+      : await this.txStreamAdapter.fetchTxs(options.contract_key);
 
-        this.logger.log(`Found ${result.total} transactions`);
-        const processedTxs: ProcessedTxsResult = await this.processTransactions(result.txs);
-        skip += BATCH_SIZE - processedTxs.total;
-      } while (result.total >= BATCH_SIZE);
+      let txs = [];
+      do {
+        this.logger.log(`Querying transactions cursor batch_size: ${BATCH_SIZE} `);
+        txs = await cursor.read(BATCH_SIZE);
+        this.logger.log(`Found ${txs.length} transactions`);
+        const common_txs: CommonTx[] = this.txStreamAdapter.transformTxs(txs);
+        await this.processTransactions(common_txs);
+      } while (txs.length > 0);
+      
+      cursor.close();
 
       this.logger.debug(`runIndexer() Completed with options includeMissings:${options.includeMissings}`);
       await this.commonUtil.delay(5000); // Wait for any discord post to be sent

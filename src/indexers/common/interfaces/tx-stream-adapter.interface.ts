@@ -12,10 +12,12 @@ export interface ProcessedTxsResult {
 }
 
 export interface TxStreamAdapter {
-  fetchTxs(batch_size: number, skip: number, contract_key?: string): Promise<CommonTxResult>;
-  fetchMissingTxs(batch_size: number, skip: number, contract_key?: string): Promise<CommonTxResult>;
+  fetchTxs(contract_key?: string): Promise<any>;
+  fetchMissingTxs(contract_key?: string): Promise<any>;
   setTxResult(txHash: string, txResult: TxProcessResult): void;
 
   subscribeToEvents?(): Client;
   fetchEventData?(event: any): Promise<CommonTx[]>;
+
+  transformTxs(txs): CommonTx[];
 }

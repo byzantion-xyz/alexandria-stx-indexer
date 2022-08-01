@@ -53,7 +53,7 @@ export class IndexerOrchestratorService {
       this.logger.log(`Querying transactions cursor batch_size: ${BATCH_SIZE} `);
       do {
         txs = await cursor.read(BATCH_SIZE);
-        this.logger.log(`Found ${txs.length} transactions`);
+        this.logger.log(`Fetching next batch of transactions`);
         const common_txs: CommonTx[] = this.txStreamAdapter.transformTxs(txs);
         await this.processTransactions(common_txs);
       } while (txs.length > 0);

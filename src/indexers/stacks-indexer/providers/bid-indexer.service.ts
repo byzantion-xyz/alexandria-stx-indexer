@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Action } from 'src/database/universal/entities/Action';
 import { SmartContract } from 'src/database/universal/entities/SmartContract';
@@ -10,6 +11,7 @@ import { CreateActionTO, CreateBidActionTO } from 'src/indexers/common/interface
 import { IndexerService } from 'src/indexers/common/interfaces/indexer-service.interface';
 import { TxProcessResult } from 'src/indexers/common/interfaces/tx-process-result.interface';
 import { Repository } from 'typeorm';
+import { StacksTxHelperService } from './stacks-tx-helper.service';
 
 @Injectable()
 export class BidIndexerService implements IndexerService {
@@ -17,17 +19,23 @@ export class BidIndexerService implements IndexerService {
 
   constructor(
     private txHelper: TxHelperService,
+    private stacksTxHelper: StacksTxHelperService,
     @InjectRepository(Action)
-    private actionRepository: Repository<Action>,
+    private actionRepository: Repository<Action>
   ) {}
 
   async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {
     this.logger.debug(`process() ${tx.hash}`);
     let txResult: TxProcessResult = { processed: false, missing: false };
 
+    if (this.stacksTxHelper.isByzMarketplace(sc)) {
+      txResult.missing = true;
+      return txResult;
+    }
+
     const contract_key = this.txHelper.extractArgumentData(tx.args, scf, 'contract_key');
     const token_id = this.txHelper.extractArgumentData(tx.args, scf, 'token_id'); 
-    const price = this.txHelper.extractArgumentData(tx.args, scf, 'bid_price');
+    const price = this.txHelper.extractArgumentData(tx.args, scf, 'price');
 
     const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
 

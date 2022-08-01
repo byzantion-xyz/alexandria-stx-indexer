@@ -1,8 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { hexToCV, cvToJSON, BufferCV } from '@stacks/transactions';
 import { principalCV } from '@stacks/transactions/dist/clarity/types/principalCV';
 import { NftMeta } from 'src/database/universal/entities/NftMeta';
+import { SmartContract } from 'src/database/universal/entities/SmartContract';
 import { TxHelperService } from 'src/indexers/common/helpers/tx-helper.service';
 import { Repository } from 'typeorm';
 interface FunctionArgs {
@@ -14,12 +16,16 @@ interface FunctionArgs {
 
 @Injectable()
 export class StacksTxHelperService {
+  private byzMarketplaces: [string];
   private readonly logger = new Logger(StacksTxHelperService.name);
 
   constructor(
     @InjectRepository(NftMeta)
     private nftMetaRepository: Repository<NftMeta>,
-  ) {}
+    private configService: ConfigService,
+  ) {
+    this.byzMarketplaces =  this.configService.get("indexer.byzMarketplaceContractKeys");
+  }
 
   parseHexArguments(args: FunctionArgs[]) {
     try {
@@ -68,5 +74,9 @@ export class StacksTxHelperService {
     if (nft_meta && nft_meta.nft_meta_bns) {
       return nft_meta;
     }
+  }
+
+  isByzMarketplace(sc: SmartContract): boolean {
+    return this.byzMarketplaces.includes(sc.contract_key);
   }
 }

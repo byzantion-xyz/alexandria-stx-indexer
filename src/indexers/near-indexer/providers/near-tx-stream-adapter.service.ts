@@ -72,7 +72,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
 
   async fetchMissingTxs(contract_key?: string): Promise<any> {
     let accounts_in = "";
-    const accounts = await this.fetchAccounts();
+    const accounts = await this.fetchAccounts(true);
     if (contract_key) {
       accounts_in = `'${contract_key}'`;
     } else {

@@ -3,6 +3,7 @@ import { StakeIndexerService } from "src/indexers/common/providers/stake-indexer
 import { UnstakeIndexerService } from "src/indexers/common/providers/unstake-indexer.service";
 import { BnsBidIndexerService } from "src/indexers/stacks-indexer/providers/bns-bid-indexer.service";
 import { BnsRegisterIndexerService } from "src/indexers/stacks-indexer/providers/bns-register-indexer.service";
+import { BnsUnlistBidIndexerService } from "src/indexers/stacks-indexer/providers/bns-unlist-bid-indexer.service";
 import { ChangePriceIndexerService } from "src/indexers/stacks-indexer/providers/change-price-indexer.service";
 import { TransferIndexerService } from "src/indexers/stacks-indexer/providers/transfer-indexer.service";
 import { IndexerService } from "../interfaces/indexer-service.interface";
@@ -22,6 +23,7 @@ export class StacksMicroIndexers {
     private unstakeIndexer: IndexerService,
     private bnsRegisterIndexer: IndexerService,
     private bnsBidIndexer: IndexerService,
+    private bnsUnlistBidIndexer: IndexerService,
     private relistIndexer: IndexerService,
   ) {}
 }
@@ -38,9 +40,22 @@ export const StacksMicroIndexersProvider = {
     unstakeIndexer: UnstakeIndexerService,
     bnsRegisterIndexer: BnsRegisterIndexerService,
     bnsBidIndexer: BnsBidIndexerService,
+    bnsUnlistBidIndexer: BnsUnlistBidIndexerService,
     relistIndexer: ListIndexerService, // Alias for relist to list.
   ) => {
-    return new StacksMicroIndexers(buyIndexer, listIndexer, unlistIndexer, transferIndexer, changePrice, stakeIndexer, unstakeIndexer, bnsRegisterIndexer, bnsBidIndexer, relistIndexer);
+    return new StacksMicroIndexers(
+      buyIndexer, 
+      listIndexer, 
+      unlistIndexer, 
+      transferIndexer, 
+      changePrice, 
+      stakeIndexer, 
+      unstakeIndexer, 
+      bnsRegisterIndexer, 
+      bnsBidIndexer, 
+      bnsUnlistBidIndexer, 
+      relistIndexer
+    );
   },
   inject: [
     BuyIndexerService, 
@@ -51,6 +66,7 @@ export const StacksMicroIndexersProvider = {
     StakeIndexerService, 
     UnstakeIndexerService,
     BnsRegisterIndexerService,
+    BnsUnlistBidIndexerService,
     BnsBidIndexerService
   ]
 };

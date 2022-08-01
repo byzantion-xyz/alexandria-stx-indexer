@@ -45,10 +45,10 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
 
   async fetchTxs(contract_key?: string): Promise<any> {
     let accounts_in = "";
+    const accounts = await this.fetchAccounts();
     if (contract_key) {
       accounts_in = `'${contract_key}'`;
     } else {
-      const accounts = await this.fetchAccounts();
       for (let i in accounts) {
         accounts_in += `'${accounts[i]}',`;
       }
@@ -72,10 +72,10 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
 
   async fetchMissingTxs(contract_key?: string): Promise<any> {
     let accounts_in = "";
+    const accounts = await this.fetchAccounts();
     if (contract_key) {
       accounts_in = `'${contract_key}'`;
     } else {
-      const accounts = await this.fetchAccounts();
       for (let i in accounts) {
         accounts_in += `'${accounts[i]}',`;
       }

@@ -50,8 +50,8 @@ export class IndexerOrchestratorService {
       : await this.txStreamAdapter.fetchTxs(options.contract_key);
 
       let txs = [];
+      this.logger.log(`Querying transactions cursor batch_size: ${BATCH_SIZE} `);
       do {
-        this.logger.log(`Querying transactions cursor batch_size: ${BATCH_SIZE} `);
         txs = await cursor.read(BATCH_SIZE);
         this.logger.log(`Found ${txs.length} transactions`);
         const common_txs: CommonTx[] = this.txStreamAdapter.transformTxs(txs);

@@ -135,7 +135,7 @@ export class IndexerOrchestratorService {
         }
       } else {
         this.logger.log(`smart_contract: ${transaction.receiver} not found`);
-        this.missingCollectionService.scrapeMissing({ contract_key: transaction.receiver });
+        //this.missingCollectionService.scrapeMissing({ contract_key: transaction.receiver });
 
         result.missing = true;
       }

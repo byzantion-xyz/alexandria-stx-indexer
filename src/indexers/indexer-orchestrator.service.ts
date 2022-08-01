@@ -17,6 +17,7 @@ import { SmartContractFunction } from "src/database/universal/entities/SmartCont
 import { CommonUtilService } from "src/common/helpers/common-util/common-util.service";
 import { NearMicroIndexers } from "./common/providers/near-micro-indexers.service";
 import { StacksMicroIndexers } from "./common/providers/stacks-micro-indexers.service";
+import { MissingCollectionService } from "src/scrapers/near-scraper/providers/missing-collection.service";
 
 const BATCH_SIZE = 1000;
 
@@ -35,7 +36,8 @@ export class IndexerOrchestratorService {
     @InjectRepository(Chain)
     private chainRepository: Repository<Chain>,
     @Inject('TxStreamAdapter') private txStreamAdapter: TxStreamAdapter,
-    private commonUtil: CommonUtilService
+    private commonUtil: CommonUtilService,
+    private missingCollectionService: MissingCollectionService,
   ) {}
 
   async runIndexer(options: IndexerOptions) {
@@ -133,6 +135,8 @@ export class IndexerOrchestratorService {
         }
       } else {
         this.logger.log(`smart_contract: ${transaction.receiver} not found`);
+        this.missingCollectionService.scrapeMissing({ contract_key: transaction.receiver });
+
         result.missing = true;
       }
     } catch (err) {

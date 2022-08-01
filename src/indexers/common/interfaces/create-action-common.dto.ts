@@ -41,6 +41,9 @@ export interface CreateBidActionTO extends CreateActionCommonArgs {
 }
 export interface CreateUnlistBidActionTO extends CreateBidActionTO {}
 
+export interface CreateAcceptBidActionTO extends CreateBidActionTO {
+  seller: string;
+}
 
 export type CreateActionTO = CreateListActionTO | 
   CreateUnlistActionTO | 
@@ -50,4 +53,5 @@ export type CreateActionTO = CreateListActionTO |
   CreateUnstakeActionTO |
   CreateRelistActionTO |
   CreateBidActionTO |
-  CreateUnlistBidActionTO;
+  CreateUnlistBidActionTO |
+  CreateAcceptBidActionTO;

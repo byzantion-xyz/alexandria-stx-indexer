@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { StakeIndexerService } from "src/indexers/common/providers/stake-indexer.service";
 import { UnstakeIndexerService } from "src/indexers/common/providers/unstake-indexer.service";
+import { BnsAcceptBidIndexerService } from "src/indexers/stacks-indexer/providers/bns-accept-bid-indexer.service";
 import { BnsBidIndexerService } from "src/indexers/stacks-indexer/providers/bns-bid-indexer.service";
 import { BnsRegisterIndexerService } from "src/indexers/stacks-indexer/providers/bns-register-indexer.service";
 import { BnsUnlistBidIndexerService } from "src/indexers/stacks-indexer/providers/bns-unlist-bid-indexer.service";
@@ -24,6 +25,7 @@ export class StacksMicroIndexers {
     private bnsRegisterIndexer: IndexerService,
     private bnsBidIndexer: IndexerService,
     private bnsUnlistBidIndexer: IndexerService,
+    private bnsAcceptBidIndexer: IndexerService,
     private relistIndexer: IndexerService,
   ) {}
 }
@@ -41,6 +43,7 @@ export const StacksMicroIndexersProvider = {
     bnsRegisterIndexer: BnsRegisterIndexerService,
     bnsBidIndexer: BnsBidIndexerService,
     bnsUnlistBidIndexer: BnsUnlistBidIndexerService,
+    bnsAcceptBidIndexer: BnsAcceptBidIndexerService,
     relistIndexer: ListIndexerService, // Alias for relist to list.
   ) => {
     return new StacksMicroIndexers(
@@ -53,7 +56,8 @@ export const StacksMicroIndexersProvider = {
       unstakeIndexer, 
       bnsRegisterIndexer, 
       bnsBidIndexer, 
-      bnsUnlistBidIndexer, 
+      bnsUnlistBidIndexer,
+      bnsAcceptBidIndexer,
       relistIndexer
     );
   },
@@ -67,6 +71,7 @@ export const StacksMicroIndexersProvider = {
     UnstakeIndexerService,
     BnsRegisterIndexerService,
     BnsUnlistBidIndexerService,
-    BnsBidIndexerService
+    BnsBidIndexerService,
+    BnsAcceptBidIndexerService
   ]
 };

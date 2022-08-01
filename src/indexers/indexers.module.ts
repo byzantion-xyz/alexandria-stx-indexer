@@ -38,6 +38,7 @@ import { Collection } from "src/database/universal/entities/Collection";
 import { BnsBidIndexerService } from './stacks-indexer/providers/bns-bid-indexer.service';
 import { BnsUnlistBidIndexerService } from './stacks-indexer/providers/bns-unlist-bid-indexer.service';
 import { BnsAcceptBidIndexerService } from './stacks-indexer/providers/bns-accept-bid-indexer.service';
+import { BidIndexerService } from './stacks-indexer/providers/bid-indexer.service';
 
 /* Select stream adapter based on chain symbol env variable */
 const TxStreamAdapterProvider = {
@@ -88,6 +89,9 @@ const TxStreamAdapterProvider = {
     NearTxStreamAdapterService,
     StacksTxStreamAdapterService,
     TxStreamAdapterProvider,
+    /* Micro indexers factory */
+    NearMicroIndexersProvider,
+    StacksMicroIndexersProvider,
     /* Micro indexers */
     BuyIndexerService,
     ListIndexerService,
@@ -100,10 +104,7 @@ const TxStreamAdapterProvider = {
     BnsBidIndexerService,
     BnsUnlistBidIndexerService,
     BnsAcceptBidIndexerService,
-    /* Micro indexers factory */
-    NearMicroIndexersProvider,
-    StacksMicroIndexersProvider,
-   
+    BidIndexerService
   ],
   exports: [IndexerOrchestratorService],
 })

@@ -2,11 +2,22 @@ import { TxProcessResult } from "src/indexers/common/interfaces/tx-process-resul
 import { CommonTx } from "./common-tx.interface";
 import { Client } from 'pg';
 
+export interface CommonTxResult {
+  txs: CommonTx[],
+  total: number
+};
+
+export interface ProcessedTxsResult {
+  total: number;
+}
+
 export interface TxStreamAdapter {
-  fetchTxs(): Promise<CommonTx[]>;
-  fetchMissingTxs(batch_size: number, skip: number): Promise<CommonTx[]>;
+  fetchTxs(contract_key?: string): Promise<any>;
+  fetchMissingTxs(contract_key?: string): Promise<any>;
   setTxResult(txHash: string, txResult: TxProcessResult): void;
-  
+
   subscribeToEvents?(): Client;
   fetchEventData?(event: any): Promise<CommonTx[]>;
+
+  transformTxs(txs): CommonTx[];
 }

@@ -30,7 +30,7 @@ export class MissingCollectionService {
     };
 
     if (data.contract_key == "x.paras.near") {
-      scrapeParams.token_series_id = data.token_id;
+      scrapeParams.token_id = data.token_id;
     }
 
     await this.nearScraperService.scrape(scrapeParams);

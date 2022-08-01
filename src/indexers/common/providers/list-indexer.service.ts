@@ -27,7 +27,7 @@ export class ListIndexerService implements IndexerService {
   constructor(
     private txHelper: TxHelperService,
     private listBotService: ListBotService,
-    // private missingCollectionService: MissingCollectionService,
+    private missingCollectionService: MissingCollectionService,
     @InjectRepository(Action)
     private actionRepository: Repository<Action>,
     @InjectRepository(NftState)
@@ -86,7 +86,7 @@ export class ListIndexerService implements IndexerService {
     } else {
       this.logger.log(`NftMeta not found ${contract_key} ${token_id}`);
 
-      // this.missingCollectionService.scrapeMissing({ contract_key, token_id });
+      //this.missingCollectionService.scrapeMissing({ contract_key, token_id });
       txResult.missing = true;
     }
 

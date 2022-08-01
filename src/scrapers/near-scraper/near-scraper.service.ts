@@ -26,15 +26,18 @@ export class NearScraperService {
 
   async scrape(data: runScraperData) {
     this.logger.log(`START SCRAPE`);
-    const { slug: slugInput, contract_key, token_series_id, token_id, starting_token_id, ending_token_id } = data;
+    const { slug: slugInput, contract_key, token_id, starting_token_id, ending_token_id } = data;
     const { scrape_non_custodial_from_paras = false, force_scrape = false, rescrape = false} = data;
     let isParasCustodialCollection = false;
-    if (token_series_id || slugInput) isParasCustodialCollection = true;
+    if (contract_key == "x.paras.near" || slugInput) isParasCustodialCollection = true;
 
     // get collection slug
     let slug = slugInput;
     if (!slug) {
-      slug = await this.getSlug(contract_key, token_series_id);
+      slug = contract_key;
+      if (isParasCustodialCollection && token_id) {
+        slug = await this.getSlugFromParas(contract_key, token_id);
+      }
     }
 
     // create SmartContract, Collection, and CollectionScrape records if they don't exist
@@ -64,7 +67,7 @@ export class NearScraperService {
         const tokens = await this.getTokensFromParas(slug, collectionSize);
         tokenMetas = tokens;
       } else {
-        if (token_id != null || token_id != undefined) {
+        if (!isParasCustodialCollection && (token_id != null || token_id != undefined)) {
           const token = await this.getTokenMetaFromContract(contract, token_id, slug);
           tokenMetas.push(token);
         }
@@ -86,7 +89,6 @@ export class NearScraperService {
       // load SmartContract with data from chain
       const smartContract = await this.dbHelper.loadSmartContract(nftContractMetadata, contract_key, slug);
 
-
       // load Collection with data from chain
       let collectionTitle = nftContractMetadata.name;
       if (isParasCustodialCollection) collectionTitle = tokenMetas[0].metadata.collection.trim();
@@ -96,7 +98,9 @@ export class NearScraperService {
         collectionTitle,
         collectionScrape.id,
         smartContract.id,
-        slug
+        slug,
+        scrape_non_custodial_from_paras,
+        isParasCustodialCollection
       );
 
       // create CollectionCreator if not exists
@@ -141,6 +145,10 @@ export class NearScraperService {
       // mark scrape as done and succeeded
       await this.markScrapeSuccess(collection.id, slug);
       this.logger.log(`[scraping ${slug}] SCRAPING COMPLETE`);
+
+      // Run missing transactions for scraped smart contract
+      await axios.post('https://byz-universal-api-new.onrender.com/near-indexer/run-missing', { contract_key });
+      
       return "Success";
     } catch (err) {
       this.logger.error(`[scraping ${slug}] Error while scraping: ${err}`);
@@ -151,12 +159,16 @@ export class NearScraperService {
   }
 
   
-  async getSlug(contract_key, token_series_id) {
+  async getSlugFromParas(contract_key, token_id) {
     this.logger.log(`[scraping ${contract_key}] Getting Slug...`);
-    let slug = contract_key;
-    if (token_series_id) {
-      const res = await axios.get(`https://api-v2-mainnet.paras.id/token/${contract_key}::${token_series_id}`);
-      slug = res.data.metadata.collection_id;
+    let slug
+    if (token_id) {
+      try {
+        const res = await axios.get(`https://api-v2-mainnet.paras.id/token?contract_id=${contract_key}&token_id=${token_id}`);
+        slug = res.data.data.results[0].metadata.collection_id;
+      } catch(err) {
+        this.logger.error(err)
+      }
     }
     return slug;
   }
@@ -214,20 +226,26 @@ export class NearScraperService {
     collectionTitle,
     collectionScrape,
     smartContractId,
-    slug
+    slug,
+    scrape_non_custodial_from_paras,
+    isParasCustodialCollection
   ) {
     if (tokenMetas.length == 0) return;
     this.logger.log(`[scraping ${slug}] Loading Collection`);
 
     // get first token data for the collection record data
     const firstTokenMeta = tokenMetas[0];
-    const firstTokenIpfsUrl = this.getTokenIpfsUrl(nftContractMetadataBaseUri, firstTokenMeta.metadata.reference);
-    const firstTokenIpfsImageUrl = this.getTokenIpfsMediaUrl(nftContractMetadataBaseUri, firstTokenMeta.metadata.media);
-    let tokenIpfsMeta;
-    if (firstTokenIpfsUrl && !firstTokenIpfsUrl.includes("ipfs.fleek.co")) {
-      const res = await axios.get(firstTokenIpfsUrl);
-      tokenIpfsMeta = res.data;
+    
+    let tokenIpfsMeta
+    if (!scrape_non_custodial_from_paras && !isParasCustodialCollection) {
+      const firstTokenIpfsUrl = this.getTokenIpfsUrl(nftContractMetadataBaseUri, firstTokenMeta.metadata.reference);
+      const byzFirstTokenIpfsUrl = this.ipfsHelperService.getByzIpfsUrl(firstTokenIpfsUrl);
+      if (byzFirstTokenIpfsUrl && !byzFirstTokenIpfsUrl.includes("ipfs.fleek.co")) {
+        const res = await axios.get(byzFirstTokenIpfsUrl);
+        tokenIpfsMeta = res.data;
+      }
     }
+    const firstTokenIpfsImageUrl = this.getTokenIpfsMediaUrl(nftContractMetadataBaseUri, firstTokenMeta.metadata.media);
 
     const data = {
       smart_contract_id: smartContractId,
@@ -262,7 +280,7 @@ export class NearScraperService {
       tokenIpfsMetas = await this.getAllTokenIpfsMetas(tokenMetas, nftContractMetadataBaseUri, slug);
 
       if (tokenIpfsMetas.length != 0 && tokenIpfsMetas.length != tokenMetas.length) {
-        const error = `[scraping ${slug}] # of token ipfs metas (${tokenIpfsMetas.length}) does not equal # of tokens scraped from contract (${tokenMetas.length})`;
+        const error = `[scraping ${slug}] # of token ipfs metas (${tokenIpfsMetas.length}) does not equal # of tokens scraped from contract (${tokenMetas.length}). TRY TO RESCRAPE (pass in "rescrape" = true)`;
         throw new Error(error);
       }
     }
@@ -587,6 +605,7 @@ export class NearScraperService {
     let endingTokenId = Number(collectionSize);
 
     const tokenZero = await contract.nft_token({ token_id: Number(0).toString() });
+
     if (!tokenZero) {
       startingTokenId = 1;
       endingTokenId++;
@@ -656,6 +675,11 @@ export class NearScraperService {
     let tokenIpfsMetas = [];
     let failedIpfsFetches = []
 
+    let failedFetchIndexOffset = -1
+    if (tokenMetas[0].token_id != '0') {
+      failedFetchIndexOffset = 0
+    }
+
     for (let i = 0; i < tokenMetas.length; i++) {
       let tokenIpfsUrl = this.getTokenIpfsUrl(nftContractMetadataBaseUri, tokenMetas[i].metadata.reference);
       if (!tokenIpfsUrl || (tokenIpfsUrl && tokenIpfsUrl == "")) continue;
@@ -666,7 +690,7 @@ export class NearScraperService {
 
       tokenIpfsMetaPromises.push(this.fetchIpfsMeta(tokenIpfsUrl));
 
-      if (i % 10 === 0 || i >= (tokenMetas.length - 1)) {
+      if (i % 8 === 0 || i >= (tokenMetas.length - 1)) {
         let ipfsResults;
         try {
           ipfsResults = await Promise.all(tokenIpfsMetaPromises);
@@ -678,15 +702,14 @@ export class NearScraperService {
           await delay(300);
           
           const failedIpfsResults = ipfsResults.filter((r) =>  r.status == 404 && r.data.includes('context canceled') || r.status == 502)
-          for(let i = 0; failedIpfsResults.length > i; i++) {
-            console.log(failedIpfsResults)
-            let index = failedIpfsResults[i]?.config?.url.split(`/[0-9]+.json/`)[1]
-            index = index.split('.json')[0]
-            console.log("url index", index)
-            console.log("i: ", i)
+          for(let j = 0; failedIpfsResults.length > j; j++) {
+            console.log(failedIpfsResults[j])
+            console.log("failed: ", failedIpfsResults[j]?.config?.url)
+            let index = failedIpfsResults[j]?.config?.url.split('.json')[0]
+            index = index.split('/')[5]
             failedIpfsFetches.push({
-              index: index,
-              url: failedIpfsResults[i]?.config?.url
+              index: Number(index) + Number(failedFetchIndexOffset),
+              url: failedIpfsResults[j]?.config?.url
             })
           }
         }
@@ -699,13 +722,22 @@ export class NearScraperService {
 
     const reTryFailedFetched = async (failedFetchesArr) => {
       for (let i = 0; i < failedFetchesArr.length; i++) {
-        const url = failedFetchesArr[i]?.url
-        this.logger.log("Retry URL",url)
+        const url = failedFetchesArr[i]?.url;
+        this.logger.log("Retry URL", url)
         try {
+          // const response = await backOff(() => this.fetchIpfsMeta(url));
           const result = await this.fetchIpfsMeta(url)
-          if (result){
-            tokenIpfsMetas.splice(failedFetchesArr[i]?.index, 0, result.data)
+          if (result.status == 200) {
+            this.logger.log("Retry URL SUCCESS", url)
+            console.log("Retry URL SUCCESS index", failedFetchesArr[i]?.index)
+            console.log("Retry URL SUCCESS result", result.data)
+            tokenIpfsMetas.splice(failedFetchesArr[i]?.index, 0, result.data);
+            failedFetchesArr.splice(i, 1);
+          } else {
+            this.logger.log("Retry URL FAIL", url)
+            reTryFailedFetched(failedFetchesArr);
           }
+          delay(2000);
         } catch(err){
           throw new Error(err)
         }

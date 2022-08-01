@@ -18,9 +18,12 @@ export class NearIndexerController {
   ) { }
 
   @Post('run')
-  async indexTransactions() {
+  async indexTransactions(@Body() params: MissingTransactionsDto) {
     if (process.env.NODE_ENV !== 'production') {
-      this.nearIndexer.runIndexer({ includeMissings: false });
+      this.nearIndexer.runIndexer({ 
+        includeMissings: false,
+        ... (params.contract_key && { contract_key: params.contract_key })
+      });
     }
 
     return 'Ok';

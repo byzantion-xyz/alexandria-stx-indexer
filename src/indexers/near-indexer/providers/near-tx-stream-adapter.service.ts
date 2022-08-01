@@ -58,6 +58,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
     const sql = `select * from transaction t inner join receipt r on t.success_receipt_id=r.receipt_id 
       WHERE processed = false 
       AND missing = false
+      AND transaction->'actions' @> '[{"FunctionCall": {}}]'  
       order by t.block_height ASC;
     `;
 
@@ -86,6 +87,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
       WHERE receiver_id in (${accounts_in}) 
       AND processed = false 
       AND missing = true
+      AND transaction->'actions' @> '[{"FunctionCall": {}}]'  
       order by t.block_height ASC;
     `;
 

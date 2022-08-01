@@ -19,7 +19,7 @@ import { NearMicroIndexers } from "./common/providers/near-micro-indexers.servic
 import { StacksMicroIndexers } from "./common/providers/stacks-micro-indexers.service";
 import { MissingCollectionService } from "src/scrapers/near-scraper/providers/missing-collection.service";
 
-const BATCH_SIZE = 100;
+const BATCH_SIZE = 1000;
 
 @Injectable()
 export class IndexerOrchestratorService {

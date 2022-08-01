@@ -34,6 +34,7 @@ export enum BidType {
 }
 
 export enum CollectionScrapeStage {
+  start = "start",
   getting_tokens = "getting_tokens",
   pinning_folder = "pinning_folder",
   loading_nft_metas = "loading_nft_metas",

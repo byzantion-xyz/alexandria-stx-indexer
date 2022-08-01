@@ -143,7 +143,7 @@ export class DbHelperService {
     const query = this.collectionScrapeRepo
       .createQueryBuilder()
       .where(
-        `stage NOT IN ('${CollectionScrapeStage.getting_tokens}', '${CollectionScrapeStage.done}') AND outcome != '${CollectionScrapeOutcome.failed}'`
+        `stage NOT IN ('${CollectionScrapeStage.start}', '${CollectionScrapeStage.done}') AND outcome != '${CollectionScrapeOutcome.failed}'`
       );
     return await query.getCount();
   }

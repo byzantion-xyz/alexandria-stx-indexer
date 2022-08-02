@@ -54,9 +54,9 @@ export const StacksMicroIndexersProvider = {
   ) => {
     return new StacksMicroIndexers(
       buyIndexer, 
-      listIndexer, 
+      listIndexer,
       unlistIndexer, 
-      transferIndexer, 
+      transferIndexer,
       changePriceIndexer, 
       bidIndexer,
       unlistBidIndexer,

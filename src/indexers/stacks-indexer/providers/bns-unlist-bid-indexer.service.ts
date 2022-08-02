@@ -42,7 +42,7 @@ export class BnsUnlistBidIndexerService implements IndexerService {
         buyer: nftMeta.nft_state?.list_seller || undefined
       };
 
-      if (this.txHelper.isNewNftListOrSale(tx, nftMeta.nft_state)) {
+      if (this.txHelper.isNewBid(tx, nftMeta.nft_state)) {
         await this.txHelper.unlistBidMeta(nftMeta.id, tx);
         await this.createAction(unlistBidActionParams);
       } else {

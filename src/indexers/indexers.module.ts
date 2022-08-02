@@ -39,6 +39,7 @@ import { BnsBidIndexerService } from './stacks-indexer/providers/bns-bid-indexer
 import { BnsUnlistBidIndexerService } from './stacks-indexer/providers/bns-unlist-bid-indexer.service';
 import { BnsAcceptBidIndexerService } from './stacks-indexer/providers/bns-accept-bid-indexer.service';
 import { BidIndexerService } from './stacks-indexer/providers/bid-indexer.service';
+import { UnlistBidIndexerService } from './stacks-indexer/providers/unlist-bid-indexer.service';
 
 /* Select stream adapter based on chain symbol env variable */
 const TxStreamAdapterProvider = {
@@ -104,7 +105,8 @@ const TxStreamAdapterProvider = {
     BnsBidIndexerService,
     BnsUnlistBidIndexerService,
     BnsAcceptBidIndexerService,
-    BidIndexerService
+    BidIndexerService,
+    UnlistBidIndexerService
   ],
   exports: [IndexerOrchestratorService],
 })

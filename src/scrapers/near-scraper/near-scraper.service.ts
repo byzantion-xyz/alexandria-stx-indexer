@@ -52,6 +52,8 @@ export class NearScraperService {
       return err.toString();
     }
 
+    await this.dbHelper.setCollectionScrapeStage(collection.id, CollectionScrapeStage.getting_tokens);
+
     // // Should scrape, so increment scrape attempt
     await this.dbHelper.incrementScrapeAttemptByOne(collection.id);
 

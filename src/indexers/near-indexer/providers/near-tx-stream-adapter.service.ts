@@ -45,10 +45,10 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
 
   async fetchTxs(contract_key?: string): Promise<any> {
     let accounts_in = "";
+    const accounts = await this.fetchAccounts();
     if (contract_key) {
       accounts_in = `'${contract_key}'`;
     } else {
-      const accounts = await this.fetchAccounts();
       for (let i in accounts) {
         accounts_in += `'${accounts[i]}',`;
       }
@@ -58,6 +58,16 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
     const sql = `select * from transaction t inner join receipt r on t.success_receipt_id=r.receipt_id 
       WHERE processed = false 
       AND missing = false
+      AND
+      (
+        transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_approve"}}]' OR
+        transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_revoke"}}]' OR
+        transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_buy" }}]' OR
+        transaction->'actions' @> '[{"FunctionCall": { "method_name": "buy" }}]' OR
+        transaction->'actions' @> '[{"FunctionCall": { "method_name": "delete_market_data" }}]' OR
+        transaction->'actions' @> '[{"FunctionCall": { "method_name": "unstake" }}]' OR
+        transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_transfer_call" }}]'
+      )
       order by t.block_height ASC;
     `;
 
@@ -72,10 +82,10 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
 
   async fetchMissingTxs(contract_key?: string): Promise<any> {
     let accounts_in = "";
+    const accounts = await this.fetchAccounts(true);
     if (contract_key) {
       accounts_in = `'${contract_key}'`;
     } else {
-      const accounts = await this.fetchAccounts();
       for (let i in accounts) {
         accounts_in += `'${accounts[i]}',`;
       }
@@ -86,6 +96,16 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
       WHERE receiver_id in (${accounts_in}) 
       AND processed = false 
       AND missing = true
+      AND
+      (
+        transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_approve"}}]' OR
+        transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_revoke"}}]' OR
+        transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_buy" }}]' OR
+        transaction->'actions' @> '[{"FunctionCall": { "method_name": "buy" }}]' OR
+        transaction->'actions' @> '[{"FunctionCall": { "method_name": "delete_market_data" }}]' OR
+        transaction->'actions' @> '[{"FunctionCall": { "method_name": "unstake" }}]' OR
+        transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_transfer_call" }}]'
+      )
       order by t.block_height ASC;
     `;
 

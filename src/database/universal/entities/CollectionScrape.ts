@@ -11,6 +11,7 @@ export class CollectionScrape {
   @Column("enum", {
     nullable: true,
     enum: [
+      "start",
       "getting_tokens",
       "pinning_folder",
       "loading_nft_metas",
@@ -19,7 +20,7 @@ export class CollectionScrape {
       "pinning_multiple_images",
       "done",
     ],
-    default: () => "'getting_tokens'",
+    default: () => "'start'",
   })
   stage:
     | "getting_tokens"

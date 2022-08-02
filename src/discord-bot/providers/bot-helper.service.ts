@@ -30,18 +30,19 @@ export class BotHelperService {
     msc: SmartContract,
     action: Action
   ): DiscordBotDto {
+    const transactionLink = `https://explorer.near.org/transactions/${action.tx_id}`;
+
     let marketplaceLink: string;
     if (msc) {
       marketplaceLink =
-        msc.base_marketplace_uri + msc.token_uri + sc.contract_key + "::" + nftMeta.token_id + "/" + nftMeta.token_id;
+        // msc.base_marketplace_uri + msc.token_uri + sc.contract_key + "::" + nftMeta.token_id + "/" + nftMeta.token_id;
+        `https://byzantion.xyz/paras-redirect?base_marketplace_uri=${encodeURIComponent(msc.base_marketplace_uri)}&token_uri=${encodeURIComponent(msc.token_uri)}&contract_key=${sc.contract_key}&token_id=${nftMeta.token_id}&tx_link=${encodeURIComponent(transactionLink)}`
     }
 
     let seller: string;
     let buyer: string;
     if (action.seller) seller = action.seller;
     if (action.buyer) buyer = action.buyer;
-
-    const transactionLink = `https://explorer.near.org/transactions/${action.tx_id}`;
 
     return {
       slug: collection.slug,
@@ -77,7 +78,7 @@ export class BotHelperService {
 
     embed.setTitle(`${title} ${subTitle}`);
     if (marketplaceLink) {
-      embed.setURL(marketplaceLink);
+      embed.setURL(`${marketplaceLink}&server_name=${server_name}`);
     }
 
     // TODO: Fetch coin to do conversion from chain.botsCoin ?

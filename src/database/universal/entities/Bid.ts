@@ -33,6 +33,9 @@ export class Bid {
   @Column("text")
   tx_id: string;
 
+  @Column("text")
+  tx_index: string;
+
   @Column("bigint")
   block_height: string;
 

@@ -557,6 +557,7 @@ export class NearScraperService {
   }
 
   async getTokensFromParasCustodialCollection(slug) {
+    this.logger.log(`[scraping ${slug}] Getting Multiple Token Metas from PARAS API...`);
     // get tokens from collection_id from Paras API
     const MAX_BATCH_LIMIT = 100;
     let currentSkip = 0;
@@ -705,14 +706,7 @@ export class NearScraperService {
           
           const failedIpfsResults = ipfsResults.filter((r) =>  r.status == 404 && r.data.includes('context canceled') || r.status == 502)
           for(let j = 0; failedIpfsResults.length > j; j++) {
-            console.log(failedIpfsResults[j])
-            console.log("failed: ", failedIpfsResults[j]?.config?.url)
-            let index = failedIpfsResults[j]?.config?.url.split('.json')[0]
-            index = index.split('/')[5]
-            failedIpfsFetches.push({
-              index: Number(index) + Number(failedFetchIndexOffset),
-              url: failedIpfsResults[j]?.config?.url
-            })
+            failedIpfsFetches.push(failedIpfsResults[j]?.config?.url)
           }
         }
         tokenIpfsMetaPromises = [];
@@ -722,22 +716,15 @@ export class NearScraperService {
       }
     }
 
-    const reTryFailedFetched = async (failedFetchesArr) => {
+    const retryFailedFetched = async (failedFetchesArr) => {
       for (let i = 0; i < failedFetchesArr.length; i++) {
-        const url = failedFetchesArr[i]?.url;
+        const url = failedFetchesArr[i];
         this.logger.log("Retry URL", url)
         try {
-          // const response = await backOff(() => this.fetchIpfsMeta(url));
           const result = await this.fetchIpfsMeta(url)
           if (result.status == 200) {
             this.logger.log("Retry URL SUCCESS", url)
-            console.log("Retry URL SUCCESS index", failedFetchesArr[i]?.index)
-            console.log("Retry URL SUCCESS result", result.data)
-            tokenIpfsMetas.splice(failedFetchesArr[i]?.index, 0, result.data);
-            failedFetchesArr.splice(i, 1);
-          } else {
-            this.logger.log("Retry URL FAIL", url)
-            reTryFailedFetched(failedFetchesArr);
+            tokenIpfsMetas.push(result.data);
           }
           delay(2000);
         } catch(err){
@@ -747,7 +734,7 @@ export class NearScraperService {
     }
 
     if (failedIpfsFetches.length > 0) {
-      await reTryFailedFetched(failedIpfsFetches)
+      await retryFailedFetched(failedIpfsFetches)
     }
 
     return tokenIpfsMetas;

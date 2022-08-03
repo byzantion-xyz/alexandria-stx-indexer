@@ -58,13 +58,13 @@ export class DbHelperService {
 
     const data = {
       contract_key: contract_key,
-      spec: nftContractMetadata.spec,
-      name: nftContractMetadata.name,
+      spec: nftContractMetadata.spec ?? "",
+      name: nftContractMetadata.name ?? "",
       type: [SmartContractType.non_fungible_tokens],
       asset_name: contract_key,
       chain_id: NEAR_PROTOCOL_DB_ID,
       json_meta: {
-        chain_meta: nftContractMetadata,
+        chain_meta: nftContractMetadata ?? {},
       },
     };
 

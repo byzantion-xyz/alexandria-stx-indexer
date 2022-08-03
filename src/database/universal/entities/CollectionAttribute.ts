@@ -1,4 +1,6 @@
-import { Column, Entity, Index, JoinColumn, ManyToOne } from "typeorm";
+import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany } from "typeorm";
+import { BidAttribute } from "./BidAttribute";
+import { BidState } from "./BidState";
 import { Collection } from "./Collection";
 
 @Index("collection_attribute_collection_id_trait_type_value_key", ["collection_id", "trait_type", "value"], {
@@ -36,4 +38,11 @@ export class CollectionAttribute {
   })
   @JoinColumn([{ name: "collection_id", referencedColumnName: "id" }])
   collection: Collection;
+
+  @OneToMany(
+    () => BidAttribute,
+    (bidAttribute) => bidAttribute.collection_attribute,
+    { cascade: true }
+  )
+  bids: BidAttribute[];
 }

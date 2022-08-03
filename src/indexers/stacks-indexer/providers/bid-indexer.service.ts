@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Action } from 'src/database/universal/entities/Action';
 import { SmartContract } from 'src/database/universal/entities/SmartContract';
@@ -6,53 +7,56 @@ import { SmartContractFunction } from 'src/database/universal/entities/SmartCont
 import { ActionName } from 'src/indexers/common/helpers/indexer-enums';
 import { TxHelperService } from 'src/indexers/common/helpers/tx-helper.service';
 import { CommonTx } from 'src/indexers/common/interfaces/common-tx.interface';
-import { CreateActionTO, CreateUnlistBidActionTO } from 'src/indexers/common/interfaces/create-action-common.dto';
+import { CreateActionTO, CreateBidActionTO } from 'src/indexers/common/interfaces/create-action-common.dto';
 import { IndexerService } from 'src/indexers/common/interfaces/indexer-service.interface';
 import { TxProcessResult } from 'src/indexers/common/interfaces/tx-process-result.interface';
 import { Repository } from 'typeorm';
 import { StacksTxHelperService } from './stacks-tx-helper.service';
 
 @Injectable()
-export class BnsUnlistBidIndexerService implements IndexerService {
-  private readonly logger = new Logger(BnsUnlistBidIndexerService.name);
+export class BidIndexerService implements IndexerService {
+  private readonly logger = new Logger(BidIndexerService.name);
 
   constructor(
-    private stacksTxHelper: StacksTxHelperService,
     private txHelper: TxHelperService,
+    private stacksTxHelper: StacksTxHelperService,
     @InjectRepository(Action)
-    private actionRepository: Repository<Action>,
-    @InjectRepository(SmartContract)
-    private smartContractRepository: Repository<SmartContract>
+    private actionRepository: Repository<Action>
   ) {}
-  
+
   async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {
     this.logger.debug(`process() ${tx.hash}`);
     let txResult: TxProcessResult = { processed: false, missing: false };
 
-    const name = this.txHelper.extractArgumentData(tx.args, scf, 'name');
-    const namespace = this.txHelper.extractArgumentData(tx.args, scf, 'namespace');
+    if (!this.stacksTxHelper.isByzMarketplace(sc)) {
+      txResult.missing = true;
+      return txResult;
+    }
 
-    const nftMeta = await this.stacksTxHelper.findMetaBns(name, namespace);
+    const contract_key = this.txHelper.extractArgumentData(tx.args, scf, 'contract_key');
+    const token_id = this.txHelper.extractArgumentData(tx.args, scf, 'token_id'); 
+    const price = this.txHelper.extractArgumentData(tx.args, scf, 'price');
+
+    const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
 
     if (nftMeta) {
-      const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName.unlist_bid, tx, nftMeta.smart_contract, nftMeta, sc);
-      const unlistBidActionParams: CreateUnlistBidActionTO = {
+      const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName.bid, tx, nftMeta.smart_contract, nftMeta, sc);
+      const bidActionParams: CreateBidActionTO = {
         ...actionCommonArgs,
-        bid_price: nftMeta.nft_state && nftMeta.nft_state.list_price ? nftMeta.nft_state.list_price : undefined,
-        buyer: nftMeta.nft_state?.list_seller || undefined
+        bid_price: price,
+        buyer: tx.signer
       };
 
       if (this.txHelper.isNewBid(tx, nftMeta.nft_state)) {
-        await this.txHelper.unlistBidMeta(nftMeta.id, tx);
-        await this.createAction(unlistBidActionParams);
+        await this.txHelper.bidMeta(nftMeta.id, tx, sc, price);
       } else {
-        this.logger.log(`Too Late`);
-        // Create missing action
-        await this.createAction(unlistBidActionParams);
+        this.logger.log(`Too Late`);        
       }
+      await this.createAction(bidActionParams);
+
       txResult.processed = true;
     } else {
-      this.logger.log(`NftMeta not found`);
+      this.logger.log(`NftMeta not found ${contract_key} ${token_id}`);
       txResult.missing = true;
     }
 
@@ -63,11 +67,10 @@ export class BnsUnlistBidIndexerService implements IndexerService {
     try {
       const action = this.actionRepository.create(params);
       const saved = await this.actionRepository.save(action);
-
       this.logger.log(`New action ${params.action}: ${saved.id} `);
-
       return saved;
     } catch (err) {}
   }
-  
+
+
 }

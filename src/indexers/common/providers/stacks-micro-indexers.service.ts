@@ -1,12 +1,15 @@
 import { Injectable } from "@nestjs/common";
 import { StakeIndexerService } from "src/indexers/common/providers/stake-indexer.service";
 import { UnstakeIndexerService } from "src/indexers/common/providers/unstake-indexer.service";
+import { AcceptBidIndexerService } from "src/indexers/stacks-indexer/providers/accept-bid-indexer.service";
+import { BidIndexerService } from "src/indexers/stacks-indexer/providers/bid-indexer.service";
 import { BnsAcceptBidIndexerService } from "src/indexers/stacks-indexer/providers/bns-accept-bid-indexer.service";
 import { BnsBidIndexerService } from "src/indexers/stacks-indexer/providers/bns-bid-indexer.service";
 import { BnsRegisterIndexerService } from "src/indexers/stacks-indexer/providers/bns-register-indexer.service";
 import { BnsUnlistBidIndexerService } from "src/indexers/stacks-indexer/providers/bns-unlist-bid-indexer.service";
 import { ChangePriceIndexerService } from "src/indexers/stacks-indexer/providers/change-price-indexer.service";
 import { TransferIndexerService } from "src/indexers/stacks-indexer/providers/transfer-indexer.service";
+import { UnlistBidIndexerService } from "src/indexers/stacks-indexer/providers/unlist-bid-indexer.service";
 import { IndexerService } from "../interfaces/indexer-service.interface";
 import { BuyIndexerService } from "./buy-indexer.service";
 import { ListIndexerService } from "./list-indexer.service";
@@ -20,6 +23,9 @@ export class StacksMicroIndexers {
     private unlistIndexer: IndexerService,
     private transferIndexer: IndexerService,
     private changePriceIndexer: IndexerService,
+    private bidIndexer: IndexerService,
+    private acceptBidIndexer: IndexerService,
+    private unlistBidIndexer: IndexerService,
     private stakeIndexer: IndexerService,
     private unstakeIndexer: IndexerService,
     private bnsRegisterIndexer: IndexerService,
@@ -37,7 +43,10 @@ export const StacksMicroIndexersProvider = {
     listIndexer: ListIndexerService,
     unlistIndexer: UnlistIndexerService,
     transferIndexer: TransferIndexerService,
-    changePrice: ChangePriceIndexerService,
+    changePriceIndexer: ChangePriceIndexerService,
+    bidIndexer: BidIndexerService,
+    unlistBidIndexer: UnlistBidIndexerService,
+    acceptBidIndexer: AcceptBidIndexerService,
     stakeIndexer: StakeIndexerService,
     unstakeIndexer: UnstakeIndexerService,
     bnsRegisterIndexer: BnsRegisterIndexerService,
@@ -48,10 +57,13 @@ export const StacksMicroIndexersProvider = {
   ) => {
     return new StacksMicroIndexers(
       buyIndexer, 
-      listIndexer, 
+      listIndexer,
       unlistIndexer, 
-      transferIndexer, 
-      changePrice, 
+      transferIndexer,
+      changePriceIndexer, 
+      bidIndexer,
+      unlistBidIndexer,
+      acceptBidIndexer,
       stakeIndexer, 
       unstakeIndexer, 
       bnsRegisterIndexer, 
@@ -67,6 +79,9 @@ export const StacksMicroIndexersProvider = {
     UnlistIndexerService, 
     TransferIndexerService, 
     ChangePriceIndexerService,
+    BidIndexerService,
+    UnlistBidIndexerService,
+    AcceptBidIndexerService,
     StakeIndexerService, 
     UnstakeIndexerService,
     BnsRegisterIndexerService,

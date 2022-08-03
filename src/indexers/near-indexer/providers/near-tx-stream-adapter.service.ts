@@ -24,7 +24,8 @@ const WHITELISTED_ACTIONS = [
   'buy', 
   'delete_market_data', 
   'unstake',
-  'nft_transfer_call'
+  'nft_transfer_call',
+  'withdraw_nft'
 ];
 
 @Injectable()
@@ -44,20 +45,20 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
   ) {}
 
   async fetchTxs(contract_key?: string): Promise<any> {
-    let accounts_in = "";
-    if (contract_key) {
-      accounts_in = `'${contract_key}'`;
-    } else {
-      const accounts = await this.fetchAccounts();
-      for (let i in accounts) {
-        accounts_in += `'${accounts[i]}',`;
-      }
-      accounts_in = accounts_in.slice(0, -1);
-    }
-
     const sql = `select * from transaction t inner join receipt r on t.success_receipt_id=r.receipt_id 
       WHERE processed = false 
       AND missing = false
+      AND
+      (
+        transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_approve"}}]' OR
+        transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_revoke"}}]' OR
+        transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_buy" }}]' OR
+        transaction->'actions' @> '[{"FunctionCall": { "method_name": "buy" }}]' OR
+        transaction->'actions' @> '[{"FunctionCall": { "method_name": "delete_market_data" }}]' OR
+        transaction->'actions' @> '[{"FunctionCall": { "method_name": "unstake" }}]' OR
+        transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_transfer_call" }}]' OR
+        transaction->'actions' @> '[{"FunctionCall": { "method_name": "withdraw_nft" }}]'
+      )
       order by t.block_height ASC;
     `;
 
@@ -72,10 +73,10 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
 
   async fetchMissingTxs(contract_key?: string): Promise<any> {
     let accounts_in = "";
+    const accounts = await this.fetchAccounts();
     if (contract_key) {
       accounts_in = `'${contract_key}'`;
     } else {
-      const accounts = await this.fetchAccounts();
       for (let i in accounts) {
         accounts_in += `'${accounts[i]}',`;
       }
@@ -86,6 +87,17 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
       WHERE receiver_id in (${accounts_in}) 
       AND processed = false 
       AND missing = true
+      AND
+      (
+        transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_approve"}}]' OR
+        transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_revoke"}}]' OR
+        transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_buy" }}]' OR
+        transaction->'actions' @> '[{"FunctionCall": { "method_name": "buy" }}]' OR
+        transaction->'actions' @> '[{"FunctionCall": { "method_name": "delete_market_data" }}]' OR
+        transaction->'actions' @> '[{"FunctionCall": { "method_name": "unstake" }}]' OR
+        transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_transfer_call" }}]' OR
+        transaction->'actions' @> '[{"FunctionCall": { "method_name": "withdraw_nft" }}]'
+      )
       order by t.block_height ASC;
     `;
 
@@ -110,48 +122,10 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
     }
   }
 
-  async verifySmartContracts(smartContracts: SmartContract[]): Promise<any> {
-    // Create smartContractFunctions for listings and unlists.
-    for (let sc of smartContracts) {
-      if (
-        sc.type.includes(SmartContractType.non_fungible_tokens) &&
-        (!sc.smart_contract_functions || !sc.smart_contract_functions.length)
-      ) {
-        const data = await this.smartContractFunctionRepository.create([
-          {
-            smart_contract_id: sc.id,
-            args: {
-              price: "msg.price",
-              token_id: "token_id",
-              list_action: "msg.market_type",
-              contract_key: "account_id",
-            },
-            name: "list",
-            function_name: "nft_approve",
-          },
-          {
-            smart_contract_id: sc.id,
-            args: { token_id: "token_id", contract_key: "account_id" },
-            name: "unlist",
-            function_name: "nft_revoke",
-          }
-        ]);
-
-        await this.smartContractFunctionRepository.save(data);
-      }
-    }
-  }
-
-  async fetchAccounts(verifySmartContracts: boolean = false): Promise<string[]> {
-    // TODO: Move to the scrapper process for new smart contracts
+  async fetchAccounts(): Promise<string[]> {
     const smartContracts: SmartContract[] = await this.smartContractRepository.find({
-      where: { chain: { symbol: "Near" } },
-      relations: { smart_contract_functions: true },
+      where: { chain: { symbol: "Near" } }
     });
-
-    if (verifySmartContracts) {
-      await this.verifySmartContracts(smartContracts);
-    }
 
     const accounts = smartContracts.map((sc) => sc.contract_key);
 
@@ -175,17 +149,6 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
           case "accept_trade":
           case "accept_offer":
           case "accept_offer_paras_series":
-          default: 
-            force_indexer = 'unknown';
-        }
-      // Map msg: stake on nft_transfer_call to stake micro indexer
-      } else if (function_name === 'nft_transfer_call') {
-        const msg = parsed_args["msg"];
-        switch (msg) {
-          case "stake":
-            force_indexer = "stake";
-            break;
-
           default: 
             force_indexer = 'unknown';
         }

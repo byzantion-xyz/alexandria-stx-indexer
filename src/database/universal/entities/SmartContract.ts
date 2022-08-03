@@ -1,7 +1,7 @@
 import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
 import { Action } from "./Action";
 import { Collection } from "./Collection";
-import { CollectionBid } from "./CollectionBid";
+import { Bid } from "./Bid";
 import { Commission } from "./Commission";
 import { NftMeta } from "./NftMeta";
 import { NftState } from "./NftState";
@@ -73,8 +73,8 @@ export class SmartContract {
   @OneToMany(() => Collection, (collection) => collection.smart_contract)
   collections: Collection[];
 
-  @OneToMany(() => CollectionBid, (collectionBid) => collectionBid.smart_contract)
-  collection_bids: CollectionBid[];
+  @OneToMany(() => Bid, (bid) => bid.smart_contract)
+  collection_bids: Bid[];
 
   @OneToMany(() => Commission, (commission) => commission.smart_contract)
   commission: Commission[];
@@ -95,7 +95,7 @@ export class SmartContract {
   @JoinColumn([{ name: "chain_id", referencedColumnName: "id" }])
   chain: Chain;
 
-  @OneToMany(() => SmartContractFunction, (smartContractFunction) => smartContractFunction.smart_contract)
+  @OneToMany(() => SmartContractFunction, (smartContractFunction) => smartContractFunction.smart_contract, { cascade: true })
   smart_contract_functions: SmartContractFunction[];
 
   @Column("uuid")

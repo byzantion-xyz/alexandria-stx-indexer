@@ -38,6 +38,11 @@ import { Collection } from "src/database/universal/entities/Collection";
 import { BnsBidIndexerService } from './stacks-indexer/providers/bns-bid-indexer.service';
 import { BnsUnlistBidIndexerService } from './stacks-indexer/providers/bns-unlist-bid-indexer.service';
 import { BnsAcceptBidIndexerService } from './stacks-indexer/providers/bns-accept-bid-indexer.service';
+import { BidIndexerService } from './stacks-indexer/providers/bid-indexer.service';
+import { UnlistBidIndexerService } from './stacks-indexer/providers/unlist-bid-indexer.service';
+import { AcceptBidIndexerService } from './stacks-indexer/providers/accept-bid-indexer.service';
+import { Bid } from "src/database/universal/entities/Bid";
+import { BidState } from "src/database/universal/entities/BidState";
 
 /* Select stream adapter based on chain symbol env variable */
 const TxStreamAdapterProvider = {
@@ -71,7 +76,9 @@ const TxStreamAdapterProvider = {
       SmartContractFunction,
       Chain,
       Commission,
-      Collection
+      Collection,
+      Bid,
+      BidState
     ]),
     TypeOrmModule.forFeature([NearTransaction, Receipt], "NEAR-STREAM"),
     TypeOrmModule.forFeature([StacksTransaction, Block], "STACKS-STREAM"),
@@ -88,6 +95,9 @@ const TxStreamAdapterProvider = {
     NearTxStreamAdapterService,
     StacksTxStreamAdapterService,
     TxStreamAdapterProvider,
+    /* Micro indexers factory */
+    NearMicroIndexersProvider,
+    StacksMicroIndexersProvider,
     /* Micro indexers */
     BuyIndexerService,
     ListIndexerService,
@@ -100,10 +110,9 @@ const TxStreamAdapterProvider = {
     BnsBidIndexerService,
     BnsUnlistBidIndexerService,
     BnsAcceptBidIndexerService,
-    /* Micro indexers factory */
-    NearMicroIndexersProvider,
-    StacksMicroIndexersProvider,
-   
+    BidIndexerService,
+    UnlistBidIndexerService,
+    AcceptBidIndexerService
   ],
   exports: [IndexerOrchestratorService],
 })

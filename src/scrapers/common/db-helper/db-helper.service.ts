@@ -14,6 +14,26 @@ import {
 import { Repository } from "typeorm";
 
 const NEAR_PROTOCOL_DB_ID = "174c3df6-0221-4ca7-b966-79ac8d981bdb";
+const scf = [{
+  args: {
+    price: "msg.price",
+    token_id: "token_id",
+    list_action: "msg.market_type",
+    contract_key: "account_id",
+  },
+  name: "list",
+  function_name: "nft_approve",
+},
+{
+  args: { token_id: "token_id", contract_key: "account_id" },
+  name: "unlist",
+  function_name: "nft_revoke",
+},
+{
+  args: { token_id: "token_id", contract_key: "receiver_id", action: "msg" },
+  name: "stake",
+  function_name: "nft_transfer_call",
+}];
 
 @Injectable()
 export class DbHelperService {
@@ -39,18 +59,21 @@ export class DbHelperService {
 
   async createSmartContract(contract_key: string, slug: string) {
     this.logger.log(`[scraping ${slug}] Creating SmartContract...`);
-    const smartContractData = {
+    const smartContractData: any = {
       contract_key: contract_key,
       type: [SmartContractType.non_fungible_tokens],
-      chain_id: NEAR_PROTOCOL_DB_ID,
+      chain_id: NEAR_PROTOCOL_DB_ID
     };
 
     let smartContract = await this.smartContractRepo.findOneBy({ contract_key });
     if (!smartContract) {
       smartContract = this.smartContractRepo.create();
+      smartContractData.smart_contract_functions = scf;
     }
+
     this.smartContractRepo.merge(smartContract, smartContractData);
-    return await this.smartContractRepo.save(smartContract);
+
+    return await this.smartContractRepo.save(smartContract, { transaction: true });
   }
 
   async loadSmartContract(nftContractMetadata, contract_key, slug) {

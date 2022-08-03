@@ -19,7 +19,7 @@ import { NearMicroIndexers } from "./common/providers/near-micro-indexers.servic
 import { StacksMicroIndexers } from "./common/providers/stacks-micro-indexers.service";
 import { MissingCollectionService } from "src/scrapers/near-scraper/providers/missing-collection.service";
 
-const BATCH_SIZE = 100;
+const BATCH_SIZE = 1000;
 
 @Injectable()
 export class IndexerOrchestratorService {
@@ -50,10 +50,10 @@ export class IndexerOrchestratorService {
       : await this.txStreamAdapter.fetchTxs(options.contract_key);
 
       let txs = [];
+      this.logger.log(`Querying transactions cursor batch_size: ${BATCH_SIZE} `);
       do {
-        this.logger.log(`Querying transactions cursor batch_size: ${BATCH_SIZE} `);
         txs = await cursor.read(BATCH_SIZE);
-        this.logger.log(`Found ${txs.length} transactions`);
+        this.logger.log(`Fetching next batch of transactions`);
         const common_txs: CommonTx[] = this.txStreamAdapter.transformTxs(txs);
         await this.processTransactions(common_txs);
       } while (txs.length > 0);
@@ -136,7 +136,7 @@ export class IndexerOrchestratorService {
       } else {
         this.logger.log(`smart_contract: ${transaction.receiver} not found`);
         if (this.chainSymbol === 'Near') {
-          //this.missingCollectionService.scrapeMissing({ contract_key: transaction.receiver });
+          this.missingCollectionService.scrapeMissing({ contract_key: transaction.receiver });
         }
         result.missing = true;
       }

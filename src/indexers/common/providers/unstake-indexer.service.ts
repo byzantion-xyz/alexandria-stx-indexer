@@ -11,7 +11,7 @@ import { TxProcessResult } from 'src/indexers/common/interfaces/tx-process-resul
 import { Action } from 'src/database/universal/entities/Action';
 import { NftState } from 'src/database/universal/entities/NftState';
 import { SmartContract } from 'src/database/universal/entities/SmartContract';
-import { ActionName } from 'src/indexers/common/helpers/indexer-enums';
+import { ActionName, SmartContractType } from 'src/indexers/common/helpers/indexer-enums';
 
 @Injectable()
 export class UnstakeIndexerService implements IndexerService {
@@ -34,9 +34,14 @@ export class UnstakeIndexerService implements IndexerService {
 
     const token_id = this.txHelper.extractArgumentData(tx.args, scf, "token_id");
     const contract_key = this.txHelper.extractArgumentData(tx.args, scf, "contract_key");
+ 
+    if (!sc.type.includes(SmartContractType.staking)) {
+      this.logger.log(`Stake contract: ${contract_key} does not have staking type`);
+      txResult.missing = true;
+      return txResult;
+    }
 
-    const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
-
+    const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);   
     if (nftMeta) {
       const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName[scf.name], tx, nftMeta.smart_contract, nftMeta, sc);
       const unstakeActionParams: CreateUnstakeActionTO = {

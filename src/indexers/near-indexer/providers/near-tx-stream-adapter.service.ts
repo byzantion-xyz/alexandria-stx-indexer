@@ -24,7 +24,8 @@ const WHITELISTED_ACTIONS = [
   'buy', 
   'delete_market_data', 
   'unstake',
-  'nft_transfer_call'
+  'nft_transfer_call',
+  'withdraw_nft'
 ];
 
 @Injectable()
@@ -66,7 +67,8 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
         transaction->'actions' @> '[{"FunctionCall": { "method_name": "buy" }}]' OR
         transaction->'actions' @> '[{"FunctionCall": { "method_name": "delete_market_data" }}]' OR
         transaction->'actions' @> '[{"FunctionCall": { "method_name": "unstake" }}]' OR
-        transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_transfer_call" }}]'
+        transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_transfer_call" }}]' OR
+        transaction->'actions' @> '[{"FunctionCall": { "method_name": "withdraw_nft" }}]'
       )
       order by t.block_height ASC;
     `;
@@ -104,7 +106,8 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
         transaction->'actions' @> '[{"FunctionCall": { "method_name": "buy" }}]' OR
         transaction->'actions' @> '[{"FunctionCall": { "method_name": "delete_market_data" }}]' OR
         transaction->'actions' @> '[{"FunctionCall": { "method_name": "unstake" }}]' OR
-        transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_transfer_call" }}]'
+        transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_transfer_call" }}]' OR
+        transaction->'actions' @> '[{"FunctionCall": { "method_name": "withdraw_nft" }}]'
       )
       order by t.block_height ASC;
     `;
@@ -195,17 +198,6 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
           case "accept_trade":
           case "accept_offer":
           case "accept_offer_paras_series":
-          default: 
-            force_indexer = 'unknown';
-        }
-      // Map msg: stake on nft_transfer_call to stake micro indexer
-      } else if (function_name === 'nft_transfer_call') {
-        const msg = parsed_args["msg"];
-        switch (msg) {
-          case "stake":
-            force_indexer = "stake";
-            break;
-
           default: 
             force_indexer = 'unknown';
         }

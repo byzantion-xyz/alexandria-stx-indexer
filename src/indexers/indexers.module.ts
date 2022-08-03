@@ -41,8 +41,8 @@ import { BnsAcceptBidIndexerService } from './stacks-indexer/providers/bns-accep
 import { BidIndexerService } from './stacks-indexer/providers/bid-indexer.service';
 import { UnlistBidIndexerService } from './stacks-indexer/providers/unlist-bid-indexer.service';
 import { AcceptBidIndexerService } from './stacks-indexer/providers/accept-bid-indexer.service';
-import { Bid } from "src/database/universal/entities/Bid";
-import { BidState } from "src/database/universal/entities/BidState";
+import { Bid } from "src/database/universal/entities/BidState";
+import { BidState } from "src/database/universal/entities/BidStateNftMeta";
 
 /* Select stream adapter based on chain symbol env variable */
 const TxStreamAdapterProvider = {

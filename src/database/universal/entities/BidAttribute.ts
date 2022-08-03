@@ -1,5 +1,5 @@
 import { Entity, Index, JoinColumn, ManyToOne, PrimaryColumn } from "typeorm";
-import { Bid } from "./Bid";
+import { Bid } from "./BidState";
 import { CollectionAttribute } from "./CollectionAttribute";
 import { NftMeta } from "./NftMeta";
 

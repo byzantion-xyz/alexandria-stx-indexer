@@ -11,8 +11,8 @@ import { SmartContractFunction } from "src/database/universal/entities/SmartCont
 import { Repository } from "typeorm";
 import { ActionName } from "./indexer-enums";
 import { Commission } from "src/database/universal/entities/Commission";
-import { BidState } from "src/database/universal/entities/BidState";
-import { Bid } from "src/database/universal/entities/Bid";
+import { BidState } from "src/database/universal/entities/BidStateNftMeta";
+import { Bid } from "src/database/universal/entities/BidState";
 
 export interface NftStateArguments {
   collection_map_id?: string
@@ -48,7 +48,7 @@ export class TxHelperService {
     );
   }
 
-  isNewBid(tx: CommonTx, bid_states: BidState[]) {
+  isNewBid(tx: CommonTx, nft_state: NftState) {
     return (
       !nft_state ||
       !nft_state.bid_block_height ||

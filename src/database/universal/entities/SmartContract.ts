@@ -1,7 +1,7 @@
 import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
 import { Action } from "./Action";
 import { Collection } from "./Collection";
-import { Bid } from "./Bid";
+import { Bid } from "./BidState";
 import { Commission } from "./Commission";
 import { NftMeta } from "./NftMeta";
 import { NftState } from "./NftState";

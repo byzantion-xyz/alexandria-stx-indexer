@@ -95,7 +95,7 @@ export class SmartContract {
   @JoinColumn([{ name: "chain_id", referencedColumnName: "id" }])
   chain: Chain;
 
-  @OneToMany(() => SmartContractFunction, (smartContractFunction) => smartContractFunction.smart_contract)
+  @OneToMany(() => SmartContractFunction, (smartContractFunction) => smartContractFunction.smart_contract, { cascade: true })
   smart_contract_functions: SmartContractFunction[];
 
   @Column("uuid")

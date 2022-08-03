@@ -78,7 +78,7 @@ export class BotHelperService {
 
     embed.setTitle(`${title} ${subTitle}`);
     if (marketplaceLink) {
-      embed.setURL(`${marketplaceLink}&server_name=${server_name}`);
+      embed.setURL(`${marketplaceLink}&server_name=${encodeURIComponent(server_name)}`);
     }
 
     // TODO: Fetch coin to do conversion from chain.botsCoin ?

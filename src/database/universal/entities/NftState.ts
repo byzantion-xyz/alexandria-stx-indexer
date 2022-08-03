@@ -39,25 +39,6 @@ export class NftState {
   list_tx_index: bigint;
 
   @Column("boolean", { default: () => "false" })
-  bid: boolean;
-
-  @Column("numeric", {
-    nullable: true,
-    precision: 40,
-    scale: 0,
-  })
-  bid_price: bigint;
-
-  @Column("text", { nullable: true })
-  bid_buyer: string | null;
-
-  @Column("bigint", { nullable: true })
-  bid_block_height: bigint;
-
-  @Column("bigint", { nullable: true })
-  bid_tx_index: bigint;
-
-  @Column("boolean", { default: () => "false" })
   staked: boolean;
 
   @Column("text", { nullable: true })
@@ -87,9 +68,6 @@ export class NftState {
   @Column("uuid", { nullable: true })
   staked_contract_id: string;
 
-  @Column("uuid", { nullable: true })
-  bid_contract_id: string;
-
   @ManyToOne(() => SmartContract, (smartContract) => smartContract.nft_state, {
     onDelete: "RESTRICT",
     onUpdate: "CASCADE",
@@ -103,13 +81,6 @@ export class NftState {
   })
   @JoinColumn([{ name: "staked_contract_id", referencedColumnName: "id" }])
   staked_contract: SmartContract;
-
-  @ManyToOne(() => SmartContract, (smartContract) => smartContract.nft_state, {
-    onDelete: "RESTRICT",
-    onUpdate: "CASCADE",
-  })
-  @JoinColumn([{ name: "bid_contract_id", referencedColumnName: "id" }])
-  bid_contract: SmartContract;
 
   @OneToOne(() => NftMeta, (nftMeta) => nftMeta.nft_state, {
     onDelete: "RESTRICT",

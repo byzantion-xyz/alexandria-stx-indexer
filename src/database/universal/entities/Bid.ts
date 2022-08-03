@@ -37,7 +37,7 @@ export class Bid {
   tx_index: string;
 
   @Column("bigint")
-  block_height: string;
+  block_height: bigint;
 
   @Column("text")
   match_tx_id: string;
@@ -54,7 +54,11 @@ export class Bid {
   @Column("timestamp without time zone")
   updated_at: Date;
 
-  @Column("bigint")
+  @Column("numeric", {
+    nullable: true,
+    precision: 40,
+    scale: 0,
+  })
   bid_price: bigint;
 
   @Column("uuid")

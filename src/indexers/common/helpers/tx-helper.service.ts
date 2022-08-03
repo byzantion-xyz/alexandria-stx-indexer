@@ -11,6 +11,8 @@ import { SmartContractFunction } from "src/database/universal/entities/SmartCont
 import { Repository } from "typeorm";
 import { ActionName } from "./indexer-enums";
 import { Commission } from "src/database/universal/entities/Commission";
+import { BidState } from "src/database/universal/entities/BidState";
+import { Bid } from "src/database/universal/entities/Bid";
 
 export interface NftStateArguments {
   collection_map_id?: string
@@ -28,7 +30,9 @@ export class TxHelperService {
     @InjectRepository(SmartContract)
     private smartContractRepository: Repository<SmartContract>,
     @InjectRepository(Commission)
-    private commissionRepository: Repository<Commission>
+    private commissionRepository: Repository<Commission>,
+    @InjectRepository(Bid)
+    private bidRepository: Repository<Bid>
   ) {}
 
   nanoToMiliSeconds(nanoseconds: bigint) {
@@ -44,7 +48,7 @@ export class TxHelperService {
     );
   }
 
-  isNewBid(tx: CommonTx, nft_state: NftState) {
+  isNewBid(tx: CommonTx, bid_states: BidState[]) {
     return (
       !nft_state ||
       !nft_state.bid_block_height ||
@@ -76,16 +80,33 @@ export class TxHelperService {
         contract_key,
         nft_metas: { token_id },
       },
-      relations: { 
-        nft_metas: { 
-          nft_state: { list_contract: true, staked_contract: true }, 
-          smart_contract: true 
+      relations: {
+        nft_metas: {
+          nft_state: { list_contract: true, staked_contract: true },
+          smart_contract: true
       }}
     });
 
     if (nft_smart_contract && nft_smart_contract.nft_metas && nft_smart_contract.nft_metas.length === 1) {
       return nft_smart_contract.nft_metas[0];
     }
+  }
+
+  async findMetaBids(nftMeta: NftMeta) {
+    const bids: Bid[] = await this.bidRepository.find({
+      where: {
+        smart_contract_id: nftMeta.smart_contract_id,
+        bid_type: 'solo',
+        states: { meta_id: nftMeta.id } 
+      },
+      relations: { states: true }
+    });
+
+    return bids;
+  }
+
+  async findCollectionBids(collection_id: string) {
+
   }
 
   async findCommissionByKey(sc: SmartContract, contract_key: string, key?: string): Promise<string> {
@@ -128,7 +149,7 @@ export class TxHelperService {
 
     await this.nftStateRepository.upsert({ meta_id: nftMetaId, ...update }, ["meta_id"]);
   }
-
+  
   async bidMeta (nftMetaId: string, tx: CommonTx, sc: SmartContract, price: bigint) {
     let update: any = {
       bid: true,

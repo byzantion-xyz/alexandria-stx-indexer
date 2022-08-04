@@ -35,7 +35,7 @@ export class BnsAcceptBidIndexerService implements IndexerService {
     const nftMeta = await this.stacksTxHelper.findMetaBns(name, namespace);
 
     if (nftMeta) {
-      const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName.accept_bid, tx, nftMeta.smart_contract, nftMeta, sc);
+      const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName.accept_bid, tx, nftMeta, sc);
       const acceptBidActionParams: CreateAcceptBidActionTO = {
         ...actionCommonArgs,
         bid_price: nftMeta.nft_state && nftMeta.nft_state.bid_price ? nftMeta.nft_state.bid_price : undefined,

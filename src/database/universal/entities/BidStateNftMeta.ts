@@ -11,17 +11,19 @@ export class BidStateNftMeta {
   @PrimaryColumn("uuid")
   meta_id: string;
 
-  @ManyToOne(() => BidState, (bidState) => bidState.nft_metas, {
-    onDelete: "RESTRICT",
-    onUpdate: "CASCADE",
-  })
+  @ManyToOne(
+    () => BidState, 
+    (bidState) => bidState.nft_metas, 
+    { onDelete: "RESTRICT", onUpdate: "CASCADE" }
+  )
   @JoinColumn([{ name: "bid_id", referencedColumnName: "id" }])
   bid_state: BidState;
 
-  @ManyToOne(() => NftMeta, (nftMeta) => nftMeta.bid_states, {
-    onDelete: "RESTRICT",
-    onUpdate: "CASCADE",
-  })
+  @ManyToOne(
+    () => NftMeta, 
+    (nftMeta) => nftMeta.bid_states, 
+    { onDelete: "RESTRICT", onUpdate: "CASCADE" }
+  )
   @JoinColumn([{ name: "meta_id", referencedColumnName: "id" }])
   meta: NftMeta;
 }

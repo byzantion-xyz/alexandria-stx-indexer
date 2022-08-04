@@ -40,7 +40,7 @@ export class BidIndexerService implements IndexerService {
     const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
 
     if (nftMeta) {
-      const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName.bid, tx, nftMeta.smart_contract, nftMeta, sc);
+      const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName.bid, tx, nftMeta, sc);
       const bidActionParams: CreateBidActionTO = {
         ...actionCommonArgs,
         bid_price: price,

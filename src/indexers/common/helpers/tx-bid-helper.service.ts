@@ -2,6 +2,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { TransactionEventSmartContractLog } from '@stacks/stacks-blockchain-api-types';
 import { BidState } from 'src/database/universal/entities/BidState';
+import { BidStateNftMeta } from 'src/database/universal/entities/BidStateNftMeta';
+import { NftMeta } from 'src/database/universal/entities/NftMeta';
 import { SmartContract } from 'src/database/universal/entities/SmartContract';
 import { TransactionEventSmartContractLogWithData } from 'src/indexers/stacks-indexer/providers/stacks-tx-helper.service';
 import { Repository } from 'typeorm';
@@ -64,7 +66,7 @@ export class TxBidHelperService {
     return {
       smart_contract_id: sc.id,
       nonce: Number(e.data.order),
-      bid_contract_nonce: `${e.contract_log.contract_id}::${Number(e.data.order)}`,
+      bid_contract_nonce: this.build_nonce(e.contract_log.contract_id, e.data.order),
       bid_price: e.data.data.offer,
       tx_id: tx.hash,
       tx_index: tx.index,
@@ -72,6 +74,21 @@ export class TxBidHelperService {
       bid_type: type,
       status: status
     };
+  }
+
+  async acceptCollectionBid(bidState: BidState, tx: CommonTx, nftMeta: NftMeta) {
+    bidState.status = CollectionBidStatus.matched;
+    bidState.bid_seller = tx.signer;
+    bidState.match_tx_id = tx.hash;
+    const bidStateNftMeta = new BidStateNftMeta();
+    bidStateNftMeta.meta_id = nftMeta.id;
+    bidState.nft_metas = [bidStateNftMeta];
+    
+    await this.bidStateRepo.save(bidState);
+  }
+
+  build_nonce(contract_key: string, order: bigint): string {
+    return `${contract_key}::${Number(order)}`;
   }
 
 }

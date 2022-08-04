@@ -44,6 +44,7 @@ import { AcceptBidIndexerService } from './stacks-indexer/providers/accept-bid-i
 import { BidState } from "src/database/universal/entities/BidState";
 import { CollectionOrderBookBidIndexerService } from './stacks-indexer/providers/collection-order-book-bid-indexer.service';
 import { TxBidHelperService } from './common/helpers/tx-bid-helper.service';
+import { CollectionOrderBookAcceptBidIndexerService } from './stacks-indexer/providers/collection-order-book-accept-bid-indexer.service';
 
 /* Select stream adapter based on chain symbol env variable */
 const TxStreamAdapterProvider = {
@@ -114,7 +115,8 @@ const TxStreamAdapterProvider = {
     UnlistBidIndexerService,
     AcceptBidIndexerService,
     CollectionOrderBookBidIndexerService,
-    TxBidHelperService
+    TxBidHelperService,
+    CollectionOrderBookAcceptBidIndexerService
   ],
   exports: [IndexerOrchestratorService],
 })

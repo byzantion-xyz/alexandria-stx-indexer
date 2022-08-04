@@ -46,7 +46,7 @@ export class TransferIndexerService implements IndexerService {
         this.stacksTxHelper.isValidWalletAddress(seller) &&
         this.stacksTxHelper.isValidWalletAddress(buyer)
       ) {
-        const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName.transfer, tx, sc, nftMeta);
+        const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName.transfer, tx, nftMeta);
         const listActionParams: CreateTransferActionTO = {
           ...actionCommonArgs,
           buyer,

@@ -6,6 +6,7 @@ import { CollectionAttribute } from "./CollectionAttribute";
 import { CollectionCreator } from "./CollectionCreator";
 import { CollectionOnDiscordServerChannel } from "./CollectionOnDiscordServerChannel";
 import { NftMeta } from "./NftMeta";
+import { BidState } from "./BidState";
 
 @Index("collection_collection_scrape_id_key", ["collection_scrape_id"], {
   unique: true,
@@ -80,6 +81,9 @@ export class Collection {
 
   @OneToOne(() => CollectionCreator, (collectionCreator) => collectionCreator.collection)
   collection_creator: CollectionCreator;
+
+  @OneToMany(() => BidState, (bidState) => bidState.collection)
+  bid_states: BidState[];
 
   @OneToMany(
     () => CollectionOnDiscordServerChannel,

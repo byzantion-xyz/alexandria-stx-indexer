@@ -54,6 +54,7 @@ export enum ActionName {
   list = "list",
   unlist = "unlist",
   buy = "buy",
+  accept_collection_bid = "accept-collection-bid",
   accept_attribute_bid = "accept-attribute-bid",
   accept_bid = "accept-bid", 
   asking_price = "asking-price",

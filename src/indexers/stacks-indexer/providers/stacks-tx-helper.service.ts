@@ -105,5 +105,9 @@ export class StacksTxHelperService {
   isByzMarketplace(sc: SmartContract): boolean {
     return this.byzMarketplaces.includes(sc.contract_key);
   }
+
+  extractContractKeyFromEvent(e: TransactionEventSmartContractLogWithData): string {
+    return e.data.data['collection-id'].split('::')[0].replace("'", '')
+  }
 }
 

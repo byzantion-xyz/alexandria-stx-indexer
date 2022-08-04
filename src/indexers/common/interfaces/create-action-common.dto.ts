@@ -46,6 +46,9 @@ export interface CreateAcceptBidActionTO extends CreateBidActionTO {
 }
 
 export interface CreateCollectionBidActionTO extends CreateBidActionTO {}
+export interface CreateAcceptCollectionBidActionTO extends CreateBidActionTO {
+  seller: string;
+}
 
 export type CreateActionTO = CreateListActionTO | 
   CreateUnlistActionTO | 
@@ -57,4 +60,5 @@ export type CreateActionTO = CreateListActionTO |
   CreateBidActionTO |
   CreateUnlistBidActionTO |
   CreateAcceptBidActionTO |
-  CreateCollectionBidActionTO ;
+  CreateCollectionBidActionTO |
+  CreateAcceptCollectionBidActionTO ;

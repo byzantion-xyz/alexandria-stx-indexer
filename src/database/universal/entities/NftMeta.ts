@@ -113,5 +113,5 @@ export class NftMeta {
     (bidState) => bidState.meta,
     { cascade: true }
   )
-  bid_states: BidState[];
+  bid_states: BidStateNftMeta[];
 }

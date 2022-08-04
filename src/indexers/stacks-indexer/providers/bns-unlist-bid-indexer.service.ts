@@ -35,7 +35,7 @@ export class BnsUnlistBidIndexerService implements IndexerService {
     const nftMeta = await this.stacksTxHelper.findMetaBns(name, namespace);
 
     if (nftMeta) {
-      const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName.unlist_bid, tx, nftMeta.smart_contract, nftMeta, sc);
+      const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName.unlist_bid, tx, nftMeta, sc);
       const unlistBidActionParams: CreateUnlistBidActionTO = {
         ...actionCommonArgs,
         bid_price: nftMeta.nft_state && nftMeta.nft_state.list_price ? nftMeta.nft_state.list_price : undefined,

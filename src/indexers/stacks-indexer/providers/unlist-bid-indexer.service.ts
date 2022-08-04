@@ -41,7 +41,7 @@ export class UnlistBidIndexerService implements IndexerService {
     const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
 
     if (nftMeta) {
-      const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName.unlist_bid, tx, nftMeta.smart_contract, nftMeta, sc);
+      const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName.unlist_bid, tx, nftMeta, sc);
       const bidActionParams: CreateUnlistBidActionTO = {
         ...actionCommonArgs,
         bid_price: price,

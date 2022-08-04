@@ -179,42 +179,39 @@ export class TxHelperService {
   }
 
   setCommonActionParams(
-    action: ActionName,
-    tx: CommonTx,
-    sc: SmartContract,
-    nftMeta: NftMeta,
+    action: ActionName, 
+    tx: CommonTx, 
+    nftMeta: NftMeta, 
     msc?: SmartContract
   ): CreateActionCommonArgs {
-
-    return {
+    let common =  this.setBasicActionParams(action, tx, msc);
+    let params: CreateActionCommonArgs = {
+      ...common,
       nft_meta_id: nftMeta.id,
-      smart_contract_id: sc.id,
       collection_id: nftMeta.collection_id,
-      block_height: tx.block_height,
-      action: action,
-      tx_index: tx.index,
-      nonce: tx.nonce,
-      block_time: moment(new Date(tx.block_timestamp)).toDate(),
-      tx_id: tx.hash,
-      ...(msc && {
-        market_name: msc.name,
-        marketplace_smart_contract_id: msc.id,
-      }),
-    };
+      smart_contract_id: nftMeta.smart_contract.id
+    }    
+    return params;
   }
 
   // TODO: Unify setCommonActionParams and setCommonCollectionActionParams
   setCommonCollectionActionParams(
     action: ActionName,
     tx: CommonTx,
-    sc: SmartContract,
     collection: Collection,
     msc?: SmartContract
   ): CreateActionCommonArgs {
-
-    return {
-      smart_contract_id: sc.id,
+    let common =  this.setBasicActionParams(action, tx, msc);
+    let params: CreateActionCommonArgs = {
+      ...common,
       collection_id: collection.id,
+      smart_contract_id: collection.smart_contract.id
+    }    
+    return params;
+  }
+
+  setBasicActionParams(action: ActionName, tx: CommonTx, msc?: SmartContract) {
+    return {
       block_height: tx.block_height,
       action: action,
       tx_index: tx.index,
@@ -226,6 +223,7 @@ export class TxHelperService {
         marketplace_smart_contract_id: msc.id,
       }),
     };
+
   }
 
 }

@@ -1,6 +1,7 @@
 import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 import { BidAttribute } from "./BidAttribute";
 import { BidStateNftMeta } from "./BidStateNftMeta";
+import { Collection } from "./Collection";
 import { SmartContract } from "./SmartContract";
 
 @Index("bid_state_pkey", ["id"], { unique: true })
@@ -71,6 +72,16 @@ export class BidState {
   })
   @JoinColumn([{ name: "smart_contract_id", referencedColumnName: "id" }])
   smart_contract: SmartContract;
+
+  @Column("uuid", { nullable: true })
+  collection_id: string;
+
+  @ManyToOne(() => Collection, (collection) => collection.bid_states, {
+    onDelete: "RESTRICT",
+    onUpdate: "CASCADE",
+  })
+  @JoinColumn([{ name: "smart_contract_id", referencedColumnName: "id" }])
+  collection: Collection;
 
   @OneToMany(
     () => BidStateNftMeta,

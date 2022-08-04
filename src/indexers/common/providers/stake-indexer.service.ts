@@ -44,12 +44,17 @@ export class StakeIndexerService implements IndexerService {
       stake_contract = this.txHelper.extractArgumentData(tx.args, scf, "contract_key");
       contract_key = sc.contract_key;
     }
+    const stake_sc = await this.smartContractRepository.findOne({ where: { contract_key: stake_contract }});
+    
+    if (!stake_sc || !stake_sc.type.includes(SmartContractType.staking)) {
+      this.logger.log(`Stake contract: ${stake_contract} not found`);
+      txResult.missing = true;
+      return txResult;
+    }
 
     const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
 
     if (nftMeta) {
-      const stake_sc = await this.smartContractRepository.findOne({ where: { contract_key: stake_contract }});
-
       const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName[scf.name], tx, sc, nftMeta, stake_sc);
       const stakeActionParams: CreateStakeActionTO = {
         ...actionCommonArgs,

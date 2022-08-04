@@ -15,11 +15,13 @@ import { NftMetaAttribute } from "src/database/universal/entities/NftMetaAttribu
 import { CollectionAttribute } from "src/database/universal/entities/CollectionAttribute";
 import { ApiProtectMiddleware } from "src/common/middleware/apiprotect.middleware";
 import { ApiKey } from "src/database/universal/entities/ApiKey";
+import { SmartContractFunction } from "src/database/universal/entities/SmartContractFunction";
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([
       SmartContract,
+      SmartContractFunction,
       Collection,
       CollectionAttribute,
       CollectionScrape,

@@ -1,7 +1,7 @@
 import { ActionName as ActionNameTO } from "../helpers/indexer-enums";
 
 export interface CreateActionCommonArgs {
-  nft_meta_id: string;
+  nft_meta_id?: string;
   collection_id: string;
   smart_contract_id: string;
   market_name: string;
@@ -45,6 +45,8 @@ export interface CreateAcceptBidActionTO extends CreateBidActionTO {
   seller: string;
 }
 
+export interface CreateCollectionBidActionTO extends CreateBidActionTO {}
+
 export type CreateActionTO = CreateListActionTO | 
   CreateUnlistActionTO | 
   CreateBuyActionTO | 
@@ -54,4 +56,5 @@ export type CreateActionTO = CreateListActionTO |
   CreateRelistActionTO |
   CreateBidActionTO |
   CreateUnlistBidActionTO |
-  CreateAcceptBidActionTO;
+  CreateAcceptBidActionTO |
+  CreateCollectionBidActionTO ;

@@ -1,6 +1,5 @@
 import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany } from "typeorm";
 import { BidAttribute } from "./BidAttribute";
-import { BidState } from "./BidStateNftMeta";
 import { Collection } from "./Collection";
 
 @Index("collection_attribute_collection_id_trait_type_value_key", ["collection_id", "trait_type", "value"], {

@@ -1,7 +1,7 @@
 import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
 import { Action } from "./Action";
 import { Collection } from "./Collection";
-import { Bid } from "./BidState";
+import { BidState } from "./BidState";
 import { Commission } from "./Commission";
 import { NftMeta } from "./NftMeta";
 import { NftState } from "./NftState";
@@ -73,8 +73,8 @@ export class SmartContract {
   @OneToMany(() => Collection, (collection) => collection.smart_contract)
   collections: Collection[];
 
-  @OneToMany(() => Bid, (bid) => bid.smart_contract)
-  collection_bids: Bid[];
+  @OneToMany(() => BidState, (bidState) => bidState.smart_contract)
+  bid_states: BidState[];
 
   @OneToMany(() => Commission, (commission) => commission.smart_contract)
   commission: Commission[];

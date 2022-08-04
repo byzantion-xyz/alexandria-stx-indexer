@@ -1,8 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
-import { hexToCV, cvToJSON, BufferCV } from '@stacks/transactions';
+import { TransactionEvent, TransactionEventSmartContractLog } from '@stacks/stacks-blockchain-api-types';
+import { BufferCV } from '@stacks/transactions';
 import { principalCV } from '@stacks/transactions/dist/clarity/types/principalCV';
+import { cvToTrueValue, hexToCV, cvToJSON } from 'micro-stacks/clarity';
 import { NftMeta } from 'src/database/universal/entities/NftMeta';
 import { SmartContract } from 'src/database/universal/entities/SmartContract';
 import { TxHelperService } from 'src/indexers/common/helpers/tx-helper.service';
@@ -13,6 +15,15 @@ interface FunctionArgs {
   name: string;
   type: string;
 }
+
+export type TransactionEventSmartContractLogWithData = TransactionEventSmartContractLog & { 
+  data: {
+    action: string,
+    data: any,
+    order: bigint,
+    type: string
+  }
+};
 
 @Injectable()
 export class StacksTxHelperService {
@@ -48,6 +59,21 @@ export class StacksTxHelperService {
     }
   }
 
+  extractSmartContractLogEvents(events: TransactionEvent[]): TransactionEventSmartContractLogWithData[] {
+    try {
+      let smart_contract_logs: TransactionEventSmartContractLogWithData[] = [];
+      for (let e of events) {
+        if (e.event_type === 'smart_contract_log' && e.contract_log.value.hex) {
+          let data: any = cvToTrueValue(hexToCV(e.contract_log.value.hex));
+          smart_contract_logs.push({ ...e, data });
+        }
+      }
+      return smart_contract_logs;
+    } catch (err) {
+      this.logger.warn('extractSmartContractLogEvents() failed.', err);
+    }
+  }
+
   isValidWalletAddress(address: string) {
     try {
       principalCV(address);
@@ -80,3 +106,4 @@ export class StacksTxHelperService {
     return this.byzMarketplaces.includes(sc.contract_key);
   }
 }
+

@@ -41,8 +41,9 @@ import { BnsAcceptBidIndexerService } from './stacks-indexer/providers/bns-accep
 import { BidIndexerService } from './stacks-indexer/providers/bid-indexer.service';
 import { UnlistBidIndexerService } from './stacks-indexer/providers/unlist-bid-indexer.service';
 import { AcceptBidIndexerService } from './stacks-indexer/providers/accept-bid-indexer.service';
-import { Bid } from "src/database/universal/entities/BidState";
-import { BidState } from "src/database/universal/entities/BidStateNftMeta";
+import { BidState } from "src/database/universal/entities/BidState";
+import { CollectionOrderBookBidIndexerService } from './stacks-indexer/providers/collection-order-book-bid-indexer.service';
+import { TxBidHelperService } from './common/helpers/tx-bid-helper.service';
 
 /* Select stream adapter based on chain symbol env variable */
 const TxStreamAdapterProvider = {
@@ -77,7 +78,6 @@ const TxStreamAdapterProvider = {
       Chain,
       Commission,
       Collection,
-      Bid,
       BidState
     ]),
     TypeOrmModule.forFeature([NearTransaction, Receipt], "NEAR-STREAM"),
@@ -112,7 +112,9 @@ const TxStreamAdapterProvider = {
     BnsAcceptBidIndexerService,
     BidIndexerService,
     UnlistBidIndexerService,
-    AcceptBidIndexerService
+    AcceptBidIndexerService,
+    CollectionOrderBookBidIndexerService,
+    TxBidHelperService
   ],
   exports: [IndexerOrchestratorService],
 })

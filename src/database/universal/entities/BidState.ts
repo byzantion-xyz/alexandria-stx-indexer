@@ -1,13 +1,13 @@
-import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany } from "typeorm";
+import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 import { BidAttribute } from "./BidAttribute";
-import { BidState } from "./BidStateNftMeta";
+import { BidStateNftMeta } from "./BidStateNftMeta";
 import { SmartContract } from "./SmartContract";
 
 @Index("bid_state_pkey", ["id"], { unique: true })
 @Entity("bid_state", { schema: "public" })
-export class Bid {
-  @Column("uuid", { primary: true })
-  id: string;
+export class BidState {
+  @PrimaryGeneratedColumn("uuid")
+  readonly id: string;
 
   @Column("integer")
   nonce: number;
@@ -33,8 +33,8 @@ export class Bid {
   @Column("text")
   tx_id: string;
 
-  @Column("text")
-  tx_index: string;
+  @Column("bigint")
+  tx_index: bigint;
 
   @Column("bigint")
   block_height: bigint;
@@ -45,6 +45,7 @@ export class Bid {
   @Column("text")
   cancel_tx_id: string;
 
+  // TODO: Use BidType;
   @Column("enum", { enum: ["collection", "attribute", "solo"] })
   bid_type: "collection" | "attribute" | "solo";
 
@@ -52,7 +53,7 @@ export class Bid {
   created_at: Date;
 
   @Column("timestamp without time zone")
-  updated_at: Date;
+  updated_at: Date; 
 
   @Column("numeric", {
     nullable: true,
@@ -64,7 +65,7 @@ export class Bid {
   @Column("uuid")
   smart_contract_id: string;
 
-  @ManyToOne(() => SmartContract, (smartContract) => smartContract.collection_bids, {
+  @ManyToOne(() => SmartContract, (smartContract) => smartContract.bid_states, {
     onDelete: "RESTRICT",
     onUpdate: "CASCADE",
   })
@@ -72,15 +73,15 @@ export class Bid {
   smart_contract: SmartContract;
 
   @OneToMany(
-    () => BidState,
-    (bidStateOnNftMeta) => bidStateOnNftMeta.bid,
+    () => BidStateNftMeta,
+    (bidStateOnNftMeta) => bidStateOnNftMeta.bid_state,
     { cascade: true }
   )
-  states: BidState[];
+  nft_metas: BidStateNftMeta[];
 
   @OneToMany(
     () => BidAttribute,
-    (bidAttribute) => bidAttribute.bid,
+    (bidAttribute) => bidAttribute.bid_state,
     { cascade: true }
   )
   attributes: BidAttribute[];

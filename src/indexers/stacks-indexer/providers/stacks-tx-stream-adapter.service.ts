@@ -12,6 +12,7 @@ import { CommonTxResult, TxStreamAdapter } from 'src/indexers/common/interfaces/
 import { Repository } from 'typeorm';
 import { StacksTransaction } from '../dto/stacks-transaction.dto';
 import { StacksTxHelperService } from './stacks-tx-helper.service';
+import { TransactionEvent } from '@stacks/stacks-blockchain-api-types';
 
 @Injectable()
 export class StacksTxStreamAdapterService implements TxStreamAdapter {
@@ -106,6 +107,7 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
         receiver: tx.tx.contract_call.contract_id,
         function_name: tx.tx.contract_call.function_name,
         args: parsed_args,
+        events: tx.tx.events,
         notify,
       };
     } catch (err) {

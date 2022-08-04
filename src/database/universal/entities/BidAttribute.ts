@@ -1,7 +1,6 @@
 import { Entity, Index, JoinColumn, ManyToOne, PrimaryColumn } from "typeorm";
-import { Bid } from "./BidState";
+import { BidState } from "./BidState";
 import { CollectionAttribute } from "./CollectionAttribute";
-import { NftMeta } from "./NftMeta";
 
 @Index("bid_attribute_pkey", ["bid_id", "collection_attribute_id"], { unique: true })
 @Entity("bid_attribute", { schema: "public" })
@@ -12,12 +11,12 @@ export class BidAttribute {
   @PrimaryColumn("uuid")
   collection_attribute_id: string;
 
-  @ManyToOne(() => Bid, (bid) => bid.states, {
+  @ManyToOne(() => BidState, (bidState) => bidState.attributes, {
     onDelete: "RESTRICT",
     onUpdate: "CASCADE",
   })
   @JoinColumn([{ name: "bid_id", referencedColumnName: "id" }])
-  bid: Bid;
+  bid_state: BidState;
 
   @ManyToOne(() => CollectionAttribute, (collectionAttribute) => collectionAttribute.bids, {
     onDelete: "RESTRICT",

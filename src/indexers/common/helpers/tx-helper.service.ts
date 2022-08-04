@@ -8,11 +8,10 @@ import { NftState } from "src/database/universal/entities/NftState";
 import { NftMeta } from "src/database/universal/entities/NftMeta";
 import { SmartContract } from "src/database/universal/entities/SmartContract";
 import { SmartContractFunction } from "src/database/universal/entities/SmartContractFunction";
+import { Collection } from "src/database/universal/entities/Collection";
 import { Repository } from "typeorm";
 import { ActionName } from "./indexer-enums";
 import { Commission } from "src/database/universal/entities/Commission";
-import { BidState } from "src/database/universal/entities/BidStateNftMeta";
-import { Bid } from "src/database/universal/entities/BidState";
 
 export interface NftStateArguments {
   collection_map_id?: string
@@ -30,9 +29,7 @@ export class TxHelperService {
     @InjectRepository(SmartContract)
     private smartContractRepository: Repository<SmartContract>,
     @InjectRepository(Commission)
-    private commissionRepository: Repository<Commission>,
-    @InjectRepository(Bid)
-    private bidRepository: Repository<Bid>
+    private commissionRepository: Repository<Commission>
   ) {}
 
   nanoToMiliSeconds(nanoseconds: bigint) {
@@ -90,23 +87,6 @@ export class TxHelperService {
     if (nft_smart_contract && nft_smart_contract.nft_metas && nft_smart_contract.nft_metas.length === 1) {
       return nft_smart_contract.nft_metas[0];
     }
-  }
-
-  async findMetaBids(nftMeta: NftMeta) {
-    const bids: Bid[] = await this.bidRepository.find({
-      where: {
-        smart_contract_id: nftMeta.smart_contract_id,
-        bid_type: 'solo',
-        states: { meta_id: nftMeta.id } 
-      },
-      relations: { states: true }
-    });
-
-    return bids;
-  }
-
-  async findCollectionBids(collection_id: string) {
-
   }
 
   async findCommissionByKey(sc: SmartContract, contract_key: string, key?: string): Promise<string> {
@@ -222,4 +202,30 @@ export class TxHelperService {
       }),
     };
   }
+
+  // TODO: Unify setCommonActionParams and setCommonCollectionActionParams
+  setCommonCollectionActionParams(
+    action: ActionName,
+    tx: CommonTx,
+    sc: SmartContract,
+    collection: Collection,
+    msc?: SmartContract
+  ): CreateActionCommonArgs {
+
+    return {
+      smart_contract_id: sc.id,
+      collection_id: collection.id,
+      block_height: tx.block_height,
+      action: action,
+      tx_index: tx.index,
+      nonce: tx.nonce,
+      block_time: moment(new Date(tx.block_timestamp)).toDate(),
+      tx_id: tx.hash,
+      ...(msc && {
+        market_name: msc.name,
+        marketplace_smart_contract_id: msc.id,
+      }),
+    };
+  }
+
 }

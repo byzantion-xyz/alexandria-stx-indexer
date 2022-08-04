@@ -5,14 +5,13 @@ import { Collection } from 'src/database/universal/entities/Collection';
 import { SmartContract } from 'src/database/universal/entities/SmartContract';
 import { SmartContractFunction } from 'src/database/universal/entities/SmartContractFunction';
 import { ActionName, BidType, CollectionBidStatus } from 'src/indexers/common/helpers/indexer-enums';
-import { TxBidHelperService } from 'src/indexers/common/helpers/tx-bid-helper.service';
+import { CreateCollectionBidStateArgs, TxBidHelperService } from 'src/indexers/common/helpers/tx-bid-helper.service';
 import { TxHelperService } from 'src/indexers/common/helpers/tx-helper.service';
 import { CommonTx } from 'src/indexers/common/interfaces/common-tx.interface';
 import { CreateActionTO, CreateCollectionBidActionTO } from 'src/indexers/common/interfaces/create-action-common.dto';
 import { IndexerService } from 'src/indexers/common/interfaces/indexer-service.interface';
 import { TxProcessResult } from 'src/indexers/common/interfaces/tx-process-result.interface';
 import { Repository } from 'typeorm';
-import { createBrotliDecompress } from 'zlib';
 import { StacksTxHelperService } from './stacks-tx-helper.service';
 
 @Injectable()
@@ -25,8 +24,6 @@ export class CollectionOrderBookBidIndexerService implements IndexerService {
     private txBidHelper: TxBidHelperService,
     @InjectRepository(Action)
     private actionRepository: Repository<Action>,
-    @InjectRepository(SmartContract)
-    private smartContractRepository: Repository<SmartContract>,
     @InjectRepository(Collection)
     private collectionRepository: Repository<Collection>,
   ) {}
@@ -52,7 +49,7 @@ export class CollectionOrderBookBidIndexerService implements IndexerService {
           CollectionBidStatus.active,
           BidType.collection
         );
-        const collectionBidArgs = {
+        const collectionBidArgs: CreateCollectionBidStateArgs = {
           ... bidCommonArgs,
           bid_buyer: event.data.data.buyer,
           collection_id: collection.id

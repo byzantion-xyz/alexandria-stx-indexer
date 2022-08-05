@@ -46,7 +46,7 @@ export class CollectionOrderBookBidIndexerService implements IndexerService {
 
       if (contract_key && collection && bid_sc) {
         const bidCommonArgs = this.txBidHelper.setCommonBidArgs(
-          tx, bid_sc, event, CollectionBidStatus.active, BidType.collection
+          tx, bid_sc, event, collection, BidType.collection
         );
         const collectionBidArgs: CreateCollectionBidStateArgs = {
           ... bidCommonArgs,

@@ -8,15 +8,15 @@ import { ActionName, BidType, CollectionBidStatus } from 'src/indexers/common/he
 import { CreateCollectionBidStateArgs, TxBidHelperService } from 'src/indexers/common/helpers/tx-bid-helper.service';
 import { TxHelperService } from 'src/indexers/common/helpers/tx-helper.service';
 import { CommonTx } from 'src/indexers/common/interfaces/common-tx.interface';
-import { CreateActionTO, CreateCollectionBidActionTO, CreateCollectionMultiOrderBookBidActionTO } from 'src/indexers/common/interfaces/create-action-common.dto';
+import { CreateActionTO, CreateCollectionBidActionTO, CreateIdBidActionTO, CreateMultiAttributeBidActionTO } from 'src/indexers/common/interfaces/create-action-common.dto';
 import { IndexerService } from 'src/indexers/common/interfaces/indexer-service.interface';
 import { TxProcessResult } from 'src/indexers/common/interfaces/tx-process-result.interface';
 import { Repository } from 'typeorm';
 import { StacksTxHelperService } from './stacks-tx-helper.service';
 
 @Injectable()
-export class CollectionMultiOrderBookBidIndexerService implements IndexerService {
-  private readonly logger = new Logger(CollectionMultiOrderBookBidIndexerService.name);
+export class MultiIdBidIndexerService implements IndexerService {
+  private readonly logger = new Logger(MultiIdBidIndexerService.name);
 
   constructor(
     private stacksTxHelper: StacksTxHelperService,
@@ -34,27 +34,26 @@ export class CollectionMultiOrderBookBidIndexerService implements IndexerService
     this.logger.debug(`process() ${tx.hash}`);
     let txResult: TxProcessResult = { processed: false, missing: false };
 
+    const token_id_list = this.txHelper.extractArgumentData(tx.args, scf, 'token_id_list');    
     const events = this.stacksTxHelper.extractSmartContractLogEvents(tx.events);
 
     for (let event of events) {
-      if (event.data && event.data.data && event.data.data['collection-id']) {
+      if (event && event.data?.data && event.data.data['collection-id']) {
         const contract_key = this.stacksTxHelper.extractContractKeyFromEvent(event);
-        const collection = await this.collectionRepository.findOne({ 
-          where: { smart_contract: { contract_key }}
-        });
+        const collection = await this.collectionRepository.findOne({ where: { smart_contract: { contract_key }}});
         const bid_sc = await this.smartContractRepository.findOne({ where: { contract_key: event.contract_log.contract_id }});
-  
+        const trait = JSON.parse(event.data.trait);
+
         if (contract_key && collection && bid_sc) {
           const bidCommonArgs = this.txBidHelper.setCommonBidArgs(
-            tx, sc, event, collection, BidType.collection
+            tx, bid_sc, event, collection, BidType.attribute
           );
           const collectionBidArgs: CreateCollectionBidStateArgs = {
             ... bidCommonArgs,
-            bid_buyer: event.data.data.buyer,
-            collection_id: collection.id
+            bid_price: event.data.data.offer,
+            bid_buyer: event.data.data.buyer
           };
-  
-          await this.txBidHelper.createBid(collectionBidArgs);
+          await this.txBidHelper.createAttributeBid(collectionBidArgs, token_id_list, trait);
         }
       }
     }
@@ -69,9 +68,9 @@ export class CollectionMultiOrderBookBidIndexerService implements IndexerService
 
     if (collection) {
       const actionCommonArgs = this.txHelper.setCommonCollectionActionParams(
-        ActionName.multi_collection_bid, tx, collection, sc
+        ActionName.multi_attribute_bid, tx, collection, sc
       );
-      const acceptBidActionParams: CreateCollectionMultiOrderBookBidActionTO = {
+      const acceptBidActionParams: CreateMultiAttributeBidActionTO = {
         ...actionCommonArgs,
         bid_price: price,
         buyer: tx.signer,
@@ -79,13 +78,11 @@ export class CollectionMultiOrderBookBidIndexerService implements IndexerService
       };
   
       await this.createAction(acceptBidActionParams);
-      txResult.processed = true;
-    } else {
-      txResult.missing = true;
     }
+    txResult.processed = true;
 
     return txResult;
-}
+  }
 
   async createAction(params: CreateActionTO): Promise<Action> {
     try {
@@ -97,7 +94,5 @@ export class CollectionMultiOrderBookBidIndexerService implements IndexerService
       return saved;
     } catch (err) {}
   }
-
-
 
 }

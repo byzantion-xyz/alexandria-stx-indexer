@@ -51,12 +51,16 @@ export interface CreateAcceptCollectionBidActionTO extends CreateBidActionTO {
 }
 export interface CreateCancelCollectionBidActionTO extends CreateBidActionTO {};
 export interface CreateCollectionMultiOrderBookBidActionTO extends CreateBidActionTO {
-  units: number
+  units: number;
 };
 
 export interface CreateIdBidActionTO extends CreateBidActionTO {
-  units: number
+  units: number;
 };
+
+export interface CreateMultiAttributeBidActionTO extends CreateBidActionTO {
+  units: number;
+}
 
 
 
@@ -71,4 +75,5 @@ export type CreateActionTO = CreateListActionTO |
   CreateUnlistBidActionTO |
   CreateAcceptBidActionTO |
   CreateCollectionBidActionTO |
-  CreateAcceptCollectionBidActionTO ;
+  CreateAcceptCollectionBidActionTO |
+  CreateMultiAttributeBidActionTO ;

@@ -1,13 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { TransactionEventSmartContractLog } from '@stacks/stacks-blockchain-api-types';
-import { type } from 'os';
 import { BidAttribute } from 'src/database/universal/entities/BidAttribute';
 import { BidState } from 'src/database/universal/entities/BidState';
 import { BidStateNftMeta } from 'src/database/universal/entities/BidStateNftMeta';
 import { CollectionAttribute } from 'src/database/universal/entities/CollectionAttribute';
 import { NftMeta } from 'src/database/universal/entities/NftMeta';
 import { SmartContract } from 'src/database/universal/entities/SmartContract';
+import { Collection } from 'src/database/universal/entities/Collection';
 import { TransactionEventSmartContractLogWithData } from 'src/indexers/stacks-indexer/providers/stacks-tx-helper.service';
 import { In, Repository } from 'typeorm';
 import { CommonTx } from '../interfaces/common-tx.interface';
@@ -25,10 +25,10 @@ export interface CreateBidCommonArgs {
   bid_price: bigint;
 
   smart_contract_id: string;
+  collection_id: string;
 }
 
 export interface CreateCollectionBidStateArgs extends CreateBidCommonArgs {
-  collection_id: string;
   bid_buyer: string;
 }
 
@@ -106,11 +106,12 @@ export class TxBidHelperService {
     tx: CommonTx, 
     sc: SmartContract, 
     e: TransactionEventSmartContractLogWithData,
-    status: CollectionBidStatus,
+    collection: Collection,
     type: BidType
   ): CreateBidCommonArgs {
     return {
       smart_contract_id: sc.id,
+      collection_id: collection.id,
       nonce: Number(e.data.order),
       bid_contract_nonce: this.build_nonce(e.contract_log.contract_id, e.data.order),
       bid_price: e.data.data.offer,
@@ -118,7 +119,7 @@ export class TxBidHelperService {
       tx_index: tx.index,
       block_height: tx.block_height,
       bid_type: type,
-      status: status
+      status: CollectionBidStatus.active
     };
   }
 

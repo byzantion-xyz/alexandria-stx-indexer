@@ -53,7 +53,7 @@ export class MultiIdBidIndexerService implements IndexerService {
             bid_price: event.data.data.offer,
             bid_buyer: event.data.data.buyer
           };
-          await this.txBidHelper.createAttributeBid(collectionBidArgs, token_id_list, trait);
+          await this.txBidHelper.createTokenIdsBid(collectionBidArgs, token_id_list, trait);
         }
       }
     }

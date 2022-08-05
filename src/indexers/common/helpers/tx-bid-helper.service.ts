@@ -65,7 +65,7 @@ export class TxBidHelperService {
     } catch (err) {}
   }
 
-  async createAttributeBid(params: CreateAttributeBidStateArgs, token_ids: [string], trait: any[]): Promise<BidState> {
+  async createTokenIdsBid(params: CreateAttributeBidStateArgs, token_ids: [string], trait?: any[]): Promise<BidState> {
     try {
       const bidState = this.bidStateRepo.create(params);
       
@@ -93,6 +93,10 @@ export class TxBidHelperService {
 
       return saved;
     } catch (err) {}
+  }
+
+  async createSoloBid(params: CreateAttributeBidStateArgs, token_id: string) {
+    return await this.createTokenIdsBid(params, [token_id]);
   }
 
   async findBidStateByNonce(nonce: string): Promise<BidState> {

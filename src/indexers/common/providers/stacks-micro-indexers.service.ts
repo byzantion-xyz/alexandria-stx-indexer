@@ -16,12 +16,15 @@ import { IdAcceptBidIndexerService } from "src/indexers/stacks-indexer/providers
 import { IdBidIndexerService } from "src/indexers/stacks-indexer/providers/id-bid-indexer.service";
 import { IdRemoveBidIndexerService } from "src/indexers/stacks-indexer/providers/id-remove-bid-indexer.service";
 import { MultiIdBidIndexerService } from "src/indexers/stacks-indexer/providers/multi-id-bid-indexer.service";
+import { SoloIdBidIndexerService } from "src/indexers/stacks-indexer/providers/solo-id-bid-indexer.service";
 import { TransferIndexerService } from "src/indexers/stacks-indexer/providers/transfer-indexer.service";
 import { UnlistBidIndexerService } from "src/indexers/stacks-indexer/providers/unlist-bid-indexer.service";
 import { IndexerService } from "../interfaces/indexer-service.interface";
 import { BuyIndexerService } from "./buy-indexer.service";
 import { ListIndexerService } from "./list-indexer.service";
 import { UnlistIndexerService } from "./unlist-indexer.service";
+
+// TODO: Try to simplify as a factory
 
 @Injectable()
 export class StacksMicroIndexers {
@@ -48,6 +51,7 @@ export class StacksMicroIndexers {
     private multIdBidIndexer: IndexerService,
     private idAcceptBidIndexer: IndexerService,
     private idRemoveBidIndexer: IndexerService,
+    private soloIdBixIndexer: IndexerService,
     private relistIndexer: IndexerService,
   ) {}
 }
@@ -77,6 +81,7 @@ export const StacksMicroIndexersProvider = {
     multiIdBidIndexer: MultiIdBidIndexerService,
     idAcceptBidIndexer: IdAcceptBidIndexerService,
     idRemoveBidIndexer: IdRemoveBidIndexerService,
+    soloIdBidIndexer: SoloIdBidIndexerService,
     relistIndexer: ListIndexerService, // Alias for relist to list.
   ) => {
     return new StacksMicroIndexers(
@@ -102,6 +107,7 @@ export const StacksMicroIndexersProvider = {
       multiIdBidIndexer,
       idAcceptBidIndexer,
       idRemoveBidIndexer,
+      soloIdBidIndexer,
       relistIndexer
     );
   },

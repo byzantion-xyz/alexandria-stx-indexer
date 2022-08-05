@@ -52,6 +52,7 @@ import { CollectionAttribute } from "src/database/universal/entities/CollectionA
 import { MultiIdBidIndexerService } from './stacks-indexer/providers/multi-id-bid-indexer.service';
 import { IdAcceptBidIndexerService } from './stacks-indexer/providers/id-accept-bid-indexer.service';
 import { IdRemoveBidIndexerService } from './stacks-indexer/providers/id-remove-bid-indexer.service';
+import { SoloIdBidIndexerService } from './stacks-indexer/providers/solo-id-bid-indexer.service';
 
 /* Select stream adapter based on chain symbol env variable */
 const TxStreamAdapterProvider = {
@@ -130,7 +131,8 @@ const TxStreamAdapterProvider = {
     IdBidIndexerService,
     MultiIdBidIndexerService,
     IdAcceptBidIndexerService,
-    IdRemoveBidIndexerService
+    IdRemoveBidIndexerService,
+    SoloIdBidIndexerService
   ],
   exports: [IndexerOrchestratorService],
 })

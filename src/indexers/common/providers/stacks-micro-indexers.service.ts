@@ -8,10 +8,12 @@ import { BnsBidIndexerService } from "src/indexers/stacks-indexer/providers/bns-
 import { BnsRegisterIndexerService } from "src/indexers/stacks-indexer/providers/bns-register-indexer.service";
 import { BnsUnlistBidIndexerService } from "src/indexers/stacks-indexer/providers/bns-unlist-bid-indexer.service";
 import { ChangePriceIndexerService } from "src/indexers/stacks-indexer/providers/change-price-indexer.service";
+import { CollectionBidIndexerService } from "src/indexers/stacks-indexer/providers/collection-bid-indexer.service";
 import { CollectionMultiOrderBookBidIndexerService } from "src/indexers/stacks-indexer/providers/collection-multi-order-book-bid-indexer.service";
 import { CollectionOrderBookAcceptBidIndexerService } from "src/indexers/stacks-indexer/providers/collection-order-book-accept-bid-indexer.service";
 import { CollectionOrderBookBidIndexerService } from "src/indexers/stacks-indexer/providers/collection-order-book-bid-indexer.service";
 import { CollectionRemoveOrderBookBidIndexerService } from "src/indexers/stacks-indexer/providers/collection-remove-order-book-bid-indexer.service";
+import { CollectionUnlistBidIndexerService } from "src/indexers/stacks-indexer/providers/collection-unlist-bid-indexer.service";
 import { IdAcceptBidIndexerService } from "src/indexers/stacks-indexer/providers/id-accept-bid-indexer.service";
 import { IdBidIndexerService } from "src/indexers/stacks-indexer/providers/id-bid-indexer.service";
 import { IdRemoveBidIndexerService } from "src/indexers/stacks-indexer/providers/id-remove-bid-indexer.service";
@@ -45,6 +47,8 @@ export class StacksMicroIndexers {
     private bnsBidIndexer: IndexerService,
     private bnsUnlistBidIndexer: IndexerService,
     private bnsAcceptBidIndexer: IndexerService,
+    private collectionBidIndexer: IndexerService,
+    private collectionUnlistBidIndexer: IndexerService,
     private collectionAcceptOrderBookBidIndexer: IndexerService,
     private collectionOrderBookBidIndexer: IndexerService,
     private collectionRemoveOrderBookBidIndexer: IndexerService,
@@ -77,6 +81,8 @@ export const StacksMicroIndexersProvider = {
     bnsBidIndexer: BnsBidIndexerService,
     bnsUnlistBidIndexer: BnsUnlistBidIndexerService,
     bnsAcceptBidIndexer: BnsAcceptBidIndexerService,
+    collectionBidIndexer: CollectionBidIndexerService,
+    collectionUnlistBidIndexer: CollectionUnlistBidIndexerService,
     collectionOrderBookBidIndexer: CollectionOrderBookBidIndexerService,
     collectionAcceptOrderBookBidIndexer: CollectionOrderBookAcceptBidIndexerService,
     collectionRemoveOrderBookBidIndexer: CollectionRemoveOrderBookBidIndexerService,
@@ -105,6 +111,8 @@ export const StacksMicroIndexersProvider = {
       bnsBidIndexer, 
       bnsUnlistBidIndexer,
       bnsAcceptBidIndexer,
+      collectionBidIndexer, 
+      collectionUnlistBidIndexer,
       collectionAcceptOrderBookBidIndexer,
       collectionOrderBookBidIndexer,
       collectionRemoveOrderBookBidIndexer,
@@ -134,6 +142,8 @@ export const StacksMicroIndexersProvider = {
     BnsUnlistBidIndexerService,
     BnsBidIndexerService,
     BnsAcceptBidIndexerService,
+    CollectionBidIndexerService,
+    CollectionUnlistBidIndexerService,
     CollectionOrderBookBidIndexerService,
     CollectionOrderBookAcceptBidIndexerService,
     CollectionRemoveOrderBookBidIndexerService,

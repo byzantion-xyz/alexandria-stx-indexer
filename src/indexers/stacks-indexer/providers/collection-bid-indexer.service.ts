@@ -59,15 +59,26 @@ export class CollectionBidIndexerService implements IndexerService {
         bid_contract_nonce: null
       } });
 
-      if (bidState && this.txBidHelper.isNewBid(tx, bidState)) {
-        bidState = this.bidStateRepository.merge(bidState, collectionBidArgs);
-        await this.bidStateRepository.save(bidState);
-      } else if (!bidState) {
-        bidState = this.bidStateRepository.create(collectionBidArgs);
+      if (this.txBidHelper.isNewBid(tx, bidState)) {
+        if (bidState) {
+          bidState = this.bidStateRepository.merge(bidState, collectionBidArgs);
+        } else {
+          bidState = this.bidStateRepository.create(collectionBidArgs);
+        }
         await this.bidStateRepository.save(bidState);
       } else {
         this.logger.log('Too late bid');
       }
+
+      const actionCommonArgs = this.txHelper.setCommonCollectionActionParams(
+        ActionName.collection_bid, tx, collection, sc
+      );
+      const actionParams: CreateCollectionBidActionTO = {
+        ...actionCommonArgs,
+        buyer: tx.signer,
+        bid_price: price
+      };
+      await this.createAction(actionParams);
 
       // Create action
       txResult.processed = true;

@@ -56,6 +56,7 @@ import { SoloIdBidIndexerService } from './stacks-indexer/providers/solo-id-bid-
 import { SoloIdRemoveBidIndexerService } from './stacks-indexer/providers/solo-id-remove-bid-indexer.service';
 import { SoloIdAcceptBidIndexerService } from './stacks-indexer/providers/solo-id-accept-bid-indexer.service';
 import { CollectionBidIndexerService } from './stacks-indexer/providers/collection-bid-indexer.service';
+import { CollectionUnlistBidIndexerService } from './stacks-indexer/providers/collection-unlist-bid-indexer.service';
 
 /* Select stream adapter based on chain symbol env variable */
 const TxStreamAdapterProvider = {
@@ -138,7 +139,8 @@ const TxStreamAdapterProvider = {
     SoloIdBidIndexerService,
     SoloIdRemoveBidIndexerService,
     SoloIdAcceptBidIndexerService,
-    CollectionBidIndexerService
+    CollectionBidIndexerService,
+    CollectionUnlistBidIndexerService
   ],
   exports: [IndexerOrchestratorService],
 })

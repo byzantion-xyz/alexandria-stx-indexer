@@ -14,6 +14,7 @@ import { CollectionOrderBookBidIndexerService } from "src/indexers/stacks-indexe
 import { CollectionRemoveOrderBookBidIndexerService } from "src/indexers/stacks-indexer/providers/collection-remove-order-book-bid-indexer.service";
 import { IdAcceptBidIndexerService } from "src/indexers/stacks-indexer/providers/id-accept-bid-indexer.service";
 import { IdBidIndexerService } from "src/indexers/stacks-indexer/providers/id-bid-indexer.service";
+import { IdRemoveBidIndexerService } from "src/indexers/stacks-indexer/providers/id-remove-bid-indexer.service";
 import { MultiIdBidIndexerService } from "src/indexers/stacks-indexer/providers/multi-id-bid-indexer.service";
 import { TransferIndexerService } from "src/indexers/stacks-indexer/providers/transfer-indexer.service";
 import { UnlistBidIndexerService } from "src/indexers/stacks-indexer/providers/unlist-bid-indexer.service";
@@ -46,6 +47,7 @@ export class StacksMicroIndexers {
     private idBidIndexer: IndexerService,
     private multIdBidIndexer: IndexerService,
     private idAcceptBidIndexer: IndexerService,
+    private idRemoveBidIndexer: IndexerService,
     private relistIndexer: IndexerService,
   ) {}
 }
@@ -74,6 +76,7 @@ export const StacksMicroIndexersProvider = {
     idBidIndexer: IdBidIndexerService,
     multiIdBidIndexer: MultiIdBidIndexerService,
     idAcceptBidIndexer: IdAcceptBidIndexerService,
+    idRemoveBidIndexer: IdRemoveBidIndexerService,
     relistIndexer: ListIndexerService, // Alias for relist to list.
   ) => {
     return new StacksMicroIndexers(
@@ -98,6 +101,7 @@ export const StacksMicroIndexersProvider = {
       idBidIndexer,
       multiIdBidIndexer,
       idAcceptBidIndexer,
+      idRemoveBidIndexer,
       relistIndexer
     );
   },
@@ -122,6 +126,7 @@ export const StacksMicroIndexersProvider = {
     CollectionMultiOrderBookBidIndexerService,
     IdBidIndexerService,
     MultiIdBidIndexerService,
-    IdAcceptBidIndexerService
+    IdAcceptBidIndexerService,
+    IdRemoveBidIndexerService
   ]
 };

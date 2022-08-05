@@ -62,6 +62,7 @@ export interface CreateMultiAttributeBidActionTO extends CreateBidActionTO {
   units: number;
 }
 
+export interface CreateCancelBidActionTO extends CreateBidActionTO {};
 
 
 export type CreateActionTO = CreateListActionTO | 
@@ -76,4 +77,5 @@ export type CreateActionTO = CreateListActionTO |
   CreateAcceptBidActionTO |
   CreateCollectionBidActionTO |
   CreateAcceptCollectionBidActionTO |
-  CreateMultiAttributeBidActionTO ;
+  CreateMultiAttributeBidActionTO |
+  CreateCancelBidActionTO;

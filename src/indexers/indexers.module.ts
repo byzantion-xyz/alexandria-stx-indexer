@@ -50,6 +50,7 @@ import { CollectionMultiOrderBookBidIndexerService } from './stacks-indexer/prov
 import { IdBidIndexerService } from './stacks-indexer/providers/id-bid-indexer.service';
 import { CollectionAttribute } from "src/database/universal/entities/CollectionAttribute";
 import { MultiIdBidIndexerService } from './stacks-indexer/providers/multi-id-bid-indexer.service';
+import { IdAcceptBidIndexerService } from './stacks-indexer/providers/id-accept-bid-indexer.service';
 
 /* Select stream adapter based on chain symbol env variable */
 const TxStreamAdapterProvider = {
@@ -126,7 +127,8 @@ const TxStreamAdapterProvider = {
     CollectionRemoveOrderBookBidIndexerService,
     CollectionMultiOrderBookBidIndexerService,
     IdBidIndexerService,
-    MultiIdBidIndexerService
+    MultiIdBidIndexerService,
+    IdAcceptBidIndexerService
   ],
   exports: [IndexerOrchestratorService],
 })

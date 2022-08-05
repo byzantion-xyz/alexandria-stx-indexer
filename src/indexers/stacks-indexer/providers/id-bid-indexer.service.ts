@@ -54,8 +54,7 @@ export class IdBidIndexerService implements IndexerService {
         const collectionBidArgs: CreateCollectionBidStateArgs = {
           ... bidCommonArgs,
           bid_price: event.data.data.offer,
-          bid_buyer: event.data.data.buyer,
-          collection_id: collection.id
+          bid_buyer: event.data.data.buyer
         };
         await this.txBidHelper.createAttributeBid(collectionBidArgs, token_id_list, trait);
         

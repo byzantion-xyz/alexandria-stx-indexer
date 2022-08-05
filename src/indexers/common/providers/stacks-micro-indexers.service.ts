@@ -12,6 +12,7 @@ import { CollectionMultiOrderBookBidIndexerService } from "src/indexers/stacks-i
 import { CollectionOrderBookAcceptBidIndexerService } from "src/indexers/stacks-indexer/providers/collection-order-book-accept-bid-indexer.service";
 import { CollectionOrderBookBidIndexerService } from "src/indexers/stacks-indexer/providers/collection-order-book-bid-indexer.service";
 import { CollectionRemoveOrderBookBidIndexerService } from "src/indexers/stacks-indexer/providers/collection-remove-order-book-bid-indexer.service";
+import { IdAcceptBidIndexerService } from "src/indexers/stacks-indexer/providers/id-accept-bid-indexer.service";
 import { IdBidIndexerService } from "src/indexers/stacks-indexer/providers/id-bid-indexer.service";
 import { MultiIdBidIndexerService } from "src/indexers/stacks-indexer/providers/multi-id-bid-indexer.service";
 import { TransferIndexerService } from "src/indexers/stacks-indexer/providers/transfer-indexer.service";
@@ -44,6 +45,7 @@ export class StacksMicroIndexers {
     private collectionMultiOrderBookBidIndexer: IndexerService,
     private idBidIndexer: IndexerService,
     private multIdBidIndexer: IndexerService,
+    private idAcceptBidIndexer: IndexerService,
     private relistIndexer: IndexerService,
   ) {}
 }
@@ -71,6 +73,7 @@ export const StacksMicroIndexersProvider = {
     collectionMultiOrderBookBidIndexer: CollectionMultiOrderBookBidIndexerService,
     idBidIndexer: IdBidIndexerService,
     multiIdBidIndexer: MultiIdBidIndexerService,
+    idAcceptBidIndexer: IdAcceptBidIndexerService,
     relistIndexer: ListIndexerService, // Alias for relist to list.
   ) => {
     return new StacksMicroIndexers(
@@ -94,6 +97,7 @@ export const StacksMicroIndexersProvider = {
       collectionMultiOrderBookBidIndexer,
       idBidIndexer,
       multiIdBidIndexer,
+      idAcceptBidIndexer,
       relistIndexer
     );
   },
@@ -117,6 +121,7 @@ export const StacksMicroIndexersProvider = {
     CollectionRemoveOrderBookBidIndexerService,
     CollectionMultiOrderBookBidIndexerService,
     IdBidIndexerService,
-    MultiIdBidIndexerService
+    MultiIdBidIndexerService,
+    IdAcceptBidIndexerService
   ]
 };

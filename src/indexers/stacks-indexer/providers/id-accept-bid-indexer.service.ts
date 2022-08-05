@@ -10,15 +10,15 @@ import { ActionName, BidType, CollectionBidStatus } from 'src/indexers/common/he
 import { CreateCollectionBidStateArgs, TxBidHelperService } from 'src/indexers/common/helpers/tx-bid-helper.service';
 import { TxHelperService } from 'src/indexers/common/helpers/tx-helper.service';
 import { CommonTx } from 'src/indexers/common/interfaces/common-tx.interface';
-import { CreateAcceptCollectionBidActionTO, CreateActionTO, CreateCollectionBidActionTO } from 'src/indexers/common/interfaces/create-action-common.dto';
+import { CreateAcceptBidActionTO, CreateAcceptCollectionBidActionTO, CreateActionTO, CreateCollectionBidActionTO } from 'src/indexers/common/interfaces/create-action-common.dto';
 import { IndexerService } from 'src/indexers/common/interfaces/indexer-service.interface';
 import { TxProcessResult } from 'src/indexers/common/interfaces/tx-process-result.interface';
 import { Repository } from 'typeorm';
 import { StacksTxHelperService } from './stacks-tx-helper.service';
 
 @Injectable()
-export class CollectionOrderBookAcceptBidIndexerService implements IndexerService {
-  private readonly logger = new Logger(CollectionOrderBookAcceptBidIndexerService.name);
+export class IdAcceptBidIndexerService implements IndexerService {
+  private readonly logger = new Logger(IdAcceptBidIndexerService.name);
 
   constructor(
     private stacksTxHelper: StacksTxHelperService,
@@ -39,7 +39,7 @@ export class CollectionOrderBookAcceptBidIndexerService implements IndexerServic
     let txResult: TxProcessResult = { processed: false, missing: false };
 
     const events = this.stacksTxHelper.extractSmartContractLogEvents(tx.events);
-    const event = events.find(e => e && e.data?.data && e.data.data['item-id']);
+    const event = events.find(e => e && e.data?.data && e.data.order && e.data.data['item-id']);
     
     if (event) {
       const token_id = event.data.data['item-id'];
@@ -55,9 +55,9 @@ export class CollectionOrderBookAcceptBidIndexerService implements IndexerServic
         await this.txBidHelper.acceptCollectionBid(bidState, tx, nftMeta);
 
         const actionCommonArgs = this.txHelper.setCommonCollectionActionParams(
-          ActionName.accept_collection_bid, tx, bidState.collection, sc
+          ActionName.accept_bid, tx, bidState.collection, sc
         );
-        const acceptBidActionParams: CreateAcceptCollectionBidActionTO = {
+        const acceptBidActionParams: CreateAcceptBidActionTO = {
           ...actionCommonArgs,
           nonce: BigInt(bidState.nonce),
           bid_price: bidState.bid_price,
@@ -88,4 +88,6 @@ export class CollectionOrderBookAcceptBidIndexerService implements IndexerServic
       return saved;
     } catch (err) {}
   }
+
+
 }

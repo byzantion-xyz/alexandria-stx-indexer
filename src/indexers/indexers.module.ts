@@ -45,6 +45,10 @@ import { BidState } from "src/database/universal/entities/BidState";
 import { CollectionOrderBookBidIndexerService } from './stacks-indexer/providers/collection-order-book-bid-indexer.service';
 import { TxBidHelperService } from './common/helpers/tx-bid-helper.service';
 import { CollectionOrderBookAcceptBidIndexerService } from './stacks-indexer/providers/collection-order-book-accept-bid-indexer.service';
+import { CollectionRemoveOrderBookBidIndexerService } from './stacks-indexer/providers/collection-remove-order-book-bid-indexer.service';
+import { CollectionMultiOrderBookBidIndexerService } from './stacks-indexer/providers/collection-multi-order-book-bid-indexer.service';
+import { IdBidIndexerService } from './stacks-indexer/providers/id-bid-indexer.service';
+import { CollectionAttribute } from "src/database/universal/entities/CollectionAttribute";
 
 /* Select stream adapter based on chain symbol env variable */
 const TxStreamAdapterProvider = {
@@ -76,6 +80,7 @@ const TxStreamAdapterProvider = {
       Action,
       SmartContract,
       SmartContractFunction,
+      CollectionAttribute,
       Chain,
       Commission,
       Collection,
@@ -116,7 +121,10 @@ const TxStreamAdapterProvider = {
     AcceptBidIndexerService,
     CollectionOrderBookBidIndexerService,
     TxBidHelperService,
-    CollectionOrderBookAcceptBidIndexerService
+    CollectionOrderBookAcceptBidIndexerService,
+    CollectionRemoveOrderBookBidIndexerService,
+    CollectionMultiOrderBookBidIndexerService,
+    IdBidIndexerService
   ],
   exports: [IndexerOrchestratorService],
 })

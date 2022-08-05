@@ -18,6 +18,7 @@ interface FunctionArgs {
 
 export type TransactionEventSmartContractLogWithData = TransactionEventSmartContractLog & { 
   data: {
+    trait: string,
     action: string,
     data: any,
     order: bigint,

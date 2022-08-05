@@ -8,15 +8,15 @@ import { ActionName, BidType, CollectionBidStatus } from 'src/indexers/common/he
 import { CreateCollectionBidStateArgs, TxBidHelperService } from 'src/indexers/common/helpers/tx-bid-helper.service';
 import { TxHelperService } from 'src/indexers/common/helpers/tx-helper.service';
 import { CommonTx } from 'src/indexers/common/interfaces/common-tx.interface';
-import { CreateActionTO, CreateCollectionBidActionTO } from 'src/indexers/common/interfaces/create-action-common.dto';
+import { CreateActionTO, CreateCollectionBidActionTO, CreateIdBidActionTO } from 'src/indexers/common/interfaces/create-action-common.dto';
 import { IndexerService } from 'src/indexers/common/interfaces/indexer-service.interface';
 import { TxProcessResult } from 'src/indexers/common/interfaces/tx-process-result.interface';
 import { Repository } from 'typeorm';
 import { StacksTxHelperService } from './stacks-tx-helper.service';
 
 @Injectable()
-export class CollectionOrderBookBidIndexerService implements IndexerService {
-  private readonly logger = new Logger(CollectionOrderBookBidIndexerService.name);
+export class IdBidIndexerService implements IndexerService {
+  private readonly logger = new Logger(IdBidIndexerService.name);
 
   constructor(
     private stacksTxHelper: StacksTxHelperService,
@@ -34,41 +34,44 @@ export class CollectionOrderBookBidIndexerService implements IndexerService {
     this.logger.debug(`process() ${tx.hash}`);
     let txResult: TxProcessResult = { processed: false, missing: false };
 
+    const price = this.txHelper.extractArgumentData(tx.args, scf, 'price');
+    const token_id_list = this.txHelper.extractArgumentData(tx.args, scf, 'token_id_list');
+    const units = this.txHelper.extractArgumentData(tx.args, scf, 'units');
+    
     const events = this.stacksTxHelper.extractSmartContractLogEvents(tx.events);
-    const event = events.find(e => e && e.data && e.data['collection-id']);
-  
+    const event = events.find(e => e && e.data && e.data.data && e.data.data['collection-id']);
+
     if (event) {
       const contract_key = this.stacksTxHelper.extractContractKeyFromEvent(event);
-      const collection = await this.collectionRepository.findOne({ 
-        where: { smart_contract: { contract_key }}
-      });
+      const collection = await this.collectionRepository.findOne({ where: { smart_contract: { contract_key }}});
       const bid_sc = await this.smartContractRepository.findOne({ where: { contract_key: event.contract_log.contract_id }});
+      const trait = JSON.parse(event.data.trait);
 
       if (contract_key && collection && bid_sc) {
         const bidCommonArgs = this.txBidHelper.setCommonBidArgs(
-          tx, bid_sc, event, CollectionBidStatus.active, BidType.collection
+          tx, bid_sc, event, CollectionBidStatus.active, BidType.attribute
         );
         const collectionBidArgs: CreateCollectionBidStateArgs = {
           ... bidCommonArgs,
+          bid_price: event.data.data.offer,
           bid_buyer: event.data.data.buyer,
           collection_id: collection.id
         };
-
-        await this.txBidHelper.createBid(collectionBidArgs);
-
+        await this.txBidHelper.createAttributeBid(collectionBidArgs, token_id_list, trait);
+        
         const actionCommonArgs = this.txHelper.setCommonCollectionActionParams(
           ActionName.collection_bid, tx, collection, sc
         );
-        const acceptBidActionParams: CreateCollectionBidActionTO = {
+        const acceptBidActionParams: CreateIdBidActionTO = {
           ...actionCommonArgs,
-          bid_price: event.data.data.offer,
-          buyer: event.data.data.buyer
+          bid_price: price,
+          buyer: tx.signer,
+          units: units
         };
   
         await this.createAction(acceptBidActionParams);
         txResult.processed = true;
       } else {
-        this.logger.log('Collection not found for: ${contract_key}');
         txResult.missing = true;
       }
     } else {
@@ -88,4 +91,5 @@ export class CollectionOrderBookBidIndexerService implements IndexerService {
       return saved;
     } catch (err) {}
   }
+  
 }

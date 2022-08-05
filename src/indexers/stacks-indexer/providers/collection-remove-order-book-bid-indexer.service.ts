@@ -1,22 +1,24 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Action } from 'src/database/universal/entities/Action';
+import { BidState } from 'src/database/universal/entities/BidState';
 import { Collection } from 'src/database/universal/entities/Collection';
+import { NftMeta } from 'src/database/universal/entities/NftMeta';
 import { SmartContract } from 'src/database/universal/entities/SmartContract';
 import { SmartContractFunction } from 'src/database/universal/entities/SmartContractFunction';
 import { ActionName, BidType, CollectionBidStatus } from 'src/indexers/common/helpers/indexer-enums';
 import { CreateCollectionBidStateArgs, TxBidHelperService } from 'src/indexers/common/helpers/tx-bid-helper.service';
 import { TxHelperService } from 'src/indexers/common/helpers/tx-helper.service';
 import { CommonTx } from 'src/indexers/common/interfaces/common-tx.interface';
-import { CreateActionTO, CreateCollectionBidActionTO } from 'src/indexers/common/interfaces/create-action-common.dto';
+import { CreateAcceptCollectionBidActionTO, CreateActionTO, CreateCancelCollectionBidActionTO, CreateCollectionBidActionTO } from 'src/indexers/common/interfaces/create-action-common.dto';
 import { IndexerService } from 'src/indexers/common/interfaces/indexer-service.interface';
 import { TxProcessResult } from 'src/indexers/common/interfaces/tx-process-result.interface';
 import { Repository } from 'typeorm';
 import { StacksTxHelperService } from './stacks-tx-helper.service';
 
 @Injectable()
-export class CollectionOrderBookBidIndexerService implements IndexerService {
-  private readonly logger = new Logger(CollectionOrderBookBidIndexerService.name);
+export class CollectionRemoveOrderBookBidIndexerService implements IndexerService {
+  private readonly logger = new Logger(CollectionRemoveOrderBookBidIndexerService.name);
 
   constructor(
     private stacksTxHelper: StacksTxHelperService,
@@ -26,8 +28,10 @@ export class CollectionOrderBookBidIndexerService implements IndexerService {
     private actionRepository: Repository<Action>,
     @InjectRepository(Collection)
     private collectionRepository: Repository<Collection>,
-    @InjectRepository(SmartContract)
-    private smartContractRepository: Repository<SmartContract>,
+    @InjectRepository(BidState)
+    private bidStateRepository: Repository<BidState>,
+    @InjectRepository(NftMeta)
+    private nftMetaRepository: Repository<NftMeta>,
   ) {}
 
   async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {
@@ -35,40 +39,31 @@ export class CollectionOrderBookBidIndexerService implements IndexerService {
     let txResult: TxProcessResult = { processed: false, missing: false };
 
     const events = this.stacksTxHelper.extractSmartContractLogEvents(tx.events);
-    const event = events.find(e => e && e.data && e.data['collection-id']);
-  
+    const event = events.find(e => e && e.data && e.data.order);
+
     if (event) {
-      const contract_key = this.stacksTxHelper.extractContractKeyFromEvent(event);
-      const collection = await this.collectionRepository.findOne({ 
-        where: { smart_contract: { contract_key }}
-      });
-      const bid_sc = await this.smartContractRepository.findOne({ where: { contract_key: event.contract_log.contract_id }});
+      const nonce = this.txBidHelper.build_nonce(sc.contract_key, event.data.order);
+      const bidState = await this.txBidHelper.findBidStateByNonce(nonce);
 
-      if (contract_key && collection && bid_sc) {
-        const bidCommonArgs = this.txBidHelper.setCommonBidArgs(
-          tx, bid_sc, event, CollectionBidStatus.active, BidType.collection
-        );
-        const collectionBidArgs: CreateCollectionBidStateArgs = {
-          ... bidCommonArgs,
-          bid_buyer: event.data.data.buyer,
-          collection_id: collection.id
-        };
-
-        await this.txBidHelper.createBid(collectionBidArgs);
+      if (bidState && bidState.status === CollectionBidStatus.active) {
+        await this.txBidHelper.cancelCollectionBid(bidState, tx);
 
         const actionCommonArgs = this.txHelper.setCommonCollectionActionParams(
-          ActionName.collection_bid, tx, collection, sc
+          ActionName.cancel_collection_bid, tx, bidState.collection, sc
         );
-        const acceptBidActionParams: CreateCollectionBidActionTO = {
+        const actionParams: CreateCancelCollectionBidActionTO = {
           ...actionCommonArgs,
-          bid_price: event.data.data.offer,
-          buyer: event.data.data.buyer
+          nonce: BigInt(bidState.nonce),
+          bid_price: bidState.bid_price,
+          buyer: bidState.bid_buyer
         };
   
-        await this.createAction(acceptBidActionParams);
+        await this.createAction(actionParams);
+        txResult.processed = true;
+      } else if (bidState) {
+        this.logger.warn(`Unable to cancel collection bid nonce: ${bidState.nonce} status: ${bidState.status}`);
         txResult.processed = true;
       } else {
-        this.logger.log('Collection not found for: ${contract_key}');
         txResult.missing = true;
       }
     } else {
@@ -88,4 +83,5 @@ export class CollectionOrderBookBidIndexerService implements IndexerService {
       return saved;
     } catch (err) {}
   }
+
 }

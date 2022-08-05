@@ -1,12 +1,15 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { TransactionEventSmartContractLog } from '@stacks/stacks-blockchain-api-types';
+import { type } from 'os';
+import { BidAttribute } from 'src/database/universal/entities/BidAttribute';
 import { BidState } from 'src/database/universal/entities/BidState';
 import { BidStateNftMeta } from 'src/database/universal/entities/BidStateNftMeta';
+import { CollectionAttribute } from 'src/database/universal/entities/CollectionAttribute';
 import { NftMeta } from 'src/database/universal/entities/NftMeta';
 import { SmartContract } from 'src/database/universal/entities/SmartContract';
 import { TransactionEventSmartContractLogWithData } from 'src/indexers/stacks-indexer/providers/stacks-tx-helper.service';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { CommonTx } from '../interfaces/common-tx.interface';
 import { BidType, CollectionBidStatus } from './indexer-enums';
 
@@ -29,6 +32,8 @@ export interface CreateCollectionBidStateArgs extends CreateBidCommonArgs {
   bid_buyer: string;
 }
 
+export interface CreateAttributeBidStateArgs extends CreateCollectionBidStateArgs {};
+
 //bid_buyer: string;
 //bid_seller: string;
 //math_tx_id: string;
@@ -43,6 +48,10 @@ export class TxBidHelperService {
   constructor(
     @InjectRepository(BidState)
     private bidStateRepo: Repository<BidState>,
+    @InjectRepository(NftMeta)
+    private nftMetaRepo: Repository<NftMeta>,
+    @InjectRepository(CollectionAttribute)
+    private collectionAttributeRepo: Repository<CollectionAttribute>,
   ) {}
 
   async createBid(params: CreateCollectionBidStateArgs): Promise<BidState> {
@@ -54,6 +63,43 @@ export class TxBidHelperService {
 
       return saved;
     } catch (err) {}
+  }
+
+  async createAttributeBid(params: CreateAttributeBidStateArgs, token_ids: [string], trait: any[]): Promise<BidState> {
+    try {
+      const bidState = this.bidStateRepo.create(params);
+      
+      const nftMetas = await this.nftMetaRepo.find({ where: { token_id: In(token_ids) } });
+      for (let meta of nftMetas) {
+        const bidStateNftMeta = new BidStateNftMeta();
+        bidStateNftMeta.meta_id = meta.id;
+        bidState.nft_metas.push(bidStateNftMeta);
+      }
+  
+      for (let attr of trait) {
+        const bid_attribute = new BidAttribute();
+        const collectionAttribute = await this.collectionAttributeRepo.findOne({ where: { 
+          collection_id: params.collection_id, 
+          trait_type: attr.trait_type,
+          value: attr.value
+        }});
+        bid_attribute.collection_attribute_id = collectionAttribute.id;
+        bidState.attributes.push(bid_attribute);
+      }
+
+      const saved = await this.bidStateRepo.save(bidState);
+
+      this.logger.log(`New attribute Bid: ${params.bid_type}: ${saved.id} `);
+
+      return saved;
+    } catch (err) {}
+  }
+
+  async findBidStateByNonce(nonce: string): Promise<BidState> {
+    return await this.bidStateRepo.findOne({
+      where: { bid_contract_nonce: nonce },
+      relations: { collection: { smart_contract: true }}
+    });
   }
 
   setCommonBidArgs(
@@ -77,14 +123,29 @@ export class TxBidHelperService {
   }
 
   async acceptCollectionBid(bidState: BidState, tx: CommonTx, nftMeta: NftMeta) {
-    bidState.status = CollectionBidStatus.matched;
-    bidState.bid_seller = tx.signer;
-    bidState.match_tx_id = tx.hash;
-    const bidStateNftMeta = new BidStateNftMeta();
-    bidStateNftMeta.meta_id = nftMeta.id;
-    bidState.nft_metas = [bidStateNftMeta];
+    try {
+      bidState.status = CollectionBidStatus.matched;
+      bidState.bid_seller = tx.signer;
+      bidState.match_tx_id = tx.hash;
+      const bidStateNftMeta = new BidStateNftMeta();
+      bidStateNftMeta.meta_id = nftMeta.id;
+      bidState.nft_metas = [bidStateNftMeta];
     
-    await this.bidStateRepo.save(bidState);
+      await this.bidStateRepo.save(bidState);
+      this.logger.log(`Accept bid order: ${bidState.nonce}`);
+    } catch (err) { this.logger.warn('Error saving acceptance', bidState.nonce, err); }
+  }
+
+  async cancelCollectionBid(bidState: BidState, tx: CommonTx) {
+    try {
+      bidState.status = CollectionBidStatus.cancelled;
+      bidState.cancel_tx_id = tx.hash;
+
+      await this.bidStateRepo.save(bidState);
+      this.logger.log(`Cancelled bid order: ${bidState.nonce} `);
+    } catch (err) {
+      this.logger.warn('Error saving cancellation ', bidState.nonce, err);
+    }
   }
 
   build_nonce(contract_key: string, order: bigint): string {

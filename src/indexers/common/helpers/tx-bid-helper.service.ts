@@ -59,10 +59,19 @@ export class TxBidHelperService {
       const action = this.bidStateRepo.create(params);
       const saved = await this.bidStateRepo.save(action);
 
-      this.logger.log(`New Bid: ${params.bid_type}: ${saved.id} `);
+      this.logger.log(`New BidState: ${params.bid_type}: ${saved.id} `);
 
       return saved;
     } catch (err) {}
+  }
+
+  isNewBid(tx: CommonTx, bidState: BidState): boolean {
+    return (
+      !bidState ||
+      !bidState.block_height ||
+      tx.block_height > bidState.block_height ||
+      (tx.block_height === bidState.block_height && tx.index && tx.index > bidState.tx_index)
+    );
   }
 
   async createTokenIdsBid(params: CreateAttributeBidStateArgs, token_ids: [string], trait?: any[]): Promise<BidState> {
@@ -119,6 +128,27 @@ export class TxBidHelperService {
       nonce: Number(e.data.order),
       bid_contract_nonce: this.build_nonce(e.contract_log.contract_id, e.data.order),
       bid_price: e.data.data.offer,
+      tx_id: tx.hash,
+      tx_index: tx.index,
+      block_height: tx.block_height,
+      bid_type: type,
+      status: CollectionBidStatus.active
+    };
+  }
+
+  setCommonV6BidArgs(
+    tx: CommonTx,
+    sc: SmartContract,
+    collection: Collection,
+    type: BidType,
+    price: number
+  ): CreateBidCommonArgs {
+    return {
+      smart_contract_id: sc.id,
+      collection_id: collection.id,
+      nonce: null,
+      bid_contract_nonce: null,
+      bid_price: BigInt(price),
       tx_id: tx.hash,
       tx_index: tx.index,
       block_height: tx.block_height,

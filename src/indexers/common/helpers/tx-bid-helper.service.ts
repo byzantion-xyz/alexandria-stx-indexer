@@ -127,7 +127,7 @@ export class TxBidHelperService {
     };
   }
 
-  async acceptCollectionBid(bidState: BidState, tx: CommonTx, nftMeta: NftMeta) {
+  async acceptBid(bidState: BidState, tx: CommonTx, nftMeta: NftMeta) {
     try {
       bidState.status = CollectionBidStatus.matched;
       bidState.bid_seller = tx.signer;
@@ -141,7 +141,7 @@ export class TxBidHelperService {
     } catch (err) { this.logger.warn('Error saving acceptance', bidState.nonce, err); }
   }
 
-  async cancelCollectionBid(bidState: BidState, tx: CommonTx) {
+  async cancelBid(bidState: BidState, tx: CommonTx) {
     try {
       bidState.status = CollectionBidStatus.cancelled;
       bidState.cancel_tx_id = tx.hash;

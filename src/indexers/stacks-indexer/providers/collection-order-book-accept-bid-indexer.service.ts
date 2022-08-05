@@ -52,7 +52,7 @@ export class CollectionOrderBookAcceptBidIndexerService implements IndexerServic
       const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
 
       if (bidState && bidState.status !== CollectionBidStatus.matched && nftMeta) {
-        await this.txBidHelper.acceptCollectionBid(bidState, tx, nftMeta);
+        await this.txBidHelper.acceptBid(bidState, tx, nftMeta);
 
         const actionCommonArgs = this.txHelper.setCommonCollectionActionParams(
           ActionName.accept_collection_bid, tx, bidState.collection, sc

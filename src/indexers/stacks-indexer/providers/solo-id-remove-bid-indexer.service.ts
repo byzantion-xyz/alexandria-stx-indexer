@@ -46,7 +46,7 @@ export class SoloIdRemoveBidIndexerService implements IndexerService {
       const bidState = await this.txBidHelper.findBidStateByNonce(nonce);
 
       if (bidState && bidState.status === CollectionBidStatus.active) {
-        await this.txBidHelper.cancelCollectionBid(bidState, tx);
+        await this.txBidHelper.cancelBid(bidState, tx);
 
         const actionCommonArgs = this.txHelper.setCommonCollectionActionParams(
           ActionName.unlist_bid, tx, bidState.collection, sc

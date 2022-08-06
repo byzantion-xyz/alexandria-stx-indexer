@@ -1,10 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Action } from 'src/database/universal/entities/Action';
-import { NftState } from 'src/database/universal/entities/NftState';
 import { SmartContract } from 'src/database/universal/entities/SmartContract';
 import { SmartContractFunction } from 'src/database/universal/entities/SmartContractFunction';
-import { ListBotService } from 'src/discord-bot/providers/list-bot.service';
 import { ActionName } from 'src/indexers/common/helpers/indexer-enums';
 import { NftStateArguments, TxHelperService } from 'src/indexers/common/helpers/tx-helper.service';
 import { CommonTx } from 'src/indexers/common/interfaces/common-tx.interface';
@@ -19,11 +17,8 @@ export class ChangePriceIndexerService implements IndexerService {
 
   constructor(
     private txHelper: TxHelperService,
-    private listBotService: ListBotService,
     @InjectRepository(Action)
     private actionRepository: Repository<Action>,
-    @InjectRepository(NftState)
-    private nftStateRepository: Repository<NftState>,
     @InjectRepository(SmartContract)
     private smartContractRepository: Repository<SmartContract>
   ) {}
@@ -43,7 +38,7 @@ export class ChangePriceIndexerService implements IndexerService {
     if (nftMeta) {
       const list_sc = await this.smartContractRepository.findOne({ where: { contract_key: second_market }});
       const commission_id = await this.txHelper.findCommissionByKey(list_sc, contract_key);
-      const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName.relist, tx, nftMeta.smart_contract, nftMeta, sc);
+      const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName.relist, tx, nftMeta, sc);
       const relistActionParams: CreateRelistActionTO = {
         ...actionCommonArgs,
         list_price: price,

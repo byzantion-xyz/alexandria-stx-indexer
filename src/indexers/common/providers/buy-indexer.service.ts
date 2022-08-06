@@ -37,7 +37,7 @@ export class BuyIndexerService implements IndexerService {
     const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
 
     if (nftMeta) {
-      const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName[scf.name], tx, sc, nftMeta, sc);
+      const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName[scf.name], tx, nftMeta, sc);
       const buyActionParams: CreateBuyActionTO = { 
         ...actionCommonArgs,
         list_price: price || (nftMeta.nft_state?.listed ? nftMeta.nft_state.list_price : undefined),
@@ -47,7 +47,7 @@ export class BuyIndexerService implements IndexerService {
       };
 
       if (this.txHelper.isNewNftListOrSale(tx, nftMeta.nft_state)) {
-        await this.txHelper.unlistMeta(nftMeta.id, tx.nonce, tx.block_height);
+        await this.txHelper.unlistMeta(nftMeta.id, tx);
         const newAction = await this.createAction(buyActionParams);
         if (newAction && tx.notify) {
           this.salesBotService.createAndSend(newAction.id);

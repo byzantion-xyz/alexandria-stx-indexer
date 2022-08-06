@@ -31,18 +31,34 @@ import { StakeIndexerService } from "./common/providers/stake-indexer.service";
 import { TxStakingHelperService } from './common/helpers/tx-staking-helper.service';
 import { UnstakeIndexerService } from './common/providers/unstake-indexer.service';
 import { ChangePriceIndexerService } from './stacks-indexer/providers/change-price-indexer.service';
-import { BnsRegisterIndexerService } from './stacks-indexer/providers/bns-register-indexer.service';
+//import { BnsRegisterIndexerService } from './stacks-indexer/providers/bns-register-indexer.service';
 import { NearMicroIndexersProvider } from "./common/providers/near-micro-indexers.service";
 import { StacksMicroIndexersProvider } from "./common/providers/stacks-micro-indexers.service";
 import { Collection } from "src/database/universal/entities/Collection";
-import { BnsBidIndexerService } from './stacks-indexer/providers/bns-bid-indexer.service';
-import { BnsUnlistBidIndexerService } from './stacks-indexer/providers/bns-unlist-bid-indexer.service';
-import { BnsAcceptBidIndexerService } from './stacks-indexer/providers/bns-accept-bid-indexer.service';
+//import { BnsBidIndexerService } from './stacks-indexer/providers/bns-bid-indexer.service';
+//import { BnsUnlistBidIndexerService } from './stacks-indexer/providers/bns-unlist-bid-indexer.service';
+//import { BnsAcceptBidIndexerService } from './stacks-indexer/providers/bns-accept-bid-indexer.service';
 import { BidIndexerService } from './stacks-indexer/providers/bid-indexer.service';
 import { UnlistBidIndexerService } from './stacks-indexer/providers/unlist-bid-indexer.service';
 import { AcceptBidIndexerService } from './stacks-indexer/providers/accept-bid-indexer.service';
-import { Bid } from "src/database/universal/entities/Bid";
 import { BidState } from "src/database/universal/entities/BidState";
+import { CollectionOrderBookBidIndexerService } from './stacks-indexer/providers/collection-order-book-bid-indexer.service';
+import { TxBidHelperService } from './common/helpers/tx-bid-helper.service';
+import { CollectionOrderBookAcceptBidIndexerService } from './stacks-indexer/providers/collection-order-book-accept-bid-indexer.service';
+import { CollectionRemoveOrderBookBidIndexerService } from './stacks-indexer/providers/collection-remove-order-book-bid-indexer.service';
+import { CollectionMultiOrderBookBidIndexerService } from './stacks-indexer/providers/collection-multi-order-book-bid-indexer.service';
+import { IdBidIndexerService } from './stacks-indexer/providers/id-bid-indexer.service';
+import { CollectionAttribute } from "src/database/universal/entities/CollectionAttribute";
+import { MultiIdBidIndexerService } from './stacks-indexer/providers/multi-id-bid-indexer.service';
+import { IdAcceptBidIndexerService } from './stacks-indexer/providers/id-accept-bid-indexer.service';
+import { IdRemoveBidIndexerService } from './stacks-indexer/providers/id-remove-bid-indexer.service';
+import { SoloIdBidIndexerService } from './stacks-indexer/providers/solo-id-bid-indexer.service';
+import { SoloIdRemoveBidIndexerService } from './stacks-indexer/providers/solo-id-remove-bid-indexer.service';
+import { SoloIdAcceptBidIndexerService } from './stacks-indexer/providers/solo-id-accept-bid-indexer.service';
+import { CollectionBidIndexerService } from './stacks-indexer/providers/collection-bid-indexer.service';
+import { CollectionUnlistBidIndexerService } from './stacks-indexer/providers/collection-unlist-bid-indexer.service';
+import { CollectionAcceptBidIndexerService } from './stacks-indexer/providers/collection-accept-bid-indexer.service';
+import { RelistIndexerService } from './stacks-indexer/providers/relist-indexer.service';
 
 /* Select stream adapter based on chain symbol env variable */
 const TxStreamAdapterProvider = {
@@ -74,10 +90,10 @@ const TxStreamAdapterProvider = {
       Action,
       SmartContract,
       SmartContractFunction,
+      CollectionAttribute,
       Chain,
       Commission,
       Collection,
-      Bid,
       BidState
     ]),
     TypeOrmModule.forFeature([NearTransaction, Receipt], "NEAR-STREAM"),
@@ -106,13 +122,29 @@ const TxStreamAdapterProvider = {
     StakeIndexerService,
     UnstakeIndexerService,
     ChangePriceIndexerService,
-    BnsRegisterIndexerService,
-    BnsBidIndexerService,
-    BnsUnlistBidIndexerService,
-    BnsAcceptBidIndexerService,
+    //BnsRegisterIndexerService,
+    //BnsBidIndexerService,
+    //BnsUnlistBidIndexerService,
+    //BnsAcceptBidIndexerService,
     BidIndexerService,
     UnlistBidIndexerService,
-    AcceptBidIndexerService
+    AcceptBidIndexerService,
+    CollectionOrderBookBidIndexerService,
+    TxBidHelperService,
+    CollectionOrderBookAcceptBidIndexerService,
+    CollectionRemoveOrderBookBidIndexerService,
+    CollectionMultiOrderBookBidIndexerService,
+    IdBidIndexerService,
+    MultiIdBidIndexerService,
+    IdAcceptBidIndexerService,
+    IdRemoveBidIndexerService,
+    SoloIdBidIndexerService,
+    SoloIdRemoveBidIndexerService,
+    SoloIdAcceptBidIndexerService,
+    CollectionBidIndexerService,
+    CollectionUnlistBidIndexerService,
+    CollectionAcceptBidIndexerService,
+    RelistIndexerService
   ],
   exports: [IndexerOrchestratorService],
 })

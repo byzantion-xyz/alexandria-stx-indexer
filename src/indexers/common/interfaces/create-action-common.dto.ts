@@ -1,7 +1,7 @@
 import { ActionName as ActionNameTO } from "../helpers/indexer-enums";
 
 export interface CreateActionCommonArgs {
-  nft_meta_id: string;
+  nft_meta_id?: string;
   collection_id: string;
   smart_contract_id: string;
   market_name: string;
@@ -45,6 +45,32 @@ export interface CreateAcceptBidActionTO extends CreateBidActionTO {
   seller: string;
 }
 
+export interface CreateUnlistCollectionBidActionTO extends CreateActionCommonArgs {
+  buyer: string;
+};
+
+export interface CreateCollectionBidActionTO extends CreateBidActionTO {}
+export interface CreateAcceptCollectionBidActionTO extends CreateBidActionTO {
+  seller: string;
+}
+export interface CreateCancelCollectionBidActionTO extends CreateBidActionTO {};
+export interface CreateCancelBidActionTO extends CreateBidActionTO {};
+
+export interface CreateCollectionMultiOrderBookBidActionTO extends CreateBidActionTO {
+  units: number;
+};
+
+export interface CreateIdBidActionTO extends CreateBidActionTO {
+  units: number;
+};
+
+export interface CreateMultiAttributeBidActionTO extends CreateBidActionTO {
+  units: number;
+}
+
+export interface CreateSoloBidActionTO extends CreateBidActionTO {}
+
+
 export type CreateActionTO = CreateListActionTO | 
   CreateUnlistActionTO | 
   CreateBuyActionTO | 
@@ -54,4 +80,10 @@ export type CreateActionTO = CreateListActionTO |
   CreateRelistActionTO |
   CreateBidActionTO |
   CreateUnlistBidActionTO |
-  CreateAcceptBidActionTO;
+  CreateAcceptBidActionTO |
+  CreateCollectionBidActionTO |
+  CreateAcceptCollectionBidActionTO |
+  CreateMultiAttributeBidActionTO |
+  CreateCancelBidActionTO |
+  CreateSoloBidActionTO |
+  CreateUnlistCollectionBidActionTO;

@@ -22,8 +22,6 @@ export class BnsRegisterIndexerService implements IndexerService {
   constructor(
     private txHelper: TxHelperService,
     private stacksTxHelper: StacksTxHelperService,
-    @InjectRepository(Action)
-    private actionRepository: Repository<Action>,
     @InjectRepository(NftMeta)
     private nftMetaRepository: Repository<NftMeta>,
     @InjectRepository(Collection)

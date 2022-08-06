@@ -3,11 +3,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { Action } from "src/database/universal/entities/Action";
 import { SmartContract } from "src/database/universal/entities/SmartContract";
 import { CommonTx } from "src/indexers/common/interfaces/common-tx.interface";
-import {
-  CreateActionCommonArgs,
-  CreateActionTO,
-  CreateTransferActionTO,
-} from "src/indexers/common/interfaces/create-action-common.dto";
+import { CreateTransferActionTO } from "src/indexers/common/interfaces/create-action-common.dto";
 import { IndexerService } from "src/indexers/common/interfaces/indexer-service.interface";
 import { TxProcessResult } from "src/indexers/common/interfaces/tx-process-result.interface";
 import { TxHelperService } from "src/indexers/common/helpers/tx-helper.service";
@@ -25,9 +21,7 @@ export class TransferIndexerService implements IndexerService {
     private txHelper: TxHelperService,
     private stacksTxHelper: StacksTxHelperService,
     @InjectRepository(Action)
-    private actionRepository: Repository<Action>,
-    @InjectRepository(SmartContract)
-    private smartContractRepository: Repository<SmartContract>
+    private actionRepository: Repository<Action>
   ) {}
 
   async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {
@@ -46,7 +40,7 @@ export class TransferIndexerService implements IndexerService {
         this.stacksTxHelper.isValidWalletAddress(seller) &&
         this.stacksTxHelper.isValidWalletAddress(buyer)
       ) {
-        const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName.transfer, tx, sc, nftMeta);
+        const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName.transfer, tx, nftMeta);
         const listActionParams: CreateTransferActionTO = {
           ...actionCommonArgs,
           buyer,

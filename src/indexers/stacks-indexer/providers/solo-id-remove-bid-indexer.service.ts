@@ -3,19 +3,19 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Action } from 'src/database/universal/entities/Action';
 import { SmartContract } from 'src/database/universal/entities/SmartContract';
 import { SmartContractFunction } from 'src/database/universal/entities/SmartContractFunction';
-import { ActionName, BidType } from 'src/indexers/common/helpers/indexer-enums';
+import { ActionName, CollectionBidStatus } from 'src/indexers/common/helpers/indexer-enums';
 import { TxBidHelperService } from 'src/indexers/common/helpers/tx-bid-helper.service';
 import { TxHelperService } from 'src/indexers/common/helpers/tx-helper.service';
 import { CommonTx } from 'src/indexers/common/interfaces/common-tx.interface';
-import { CreateAcceptBidActionTO, CreateActionTO } from 'src/indexers/common/interfaces/create-action-common.dto';
+import { CreateActionTO, CreateCancelBidActionTO } from 'src/indexers/common/interfaces/create-action-common.dto';
 import { IndexerService } from 'src/indexers/common/interfaces/indexer-service.interface';
 import { TxProcessResult } from 'src/indexers/common/interfaces/tx-process-result.interface';
 import { Repository } from 'typeorm';
 import { StacksTxHelperService } from './stacks-tx-helper.service';
 
 @Injectable()
-export class AcceptBidIndexerService implements IndexerService {
-  private readonly logger = new Logger(AcceptBidIndexerService.name);
+export class SoloIdRemoveBidIndexerService implements IndexerService {
+  private readonly logger = new Logger(SoloIdRemoveBidIndexerService.name);
 
   constructor(
     private stacksTxHelper: StacksTxHelperService,
@@ -29,40 +29,35 @@ export class AcceptBidIndexerService implements IndexerService {
     this.logger.debug(`process() ${tx.hash}`);
     let txResult: TxProcessResult = { processed: false, missing: false };
 
-    if (!this.stacksTxHelper.isByzOldMarketplace(sc)) {
-      txResult.missing = true;
-      return txResult;
-    }
+    const events = this.stacksTxHelper.extractSmartContractLogEvents(tx.events);
+    const event = events.find(e => e && e.data?.data && e.data.order);
 
-    const contract_key = this.txHelper.extractArgumentData(tx.args, scf, 'contract_key');
-    const token_id = this.txHelper.extractArgumentData(tx.args, scf, 'token_id'); 
-    const price = this.txHelper.extractArgumentData(tx.args, scf, 'price');
+    if (event) {
+      const nonce = this.txBidHelper.build_nonce(sc.contract_key, event.data.order);
+      const bidState = await this.txBidHelper.findBidStateByNonce(nonce);
 
-    const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
+      if (bidState && bidState.status === CollectionBidStatus.active) {
+        await this.txBidHelper.cancelBid(bidState, tx);
 
-    if (nftMeta) {
-      let bidState = await this.txBidHelper.findActiveBid(nftMeta.collection.id, BidType.solo);
-
-      if (bidState && this.txBidHelper.isNewBid(tx, bidState)) {
-        await this.txBidHelper.acceptBid(bidState, tx, nftMeta);
-
-        await this.txHelper.unlistMeta(nftMeta.id, tx);
+        const actionCommonArgs = this.txHelper.setCommonCollectionActionParams(
+          ActionName.unlist_bid, tx, bidState.collection, sc
+        );
+        const actionParams: CreateCancelBidActionTO = {
+          ...actionCommonArgs,
+          nonce: BigInt(bidState.nonce),
+          bid_price: bidState.bid_price,
+          buyer: bidState.bid_buyer
+        };
+  
+        await this.createAction(actionParams);
+        txResult.processed = true;
+      } else if (bidState) {
+        this.logger.warn(`Unable to cancel collection bid nonce: ${bidState.nonce} status: ${bidState.status}`);
+        txResult.processed = true;
       } else {
-        this.logger.log(`Too Late`);
+        txResult.missing = true;
       }
-
-      const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName.accept_bid, tx, nftMeta, sc);
-      const acceptBidActionParams: CreateAcceptBidActionTO = {
-        ...actionCommonArgs,
-        bid_price: price,
-        buyer: nftMeta.nft_state.bid_buyer,
-        seller: tx.signer
-      };
-      await this.createAction(acceptBidActionParams);
-
-      txResult.processed = true;
     } else {
-      this.logger.log(`NftMeta not found ${contract_key} ${token_id}`);
       txResult.missing = true;
     }
 

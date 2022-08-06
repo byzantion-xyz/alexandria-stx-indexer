@@ -1,8 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Action } from 'src/database/universal/entities/Action';
-import { Collection } from 'src/database/universal/entities/Collection';
-import { NftMeta } from 'src/database/universal/entities/NftMeta';
 import { SmartContract } from 'src/database/universal/entities/SmartContract';
 import { SmartContractFunction } from 'src/database/universal/entities/SmartContractFunction';
 import { ActionName } from 'src/indexers/common/helpers/indexer-enums';
@@ -22,11 +20,7 @@ export class BnsBidIndexerService implements IndexerService {
     private txHelper: TxHelperService,
     private stacksTxHelper: StacksTxHelperService,
     @InjectRepository(Action)
-    private actionRepository: Repository<Action>,
-    @InjectRepository(NftMeta)
-    private nftMetaRepository: Repository<NftMeta>,
-    @InjectRepository(Collection)
-    private collectionRepository: Repository<Collection>
+    private actionRepository: Repository<Action>
   ) {}
 
   async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {

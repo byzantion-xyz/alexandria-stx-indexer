@@ -20,9 +20,7 @@ export class AcceptBidIndexerService implements IndexerService {
     private stacksTxHelper: StacksTxHelperService,
     private txHelper: TxHelperService,
     @InjectRepository(Action)
-    private actionRepository: Repository<Action>,
-    @InjectRepository(SmartContract)
-    private smartContractRepository: Repository<SmartContract>
+    private actionRepository: Repository<Action>
   ) {}
 
   async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {

@@ -4,7 +4,7 @@ import { Action } from 'src/database/universal/entities/Action';
 import { Collection } from 'src/database/universal/entities/Collection';
 import { SmartContract } from 'src/database/universal/entities/SmartContract';
 import { SmartContractFunction } from 'src/database/universal/entities/SmartContractFunction';
-import { ActionName, BidType, CollectionBidStatus } from 'src/indexers/common/helpers/indexer-enums';
+import { ActionName, BidType } from 'src/indexers/common/helpers/indexer-enums';
 import { CreateCollectionBidStateArgs, TxBidHelperService } from 'src/indexers/common/helpers/tx-bid-helper.service';
 import { TxHelperService } from 'src/indexers/common/helpers/tx-helper.service';
 import { CommonTx } from 'src/indexers/common/interfaces/common-tx.interface';

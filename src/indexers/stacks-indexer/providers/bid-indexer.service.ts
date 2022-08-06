@@ -1,5 +1,4 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Action } from 'src/database/universal/entities/Action';
 import { SmartContract } from 'src/database/universal/entities/SmartContract';

@@ -2,15 +2,13 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Action } from 'src/database/universal/entities/Action';
 import { BidState } from 'src/database/universal/entities/BidState';
-import { Collection } from 'src/database/universal/entities/Collection';
-import { NftMeta } from 'src/database/universal/entities/NftMeta';
 import { SmartContract } from 'src/database/universal/entities/SmartContract';
 import { SmartContractFunction } from 'src/database/universal/entities/SmartContractFunction';
-import { ActionName, BidType, CollectionBidStatus } from 'src/indexers/common/helpers/indexer-enums';
-import { CreateCollectionBidStateArgs, TxBidHelperService } from 'src/indexers/common/helpers/tx-bid-helper.service';
+import { ActionName, CollectionBidStatus } from 'src/indexers/common/helpers/indexer-enums';
+import { TxBidHelperService } from 'src/indexers/common/helpers/tx-bid-helper.service';
 import { TxHelperService } from 'src/indexers/common/helpers/tx-helper.service';
 import { CommonTx } from 'src/indexers/common/interfaces/common-tx.interface';
-import { CreateAcceptCollectionBidActionTO, CreateActionTO, CreateCollectionBidActionTO } from 'src/indexers/common/interfaces/create-action-common.dto';
+import { CreateAcceptCollectionBidActionTO, CreateActionTO } from 'src/indexers/common/interfaces/create-action-common.dto';
 import { IndexerService } from 'src/indexers/common/interfaces/indexer-service.interface';
 import { TxProcessResult } from 'src/indexers/common/interfaces/tx-process-result.interface';
 import { Repository } from 'typeorm';
@@ -26,12 +24,8 @@ export class CollectionOrderBookAcceptBidIndexerService implements IndexerServic
     private txBidHelper: TxBidHelperService,
     @InjectRepository(Action)
     private actionRepository: Repository<Action>,
-    @InjectRepository(Collection)
-    private collectionRepository: Repository<Collection>,
     @InjectRepository(BidState)
-    private bidStateRepository: Repository<BidState>,
-    @InjectRepository(NftMeta)
-    private nftMetaRepository: Repository<NftMeta>,
+    private bidStateRepository: Repository<BidState>
   ) {}
 
   async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {

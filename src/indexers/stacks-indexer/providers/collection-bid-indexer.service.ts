@@ -13,14 +13,12 @@ import { CreateActionTO, CreateCollectionBidActionTO } from 'src/indexers/common
 import { IndexerService } from 'src/indexers/common/interfaces/indexer-service.interface';
 import { TxProcessResult } from 'src/indexers/common/interfaces/tx-process-result.interface';
 import { Repository } from 'typeorm';
-import { StacksTxHelperService } from './stacks-tx-helper.service';
 
 @Injectable()
 export class CollectionBidIndexerService implements IndexerService {
   private readonly logger = new Logger(CollectionBidIndexerService.name);
 
   constructor(
-    private stacksTxHelper: StacksTxHelperService,
     private txHelper: TxHelperService,
     private txBidHelper: TxBidHelperService,
     @InjectRepository(Action)

@@ -46,7 +46,7 @@ export class CollectionAcceptBidIndexerService implements IndexerService {
       if (bidState && this.txBidHelper.isNewBid(tx, bidState)) {
         await this.txBidHelper.acceptBid(bidState, tx, nftMeta);
 
-        await this.txHelper.unlistMeta(nftMeta.id, tx.index, tx.block_height);
+        await this.txHelper.unlistMeta(nftMeta.id, tx);
 
         const actionCommonArgs = this.txHelper.setCommonCollectionActionParams(
           ActionName.accept_bid, tx, nftMeta.collection, sc

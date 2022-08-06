@@ -45,7 +45,7 @@ export class CollectionUnlistBidIndexerService implements IndexerService {
     if (collection) {
       let bidState = await this.txBidHelper.findActiveBid(collection.id, BidType.collection);
 
-      if (this.txBidHelper.isNewBid(tx, bidState)) {
+      if (bidState && this.txBidHelper.isNewBid(tx, bidState)) {
         this.txBidHelper.cancelBid(bidState, tx);
       } else {
         this.logger.log(`Too Late Unlist Bid ${tx.hash}`);

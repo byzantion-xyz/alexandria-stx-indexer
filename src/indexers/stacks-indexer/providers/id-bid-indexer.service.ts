@@ -39,7 +39,7 @@ export class IdBidIndexerService implements IndexerService {
     const units = this.txHelper.extractArgumentData(tx.args, scf, 'units');
     
     const events = this.stacksTxHelper.extractSmartContractLogEvents(tx.events);
-    const event = events.find(e => e && e.data && e.data.data && e.data.data['collection-id']);
+    const event = events.find(e => e && e.data?.data && e.data.data['collection-id']);
 
     if (event) {
       const contract_key = this.stacksTxHelper.extractContractKeyFromEvent(event);

@@ -80,7 +80,8 @@ export class TxHelperService {
       relations: {
         nft_metas: {
           nft_state: { list_contract: true, staked_contract: true },
-          smart_contract: true
+          smart_contract: true,
+          collection: true
       }}
     });
 

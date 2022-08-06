@@ -56,21 +56,10 @@ export class CollectionBidIndexerService implements IndexerService {
         bid_buyer: tx.signer
       };
 
-      let bidState = await this.bidStateRepository.findOne({ where: {
-        collection_id: collection.id,
-        bid_type: BidType.collection,
-        status: CollectionBidStatus.active,
-        nonce: null,
-        bid_contract_nonce: null
-      } });
+      let bidState = await this.txBidHelper.findActiveBid(collection.id, BidType.collection);
 
       if (this.txBidHelper.isNewBid(tx, bidState)) {
-        if (bidState) {
-          bidState = this.bidStateRepository.merge(bidState, collectionBidArgs);
-        } else {
-          bidState = this.bidStateRepository.create(collectionBidArgs);
-        }
-        await this.bidStateRepository.save(bidState);
+        await this.txBidHelper.createOrReplaceBid(collectionBidArgs, bidState);
       } else {
         this.logger.log('Too late bid');
       }

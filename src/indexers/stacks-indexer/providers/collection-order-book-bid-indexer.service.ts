@@ -54,7 +54,7 @@ export class CollectionOrderBookBidIndexerService implements IndexerService {
           collection_id: collection.id
         };
 
-        await this.txBidHelper.createBid(collectionBidArgs);
+        await this.txBidHelper.createOrReplaceBid(collectionBidArgs);
 
         const actionCommonArgs = this.txHelper.setCommonCollectionActionParams(
           ActionName.collection_bid, tx, collection, sc

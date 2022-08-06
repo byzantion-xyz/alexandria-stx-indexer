@@ -54,7 +54,7 @@ export class CollectionMultiOrderBookBidIndexerService implements IndexerService
             collection_id: collection.id
           };
   
-          await this.txBidHelper.createBid(collectionBidArgs);
+          await this.txBidHelper.createOrReplaceBid(collectionBidArgs);
         }
       }
     }

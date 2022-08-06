@@ -33,6 +33,9 @@ export interface CreateCollectionBidStateArgs extends CreateBidCommonArgs {
 }
 
 export interface CreateAttributeBidStateArgs extends CreateCollectionBidStateArgs {};
+export interface CreateBidStateArgs extends CreateBidCommonArgs {
+  bid_buyer: string;
+};
 
 //bid_buyer: string;
 //bid_seller: string;
@@ -54,10 +57,14 @@ export class TxBidHelperService {
     private collectionAttributeRepo: Repository<CollectionAttribute>,
   ) {}
 
-  async createBid(params: CreateCollectionBidStateArgs): Promise<BidState> {
+  async createOrReplaceBid(params: CreateCollectionBidStateArgs, bidState?: BidState): Promise<BidState> {
     try {
-      const action = this.bidStateRepo.create(params);
-      const saved = await this.bidStateRepo.save(action);
+      if (bidState) {
+        bidState = this.bidStateRepo.merge(bidState, params);
+      } else {
+        bidState = this.bidStateRepo.create(params);
+      }
+      const saved = await this.bidStateRepo.save(bidState);
 
       this.logger.log(`New BidState: ${params.bid_type}: ${saved.id} `);
 
@@ -87,9 +94,12 @@ export class TxBidHelperService {
   }
 
   async createTokenIdsBid(params: CreateAttributeBidStateArgs, token_ids: [string], trait?: any[]): Promise<BidState> {
+    const bidState = this.bidStateRepo.create(params);
+    return await this.setTokenIdsAndAttributes(bidState, token_ids, trait);
+  }
+  
+  async setTokenIdsAndAttributes(bidState: BidState, token_ids: [string], trait?: any[]): Promise<BidState> {
     try {
-      const bidState = this.bidStateRepo.create(params);
-      
       const nftMetas = await this.nftMetaRepo.find({ where: { token_id: In(token_ids) } });
       for (let meta of nftMetas) {
         const bidStateNftMeta = new BidStateNftMeta();
@@ -100,7 +110,7 @@ export class TxBidHelperService {
       for (let attr of trait) {
         const bid_attribute = new BidAttribute();
         const collectionAttribute = await this.collectionAttributeRepo.findOne({ where: { 
-          collection_id: params.collection_id, 
+          collection_id: bidState.collection_id, 
           trait_type: attr.trait_type,
           value: attr.value
         }});
@@ -110,10 +120,18 @@ export class TxBidHelperService {
 
       const saved = await this.bidStateRepo.save(bidState);
 
-      this.logger.log(`New attribute Bid: ${params.bid_type}: ${saved.id} `);
+      this.logger.log(`New attribute Bid: ${bidState.bid_type}: ${saved.id} `);
 
       return saved;
     } catch (err) {}
+  }
+
+  async upsertTokenIdsBid(params: CreateAttributeBidStateArgs, bidState: BidState, token_ids: [string], trait?: any[]) {
+    if (!bidState) {
+      bidState = this.bidStateRepo.create(params);
+    } else {
+      bidState = this.bidStateRepo.merge(bidState, params);
+    }
   }
 
   async createSoloBid(params: CreateAttributeBidStateArgs, token_id: string) {

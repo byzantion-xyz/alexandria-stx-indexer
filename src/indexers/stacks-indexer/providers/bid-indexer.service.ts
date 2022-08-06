@@ -3,7 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Action } from 'src/database/universal/entities/Action';
 import { SmartContract } from 'src/database/universal/entities/SmartContract';
 import { SmartContractFunction } from 'src/database/universal/entities/SmartContractFunction';
-import { ActionName } from 'src/indexers/common/helpers/indexer-enums';
+import { ActionName, BidType } from 'src/indexers/common/helpers/indexer-enums';
+import { CreateBidCommonArgs, CreateBidStateArgs, TxBidHelperService } from 'src/indexers/common/helpers/tx-bid-helper.service';
 import { TxHelperService } from 'src/indexers/common/helpers/tx-helper.service';
 import { CommonTx } from 'src/indexers/common/interfaces/common-tx.interface';
 import { CreateActionTO, CreateBidActionTO } from 'src/indexers/common/interfaces/create-action-common.dto';
@@ -19,6 +20,7 @@ export class BidIndexerService implements IndexerService {
   constructor(
     private txHelper: TxHelperService,
     private stacksTxHelper: StacksTxHelperService,
+    private txBidHelper: TxBidHelperService,
     @InjectRepository(Action)
     private actionRepository: Repository<Action>
   ) {}
@@ -39,18 +41,27 @@ export class BidIndexerService implements IndexerService {
     const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
 
     if (nftMeta) {
+      const bidCommonArgs: CreateBidCommonArgs = this.txBidHelper.setCommonV6BidArgs(
+        tx, sc, nftMeta.collection, BidType.solo, price
+      );
+      const bidParams: CreateBidStateArgs = {
+        ... bidCommonArgs,
+        bid_buyer: tx.signer
+      };
+      let bidState = await this.txBidHelper.findActiveBid(nftMeta.collection.id, BidType.solo);
+
+      if (this.txBidHelper.isNewBid(tx, bidState)) {
+        await this.txBidHelper.createOrReplaceBid(bidParams, bidState);
+      } else {
+        this.logger.log(`Too Late`);        
+      }
+
       const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName.bid, tx, nftMeta, sc);
       const bidActionParams: CreateBidActionTO = {
         ...actionCommonArgs,
         bid_price: price,
         buyer: tx.signer
       };
-
-      if (this.txHelper.isNewBid(tx, nftMeta.nft_state)) {
-        await this.txHelper.bidMeta(nftMeta.id, tx, sc, price);
-      } else {
-        this.logger.log(`Too Late`);        
-      }
       await this.createAction(bidActionParams);
 
       txResult.processed = true;

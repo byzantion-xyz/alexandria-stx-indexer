@@ -101,13 +101,13 @@ export class TxHelperService {
     }
   }
 
-  async unlistMeta(nftMetaId: string, nonce: bigint, block_height: bigint) {
+  async unlistMeta(nftMetaId: string, index: bigint, block_height: bigint) {
     let update = {
       listed: false,
       list_price: null,
       list_seller: null,
       list_contract_id: null,
-      list_tx_index: nonce,
+      list_tx_index: index,
       list_block_height: block_height,
       function_args: null,
       commission_id: null

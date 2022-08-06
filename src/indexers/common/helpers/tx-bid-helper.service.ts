@@ -74,6 +74,18 @@ export class TxBidHelperService {
     );
   }
 
+  async findActiveBid(collectionId: string, bid_type: BidType) {
+    return await this.bidStateRepo.findOne({
+      where: {
+        collection_id: collectionId,
+        bid_type: bid_type,
+        status: CollectionBidStatus.active,
+        nonce: null,
+        bid_contract_nonce: null,
+      }
+    });
+  }
+
   async createTokenIdsBid(params: CreateAttributeBidStateArgs, token_ids: [string], trait?: any[]): Promise<BidState> {
     try {
       const bidState = this.bidStateRepo.create(params);

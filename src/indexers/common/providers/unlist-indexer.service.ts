@@ -56,7 +56,7 @@ export class UnlistIndexerService implements IndexerService {
       };
 
       if (this.txHelper.isNewNftListOrSale(tx, nftMeta.nft_state)) {
-        await this.txHelper.unlistMeta(nftMeta.id, tx.nonce, tx.block_height);
+        await this.txHelper.unlistMeta(nftMeta.id, tx.index | tx.nonce, tx.block_height);
         await this.createAction(unlistActionParams);
       } else {
         this.logger.log(`Too Late`);

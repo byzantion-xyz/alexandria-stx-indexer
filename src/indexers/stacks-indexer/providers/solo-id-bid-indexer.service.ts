@@ -36,7 +36,7 @@ export class SoloIdBidIndexerService implements IndexerService {
 
     const token_id = this.txHelper.extractArgumentData(tx.args, scf, 'token_id');    
     const events = this.stacksTxHelper.extractSmartContractLogEvents(tx.events);
-    const event = events.find(e => e && e.data && e.data.data && e.data.data['collection-id']);
+    const event = events.find(e => e && e.data?.data && e.data.data['collection-id']);
 
     if (event) {
       const { offer, buyer } = event.data.data;

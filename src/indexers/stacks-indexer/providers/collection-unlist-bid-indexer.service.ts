@@ -41,7 +41,7 @@ export class CollectionUnlistBidIndexerService implements IndexerService {
     }})
 
     if (collection) {
-      let bidState = await this.txBidHelper.findActiveCollectionBid(collection.id);
+      let bidState = await this.txBidHelper.findActiveBid(collection.id, BidType.collection);
 
       if (this.txBidHelper.isNewBid(tx, bidState)) {
         this.txBidHelper.cancelBid(bidState, tx);

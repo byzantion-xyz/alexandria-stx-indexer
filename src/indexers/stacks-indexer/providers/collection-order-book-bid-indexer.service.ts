@@ -35,7 +35,7 @@ export class CollectionOrderBookBidIndexerService implements IndexerService {
     let txResult: TxProcessResult = { processed: false, missing: false };
 
     const events = this.stacksTxHelper.extractSmartContractLogEvents(tx.events);
-    const event = events.find(e => e && e.data && e.data['collection-id']);
+    const event = events.find(e => e && e.data?.data && e.data.data['collection-id']);
   
     if (event) {
       const contract_key = this.stacksTxHelper.extractContractKeyFromEvent(event);
@@ -68,7 +68,7 @@ export class CollectionOrderBookBidIndexerService implements IndexerService {
         await this.createAction(acceptBidActionParams);
         txResult.processed = true;
       } else {
-        this.logger.log('Collection not found for: ${contract_key}');
+        this.logger.log(`Collection not found for: ${contract_key}`);
         txResult.missing = true;
       }
     } else {

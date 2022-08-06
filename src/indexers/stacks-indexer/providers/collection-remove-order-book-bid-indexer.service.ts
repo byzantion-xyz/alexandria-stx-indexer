@@ -30,7 +30,7 @@ export class CollectionRemoveOrderBookBidIndexerService implements IndexerServic
     let txResult: TxProcessResult = { processed: false, missing: false };
 
     const events = this.stacksTxHelper.extractSmartContractLogEvents(tx.events);
-    const event = events.find(e => e && e.data && e.data.order);
+    const event = events.find(e => e && e.data?.data && e.data.order);
 
     if (event) {
       const nonce = this.txBidHelper.build_nonce(sc.contract_key, event.data.order);

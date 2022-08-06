@@ -31,13 +31,13 @@ import { StakeIndexerService } from "./common/providers/stake-indexer.service";
 import { TxStakingHelperService } from './common/helpers/tx-staking-helper.service';
 import { UnstakeIndexerService } from './common/providers/unstake-indexer.service';
 import { ChangePriceIndexerService } from './stacks-indexer/providers/change-price-indexer.service';
-import { BnsRegisterIndexerService } from './stacks-indexer/providers/bns-register-indexer.service';
+//import { BnsRegisterIndexerService } from './stacks-indexer/providers/bns-register-indexer.service';
 import { NearMicroIndexersProvider } from "./common/providers/near-micro-indexers.service";
 import { StacksMicroIndexersProvider } from "./common/providers/stacks-micro-indexers.service";
 import { Collection } from "src/database/universal/entities/Collection";
-import { BnsBidIndexerService } from './stacks-indexer/providers/bns-bid-indexer.service';
-import { BnsUnlistBidIndexerService } from './stacks-indexer/providers/bns-unlist-bid-indexer.service';
-import { BnsAcceptBidIndexerService } from './stacks-indexer/providers/bns-accept-bid-indexer.service';
+//import { BnsBidIndexerService } from './stacks-indexer/providers/bns-bid-indexer.service';
+//import { BnsUnlistBidIndexerService } from './stacks-indexer/providers/bns-unlist-bid-indexer.service';
+//import { BnsAcceptBidIndexerService } from './stacks-indexer/providers/bns-accept-bid-indexer.service';
 import { BidIndexerService } from './stacks-indexer/providers/bid-indexer.service';
 import { UnlistBidIndexerService } from './stacks-indexer/providers/unlist-bid-indexer.service';
 import { AcceptBidIndexerService } from './stacks-indexer/providers/accept-bid-indexer.service';
@@ -121,10 +121,10 @@ const TxStreamAdapterProvider = {
     StakeIndexerService,
     UnstakeIndexerService,
     ChangePriceIndexerService,
-    BnsRegisterIndexerService,
-    BnsBidIndexerService,
-    BnsUnlistBidIndexerService,
-    BnsAcceptBidIndexerService,
+    //BnsRegisterIndexerService,
+    //BnsBidIndexerService,
+    //BnsUnlistBidIndexerService,
+    //BnsAcceptBidIndexerService,
     BidIndexerService,
     UnlistBidIndexerService,
     AcceptBidIndexerService,

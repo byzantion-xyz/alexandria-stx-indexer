@@ -3,10 +3,10 @@ import { StakeIndexerService } from "src/indexers/common/providers/stake-indexer
 import { UnstakeIndexerService } from "src/indexers/common/providers/unstake-indexer.service";
 import { AcceptBidIndexerService } from "src/indexers/stacks-indexer/providers/accept-bid-indexer.service";
 import { BidIndexerService } from "src/indexers/stacks-indexer/providers/bid-indexer.service";
-import { BnsAcceptBidIndexerService } from "src/indexers/stacks-indexer/providers/bns-accept-bid-indexer.service";
-import { BnsBidIndexerService } from "src/indexers/stacks-indexer/providers/bns-bid-indexer.service";
-import { BnsRegisterIndexerService } from "src/indexers/stacks-indexer/providers/bns-register-indexer.service";
-import { BnsUnlistBidIndexerService } from "src/indexers/stacks-indexer/providers/bns-unlist-bid-indexer.service";
+//import { BnsAcceptBidIndexerService } from "src/indexers/stacks-indexer/providers/bns-accept-bid-indexer.service";
+//import { BnsBidIndexerService } from "src/indexers/stacks-indexer/providers/bns-bid-indexer.service";
+//import { BnsRegisterIndexerService } from "src/indexers/stacks-indexer/providers/bns-register-indexer.service";
+//import { BnsUnlistBidIndexerService } from "src/indexers/stacks-indexer/providers/bns-unlist-bid-indexer.service";
 import { ChangePriceIndexerService } from "src/indexers/stacks-indexer/providers/change-price-indexer.service";
 import { CollectionAcceptBidIndexerService } from "src/indexers/stacks-indexer/providers/collection-accept-bid-indexer.service";
 import { CollectionBidIndexerService } from "src/indexers/stacks-indexer/providers/collection-bid-indexer.service";
@@ -44,10 +44,10 @@ export class StacksMicroIndexers {
     private unlistBidIndexer: IndexerService,
     private stakeIndexer: IndexerService,
     private unstakeIndexer: IndexerService,
-    private bnsRegisterIndexer: IndexerService,
-    private bnsBidIndexer: IndexerService,
-    private bnsUnlistBidIndexer: IndexerService,
-    private bnsAcceptBidIndexer: IndexerService,
+    //private bnsRegisterIndexer: IndexerService,
+    //private bnsBidIndexer: IndexerService,
+    //private bnsUnlistBidIndexer: IndexerService,
+    //private bnsAcceptBidIndexer: IndexerService,
     private collectionBidIndexer: IndexerService,
     private collectionUnlistBidIndexer: IndexerService,
     private collectionAcceptBidIndexer: IndexerService,
@@ -79,10 +79,10 @@ export const StacksMicroIndexersProvider = {
     acceptBidIndexer: AcceptBidIndexerService,
     stakeIndexer: StakeIndexerService,
     unstakeIndexer: UnstakeIndexerService,
-    bnsRegisterIndexer: BnsRegisterIndexerService,
-    bnsBidIndexer: BnsBidIndexerService,
-    bnsUnlistBidIndexer: BnsUnlistBidIndexerService,
-    bnsAcceptBidIndexer: BnsAcceptBidIndexerService,
+    //bnsRegisterIndexer: BnsRegisterIndexerService,
+    //bnsBidIndexer: BnsBidIndexerService,
+    //bnsUnlistBidIndexer: BnsUnlistBidIndexerService,
+    //bnsAcceptBidIndexer: BnsAcceptBidIndexerService,
     collectionBidIndexer: CollectionBidIndexerService,
     collectionUnlistBidIndexer: CollectionUnlistBidIndexerService,
     collectionAcceptBidIndexer: CollectionAcceptBidIndexerService,
@@ -110,10 +110,10 @@ export const StacksMicroIndexersProvider = {
       acceptBidIndexer,
       stakeIndexer, 
       unstakeIndexer, 
-      bnsRegisterIndexer, 
-      bnsBidIndexer, 
-      bnsUnlistBidIndexer,
-      bnsAcceptBidIndexer,
+      //bnsRegisterIndexer, 
+      //bnsBidIndexer, 
+      //bnsUnlistBidIndexer,
+      //bnsAcceptBidIndexer,
       collectionBidIndexer, 
       collectionUnlistBidIndexer,
       collectionAcceptBidIndexer,
@@ -142,10 +142,10 @@ export const StacksMicroIndexersProvider = {
     AcceptBidIndexerService,
     StakeIndexerService, 
     UnstakeIndexerService,
-    BnsRegisterIndexerService,
-    BnsUnlistBidIndexerService,
-    BnsBidIndexerService,
-    BnsAcceptBidIndexerService,
+    //BnsRegisterIndexerService,
+    //BnsUnlistBidIndexerService,
+    //BnsBidIndexerService,
+    //BnsAcceptBidIndexerService,
     CollectionBidIndexerService,
     CollectionUnlistBidIndexerService,
     CollectionAcceptBidIndexerService,

@@ -3,7 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Action } from 'src/database/universal/entities/Action';
 import { SmartContract } from 'src/database/universal/entities/SmartContract';
 import { SmartContractFunction } from 'src/database/universal/entities/SmartContractFunction';
-import { ActionName } from 'src/indexers/common/helpers/indexer-enums';
+import { ActionName, BidType } from 'src/indexers/common/helpers/indexer-enums';
+import { TxBidHelperService } from 'src/indexers/common/helpers/tx-bid-helper.service';
 import { TxHelperService } from 'src/indexers/common/helpers/tx-helper.service';
 import { CommonTx } from 'src/indexers/common/interfaces/common-tx.interface';
 import { CreateAcceptBidActionTO, CreateActionTO } from 'src/indexers/common/interfaces/create-action-common.dto';
@@ -19,6 +20,7 @@ export class AcceptBidIndexerService implements IndexerService {
   constructor(
     private stacksTxHelper: StacksTxHelperService,
     private txHelper: TxHelperService,
+    private txBidHelper: TxBidHelperService,
     @InjectRepository(Action)
     private actionRepository: Repository<Action>
   ) {}
@@ -39,6 +41,16 @@ export class AcceptBidIndexerService implements IndexerService {
     const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
 
     if (nftMeta) {
+      let bidState = await this.txBidHelper.findActiveBid(nftMeta.collection.id, BidType.solo);
+
+      if (bidState && this.txBidHelper.isNewBid(tx, bidState)) {
+        await this.txBidHelper.acceptBid(bidState, tx, nftMeta);
+
+        await this.txHelper.unlistMeta(nftMeta.id, tx);
+      } else {
+        this.logger.log(`Too Late`);
+      }
+
       const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName.accept_bid, tx, nftMeta, sc);
       const acceptBidActionParams: CreateAcceptBidActionTO = {
         ...actionCommonArgs,
@@ -46,12 +58,6 @@ export class AcceptBidIndexerService implements IndexerService {
         buyer: nftMeta.nft_state.bid_buyer,
         seller: tx.signer
       };
-
-      if (this.txHelper.isNewBid(tx, nftMeta.nft_state)) {
-        await this.txHelper.unlistBidMeta(nftMeta.id, tx);
-      } else {
-        this.logger.log(`Too Late`);
-      }
       await this.createAction(acceptBidActionParams);
 
       txResult.processed = true;

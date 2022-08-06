@@ -135,7 +135,7 @@ export class IndexerOrchestratorService {
         }
       } else {
         this.logger.log(`smart_contract: ${transaction.receiver} not found`);
-        if (this.chainSymbol === 'Near') {
+        if (this.chainSymbol === 'Near' && process.env.NODE_ENV === 'production') {
           this.missingCollectionService.scrapeMissing({ contract_key: transaction.receiver });
         }
         result.missing = true;

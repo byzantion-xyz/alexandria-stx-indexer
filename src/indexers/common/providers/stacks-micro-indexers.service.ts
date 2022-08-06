@@ -19,6 +19,7 @@ import { IdAcceptBidIndexerService } from "src/indexers/stacks-indexer/providers
 import { IdBidIndexerService } from "src/indexers/stacks-indexer/providers/id-bid-indexer.service";
 import { IdRemoveBidIndexerService } from "src/indexers/stacks-indexer/providers/id-remove-bid-indexer.service";
 import { MultiIdBidIndexerService } from "src/indexers/stacks-indexer/providers/multi-id-bid-indexer.service";
+import { RelistIndexerService } from "src/indexers/stacks-indexer/providers/relist-indexer.service";
 import { SoloIdAcceptBidIndexerService } from "src/indexers/stacks-indexer/providers/solo-id-accept-bid-indexer.service";
 import { SoloIdBidIndexerService } from "src/indexers/stacks-indexer/providers/solo-id-bid-indexer.service";
 import { SoloIdRemoveBidIndexerService } from "src/indexers/stacks-indexer/providers/solo-id-remove-bid-indexer.service";
@@ -37,6 +38,7 @@ export class StacksMicroIndexers {
     private buyIndexer: IndexerService,
     private listIndexer: IndexerService,
     private unlistIndexer: IndexerService,
+    private relistIndexer: IndexerService,
     private transferIndexer: IndexerService,
     private changePriceIndexer: IndexerService,
     private bidIndexer: IndexerService,
@@ -61,8 +63,7 @@ export class StacksMicroIndexers {
     private idRemoveBidIndexer: IndexerService,
     private soloIdBidIndexer: IndexerService,
     private soloIdRemoveBidIndexer: IndexerService,
-    private soloIdAcceptBidIndexer: IndexerService,
-    private relistIndexer: IndexerService,
+    private soloIdAcceptBidIndexer: IndexerService
   ) {}
 }
 
@@ -72,6 +73,7 @@ export const StacksMicroIndexersProvider = {
     buyIndexer: BuyIndexerService,
     listIndexer: ListIndexerService,
     unlistIndexer: UnlistIndexerService,
+    relistIndexer: RelistIndexerService, // Alias for relist to list.
     transferIndexer: TransferIndexerService,
     changePriceIndexer: ChangePriceIndexerService,
     bidIndexer: BidIndexerService,
@@ -96,13 +98,13 @@ export const StacksMicroIndexersProvider = {
     idRemoveBidIndexer: IdRemoveBidIndexerService,
     soloIdBidIndexer: SoloIdBidIndexerService,
     soloIdRemoveBidIndexer: SoloIdRemoveBidIndexerService,
-    soloIdAcceptBidIndexer: SoloIdAcceptBidIndexerService,
-    relistIndexer: ListIndexerService, // Alias for relist to list.
+    soloIdAcceptBidIndexer: SoloIdAcceptBidIndexerService
   ) => {
     return new StacksMicroIndexers(
       buyIndexer, 
       listIndexer,
       unlistIndexer, 
+      relistIndexer,
       transferIndexer,
       changePriceIndexer, 
       bidIndexer,
@@ -127,14 +129,14 @@ export const StacksMicroIndexersProvider = {
       idRemoveBidIndexer,
       soloIdBidIndexer,
       soloIdRemoveBidIndexer,
-      soloIdAcceptBidIndexer,
-      relistIndexer
+      soloIdAcceptBidIndexer
     );
   },
   inject: [
     BuyIndexerService, 
     ListIndexerService,
-    UnlistIndexerService, 
+    UnlistIndexerService,
+    RelistIndexerService, 
     TransferIndexerService, 
     ChangePriceIndexerService,
     BidIndexerService,

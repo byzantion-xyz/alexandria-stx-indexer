@@ -59,7 +59,7 @@ export class ListIndexerService implements IndexerService {
    
     if (nftMeta) {
       const commission_id = await this.txHelper.findCommissionByKey(sc, contract_key, commission_key);
-      const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName[scf.name], tx, sc, nftMeta, market_sc);
+      const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName[scf.name], tx, nftMeta, market_sc);
       const listActionParams: CreateListActionTO = {
         ...actionCommonArgs,
         list_price: price,

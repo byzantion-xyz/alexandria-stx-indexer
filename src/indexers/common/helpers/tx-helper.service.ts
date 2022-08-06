@@ -8,6 +8,7 @@ import { NftState } from "src/database/universal/entities/NftState";
 import { NftMeta } from "src/database/universal/entities/NftMeta";
 import { SmartContract } from "src/database/universal/entities/SmartContract";
 import { SmartContractFunction } from "src/database/universal/entities/SmartContractFunction";
+import { Collection } from "src/database/universal/entities/Collection";
 import { Repository } from "typeorm";
 import { ActionName } from "./indexer-enums";
 import { Commission } from "src/database/universal/entities/Commission";
@@ -76,10 +77,11 @@ export class TxHelperService {
         contract_key,
         nft_metas: { token_id },
       },
-      relations: { 
-        nft_metas: { 
-          nft_state: { list_contract: true, staked_contract: true }, 
-          smart_contract: true 
+      relations: {
+        nft_metas: {
+          nft_state: { list_contract: true, staked_contract: true },
+          smart_contract: true,
+          collection: true
       }}
     });
 
@@ -99,14 +101,14 @@ export class TxHelperService {
     }
   }
 
-  async unlistMeta(nftMetaId: string, nonce: bigint, block_height: bigint) {
+  async unlistMeta(nftMetaId: string, tx: CommonTx) {
     let update = {
       listed: false,
       list_price: null,
       list_seller: null,
       list_contract_id: null,
-      list_tx_index: nonce,
-      list_block_height: block_height,
+      list_tx_index: tx.index || tx.nonce,
+      list_block_height: tx.block_height,
       function_args: null,
       commission_id: null
     };
@@ -128,7 +130,7 @@ export class TxHelperService {
 
     await this.nftStateRepository.upsert({ meta_id: nftMetaId, ...update }, ["meta_id"]);
   }
-
+  
   async bidMeta (nftMetaId: string, tx: CommonTx, sc: SmartContract, price: bigint) {
     let update: any = {
       bid: true,
@@ -178,17 +180,39 @@ export class TxHelperService {
   }
 
   setCommonActionParams(
-    action: ActionName,
-    tx: CommonTx,
-    sc: SmartContract,
-    nftMeta: NftMeta,
+    action: ActionName, 
+    tx: CommonTx, 
+    nftMeta: NftMeta, 
     msc?: SmartContract
   ): CreateActionCommonArgs {
-
-    return {
+    let common =  this.setBasicActionParams(action, tx, msc);
+    let params: CreateActionCommonArgs = {
+      ...common,
       nft_meta_id: nftMeta.id,
-      smart_contract_id: sc.id,
       collection_id: nftMeta.collection_id,
+      smart_contract_id: nftMeta.smart_contract.id
+    }    
+    return params;
+  }
+
+  // TODO: Unify setCommonActionParams and setCommonCollectionActionParams
+  setCommonCollectionActionParams(
+    action: ActionName,
+    tx: CommonTx,
+    collection: Collection,
+    msc?: SmartContract
+  ): CreateActionCommonArgs {
+    let common =  this.setBasicActionParams(action, tx, msc);
+    let params: CreateActionCommonArgs = {
+      ...common,
+      collection_id: collection.id,
+      smart_contract_id: collection.smart_contract.id
+    }    
+    return params;
+  }
+
+  setBasicActionParams(action: ActionName, tx: CommonTx, msc?: SmartContract) {
+    return {
       block_height: tx.block_height,
       action: action,
       tx_index: tx.index,
@@ -200,5 +224,7 @@ export class TxHelperService {
         marketplace_smart_contract_id: msc.id,
       }),
     };
+
   }
+
 }

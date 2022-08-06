@@ -43,7 +43,7 @@ export class UnstakeIndexerService implements IndexerService {
 
     const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);   
     if (nftMeta) {
-      const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName[scf.name], tx, nftMeta.smart_contract, nftMeta, sc);
+      const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName[scf.name], tx, nftMeta, sc);
       const unstakeActionParams: CreateUnstakeActionTO = {
         ...actionCommonArgs,
         seller: tx.signer,

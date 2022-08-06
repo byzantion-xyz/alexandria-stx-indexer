@@ -1,3 +1,5 @@
+import { TransactionEvent as StacksTransactionEvent } from "@stacks/stacks-blockchain-api-types";
+
 export interface CommonTx {
     hash: string;
     
@@ -13,7 +15,7 @@ export interface CommonTx {
     function_name: string;
     indexer_name?: string;
     args: JSON;
-    events?: JSON;
+    events?: StacksTransactionEvent[] ; // TODO: Add near events
     
     notify: boolean;
 }

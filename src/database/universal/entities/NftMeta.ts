@@ -16,6 +16,7 @@ import { SmartContract } from "./SmartContract";
 import { NftMetaAttribute } from "./NftMetaAttribute";
 import { NftMetaBns } from "./NftMetaBns";
 import { NftState } from "./NftState";
+import { BidStateNftMeta } from "./BidStateNftMeta";
 import { BidState } from "./BidState";
 
 @Index("nft_meta_collection_id_token_id_key", ["collection_id", "token_id"], {
@@ -108,9 +109,9 @@ export class NftMeta {
   nft_state: NftState;
 
   @OneToMany(
-    () => BidState,
+    () => BidStateNftMeta,
     (bidState) => bidState.meta,
     { cascade: true }
   )
-  bid_states: BidState[];
+  bid_states: BidStateNftMeta[];
 }

@@ -11,6 +11,7 @@ import { CreateActionTO, CreateCollectionBidActionTO } from 'src/indexers/common
 import { IndexerService } from 'src/indexers/common/interfaces/indexer-service.interface';
 import { TxProcessResult } from 'src/indexers/common/interfaces/tx-process-result.interface';
 import { Repository } from 'typeorm';
+import { StacksTxHelperService } from './stacks-tx-helper.service';
 
 @Injectable()
 export class CollectionAcceptBidIndexerService implements IndexerService {
@@ -18,6 +19,7 @@ export class CollectionAcceptBidIndexerService implements IndexerService {
 
   constructor(
     private txHelper: TxHelperService,
+    private stacksTxHelper: StacksTxHelperService,
     private txBidHelper: TxBidHelperService,
     @InjectRepository(Action)
     private actionRepository: Repository<Action>,
@@ -26,6 +28,11 @@ export class CollectionAcceptBidIndexerService implements IndexerService {
   async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {
     this.logger.debug(`process() ${tx.hash}`);
     let txResult: TxProcessResult = { processed: false, missing: false };
+
+    if (!this.stacksTxHelper.isByzOldMarketplace(sc)) {
+      txResult.missing = true;
+      return txResult;
+    }
 
     const contract_key = this.txHelper.extractArgumentData(tx.args, scf, 'contract_key');
     const token_id = this.txHelper.extractArgumentData(tx.args, scf, 'token_id');

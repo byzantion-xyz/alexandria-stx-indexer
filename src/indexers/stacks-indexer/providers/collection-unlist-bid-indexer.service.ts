@@ -32,6 +32,11 @@ export class CollectionUnlistBidIndexerService implements IndexerService {
     this.logger.debug(`process() ${tx.hash}`);
     let txResult: TxProcessResult = { processed: false, missing: false };
 
+    if (!this.stacksTxHelper.isByzOldMarketplace(sc)) {
+      txResult.missing = true;
+      return txResult;
+    }
+
     const contract_key = this.txHelper.extractArgumentData(tx.args, scf, 'contract_key');
     const collection = await this.collectionRepository.findOne({ where: { 
       smart_contract: { contract_key }

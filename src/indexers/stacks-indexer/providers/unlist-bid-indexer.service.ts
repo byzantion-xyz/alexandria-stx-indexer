@@ -29,7 +29,7 @@ export class UnlistBidIndexerService implements IndexerService {
     this.logger.debug(`process() ${tx.hash}`);
     let txResult: TxProcessResult = { processed: false, missing: false };
 
-    if (!this.stacksTxHelper.isByzMarketplace(sc)) {
+    if (!this.stacksTxHelper.isByzOldMarketplace(sc)) {
       txResult.missing = true;
       return txResult;
     }

@@ -28,7 +28,7 @@ export type TransactionEventSmartContractLogWithData = TransactionEventSmartCont
 
 @Injectable()
 export class StacksTxHelperService {
-  private byzMarketplaces: [string];
+  private byzOldMarketplaces: [string];
   private readonly logger = new Logger(StacksTxHelperService.name);
 
   constructor(
@@ -36,7 +36,7 @@ export class StacksTxHelperService {
     private nftMetaRepository: Repository<NftMeta>,
     private configService: ConfigService,
   ) {
-    this.byzMarketplaces =  this.configService.get("indexer.byzMarketplaceContractKeys");
+    this.byzOldMarketplaces =  this.configService.get("indexer.byzOldMarketplaceContractKeys");
   }
 
   parseHexArguments(args: FunctionArgs[]) {
@@ -103,8 +103,8 @@ export class StacksTxHelperService {
     }
   }
 
-  isByzMarketplace(sc: SmartContract): boolean {
-    return this.byzMarketplaces.includes(sc.contract_key);
+  isByzOldMarketplace(sc: SmartContract): boolean {
+    return this.byzOldMarketplaces.includes(sc.contract_key);
   }
 
   extractContractKeyFromEvent(e: TransactionEventSmartContractLogWithData): string {

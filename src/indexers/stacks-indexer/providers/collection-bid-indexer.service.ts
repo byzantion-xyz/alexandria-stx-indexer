@@ -40,7 +40,7 @@ export class CollectionBidIndexerService implements IndexerService {
       return txResult;
     }
 
-    const contract_key = this.txHelper.extractArgumentData(tx.args, scf, 'contract_key');
+    const contract_key = this.stacksTxHelper.extractAndParseContractKey(tx.args, scf);
     const price = this.txHelper.extractArgumentData(tx.args, scf, 'bid_price');
 
     const collection = await this.collectionRepository.findOne({ where: { 

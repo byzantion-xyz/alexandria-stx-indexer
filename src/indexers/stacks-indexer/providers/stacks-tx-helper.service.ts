@@ -7,6 +7,7 @@ import { principalCV } from '@stacks/transactions/dist/clarity/types/principalCV
 import { cvToTrueValue, hexToCV, cvToJSON } from 'micro-stacks/clarity';
 import { NftMeta } from 'src/database/universal/entities/NftMeta';
 import { SmartContract } from 'src/database/universal/entities/SmartContract';
+import { SmartContractFunction } from 'src/database/universal/entities/SmartContractFunction';
 import { TxHelperService } from 'src/indexers/common/helpers/tx-helper.service';
 import { Repository } from 'typeorm';
 interface FunctionArgs {
@@ -32,6 +33,7 @@ export class StacksTxHelperService {
   private readonly logger = new Logger(StacksTxHelperService.name);
 
   constructor(
+    private txHelper: TxHelperService,
     @InjectRepository(NftMeta)
     private nftMetaRepository: Repository<NftMeta>,
     private configService: ConfigService,
@@ -109,6 +111,14 @@ export class StacksTxHelperService {
 
   extractContractKeyFromEvent(e: TransactionEventSmartContractLogWithData): string {
     return e.data.data['collection-id'].split('::')[0].replace("'", '')
+  }
+
+  extractAndParseContractKey(args: JSON, scf: SmartContractFunction, field: string = 'contract_key'): string {
+    let contract_key = this.txHelper.extractArgumentData(args, scf, field);
+    if (contract_key.includes(':')) contract_key = contract_key.split(':')[0];
+    if (contract_key.includes("'")) contract_key.replace("'", "");
+
+    return contract_key;
   }
 }
 

@@ -5,7 +5,7 @@ import { Collection } from 'src/database/universal/entities/Collection';
 import { SmartContract } from 'src/database/universal/entities/SmartContract';
 import { SmartContractFunction } from 'src/database/universal/entities/SmartContractFunction';
 import { ActionName, BidType } from 'src/indexers/common/helpers/indexer-enums';
-import { CreateCollectionBidStateArgs, TxBidHelperService } from 'src/indexers/common/helpers/tx-bid-helper.service';
+import { CreateBidStateArgs, CreateCollectionBidStateArgs, TxBidHelperService } from 'src/indexers/common/helpers/tx-bid-helper.service';
 import { TxHelperService } from 'src/indexers/common/helpers/tx-helper.service';
 import { CommonTx } from 'src/indexers/common/interfaces/common-tx.interface';
 import { CreateActionTO, CreateSoloBidActionTO } from 'src/indexers/common/interfaces/create-action-common.dto';
@@ -52,7 +52,7 @@ export class SoloIdBidIndexerService implements IndexerService {
         const bidCommonArgs = this.txBidHelper.setCommonBidArgs(
           tx, bid_sc, event, collection, BidType.solo
         );
-        const collectionBidArgs: CreateCollectionBidStateArgs = {
+        const collectionBidArgs: CreateBidStateArgs = {
           ... bidCommonArgs,
           bid_price: offer,
           bid_buyer: buyer

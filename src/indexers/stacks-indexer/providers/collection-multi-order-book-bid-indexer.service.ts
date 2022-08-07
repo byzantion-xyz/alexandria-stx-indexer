@@ -59,7 +59,7 @@ export class CollectionMultiOrderBookBidIndexerService implements IndexerService
       }
     }
 
-    const contract_key = this.txHelper.extractArgumentData(tx.args, scf, 'collection_map_id');
+    const contract_key = this.stacksTxHelper.extractAndParseContractKey(tx.args, scf, 'collection_map_id');
     const price = this.txHelper.extractArgumentData(tx.args, scf, 'bid_price');
     const units = this.txHelper.extractArgumentData(tx.args, scf, 'units');
 

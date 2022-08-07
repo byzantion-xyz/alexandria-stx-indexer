@@ -55,7 +55,7 @@ export class AcceptBidIndexerService implements IndexerService {
       const acceptBidActionParams: CreateAcceptBidActionTO = {
         ...actionCommonArgs,
         bid_price: price,
-        buyer: nftMeta.nft_state.bid_buyer,
+        buyer: bidState.bid_buyer,
         seller: tx.signer
       };
       await this.createAction(acceptBidActionParams);

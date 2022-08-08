@@ -1,4 +1,5 @@
-import { Column, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, Index, JoinColumn, ManyToOne, OneToOne, PrimaryGeneratedColumn } from "typeorm";
+import { MegapontAttribute } from "./MegapontAttribute";
 import { NftMeta } from "./NftMeta";
 
 @Index("nft_meta_attribute_pkey", ["id"], { unique: true })
@@ -44,4 +45,7 @@ export class NftMetaAttribute {
   })
   @JoinColumn([{ name: "meta_id", referencedColumnName: "id" }])
   meta: NftMeta;
+
+  @OneToOne(() => MegapontAttribute, (megapontAttribute) => megapontAttribute.nft_meta_attribute_id)
+  megapont_attribute: MegapontAttribute;
 }

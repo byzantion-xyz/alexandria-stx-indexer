@@ -59,6 +59,7 @@ import { CollectionBidIndexerService } from './stacks-indexer/providers/collecti
 import { CollectionUnlistBidIndexerService } from './stacks-indexer/providers/collection-unlist-bid-indexer.service';
 import { CollectionAcceptBidIndexerService } from './stacks-indexer/providers/collection-accept-bid-indexer.service';
 import { RelistIndexerService } from './stacks-indexer/providers/relist-indexer.service';
+import { RenameIndexerService } from './stacks-indexer/providers/rename-indexer.service';
 
 /* Select stream adapter based on chain symbol env variable */
 const TxStreamAdapterProvider = {
@@ -144,7 +145,8 @@ const TxStreamAdapterProvider = {
     CollectionBidIndexerService,
     CollectionUnlistBidIndexerService,
     CollectionAcceptBidIndexerService,
-    RelistIndexerService
+    RelistIndexerService,
+    RenameIndexerService
   ],
   exports: [IndexerOrchestratorService],
 })

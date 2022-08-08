@@ -20,6 +20,7 @@ import { IdBidIndexerService } from "src/indexers/stacks-indexer/providers/id-bi
 import { IdRemoveBidIndexerService } from "src/indexers/stacks-indexer/providers/id-remove-bid-indexer.service";
 import { MultiIdBidIndexerService } from "src/indexers/stacks-indexer/providers/multi-id-bid-indexer.service";
 import { RelistIndexerService } from "src/indexers/stacks-indexer/providers/relist-indexer.service";
+import { RenameIndexerService } from "src/indexers/stacks-indexer/providers/rename-indexer.service";
 import { SoloIdAcceptBidIndexerService } from "src/indexers/stacks-indexer/providers/solo-id-accept-bid-indexer.service";
 import { SoloIdBidIndexerService } from "src/indexers/stacks-indexer/providers/solo-id-bid-indexer.service";
 import { SoloIdRemoveBidIndexerService } from "src/indexers/stacks-indexer/providers/solo-id-remove-bid-indexer.service";
@@ -63,7 +64,8 @@ export class StacksMicroIndexers {
     private idRemoveBidIndexer: IndexerService,
     private soloIdBidIndexer: IndexerService,
     private soloIdRemoveBidIndexer: IndexerService,
-    private soloIdAcceptBidIndexer: IndexerService
+    private soloIdAcceptBidIndexer: IndexerService,
+    private renameIndexer: IndexerService
   ) {}
 }
 
@@ -98,7 +100,8 @@ export const StacksMicroIndexersProvider = {
     idRemoveBidIndexer: IdRemoveBidIndexerService,
     soloIdBidIndexer: SoloIdBidIndexerService,
     soloIdRemoveBidIndexer: SoloIdRemoveBidIndexerService,
-    soloIdAcceptBidIndexer: SoloIdAcceptBidIndexerService
+    soloIdAcceptBidIndexer: SoloIdAcceptBidIndexerService,
+    renameIndexer: RenameIndexerService
   ) => {
     return new StacksMicroIndexers(
       buyIndexer, 
@@ -129,7 +132,8 @@ export const StacksMicroIndexersProvider = {
       idRemoveBidIndexer,
       soloIdBidIndexer,
       soloIdRemoveBidIndexer,
-      soloIdAcceptBidIndexer
+      soloIdAcceptBidIndexer,
+      renameIndexer
     );
   },
   inject: [
@@ -161,6 +165,7 @@ export const StacksMicroIndexersProvider = {
     IdRemoveBidIndexerService,
     SoloIdBidIndexerService,
     SoloIdRemoveBidIndexerService,
-    SoloIdAcceptBidIndexerService
+    SoloIdAcceptBidIndexerService,
+    RenameIndexerService
   ]
 };

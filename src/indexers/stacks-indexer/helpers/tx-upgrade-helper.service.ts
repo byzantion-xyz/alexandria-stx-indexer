@@ -43,4 +43,26 @@ export class TxUpgradeHelperService {
     }
   }
 
+  async findMetasByAssetNameWithAttr(asset_name: string, token_ids: string[]) {
+    const nft_metas = await this.nftMetaRepository.find({
+      where: {
+        asset_name: asset_name,
+        token_id: In(token_ids)
+      },
+      relations: { attributes: true, nft_state: true }
+    });
+
+    if (nft_metas.length === token_ids.length) {
+      return nft_metas;
+    }
+  }
+
+  async findMetaByAssetNameWithAttr(asset_name: string, token_id: string) {
+    const nft_metas = await this.findMetasByAssetNameWithAttr(asset_name, [token_id]);
+
+    if (nft_metas && nft_metas.length === 1) {
+      return nft_metas[0];
+    }
+  }
+
 }

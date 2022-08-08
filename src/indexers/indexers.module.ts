@@ -63,7 +63,7 @@ import { RenameIndexerService } from './stacks-indexer/providers/rename-indexer.
 import { UpgradeIndexerService } from './stacks-indexer/providers/upgrade-indexer.service';
 import { TxUpgradeHelperService } from './stacks-indexer/helpers/tx-upgrade-helper.service';
 import { NftMetaAttribute } from "src/database/universal/entities/NftMetaAttribute";
-import { MegaUpgradeIndexerService } from './stacks-indexer/providers/mega-upgrade-indexer.service';
+import { UpgradeMegaIndexerService } from './stacks-indexer/providers/upgrade-mega-indexer.service';
 
 /* Select stream adapter based on chain symbol env variable */
 const TxStreamAdapterProvider = {
@@ -154,7 +154,7 @@ const TxStreamAdapterProvider = {
     RenameIndexerService,
     UpgradeIndexerService,
     TxUpgradeHelperService,
-    MegaUpgradeIndexerService
+    UpgradeMegaIndexerService
   ],
   exports: [IndexerOrchestratorService],
 })

@@ -19,8 +19,8 @@ import { NftMeta } from 'src/database/universal/entities/NftMeta';
 const attribute_names = ['mouth', 'jewellery', 'head', 'eyes', 'ears', 'body', 'background'];
 
 @Injectable()
-export class MegaUpgradeIndexerService implements IndexerService {
-  private readonly logger = new Logger(MegaUpgradeIndexerService.name);
+export class UpgradeMegaIndexerService implements IndexerService {
+  private readonly logger = new Logger(UpgradeMegaIndexerService.name);
 
   constructor(
     private txHelper: TxHelperService,

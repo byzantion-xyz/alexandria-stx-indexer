@@ -60,6 +60,9 @@ import { CollectionUnlistBidIndexerService } from './stacks-indexer/providers/co
 import { CollectionAcceptBidIndexerService } from './stacks-indexer/providers/collection-accept-bid-indexer.service';
 import { RelistIndexerService } from './stacks-indexer/providers/relist-indexer.service';
 import { RenameIndexerService } from './stacks-indexer/providers/rename-indexer.service';
+import { UpgradeIndexerService } from './stacks-indexer/providers/upgrade-indexer.service';
+import { TxUpgradeHelperService } from './stacks-indexer/helpers/tx-upgrade-helper.service';
+import { NftMetaAttribute } from "src/database/universal/entities/NftMetaAttribute";
 
 /* Select stream adapter based on chain symbol env variable */
 const TxStreamAdapterProvider = {
@@ -95,7 +98,8 @@ const TxStreamAdapterProvider = {
       Chain,
       Commission,
       Collection,
-      BidState
+      BidState,
+      NftMetaAttribute
     ]),
     TypeOrmModule.forFeature([NearTransaction, Receipt], "NEAR-STREAM"),
     TypeOrmModule.forFeature([StacksTransaction, Block], "STACKS-STREAM"),
@@ -146,7 +150,9 @@ const TxStreamAdapterProvider = {
     CollectionUnlistBidIndexerService,
     CollectionAcceptBidIndexerService,
     RelistIndexerService,
-    RenameIndexerService
+    RenameIndexerService,
+    UpgradeIndexerService,
+    TxUpgradeHelperService
   ],
   exports: [IndexerOrchestratorService],
 })

@@ -179,6 +179,10 @@ export class TxHelperService {
     await this.nftStateRepository.upsert({ meta_id: nftMetaId, ...update }, ["meta_id"]);
   }
 
+  async burnMeta(nftMetaId: string) {
+    await this.nftStateRepository.upsert({ meta_id: nftMetaId, burned: true }, ["meta_id"]);
+  }
+
   setCommonActionParams(
     action: ActionName, 
     tx: CommonTx, 

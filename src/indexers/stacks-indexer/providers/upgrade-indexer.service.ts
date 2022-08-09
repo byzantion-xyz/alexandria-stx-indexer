@@ -39,13 +39,8 @@ export class UpgradeIndexerService implements IndexerService {
     const nftMeta = await this.txUpgradeHelper.findMetaByContractKeyWithAttr(contract_key, token_id);
     
     if (nftMeta) {
-      const newBot = await this.txUpgradeHelper.findMetasByContractKeyWithAttr(ref_contract_key, token_id_list); 
-     
-      if (newBot && newBot.length === attribute_names.length) {
-        await this.txUpgradeHelper.upgradeMegapont(nftMeta, newBot, token_id_list, name);
-      } else {
-        this.logger.log('New bot not found for token_ids', token_id_list);
-      }
+      const newBot = await this.txUpgradeHelper.findMetasByContractKeyWithAttr(ref_contract_key, token_id_list);      
+      await this.txUpgradeHelper.upgradeMegapont(nftMeta, newBot, token_id_list, name);
 
       txResult.processed = true;
     } else {

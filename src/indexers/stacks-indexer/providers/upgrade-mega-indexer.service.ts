@@ -49,13 +49,10 @@ export class UpgradeMegaIndexerService implements IndexerService {
     const nftMeta = await this.txUpgradeHelper.findMetaByAssetNameWithAttr(robot_asset_name, token_id);
 
     if (nftMeta) {
-      const newBot = await this.txUpgradeHelper.findMetasByAssetNameWithAttr(component_asset_name, token_id_list);
-
-      if (newBot && newBot.length === attribute_names.length) {
-        await this.txUpgradeHelper.upgradeMegapont(nftMeta, newBot, token_id_list, name);
-      } else {
-        this.logger.log('New bot not found for token_ids', token_id_list);
-      }
+      const newBot = await this.txUpgradeHelper.findMetasByAssetNameWithAttr(
+        component_asset_name, token_id_list
+      );
+      await this.txUpgradeHelper.upgradeMegapont(nftMeta, newBot, token_id_list, name);
 
       txResult.processed = true;
     } else {

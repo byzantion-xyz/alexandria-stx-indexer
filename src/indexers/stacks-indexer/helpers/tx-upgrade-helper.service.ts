@@ -66,37 +66,50 @@ export class TxUpgradeHelperService {
     }
   }
 
-  async upgradeMegapont(nftMeta: NftMeta, newBot: NftMeta[], token_id_list: string[], name: string) {
+  async upgradeMegapont(nftMeta: NftMeta, newBotMetas: NftMeta[], token_id_list: string[], name: string) {
     try {
+      this.logger.log('Original attrs');
+      this.logger.log(JSON.stringify(nftMeta.attributes, null, 2));
+
+      let newBot = {};
+      if (newBotMetas && newBotMetas.length) {
+        for (let attr of attribute_names) {
+          Object.assign(newBot, { 
+            [attr]: newBotMetas.find(meta => meta.token_id === token_id_list[attribute_names.indexOf(attr)])
+          });
+        }
+      }
+
       nftMeta.attributes = nftMeta.attributes.filter(async attr => 
         !attr.megapont_attribute?.trait_group && attr.trait_type !== 'Trait Count'
       );
 
-      const newAttributes = attribute_names.map(attr_name => {
-        const metaAttr = newBot.find(meta => meta.token_id === token_id_list[attribute_names.indexOf(attr_name)]);
-        
-        return {
-          trait_type: metaAttr.attributes[0]?.trait_type,
-          value: metaAttr.attributes[0]?.value,
-          scanned: false,
+      const newAttributes = attribute_names.map(attr_name => {        
+        return this.nftMetaAttributeRepository.create({
+          trait_type: newBot[attr_name]?.attributes[0]?.trait_type,
+          value: newBot[attr_name]?.attributes[0]?.value,
           megapont_attribute: this.megapontAttributeRepository.create({
-            trait_group: metaAttr.attributes[0]?.trait_type ? 'Component' : null,
-            token_id: metaAttr.token_id,
-            sequence: metaAttr.attributes[1]?.value
+            trait_group: newBot[attr_name]?.attributes[0]?.trait_type ? 'Component' : null,
+            token_id: newBot[attr_name]?.token_id,
+            sequence: newBot[attr_name]?.attributes[1]?.value
           })
-        };
+        });
       });
 
       for (let attr of newAttributes) {
-        if (!attr.scanned && attr.megapont_attribute.trait_group) {
-          let arrayIndex = nftMeta.attributes.findIndex(i => i.trait_type === attr.trait_type );
+        if (attr.megapont_attribute.trait_group) {
+          let arrayIndex = nftMeta.attributes.findIndex(i => 
+            i.trait_type === attr.trait_type
+          );
           if (arrayIndex >= 0) {
-            nftMeta.attributes[arrayIndex] = this.nftMetaAttributeRepository.create(attr);
+            nftMeta.attributes[arrayIndex] = attr;
           } else {
-            nftMeta.attributes.push(this.nftMetaAttributeRepository.create(attr));
+            nftMeta.attributes.push(attr);
           }
           
-          let burn = newBot.find(meta => meta.token_id === attr.megapont_attribute.token_id);
+          let burn = newBotMetas && newBotMetas.length 
+            ? newBotMetas.find(meta => meta.token_id === attr.megapont_attribute.token_id)
+            : undefined;
           if (!burn.nft_state?.burned) {
             await this.txHelper.burnMeta(burn.id);
           } else {
@@ -112,7 +125,10 @@ export class TxUpgradeHelperService {
         score: 1
       }));
       if (name) nftMeta.name = name.replace(/^"(.+(?="$))"$/, '$1');
+      
+      this.logger.log('Updated attributes');
       this.logger.log(JSON.stringify(nftMeta.attributes, null, 2));
+
       await this.nftMetaRepository.save(nftMeta, { transaction: true });
     } catch (err) {
       this.logger.warn('upgradeMegapont() failed. ', err);

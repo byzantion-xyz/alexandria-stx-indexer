@@ -46,6 +46,10 @@ export class NftMetaAttribute {
   @JoinColumn([{ name: "meta_id", referencedColumnName: "id" }])
   meta: NftMeta;
 
-  @OneToOne(() => MegapontAttribute, (megapontAttribute) => megapontAttribute.nft_meta_attribute_id)
+  @OneToOne(
+    () => MegapontAttribute, (megapontAttribute) => 
+    megapontAttribute.nft_meta_attribute, 
+    { cascade: true }
+  )
   megapont_attribute: MegapontAttribute;
 }

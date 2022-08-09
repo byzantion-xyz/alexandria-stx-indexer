@@ -99,7 +99,7 @@ export class NftMeta {
   @JoinColumn([{ name: "smart_contract_id", referencedColumnName: "id" }])
   smart_contract: SmartContract;
 
-  @OneToMany(() => NftMetaAttribute, (nftMetaAttribute) => nftMetaAttribute.meta, { cascade: true })
+  @OneToMany(() => NftMetaAttribute, (nftMetaAttribute) => nftMetaAttribute.meta, { cascade: true, onDelete: 'CASCADE' })
   attributes: NftMetaAttribute[];
 
   @OneToOne(() => NftMetaBns, (nftMetaBns) => nftMetaBns.meta)

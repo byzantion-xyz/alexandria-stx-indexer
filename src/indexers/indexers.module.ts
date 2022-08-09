@@ -64,6 +64,7 @@ import { UpgradeIndexerService } from './stacks-indexer/providers/upgrade-indexe
 import { TxUpgradeHelperService } from './stacks-indexer/helpers/tx-upgrade-helper.service';
 import { NftMetaAttribute } from "src/database/universal/entities/NftMetaAttribute";
 import { UpgradeMegaIndexerService } from './stacks-indexer/providers/upgrade-mega-indexer.service';
+import { MegapontAttribute } from "src/database/universal/entities/MegapontAttribute";
 
 /* Select stream adapter based on chain symbol env variable */
 const TxStreamAdapterProvider = {
@@ -100,7 +101,8 @@ const TxStreamAdapterProvider = {
       Commission,
       Collection,
       BidState,
-      NftMetaAttribute
+      NftMetaAttribute,
+      MegapontAttribute
     ]),
     TypeOrmModule.forFeature([NearTransaction, Receipt], "NEAR-STREAM"),
     TypeOrmModule.forFeature([StacksTransaction, Block], "STACKS-STREAM"),

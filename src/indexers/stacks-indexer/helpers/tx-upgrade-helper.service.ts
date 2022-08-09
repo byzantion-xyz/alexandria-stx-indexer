@@ -1,24 +1,25 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Commission } from 'src/database/universal/entities/Commission';
+import { MegapontAttribute } from 'src/database/universal/entities/MegapontAttribute';
 import { NftMeta } from 'src/database/universal/entities/NftMeta';
-import { NftState } from 'src/database/universal/entities/NftState';
-import { SmartContract } from 'src/database/universal/entities/SmartContract';
+import { NftMetaAttribute } from 'src/database/universal/entities/NftMetaAttribute';
+import { TxHelperService } from 'src/indexers/common/helpers/tx-helper.service';
 import { In, Repository } from 'typeorm';
+
+export const attribute_names = ['mouth', 'jewellery', 'head', 'eyes', 'ears','body', 'background'];
 
 @Injectable()
 export class TxUpgradeHelperService {
   private readonly logger = new Logger(TxUpgradeHelperService.name);
 
   constructor(
-    @InjectRepository(NftState)
-    private nftStateRepository: Repository<NftState>,
+    private txHelper: TxHelperService,
     @InjectRepository(NftMeta)
     private nftMetaRepository: Repository<NftMeta>,
-    @InjectRepository(SmartContract)
-    private smartContractRepository: Repository<SmartContract>,
-    @InjectRepository(Commission)
-    private commissionRepository: Repository<Commission>
+    @InjectRepository(NftMetaAttribute)
+    private nftMetaAttributeRepository: Repository<NftMetaAttribute>,
+    @InjectRepository(MegapontAttribute)
+    private megapontAttributeRepository: Repository<MegapontAttribute>
   ) {}
   
   async findMetasByContractKeyWithAttr(contract_key: string, token_ids: string[]) {
@@ -62,6 +63,60 @@ export class TxUpgradeHelperService {
 
     if (nft_metas && nft_metas.length === 1) {
       return nft_metas[0];
+    }
+  }
+
+  async upgradeMegapont(nftMeta: NftMeta, newBot: NftMeta[], token_id_list: string[], name: string) {
+    try {
+      nftMeta.attributes = nftMeta.attributes.filter(async attr => 
+        !attr.megapont_attribute?.trait_group && attr.trait_type !== 'Trait Count'
+      );
+
+      const newAttributes = attribute_names.map(attr_name => {
+        const metaAttr = newBot.find(meta => meta.token_id === token_id_list[attribute_names.indexOf(attr_name)]);
+        
+        return {
+          trait_type: metaAttr.attributes[0]?.trait_type,
+          value: metaAttr.attributes[0]?.value,
+          scanned: false,
+          megapont_attribute: this.megapontAttributeRepository.create({
+            trait_group: metaAttr.attributes[0]?.trait_type ? 'Component' : null,
+            token_id: metaAttr.token_id,
+            sequence: metaAttr.attributes[1]?.value
+          })
+        };
+      });
+
+      for (let attr of newAttributes) {
+        if (!attr.scanned && attr.megapont_attribute.trait_group) {
+          let arrayIndex = nftMeta.attributes.findIndex(i => i.trait_type === attr.trait_type );
+          if (arrayIndex >= 0) {
+            nftMeta.attributes[arrayIndex] = this.nftMetaAttributeRepository.create(attr);
+          } else {
+            nftMeta.attributes.push(this.nftMetaAttributeRepository.create(attr));
+          }
+          
+          let burn = newBot.find(meta => meta.token_id === attr.megapont_attribute.token_id);
+          if (!burn.nft_state?.burned) {
+            await this.txHelper.burnMeta(burn.id);
+          } else {
+            this.logger.log(`Already burned name:${burn.name} id:${burn.token_id}`);
+          }
+        }
+      }
+
+      nftMeta.attributes.push(this.nftMetaAttributeRepository.create({
+        trait_type: 'Trait Count',
+        value: nftMeta.attributes.length.toString(),
+        rarity: 1,
+        score: 1
+      }));
+      if (name) nftMeta.name = name.replace(/^"(.+(?="$))"$/, '$1');
+      this.logger.log(JSON.stringify(nftMeta.attributes, null, 2));
+      await this.nftMetaRepository.save(nftMeta, { transaction: true });
+    } catch (err) {
+      this.logger.warn('upgradeMegapont() failed. ', err);
+      throw err;
     }
   }
 

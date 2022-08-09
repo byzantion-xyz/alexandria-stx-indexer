@@ -64,6 +64,9 @@ export class NftState {
   @Column("bigint", { nullable: true })
   list_block_height: bigint;
 
+  @Column("timestamp without time zone", { nullable: true })
+  list_block_datetime: Date;
+
   @Column("bigint", { nullable: true })
   list_tx_index: bigint;
 

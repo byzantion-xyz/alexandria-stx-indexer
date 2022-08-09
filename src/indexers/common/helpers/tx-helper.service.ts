@@ -109,6 +109,7 @@ export class TxHelperService {
       list_contract_id: null,
       list_tx_index: tx.index || tx.nonce,
       list_block_height: tx.block_height,
+      list_block_datetime: null,
       function_args: null,
       commission_id: null
     };
@@ -124,6 +125,7 @@ export class TxHelperService {
       list_tx_index: tx.index,
       list_seller: tx.signer,
       list_block_height: tx.block_height,
+      list_block_datetime: moment(new Date(tx.block_timestamp)).toDate(),
       ... (commission_id && { commission_id }),
       ... (args && { function_args: args }),
     };

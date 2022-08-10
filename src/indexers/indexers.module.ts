@@ -65,6 +65,11 @@ import { TxUpgradeHelperService } from './stacks-indexer/helpers/tx-upgrade-help
 import { NftMetaAttribute } from "src/database/universal/entities/NftMetaAttribute";
 import { UpgradeMegaIndexerService } from './stacks-indexer/providers/upgrade-mega-indexer.service';
 import { MegapontAttribute } from "src/database/universal/entities/MegapontAttribute";
+import { ListIndexerService as StacksListIndexerService } from './stacks-indexer/providers/list-indexer.service';
+import { UnlistIndexerService as StacksUnlistIndexerService } from './stacks-indexer/providers/unlist-indexer.service';
+import { BuyIndexerService as StacksBuyIndexerService } from './stacks-indexer/providers/buy-indexer.service';
+import { StakeIndexerService as StacksStakeIndexerService } from './stacks-indexer/providers/stake-indexer.service';
+import { UnstakeIndexerService as StacksUnstakeIndexerService } from './stacks-indexer/providers/unstake-indexer.service';
 
 /* Select stream adapter based on chain symbol env variable */
 const TxStreamAdapterProvider = {
@@ -122,18 +127,24 @@ const TxStreamAdapterProvider = {
     /* Micro indexers factory */
     NearMicroIndexersProvider,
     StacksMicroIndexersProvider,
-    /* Micro indexers */
+    /* Near Micro indexers */
     BuyIndexerService,
     ListIndexerService,
     UnlistIndexerService,
-    TransferIndexerService,
     StakeIndexerService,
     UnstakeIndexerService,
-    ChangePriceIndexerService,
+    /* Stacks micro indexers */
     //BnsRegisterIndexerService,
     //BnsBidIndexerService,
     //BnsUnlistBidIndexerService,
     //BnsAcceptBidIndexerService,
+    StacksListIndexerService,
+    StacksUnlistIndexerService,
+    StacksBuyIndexerService,
+    StacksStakeIndexerService,
+    StacksUnstakeIndexerService,
+    TransferIndexerService,
+    ChangePriceIndexerService,
     BidIndexerService,
     UnlistBidIndexerService,
     AcceptBidIndexerService,

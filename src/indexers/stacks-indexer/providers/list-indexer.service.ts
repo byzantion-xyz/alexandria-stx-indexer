@@ -1,19 +1,19 @@
 import { Logger, Injectable } from "@nestjs/common";
 import { TxProcessResult } from "src/indexers/common/interfaces/tx-process-result.interface";
-import { TxHelperService } from "../helpers/tx-helper.service";
+import { NftStateArguments, TxHelperService } from "src/indexers/common/helpers/tx-helper.service";
 import { ListBotService } from "src/discord-bot/providers/list-bot.service";
 import { MissingCollectionService } from "src/scrapers/near-scraper/providers/missing-collection.service";
-import { CreateListActionTO } from "../interfaces/create-action-common.dto";
+import { CreateListActionTO } from "src/indexers/common/interfaces/create-action-common.dto";
 
 import { CommonTx } from "src/indexers/common/interfaces/common-tx.interface";
-import { IndexerService } from "../interfaces/indexer-service.interface";
+import { IndexerService } from "src/indexers/common/interfaces/indexer-service.interface";
 
 import { InjectRepository } from "@nestjs/typeorm";
 import { Action } from "src/database/universal/entities/Action";
 import { SmartContract } from "src/database/universal/entities/SmartContract";
 import { SmartContractFunction } from "src/database/universal/entities/SmartContractFunction";
 import { Repository } from "typeorm";
-import { ActionName, SmartContractType } from "../helpers/indexer-enums";
+import { ActionName, SmartContractType } from "src/indexers/common/helpers/indexer-enums";
 import { NftState } from "src/database/universal/entities/NftState";
 
 @Injectable()
@@ -26,6 +26,8 @@ export class ListIndexerService implements IndexerService {
     private missingCollectionService: MissingCollectionService,
     @InjectRepository(Action)
     private actionRepository: Repository<Action>,
+    @InjectRepository(NftState)
+    private nftStateRepository: Repository<NftState>,
     @InjectRepository(SmartContract)
     private smartContractRepository: Repository<SmartContract>
   ) {}
@@ -37,7 +39,8 @@ export class ListIndexerService implements IndexerService {
 
     const token_id = this.txHelper.extractArgumentData(tx.args, scf, "token_id");
     const price = this.txHelper.extractArgumentData(tx.args, scf, "price");
-    
+    const collection_map_id = this.txHelper.extractArgumentData(tx.args, scf, "collection_map_id");
+    let commission_key = this.txHelper.extractArgumentData(tx.args, scf, 'commission_trait');
     let contract_key = this.txHelper.extractArgumentData(tx.args, scf, "contract_key");
 
     // Check if custodial
@@ -51,15 +54,21 @@ export class ListIndexerService implements IndexerService {
     const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
    
     if (nftMeta) {
+      const commission_id = await this.txHelper.findCommissionByKey(sc, contract_key, commission_key);
       const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName[scf.name], tx, nftMeta, market_sc);
       const listActionParams: CreateListActionTO = {
         ...actionCommonArgs,
         list_price: price,
-        seller: tx.signer
+        seller: tx.signer,
+        ... (commission_id && { commission_id })
       };
     
       if (this.txHelper.isNewNftListOrSale(tx, nftMeta.nft_state)) {
-        await this.txHelper.listMeta(nftMeta.id, tx, sc, price);
+        const args: NftStateArguments = {
+          ... (collection_map_id && { collection_map_id })
+        };
+        await this.txHelper.listMeta(nftMeta.id, tx, sc, price, commission_id, args);
+        // TODO: Use unified service to update NftMeta and handle NftState changes
 
         const newAction = await this.createAction(listActionParams);
         if (newAction && tx.notify) {

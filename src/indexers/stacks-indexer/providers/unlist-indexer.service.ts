@@ -1,29 +1,24 @@
-import { Logger, Injectable } from "@nestjs/common";
+import { Logger, Injectable, NotAcceptableException } from "@nestjs/common";
 import { TxProcessResult } from "src/indexers/common/interfaces/tx-process-result.interface";
-import { TxHelperService } from "../helpers/tx-helper.service";
-import { ListBotService } from "src/discord-bot/providers/list-bot.service";
-import { MissingCollectionService } from "src/scrapers/near-scraper/providers/missing-collection.service";
-import { CreateListActionTO } from "../interfaces/create-action-common.dto";
+import { TxHelperService } from "src/indexers/common/helpers/tx-helper.service";
+import { CreateUnlistActionTO } from "src/indexers/common/interfaces/create-action-common.dto";
 
 import { CommonTx } from "src/indexers/common/interfaces/common-tx.interface";
-import { IndexerService } from "../interfaces/indexer-service.interface";
+import { IndexerService } from "src/indexers/common/interfaces/indexer-service.interface";
 
 import { InjectRepository } from "@nestjs/typeorm";
-import { Action } from "src/database/universal/entities/Action";
 import { SmartContract } from "src/database/universal/entities/SmartContract";
 import { SmartContractFunction } from "src/database/universal/entities/SmartContractFunction";
 import { Repository } from "typeorm";
-import { ActionName, SmartContractType } from "../helpers/indexer-enums";
-import { NftState } from "src/database/universal/entities/NftState";
+import { ActionName, SmartContractType } from "src/indexers/common/helpers/indexer-enums";
+import { Action } from "src/database/universal/entities/Action";
 
 @Injectable()
-export class ListIndexerService implements IndexerService {
-  private readonly logger = new Logger(ListIndexerService.name);
+export class UnlistIndexerService implements IndexerService {
+  private readonly logger = new Logger(UnlistIndexerService.name);
 
   constructor(
     private txHelper: TxHelperService,
-    private listBotService: ListBotService,
-    private missingCollectionService: MissingCollectionService,
     @InjectRepository(Action)
     private actionRepository: Repository<Action>,
     @InjectRepository(SmartContract)
@@ -36,8 +31,6 @@ export class ListIndexerService implements IndexerService {
     let market_sc: SmartContract;
 
     const token_id = this.txHelper.extractArgumentData(tx.args, scf, "token_id");
-    const price = this.txHelper.extractArgumentData(tx.args, scf, "price");
-    
     let contract_key = this.txHelper.extractArgumentData(tx.args, scf, "contract_key");
 
     // Check if custodial
@@ -49,42 +42,40 @@ export class ListIndexerService implements IndexerService {
     }
 
     const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
-   
-    if (nftMeta) {
-      const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName[scf.name], tx, nftMeta, market_sc);
-      const listActionParams: CreateListActionTO = {
-        ...actionCommonArgs,
-        list_price: price,
-        seller: tx.signer
-      };
-    
-      if (this.txHelper.isNewNftListOrSale(tx, nftMeta.nft_state)) {
-        await this.txHelper.listMeta(nftMeta.id, tx, sc, price);
 
-        const newAction = await this.createAction(listActionParams);
-        if (newAction && tx.notify) {
-          this.listBotService.createAndSend(newAction.id);
-        }
+    if (nftMeta) { 
+      const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName[scf.name], tx, nftMeta, market_sc);
+      const unlistActionParams: CreateUnlistActionTO = {
+        ...actionCommonArgs,
+        list_price: nftMeta.nft_state && nftMeta.nft_state.list_price ? nftMeta.nft_state.list_price : undefined,
+        seller: nftMeta.nft_state?.list_seller || undefined,
+        commission_id: nftMeta.nft_state?.commission_id
+      };
+
+      if (this.txHelper.isNewNftListOrSale(tx, nftMeta.nft_state)) {
+        await this.txHelper.unlistMeta(nftMeta.id, tx);
+        await this.createAction(unlistActionParams);
       } else {
         this.logger.log(`Too Late`);
-        await this.createAction(listActionParams);
-      }
+        // Create missing action
+        await this.createAction(unlistActionParams);
+      }      
       txResult.processed = true;
     } else {
       this.logger.log(`NftMeta not found ${contract_key} ${token_id}`);
-
-      //this.missingCollectionService.scrapeMissing({ contract_key, token_id });
       txResult.missing = true;
     }
 
     return txResult;
   }
 
-  async createAction(params: CreateListActionTO): Promise<Action> {
+  async createAction(params: CreateUnlistActionTO): Promise<Action> {
     try {
       const action = this.actionRepository.create(params);
       const saved = await this.actionRepository.save(action);
+
       this.logger.log(`New action ${params.action}: ${saved.id} `);
+
       return saved;
     } catch (err) {}
   }

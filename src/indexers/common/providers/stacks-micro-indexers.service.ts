@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
-import { StakeIndexerService } from "src/indexers/common/providers/stake-indexer.service";
-import { UnstakeIndexerService } from "src/indexers/common/providers/unstake-indexer.service";
+import { StakeIndexerService } from "src/indexers/stacks-indexer/providers/stake-indexer.service";
+import { UnstakeIndexerService } from "src/indexers/stacks-indexer/providers/unstake-indexer.service";
 import { AcceptBidIndexerService } from "src/indexers/stacks-indexer/providers/accept-bid-indexer.service";
 import { BidIndexerService } from "src/indexers/stacks-indexer/providers/bid-indexer.service";
 //import { BnsAcceptBidIndexerService } from "src/indexers/stacks-indexer/providers/bns-accept-bid-indexer.service";
@@ -29,9 +29,9 @@ import { TransferIndexerService } from "src/indexers/stacks-indexer/providers/tr
 import { UnlistBidIndexerService } from "src/indexers/stacks-indexer/providers/unlist-bid-indexer.service";
 import { UpgradeIndexerService } from "src/indexers/stacks-indexer/providers/upgrade-indexer.service";
 import { IndexerService } from "../interfaces/indexer-service.interface";
-import { BuyIndexerService } from "./buy-indexer.service";
-import { ListIndexerService } from "./list-indexer.service";
-import { UnlistIndexerService } from "./unlist-indexer.service";
+import { BuyIndexerService } from "src/indexers/stacks-indexer/providers/buy-indexer.service";
+import { ListIndexerService } from "src/indexers/stacks-indexer/providers/list-indexer.service";
+import { UnlistIndexerService } from "src/indexers/stacks-indexer/providers/unlist-indexer.service";
 
 // TODO: Try to simplify as a factory
 

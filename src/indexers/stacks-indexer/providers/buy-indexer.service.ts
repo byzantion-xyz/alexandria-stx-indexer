@@ -1,19 +1,19 @@
-import { Logger, Injectable, NotAcceptableException } from "@nestjs/common";
+import { Logger, Injectable } from "@nestjs/common";
 
 import { TxProcessResult } from "src/indexers/common/interfaces/tx-process-result.interface";
-import { TxHelperService } from "../helpers/tx-helper.service";
+import { TxHelperService } from "src/indexers/common/helpers/tx-helper.service";
 
 import { SalesBotService } from "src/discord-bot/providers/sales-bot.service";
-import { CreateActionCommonArgs, CreateBuyActionTO } from "../interfaces/create-action-common.dto";
+import { CreateBuyActionTO } from "src/indexers/common/interfaces/create-action-common.dto";
 import { CommonTx } from "src/indexers/common/interfaces/common-tx.interface";
-import { IndexerService } from "../interfaces/indexer-service.interface";
+import { IndexerService } from "src/indexers/common/interfaces/indexer-service.interface";
 
 import { InjectRepository } from "@nestjs/typeorm";
-import { Action, Action as ActionEntity } from "src/database/universal/entities/Action";
+import { Action as ActionEntity } from "src/database/universal/entities/Action";
 import { SmartContract } from "src/database/universal/entities/SmartContract";
 import { SmartContractFunction } from "src/database/universal/entities/SmartContractFunction";
 import { Repository } from "typeorm";
-import { ActionName } from "../helpers/indexer-enums";
+import { ActionName } from "src/indexers/common/helpers/indexer-enums";
 
 @Injectable()
 export class BuyIndexerService implements IndexerService {
@@ -42,7 +42,8 @@ export class BuyIndexerService implements IndexerService {
         ...actionCommonArgs,
         list_price: price || (nftMeta.nft_state?.listed ? nftMeta.nft_state.list_price : undefined),
         seller: nftMeta.nft_state && nftMeta.nft_state.listed ? nftMeta.nft_state.list_seller : undefined,
-        buyer: tx.signer
+        buyer: tx.signer,
+        commission_id: nftMeta.nft_state?.commission_id
       };
 
       if (this.txHelper.isNewNftListOrSale(tx, nftMeta.nft_state)) {

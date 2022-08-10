@@ -43,22 +43,32 @@ export class StacksTxHelperService {
 
   parseHexArguments(args: FunctionArgs[]) {
     try {
-      let result = {};
+      let result = [];
       for (let arg of args) {
         if (arg.hex) {
           let data = hexToCV(arg.hex);
           if (Object.keys(data).includes('buffer')) {
-            result[arg.name] = (data as BufferCV).buffer.toString();
+            result.push((data as BufferCV).buffer.toString());
           } else {
             let json = cvToJSON(data);
-            result[arg.name] = json.type === 'uint' ? Number(json.value) : json.value;
+            result.push(json.type === 'uint' ? Number(json.value) : json.value);
           }
         }
       }
-
       return result;
     } catch (err) {
       this.logger.warn('parseHexArguments() failed. ', err);
+    }
+  }
+
+  extractArgumentData(args: [], scf: SmartContractFunction, field: string) {
+    const index = scf.args[field];
+    if (typeof index === 'undefined') {
+      return undefined;
+    } else if (!isNaN(index)) {
+      return args[index];
+    } else {
+      return index;
     }
   }
 
@@ -113,8 +123,8 @@ export class StacksTxHelperService {
     return e.data.data['collection-id'].split('::')[0].replace("'", '')
   }
 
-  extractAndParseContractKey(args: JSON, scf: SmartContractFunction, field: string = 'contract_key'): string {
-    let contract_key = this.txHelper.extractArgumentData(args, scf, field);
+  extractAndParseContractKey(args: [], scf: SmartContractFunction, field: string = 'contract_key'): string {
+    let contract_key = this.extractArgumentData(args, scf, field);
     if (contract_key.includes(':')) contract_key = contract_key.split(':')[0];
     if (contract_key.includes("'")) contract_key.replace("'", "");
 

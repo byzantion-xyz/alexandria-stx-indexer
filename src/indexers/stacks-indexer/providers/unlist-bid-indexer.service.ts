@@ -35,7 +35,7 @@ export class UnlistBidIndexerService implements IndexerService {
     }
 
     const contract_key = this.stacksTxHelper.extractAndParseContractKey(tx.args, scf);
-    const token_id = this.txHelper.extractArgumentData(tx.args, scf, 'token_id'); 
+    const token_id = this.stacksTxHelper.extractArgumentData(tx.args, scf, 'token_id'); 
 
     const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
 

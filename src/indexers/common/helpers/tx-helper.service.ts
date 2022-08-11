@@ -211,7 +211,7 @@ export class TxHelperService {
     let params: CreateActionCommonArgs = {
       ...common,
       collection_id: collection.id,
-      smart_contract_id: collection.smart_contract.id
+      smart_contract_id: collection.smart_contract_id
     }    
     return params;
   }

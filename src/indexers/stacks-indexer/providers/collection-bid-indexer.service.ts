@@ -41,11 +41,11 @@ export class CollectionBidIndexerService implements IndexerService {
     }
 
     const contract_key = this.stacksTxHelper.extractAndParseContractKey(tx.args, scf);
-    const price = this.txHelper.extractArgumentData(tx.args, scf, 'bid_price');
+    const price = this.stacksTxHelper.extractArgumentData(tx.args, scf, 'bid_price');
 
     const collection = await this.collectionRepository.findOne({ where: { 
       smart_contract: { contract_key }
-    }})
+    }});
 
     if (collection) {
       const bidCommonArgs: CreateBidCommonArgs = this.txBidHelper.setCommonV6BidArgs(
@@ -60,19 +60,19 @@ export class CollectionBidIndexerService implements IndexerService {
 
       if (this.txBidHelper.isNewBid(tx, bidState)) {
         await this.txBidHelper.createOrReplaceBid(collectionBidArgs, bidState);
+
+        const actionCommonArgs = this.txHelper.setCommonCollectionActionParams(
+          ActionName.collection_bid, tx, collection, sc
+        );
+        const actionParams: CreateCollectionBidActionTO = {
+          ...actionCommonArgs,
+          buyer: tx.signer,
+          bid_price: price
+        };
+        await this.createAction(actionParams);
       } else {
         this.logger.log('Too late bid');
       }
-
-      const actionCommonArgs = this.txHelper.setCommonCollectionActionParams(
-        ActionName.collection_bid, tx, collection, sc
-      );
-      const actionParams: CreateCollectionBidActionTO = {
-        ...actionCommonArgs,
-        buyer: tx.signer,
-        bid_price: price
-      };
-      await this.createAction(actionParams);
 
       // Create action
       txResult.processed = true;

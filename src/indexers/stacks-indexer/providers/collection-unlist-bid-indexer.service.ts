@@ -48,18 +48,18 @@ export class CollectionUnlistBidIndexerService implements IndexerService {
 
       if (bidState && this.txBidHelper.isNewBid(tx, bidState)) {
         this.txBidHelper.cancelBid(bidState, tx);
+
+        const actionCommonArgs = this.txHelper.setCommonCollectionActionParams(
+          ActionName.unlist_collection_bid, tx, collection, sc
+        );
+        const actionParams: CreateUnlistCollectionBidActionTO = {
+          ...actionCommonArgs,
+          buyer: tx.signer
+        };
+        await this.createAction(actionParams);  
       } else {
         this.logger.log(`Too Late Unlist Bid ${tx.hash}`);
       }
-
-      const actionCommonArgs = this.txHelper.setCommonCollectionActionParams(
-        ActionName.unlist_collection_bid, tx, collection, sc
-      );
-      const actionParams: CreateUnlistCollectionBidActionTO = {
-        ...actionCommonArgs,
-        buyer: tx.signer
-      };
-      await this.createAction(actionParams);
 
       txResult.processed = true;
     } else {

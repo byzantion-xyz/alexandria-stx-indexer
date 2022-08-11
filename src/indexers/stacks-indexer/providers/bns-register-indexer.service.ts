@@ -32,8 +32,8 @@ export class BnsRegisterIndexerService implements IndexerService {
     this.logger.debug(`process() ${tx.hash}`);
     let txResult: TxProcessResult = { processed: false, missing: false };
 
-    const namespace: string = this.txHelper.extractArgumentData(tx.args, scf, 'namespace');
-    const name: string  = this.txHelper.extractArgumentData(tx.args, scf, 'name'); 
+    const namespace: string = this.stacksTxHelper.extractArgumentData(tx.args, scf, 'namespace');
+    const name: string  = this.stacksTxHelper.extractArgumentData(tx.args, scf, 'name'); 
 
     const nftMeta = await this.stacksTxHelper.findMetaBns(name, namespace, sc.id);
 

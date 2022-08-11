@@ -12,6 +12,7 @@ import { CreateActionTO, CreateStakeActionTO } from 'src/indexers/common/interfa
 import { IndexerService } from 'src/indexers/common/interfaces/indexer-service.interface';
 import { TxProcessResult } from 'src/indexers/common/interfaces/tx-process-result.interface';
 import { Repository } from 'typeorm';
+import { StacksTxHelperService } from './stacks-tx-helper.service';
 
 @Injectable()
 export class StakeIndexerService implements IndexerService {
@@ -19,6 +20,7 @@ export class StakeIndexerService implements IndexerService {
 
   constructor(
     private txHelper: TxHelperService,
+    private stacksTxHelper: StacksTxHelperService,
     private txStakingHelper: TxStakingHelperService,
     @InjectRepository(Action)
     private actionRepository: Repository<Action>,
@@ -32,7 +34,7 @@ export class StakeIndexerService implements IndexerService {
     this.logger.debug(`process() ${tx.hash}`);
     let txResult: TxProcessResult = { processed: false, missing: false };
 
-    const token_id = this.txHelper.extractArgumentData(tx.args, scf, "token_id");
+    const token_id = this.stacksTxHelper.extractArgumentData(tx.args, scf, "token_id");
     let stake_contract;
     let contract_key;
 
@@ -40,10 +42,8 @@ export class StakeIndexerService implements IndexerService {
     if (sc.type.includes(SmartContractType.staking)) {
       stake_contract = sc.contract_key;
       contract_key = this.txHelper.extractArgumentData(tx.args, scf, "contract_key");
-    } else {
-      stake_contract = this.txHelper.extractArgumentData(tx.args, scf, "contract_key");
-      contract_key = sc.contract_key;
     }
+    
     const stake_sc = await this.smartContractRepository.findOne({ where: { contract_key: stake_contract }});
     
     if (!stake_sc || !stake_sc.type.includes(SmartContractType.staking)) {
@@ -59,6 +59,7 @@ export class StakeIndexerService implements IndexerService {
       const stakeActionParams: CreateStakeActionTO = {
         ...actionCommonArgs,
         seller: tx.signer,
+        market_name: null
       };
 
       if (this.txStakingHelper.isNewStakingBlock(tx, nftMeta.nft_state)) {

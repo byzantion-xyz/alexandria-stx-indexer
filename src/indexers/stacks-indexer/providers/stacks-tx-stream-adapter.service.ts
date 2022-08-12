@@ -48,7 +48,7 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
       AND tx->>'tx_type' = 'contract_call'
       AND tx->>'tx_status' = 'success'
       AND processed = false 
-      AND  missing = false
+      AND missing = false
       ORDER BY t.block_height ASC, tx->>'microblock_sequence' asc, tx->>'index' ASC 
     `;
 
@@ -62,11 +62,24 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
   }
 
   async fetchMissingTxs(contract_key?: string): Promise<any> {
+    let accounts_in = "";
+    const accounts = await this.fetchAccounts();
+
+    if (contract_key) {
+      accounts_in = `'${contract_key}'`;
+    } else {
+      for (let i in accounts) {
+        accounts_in += `'${accounts[i]}',`;
+      }
+      accounts_in = accounts_in.slice(0, -1);
+    }
+
     const sql = `SELECT * from transaction t
-      WHERE tx->>'tx_type' = 'contract_call' AND
-      ${ contract_key ? `tx->'contract_call'->>'contract_id' = ${contract_key} AND` : '' }
-      tx->>'tx_status' = 'success' AND
-      processed = false AND  missing = true
+      WHERE t.contract_id IN (${accounts_in})
+      AND tx->>'tx_type' = 'contract_call'
+      AND tx->>'tx_status' = 'success' 
+      AND processed = false 
+      AND missing = true
       ORDER BY t.block_height ASC, tx->>'microblock_sequence' asc, tx->>'index' ASC 
     `;
 

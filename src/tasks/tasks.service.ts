@@ -1,5 +1,4 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { Cron, CronExpression, Timeout } from '@nestjs/schedule';
 import { IndexerEventType } from 'src/indexers/common/helpers/indexer-enums';
 import { IndexerOrchestratorService } from 'src/indexers/indexer-orchestrator.service';
@@ -9,7 +8,6 @@ export class TasksService {
     private readonly logger = new Logger(TasksService.name);
 
     constructor(
-      private configService: ConfigService,
       private indexerOrchestrator: IndexerOrchestratorService
     ) {}
 
@@ -33,10 +31,7 @@ export class TasksService {
 
     @Timeout(2000)
     handleIndexerSubscription() {
-      const chainSymbol = this.configService.get("indexer.chainSymbol");
-      if (chainSymbol === 'Near') {
-        this.indexerOrchestrator.subscribeToEvents({ event: IndexerEventType.block });
-      }
+      this.indexerOrchestrator.subscribeToEvents({ event: IndexerEventType.block });
     }
 
 }

@@ -4,11 +4,13 @@ export interface DiscordBotDto {
   rarity: number;
   ranking: number;
   collectionSize: number;
+  cryptoCurrency: string;
   price: number;
   marketplaceLink?: string;
   transactionLink: string;
   seller?: string;
   buyer?: string;
+  sellerLink?: string;
+  buyerLink?: string;
   image: string;
 }
-

@@ -9,9 +9,10 @@ import { CryptoRateService } from "./providers/crypto-rate.service";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { CryptoRate } from "src/database/universal/entities/CryptoRate";
 import { Action } from "src/database/universal/entities/Action";
+import { Collection } from "src/database/universal/entities/Collection";
 
 @Module({
-  imports: [DiscordModule.forFeature(), DiscordServerModule, TypeOrmModule.forFeature([CryptoRate, Action])],
+  imports: [DiscordModule.forFeature(), DiscordServerModule, TypeOrmModule.forFeature([CryptoRate, Action, Collection])],
   controllers: [DiscordBotController],
   providers: [ListBotService, BotHelperService, SalesBotService, CryptoRateService],
   exports: [ListBotService, SalesBotService],

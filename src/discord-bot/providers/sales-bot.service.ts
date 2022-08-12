@@ -19,7 +19,6 @@ export class SalesBotService {
       const channels = await this.discordServerService.fetchChannelsBySlug(data.slug, DiscordChannelType.sales);
       const subTitle = 'has been sold';
       const color: ColorResolvable = 'BLUE';
-
       if (!channels || !channels.length) return;
 
       for (let channel of channels) {
@@ -32,7 +31,9 @@ export class SalesBotService {
   }
 
   async createAndSend(actionId: string) {
-    const data: DiscordBotDto = await this.botHelper.fetchActionData(actionId);
+    const action = await this.botHelper.fetchActionData(actionId);
+    const data = await this.botHelper.createDiscordBotDto(action);
+
     await this.send(data);
   }
 }

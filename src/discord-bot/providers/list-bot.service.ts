@@ -33,8 +33,11 @@ export class ListBotService {
   }
 
   async createAndSend(actionId: string) {
-    const data: DiscordBotDto = await this.botHelper.fetchActionData(actionId);
+    const action = await this.botHelper.fetchActionData(actionId);
+    const data = await this.botHelper.createDiscordBotDto(action);
+
     await this.send(data);
   }
+
 }
 

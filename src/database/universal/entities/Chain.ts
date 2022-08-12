@@ -21,6 +21,9 @@ export class Chain {
   @Column("timestamp without time zone")
   updated_at: Date;
 
+  @Column("integer")
+  format_digits: number;
+
   @Column("text", { nullable: true })
   coin: string | null;
 

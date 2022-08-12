@@ -4,15 +4,18 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Client, Pool } from 'pg';
 import * as Cursor from 'pg-cursor';
 import * as moment from "moment";
+
 import { Transaction as TransactionEntity } from 'src/database/stacks-stream/entities/Transaction';
 import { IndexerEventType } from 'src/indexers/common/helpers/indexer-enums';
 import { CommonTx } from 'src/indexers/common/interfaces/common-tx.interface';
 import { TxProcessResult } from 'src/indexers/common/interfaces/tx-process-result.interface';
 import { CommonTxResult, TxStreamAdapter } from 'src/indexers/common/interfaces/tx-stream-adapter.interface';
-import { Repository } from 'typeorm';
+import { In, Not, Repository } from 'typeorm';
 import { StacksTransaction } from '../dto/stacks-transaction.dto';
 import { StacksTxHelperService } from './stacks-tx-helper.service';
 import { TransactionEvent } from '@stacks/stacks-blockchain-api-types';
+import { SmartContract } from 'src/database/universal/entities/SmartContract';
+import { NearIndexerController } from 'src/indexers/near-indexer/near-indexer.controller';
 
 @Injectable()
 export class StacksTxStreamAdapterService implements TxStreamAdapter {
@@ -23,14 +26,29 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
     private stacksTxHelper: StacksTxHelperService,
     @InjectRepository(TransactionEntity, "STACKS-STREAM")
     private transactionRepository: Repository<TransactionEntity>,
+    @InjectRepository(SmartContract)
+    private smartContractRepository: Repository<SmartContract>
   ) {}
 
   async fetchTxs(contract_key?: string): Promise<any> {
+    let accounts_in = "";
+    const accounts = await this.fetchAccounts();
+
+    if (contract_key) {
+      accounts_in = `'${contract_key}'`;
+    } else {
+      for (let i in accounts) {
+        accounts_in += `'${accounts[i]}',`;
+      }
+      accounts_in = accounts_in.slice(0, -1);
+    }
+
     const sql = `SELECT * from transaction t
-      WHERE tx->>'tx_type' = 'contract_call' AND
-      ${ contract_key ? `tx->'contract_call'->>'contract_id' = ${contract_key} AND` : '' }
-      tx->>'tx_status' = 'success' AND
-      processed = false AND  missing = false
+      WHERE t.contract_id IN (${accounts_in})
+      AND tx->>'tx_type' = 'contract_call'
+      AND tx->>'tx_status' = 'success'
+      AND processed = false 
+      AND  missing = false
       ORDER BY t.block_height ASC, tx->>'microblock_sequence' asc, tx->>'index' ASC 
     `;
 
@@ -113,6 +131,24 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
     } catch (err) {
       this.logger.warn(`transormTx() has failed for tx hash: ${tx.hash}`);
     }
+  }
+
+  async fetchAccounts(): Promise<string[]> {
+    const smartContracts: SmartContract[] = await this.smartContractRepository.find({
+      where: { 
+        chain: { symbol: "Stacks" },
+        contract_key: Not(In([
+          'SP000000000000000000002Q6VF78.bns', 
+          'SP2KAF9RF86PVX3NEE27DFV1CQX0T4WGR41X3S45C.bns-marketplace', 
+          'SP2KAF9RF86PVX3NEE27DFV1CQX0T4WGR41X3S45C.bns-marketplace-v1', 
+          'SP2KAF9RF86PVX3NEE27DFV1CQX0T4WGR41X3S45C.bns-marketplace-v3'
+        ]))
+      }
+    });
+
+    const accounts = smartContracts.map((sc) => sc.contract_key);
+
+    return accounts;
   }
 
   subscribeToEvents(): Client {

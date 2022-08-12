@@ -28,9 +28,13 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
   async fetchTxs(contract_key?: string): Promise<any> {
     const sql = `SELECT * from transaction t
       WHERE tx->>'tx_type' = 'contract_call' AND
-      ${ contract_key ? `tx->'contract_call'->>'contract_id' = ${contract_key} AND` : '' }
-      tx->>'tx_status' = 'success' AND
-      processed = false AND  missing = false
+      ${ contract_key ? 
+        `tx->'contract_call'->>'contract_id' = ${contract_key}` : 
+        `tx->'contract_call'->>'contract_id' != 'SP000000000000000000002Q6VF78.pox' ` 
+      }
+      AND tx->>'tx_status' = 'success'
+      AND processed = false 
+      AND  missing = false
       ORDER BY t.block_height ASC, tx->>'microblock_sequence' asc, tx->>'index' ASC 
     `;
 

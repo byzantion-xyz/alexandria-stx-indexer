@@ -80,7 +80,7 @@ export class BidState {
     onDelete: "RESTRICT",
     onUpdate: "CASCADE",
   })
-  @JoinColumn([{ name: "smart_contract_id", referencedColumnName: "id" }])
+  @JoinColumn([{ name: "collection_id", referencedColumnName: "id" }])
   collection: Collection;
 
   @OneToMany(

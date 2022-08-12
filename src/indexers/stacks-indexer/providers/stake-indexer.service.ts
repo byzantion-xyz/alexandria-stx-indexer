@@ -41,7 +41,7 @@ export class StakeIndexerService implements IndexerService {
     // Check when staking is executed on staking sc or in nft contract.
     if (sc.type.includes(SmartContractType.staking)) {
       stake_contract = sc.contract_key;
-      contract_key = this.txHelper.extractArgumentData(tx.args, scf, "contract_key");
+      contract_key = this.stacksTxHelper.extractArgumentData(tx.args, scf, "contract_key");
     }
     
     const stake_sc = await this.smartContractRepository.findOne({ where: { contract_key: stake_contract }});

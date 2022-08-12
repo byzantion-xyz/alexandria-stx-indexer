@@ -70,6 +70,7 @@ import { UnlistIndexerService as StacksUnlistIndexerService } from './stacks-ind
 import { BuyIndexerService as StacksBuyIndexerService } from './stacks-indexer/providers/buy-indexer.service';
 import { StakeIndexerService as StacksStakeIndexerService } from './stacks-indexer/providers/stake-indexer.service';
 import { UnstakeIndexerService as StacksUnstakeIndexerService } from './stacks-indexer/providers/unstake-indexer.service';
+import { BuyWrapperIndexerService } from './stacks-indexer/providers/buy-wrapper-indexer.service';
 
 /* Select stream adapter based on chain symbol env variable */
 const TxStreamAdapterProvider = {
@@ -167,7 +168,8 @@ const TxStreamAdapterProvider = {
     RenameIndexerService,
     UpgradeIndexerService,
     TxUpgradeHelperService,
-    UpgradeMegaIndexerService
+    UpgradeMegaIndexerService,
+    BuyWrapperIndexerService
   ],
   exports: [IndexerOrchestratorService],
 })

@@ -32,6 +32,7 @@ import { IndexerService } from "../interfaces/indexer-service.interface";
 import { BuyIndexerService } from "src/indexers/stacks-indexer/providers/buy-indexer.service";
 import { ListIndexerService } from "src/indexers/stacks-indexer/providers/list-indexer.service";
 import { UnlistIndexerService } from "src/indexers/stacks-indexer/providers/unlist-indexer.service";
+import { BuyWrapperIndexerService } from "src/indexers/stacks-indexer/providers/buy-wrapper-indexer.service";
 
 // TODO: Try to simplify as a factory
 
@@ -69,7 +70,8 @@ export class StacksMicroIndexers {
     private soloIdAcceptBidIndexer: IndexerService,
     private renameIndexer: IndexerService,
     private upgradeIndexer: IndexerService,
-    private upgradeMegaIndexer: IndexerService
+    private upgradeMegaIndexer: IndexerService,
+    private buyWrapperIndexer: IndexerService
   ) {}
 }
 
@@ -107,7 +109,8 @@ export const StacksMicroIndexersProvider = {
     soloIdAcceptBidIndexer: SoloIdAcceptBidIndexerService,
     renameIndexer: RenameIndexerService,
     upgradeIndexer: UpgradeIndexerService,
-    upgradeMegaIndexer: UpgradeMegaIndexerService
+    upgradeMegaIndexer: UpgradeMegaIndexerService,
+    buyWrapperIndexer: BuyWrapperIndexerService
   ) => {
     return new StacksMicroIndexers(
       buyIndexer, 
@@ -141,7 +144,8 @@ export const StacksMicroIndexersProvider = {
       soloIdAcceptBidIndexer,
       renameIndexer,
       upgradeIndexer, 
-      upgradeMegaIndexer
+      upgradeMegaIndexer,
+      buyWrapperIndexer
     );
   },
   inject: [
@@ -176,6 +180,7 @@ export const StacksMicroIndexersProvider = {
     SoloIdAcceptBidIndexerService,
     RenameIndexerService,
     UpgradeIndexerService,
-    UpgradeMegaIndexerService
+    UpgradeMegaIndexerService,
+    BuyWrapperIndexerService
   ]
 };

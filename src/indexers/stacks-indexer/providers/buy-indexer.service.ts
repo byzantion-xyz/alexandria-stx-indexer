@@ -37,7 +37,7 @@ export class BuyIndexerService implements IndexerService {
     const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
 
     if (nftMeta) {
-      const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName[scf.name], tx, nftMeta, sc);
+      const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName.buy, tx, nftMeta, sc);
       const buyActionParams: CreateBuyActionTO = { 
         ...actionCommonArgs,
         list_price: nftMeta.nft_state?.listed ? nftMeta.nft_state.list_price : undefined,

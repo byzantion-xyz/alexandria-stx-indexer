@@ -29,9 +29,9 @@ export class TransferIndexerService implements IndexerService {
     let txResult: TxProcessResult = { processed: false, missing: false };
 
     const contract_key = sc.contract_key;
-    const token_id = this.txHelper.extractArgumentData(tx.args, scf, 'token_id');
-    const seller = this.txHelper.extractArgumentData(tx.args, scf, 'seller');
-    const buyer = this.txHelper.extractArgumentData(tx.args, scf, 'buyer');
+    const token_id = this.stacksTxHelper.extractArgumentData(tx.args, scf, 'token_id');
+    const seller = this.stacksTxHelper.extractArgumentData(tx.args, scf, 'seller');
+    const buyer = this.stacksTxHelper.extractArgumentData(tx.args, scf, 'buyer');
 
     const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
 

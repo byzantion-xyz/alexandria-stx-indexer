@@ -35,8 +35,8 @@ export class BidIndexerService implements IndexerService {
     }
 
     const contract_key = this.stacksTxHelper.extractAndParseContractKey(tx.args, scf);
-    const token_id = this.txHelper.extractArgumentData(tx.args, scf, 'token_id'); 
-    const price = this.txHelper.extractArgumentData(tx.args, scf, 'price');
+    const token_id = this.stacksTxHelper.extractArgumentData(tx.args, scf, 'token_id'); 
+    const price = this.stacksTxHelper.extractArgumentData(tx.args, scf, 'bid_price');
 
     const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
 

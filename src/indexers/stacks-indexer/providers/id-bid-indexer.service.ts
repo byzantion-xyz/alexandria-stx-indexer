@@ -34,9 +34,9 @@ export class IdBidIndexerService implements IndexerService {
     this.logger.debug(`process() ${tx.hash}`);
     let txResult: TxProcessResult = { processed: false, missing: false };
 
-    const price = this.txHelper.extractArgumentData(tx.args, scf, 'price');
-    const token_id_list = this.txHelper.extractArgumentData(tx.args, scf, 'token_id_list');
-    const units = this.txHelper.extractArgumentData(tx.args, scf, 'units');
+    const price = this.stacksTxHelper.extractArgumentData(tx.args, scf, 'price');
+    const token_id_list = this.stacksTxHelper.extractArgumentData(tx.args, scf, 'token_id_list');
+    const units = this.stacksTxHelper.extractArgumentData(tx.args, scf, 'units');
     
     const events = this.stacksTxHelper.extractSmartContractLogEvents(tx.events);
     const event = events.find(e => e && e.data?.data && e.data.data['collection-id']);

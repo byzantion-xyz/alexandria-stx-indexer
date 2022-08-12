@@ -10,6 +10,7 @@ import { CreateActionTO, CreateRelistActionTO } from 'src/indexers/common/interf
 import { IndexerService } from 'src/indexers/common/interfaces/indexer-service.interface';
 import { TxProcessResult } from 'src/indexers/common/interfaces/tx-process-result.interface';
 import { Repository } from 'typeorm';
+import { StacksTxHelperService } from './stacks-tx-helper.service';
 
 @Injectable()
 export class ChangePriceIndexerService implements IndexerService {
@@ -17,6 +18,7 @@ export class ChangePriceIndexerService implements IndexerService {
 
   constructor(
     private txHelper: TxHelperService,
+    private stacksTxHelper: StacksTxHelperService,
     @InjectRepository(Action)
     private actionRepository: Repository<Action>,
     @InjectRepository(SmartContract)
@@ -27,30 +29,30 @@ export class ChangePriceIndexerService implements IndexerService {
     this.logger.debug(`process() ${tx.hash}`);
     let txResult: TxProcessResult = { processed: false, missing: false };
 
-    const second_market = this.txHelper.extractArgumentData(tx.args, scf, 'second_market');
-    const token_id = this.txHelper.extractArgumentData(tx.args, scf, "token_id");
-    const price = this.txHelper.extractArgumentData(tx.args, scf, "price");
-    const contract_key = this.txHelper.extractArgumentData(tx.args, scf, "contract_key");
-    const collection_map_id = this.txHelper.extractArgumentData(tx.args, scf, "collection_map_id");
+    const second_market =  this.stacksTxHelper.extractArgumentData(tx.args, scf, 'second_market');
+    const token_id = this.stacksTxHelper.extractArgumentData(tx.args, scf, "token_id");
+    const price =  this.stacksTxHelper.extractArgumentData(tx.args, scf, "price");
+    const contract_key =  this.stacksTxHelper.extractArgumentData(tx.args, scf, "contract_key");
+    const collection_map_id = this.stacksTxHelper.extractArgumentData(tx.args, scf, "collection_map_id");
 
     const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
 
     if (nftMeta) {
       const list_sc = await this.smartContractRepository.findOne({ where: { contract_key: second_market }});
-      const commission_id = await this.txHelper.findCommissionByKey(list_sc, contract_key);
+      const commission = await this.txHelper.findCommissionByKey(list_sc, contract_key);
       const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName.relist, tx, nftMeta, sc);
       const relistActionParams: CreateRelistActionTO = {
         ...actionCommonArgs,
         list_price: price,
         seller: tx.signer,
-        ... (commission_id && { commission_id })
+        ... (commission && { commission_id: commission.id })
       };
 
       if (this.txHelper.isNewNftListOrSale(tx, nftMeta.nft_state)) {
         const args: NftStateArguments = {
           collection_map_id: collection_map_id || contract_key || null
         };
-        await this.txHelper.listMeta(nftMeta.id, tx, list_sc, price, commission_id, args);
+        await this.txHelper.listMeta(nftMeta.id, tx, list_sc, price, commission?.id, args);
 
         await this.createAction(relistActionParams);
       } else {

@@ -13,6 +13,7 @@ import { Repository } from 'typeorm';
 import { MegapontAttribute } from 'src/database/universal/entities/MegapontAttribute';
 import { NftMetaAttribute } from 'src/database/universal/entities/NftMetaAttribute';
 import { NftMeta } from 'src/database/universal/entities/NftMeta';
+import { StacksTxHelperService } from './stacks-tx-helper.service';
 
 @Injectable()
 export class UpgradeMegaIndexerService implements IndexerService {
@@ -20,6 +21,7 @@ export class UpgradeMegaIndexerService implements IndexerService {
 
   constructor(
     private txHelper: TxHelperService,
+    private stacksTxHelper: StacksTxHelperService,
     private txUpgradeHelper: TxUpgradeHelperService,
     @InjectRepository(Action)
     private actionRepository: Repository<Action>,
@@ -36,14 +38,14 @@ export class UpgradeMegaIndexerService implements IndexerService {
     this.logger.debug(`process() ${tx.hash}`);
     let txResult: TxProcessResult = { processed: false, missing: false };
 
-    const robot_asset_name = this.txHelper.extractArgumentData(tx.args, scf, 'robot_asset_name');
-    const component_asset_name = this.txHelper.extractArgumentData(tx.args, scf, 'component_asset_name');
-    const token_id = this.txHelper.extractArgumentData(tx.args, scf, 'token_id');
-    const name = this.txHelper.extractArgumentData(tx.args, scf, 'name');
+    const robot_asset_name = this.stacksTxHelper.extractArgumentData(tx.args, scf, 'robot_asset_name');
+    const component_asset_name = this.stacksTxHelper.extractArgumentData(tx.args, scf, 'component_asset_name');
+    const token_id = this.stacksTxHelper.extractArgumentData(tx.args, scf, 'token_id');
+    const name = this.stacksTxHelper.extractArgumentData(tx.args, scf, 'name');
     const { contract_key } = sc;
     
     const token_id_list: string[] = attribute_names.map(attr_name => {
-      return this.txHelper.extractArgumentData(tx.args, scf, attr_name).toString();
+      return this.stacksTxHelper.extractArgumentData(tx.args, scf, attr_name).toString();
     });
 
     const nftMeta = await this.txUpgradeHelper.findMetaByAssetNameWithAttr(robot_asset_name, token_id);
@@ -56,7 +58,7 @@ export class UpgradeMegaIndexerService implements IndexerService {
 
       txResult.processed = true;
     } else {
-      this.logger.log(`NftMeta not found ${contract_key} ${token_id}`);
+      this.logger.log(`NftMeta not found ${robot_asset_name} ${token_id}`);
       txResult.missing = true;
     }
 

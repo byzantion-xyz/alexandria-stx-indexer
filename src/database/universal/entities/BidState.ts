@@ -19,7 +19,7 @@ export class BidState {
   @Column("text")
   bid_buyer: string;
 
-  @Column("text")
+  @Column("text", { nullable: true })
   bid_seller: string;
 
   @Column("enum", { enum: ["active", "pending", "cancelled", "matched"], default: () => "active" })
@@ -80,7 +80,7 @@ export class BidState {
     onDelete: "RESTRICT",
     onUpdate: "CASCADE",
   })
-  @JoinColumn([{ name: "smart_contract_id", referencedColumnName: "id" }])
+  @JoinColumn([{ name: "collection_id", referencedColumnName: "id" }])
   collection: Collection;
 
   @OneToMany(

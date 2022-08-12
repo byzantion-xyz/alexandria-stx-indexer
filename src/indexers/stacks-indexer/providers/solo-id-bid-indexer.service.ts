@@ -34,7 +34,7 @@ export class SoloIdBidIndexerService implements IndexerService {
     this.logger.debug(`process() ${tx.hash}`);
     let txResult: TxProcessResult = { processed: false, missing: false };
 
-    const token_id = this.txHelper.extractArgumentData(tx.args, scf, 'token_id');    
+    const token_id = this.stacksTxHelper.extractArgumentData(tx.args, scf, 'token_id');    
     const events = this.stacksTxHelper.extractSmartContractLogEvents(tx.events);
     const event = events.find(e => e && e.data?.data && e.data.data['collection-id']);
 

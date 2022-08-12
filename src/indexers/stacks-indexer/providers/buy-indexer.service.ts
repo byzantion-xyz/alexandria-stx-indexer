@@ -14,6 +14,7 @@ import { SmartContract } from "src/database/universal/entities/SmartContract";
 import { SmartContractFunction } from "src/database/universal/entities/SmartContractFunction";
 import { Repository } from "typeorm";
 import { ActionName } from "src/indexers/common/helpers/indexer-enums";
+import { StacksTxHelperService } from "./stacks-tx-helper.service";
 
 @Injectable()
 export class BuyIndexerService implements IndexerService {
@@ -21,6 +22,7 @@ export class BuyIndexerService implements IndexerService {
 
   constructor(
     private txHelper: TxHelperService,
+    private stacksTxHelper: StacksTxHelperService,
     private salesBotService: SalesBotService,
     @InjectRepository(ActionEntity)
     private actionRepository: Repository<ActionEntity>
@@ -29,10 +31,8 @@ export class BuyIndexerService implements IndexerService {
   async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {
     this.logger.debug(`process() ${tx.hash}`);
     let txResult: TxProcessResult = { processed: false, missing: false };
-
-    const token_id = this.txHelper.extractArgumentData(tx.args, scf, "token_id");
-    const contract_key = this.txHelper.extractArgumentData(tx.args, scf, "contract_key");
-    const price = this.txHelper.extractArgumentData(tx.args, scf, "price");
+    const token_id = this.stacksTxHelper.extractArgumentData(tx.args, scf, "token_id");
+    const contract_key = this.stacksTxHelper.extractArgumentData(tx.args, scf, "contract_key");
 
     const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
 
@@ -40,17 +40,18 @@ export class BuyIndexerService implements IndexerService {
       const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName[scf.name], tx, nftMeta, sc);
       const buyActionParams: CreateBuyActionTO = { 
         ...actionCommonArgs,
-        list_price: price || (nftMeta.nft_state?.listed ? nftMeta.nft_state.list_price : undefined),
+        list_price: nftMeta.nft_state?.listed ? nftMeta.nft_state.list_price : undefined,
         seller: nftMeta.nft_state && nftMeta.nft_state.listed ? nftMeta.nft_state.list_seller : undefined,
         buyer: tx.signer,
-        commission_id: nftMeta.nft_state?.commission_id
+        market_name: nftMeta.nft_state?.commission?.market_name || null,
+        commission_id: nftMeta.nft_state?.commission?.id
       };
 
       if (this.txHelper.isNewNftListOrSale(tx, nftMeta.nft_state)) {
         await this.txHelper.unlistMeta(nftMeta.id, tx);
         const newAction = await this.createAction(buyActionParams);
         if (newAction && tx.notify) {
-          this.salesBotService.createAndSend(newAction.id);
+          //this.salesBotService.createAndSend(newAction.id);
         }
       } else  {
         this.logger.log(`Too Late`);

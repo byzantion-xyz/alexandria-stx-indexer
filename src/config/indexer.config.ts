@@ -12,9 +12,9 @@ export default registerAs("indexer", () => ({
         function_name: "transfer",
         name: "transfer",
         args: {
-          token_id: 'id',
-          seller: 'sender',
-          buyer: 'recipient',
+          token_id: 0,
+          seller: 1,
+          buyer: 2,
         },
       },
     ],

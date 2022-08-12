@@ -35,15 +35,16 @@ export class CollectionMultiOrderBookBidIndexerService implements IndexerService
     let txResult: TxProcessResult = { processed: false, missing: false };
 
     const events = this.stacksTxHelper.extractSmartContractLogEvents(tx.events);
-
     for (let event of events) {
-      if (event.data && event.data.data && event.data.data['collection-id']) {
+      if (event.data && event.data?.data && event.data.data['collection-id']) {
         const contract_key = this.stacksTxHelper.extractContractKeyFromEvent(event);
         const collection = await this.collectionRepository.findOne({ 
           where: { smart_contract: { contract_key }}
         });
-        const bid_sc = await this.smartContractRepository.findOne({ where: { contract_key: event.contract_log.contract_id }});
-  
+        const bid_sc = await this.smartContractRepository.findOne({ where: { 
+          contract_key: event.contract_log.contract_id 
+        }});
+
         if (contract_key && collection && bid_sc) {
           const bidCommonArgs = this.txBidHelper.setCommonBidArgs(
             tx, sc, event, collection, BidType.collection
@@ -60,8 +61,8 @@ export class CollectionMultiOrderBookBidIndexerService implements IndexerService
     }
 
     const contract_key = this.stacksTxHelper.extractAndParseContractKey(tx.args, scf, 'collection_map_id');
-    const price = this.txHelper.extractArgumentData(tx.args, scf, 'bid_price');
-    const units = this.txHelper.extractArgumentData(tx.args, scf, 'units');
+    const price = this.stacksTxHelper.extractArgumentData(tx.args, scf, 'bid_price');
+    const units = this.stacksTxHelper.extractArgumentData(tx.args, scf, 'units');
 
     const collection = await this.collectionRepository.findOne({ 
       where: { smart_contract: { contract_key }}

@@ -34,7 +34,7 @@ export class MultiIdBidIndexerService implements IndexerService {
     this.logger.debug(`process() ${tx.hash}`);
     let txResult: TxProcessResult = { processed: false, missing: false };
 
-    const token_id_list = this.txHelper.extractArgumentData(tx.args, scf, 'token_id_list');    
+    const token_id_list = this.stacksTxHelper.extractArgumentData(tx.args, scf, 'token_id_list');    
     const events = this.stacksTxHelper.extractSmartContractLogEvents(tx.events);
 
     for (let event of events) {
@@ -59,8 +59,8 @@ export class MultiIdBidIndexerService implements IndexerService {
     }
 
     const contract_key = this.stacksTxHelper.extractAndParseContractKey(tx.args, scf, 'collection_map_id');
-    const price = this.txHelper.extractArgumentData(tx.args, scf, 'bid_price');
-    const units = this.txHelper.extractArgumentData(tx.args, scf, 'units');
+    const price = this.stacksTxHelper.extractArgumentData(tx.args, scf, 'bid_price');
+    const units = this.stacksTxHelper.extractArgumentData(tx.args, scf, 'units');
 
     const collection = await this.collectionRepository.findOne({ 
       where: { smart_contract: { contract_key }}

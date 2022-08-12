@@ -68,9 +68,6 @@ export class TxUpgradeHelperService {
 
   async upgradeMegapont(nftMeta: NftMeta, newBotMetas: NftMeta[], token_id_list: string[], name: string) {
     try {
-      this.logger.log('Original attrs');
-      this.logger.log(JSON.stringify(nftMeta.attributes, null, 2));
-
       let newBot = {};
       if (newBotMetas && newBotMetas.length) {
         for (let attr of attribute_names) {

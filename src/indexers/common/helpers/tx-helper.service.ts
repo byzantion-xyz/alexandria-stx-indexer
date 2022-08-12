@@ -79,7 +79,7 @@ export class TxHelperService {
       },
       relations: {
         nft_metas: {
-          nft_state: { list_contract: true, staked_contract: true },
+          nft_state: { list_contract: true, staked_contract: true, commission: true },
           smart_contract: true,
           collection: true
       }}
@@ -90,14 +90,13 @@ export class TxHelperService {
     }
   }
 
-  async findCommissionByKey(sc: SmartContract, contract_key: string, key?: string): Promise<string> {
-    let commission_id: string;
+  async findCommissionByKey(sc: SmartContract, contract_key: string, key?: string): Promise<Commission> {
     if (!key) {
       key = `${sc.contract_key}::${contract_key}`;
     }
     if (key) {
       const commission = await this.commissionRepository.findOneBy({ commission_key: key });
-      if (commission) return commission.id;
+      return commission;
     }
   }
 
@@ -212,7 +211,7 @@ export class TxHelperService {
     let params: CreateActionCommonArgs = {
       ...common,
       collection_id: collection.id,
-      smart_contract_id: collection.smart_contract.id
+      smart_contract_id: collection.smart_contract_id
     }    
     return params;
   }

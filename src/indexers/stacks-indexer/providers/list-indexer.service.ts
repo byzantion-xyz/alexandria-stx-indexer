@@ -15,6 +15,7 @@ import { SmartContractFunction } from "src/database/universal/entities/SmartCont
 import { Repository } from "typeorm";
 import { ActionName, SmartContractType } from "src/indexers/common/helpers/indexer-enums";
 import { NftState } from "src/database/universal/entities/NftState";
+import { StacksTxHelperService } from "./stacks-tx-helper.service";
 
 @Injectable()
 export class ListIndexerService implements IndexerService {
@@ -22,6 +23,7 @@ export class ListIndexerService implements IndexerService {
 
   constructor(
     private txHelper: TxHelperService,
+    private stacksTxHelper: StacksTxHelperService,
     private listBotService: ListBotService,
     private missingCollectionService: MissingCollectionService,
     @InjectRepository(Action)
@@ -35,44 +37,35 @@ export class ListIndexerService implements IndexerService {
   async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {
     this.logger.debug(`process() ${tx.hash}`);
     let txResult: TxProcessResult = { processed: false, missing: false };
-    let market_sc: SmartContract;
 
-    const token_id = this.txHelper.extractArgumentData(tx.args, scf, "token_id");
-    const price = this.txHelper.extractArgumentData(tx.args, scf, "price");
-    const collection_map_id = this.txHelper.extractArgumentData(tx.args, scf, "collection_map_id");
-    let commission_key = this.txHelper.extractArgumentData(tx.args, scf, 'commission_trait');
-    let contract_key = this.txHelper.extractArgumentData(tx.args, scf, "contract_key");
-
-    // Check if custodial
-    if (sc.type.includes(SmartContractType.non_fungible_tokens)) {
-      if (contract_key) {
-        market_sc = await this.smartContractRepository.findOneBy({ contract_key });
-      }
-      contract_key = sc.contract_key;
-    }
+    const token_id = this.stacksTxHelper.extractArgumentData(tx.args, scf, "token_id");
+    const price = this.stacksTxHelper.extractArgumentData(tx.args, scf, "list_price");
+    const collection_map_id = this.stacksTxHelper.extractArgumentData(tx.args, scf, "collection_map_id");
+    let commission_key = this.stacksTxHelper.extractArgumentData(tx.args, scf, 'commission_trait');
+    let contract_key = this.stacksTxHelper.extractArgumentData(tx.args, scf, "contract_key");
 
     const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
    
     if (nftMeta) {
-      const commission_id = await this.txHelper.findCommissionByKey(sc, contract_key, commission_key);
-      const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName[scf.name], tx, nftMeta, market_sc);
+      const commission = await this.txHelper.findCommissionByKey(sc, contract_key, commission_key);
+      const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName[scf.name], tx, nftMeta, sc);
       const listActionParams: CreateListActionTO = {
         ...actionCommonArgs,
         list_price: price,
         seller: tx.signer,
-        ... (commission_id && { commission_id })
+        ... (commission && { commission_id: commission.id }),
+        market_name: commission?.market_name || null
       };
     
       if (this.txHelper.isNewNftListOrSale(tx, nftMeta.nft_state)) {
         const args: NftStateArguments = {
           ... (collection_map_id && { collection_map_id })
         };
-        await this.txHelper.listMeta(nftMeta.id, tx, sc, price, commission_id, args);
-        // TODO: Use unified service to update NftMeta and handle NftState changes
+        await this.txHelper.listMeta(nftMeta.id, tx, sc, price, commission?.id, args);
 
         const newAction = await this.createAction(listActionParams);
         if (newAction && tx.notify) {
-          this.listBotService.createAndSend(newAction.id);
+          //this.listBotService.createAndSend(newAction.id);
         }
       } else {
         this.logger.log(`Too Late`);

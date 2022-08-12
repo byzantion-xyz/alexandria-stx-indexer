@@ -10,6 +10,7 @@ import { CreateListActionTO } from 'src/indexers/common/interfaces/create-action
 import { IndexerService } from 'src/indexers/common/interfaces/indexer-service.interface';
 import { TxProcessResult } from 'src/indexers/common/interfaces/tx-process-result.interface';
 import { Repository } from 'typeorm';
+import { StacksTxHelperService } from './stacks-tx-helper.service';
 
 @Injectable()
 export class UpgradeIndexerService implements IndexerService {
@@ -17,6 +18,7 @@ export class UpgradeIndexerService implements IndexerService {
 
   constructor(
     private txHelper: TxHelperService,
+    private stacksTxHelper: StacksTxHelperService,
     private txUpgradeHelper: TxUpgradeHelperService,
     @InjectRepository(Action)
     private actionRepository: Repository<Action>
@@ -27,13 +29,13 @@ export class UpgradeIndexerService implements IndexerService {
     this.logger.debug(`process() ${tx.hash}`);
     let txResult: TxProcessResult = { processed: false, missing: false };
 
-    const ref_contract_key = this.txHelper.extractArgumentData(tx.args, scf, 'ref_contract_key');
-    const token_id = this.txHelper.extractArgumentData(tx.args, scf, 'token_id');
-    const name = this.txHelper.extractArgumentData(tx.args, scf, 'name');
+    const ref_contract_key = this.stacksTxHelper.extractArgumentData(tx.args, scf, 'ref_contract_key');
+    const token_id = this.stacksTxHelper.extractArgumentData(tx.args, scf, 'token_id');
+    const name = this.stacksTxHelper.extractArgumentData(tx.args, scf, 'name');
     const { contract_key } = sc;
-    
+
     const token_id_list: string[] = attribute_names.map(attr_name => {
-      return this.txHelper.extractArgumentData(tx.args, scf, attr_name).toString();
+      return this.stacksTxHelper.extractArgumentData(tx.args, scf, attr_name).toString();
     });
 
     const nftMeta = await this.txUpgradeHelper.findMetaByContractKeyWithAttr(contract_key, token_id);

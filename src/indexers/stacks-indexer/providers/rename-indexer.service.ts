@@ -10,6 +10,7 @@ import { CreateActionTO } from 'src/indexers/common/interfaces/create-action-com
 import { IndexerService } from 'src/indexers/common/interfaces/indexer-service.interface';
 import { TxProcessResult } from 'src/indexers/common/interfaces/tx-process-result.interface';
 import { Repository } from 'typeorm';
+import { StacksTxHelperService } from './stacks-tx-helper.service';
 
 @Injectable()
 export class RenameIndexerService implements IndexerService {
@@ -17,6 +18,7 @@ export class RenameIndexerService implements IndexerService {
 
   constructor (
     private txHelper: TxHelperService,
+    private stacksTxHelper: StacksTxHelperService,
     @InjectRepository(Action)
     private actionRepository: Repository<Action>,
     @InjectRepository(NftMeta)
@@ -27,9 +29,9 @@ export class RenameIndexerService implements IndexerService {
     this.logger.debug(`process() ${tx.hash}`);
     let txResult: TxProcessResult = { processed: false, missing: false };
 
-    const contract_key = this.txHelper.extractArgumentData(tx.args, scf, 'contract_key');
-    const token_id = this.txHelper.extractArgumentData(tx.args, scf, 'token_id');
-    const name = this.txHelper.extractArgumentData(tx.args, scf, 'name');
+    const contract_key = this.stacksTxHelper.extractArgumentData(tx.args, scf, 'contract_key');
+    const token_id = this.stacksTxHelper.extractArgumentData(tx.args, scf, 'token_id');
+    const name = this.stacksTxHelper.extractArgumentData(tx.args, scf, 'name');
 
     const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
     if (nftMeta) {
@@ -44,12 +46,7 @@ export class RenameIndexerService implements IndexerService {
   }
 
   async createAction(params: CreateActionTO): Promise<Action> {
-    try {
-      const action = this.actionRepository.create(params);
-      const saved = await this.actionRepository.save(action);
-      this.logger.log(`New action ${params.action}: ${saved.id} `);
-      return saved;
-    } catch (err) {}
+    return;
   }
 
 }

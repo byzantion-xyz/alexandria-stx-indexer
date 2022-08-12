@@ -66,10 +66,10 @@ export class TxBidHelperService {
       }
       const saved = await this.bidStateRepo.save(bidState);
 
-      this.logger.log(`New BidState: ${params.bid_type}: ${saved.id} `);
+      this.logger.log(`New bid_state bid_type:${params.bid_type}  id: ${saved.id} `);
 
       return saved;
-    } catch (err) {}
+    } catch (err) {} 
   }
 
   isNewBid(tx: CommonTx, bidState: BidState): boolean {
@@ -197,7 +197,7 @@ export class TxBidHelperService {
       bidState.nft_metas = [bidStateNftMeta];
     
       await this.bidStateRepo.save(bidState);
-      this.logger.log(`Accept bid order: ${bidState.nonce}`);
+      this.logger.log(`Accept bid nonce: ${bidState.nonce || 'unknown' }`);
     } catch (err) { this.logger.warn('Error saving acceptance', bidState.nonce, err); }
   }
 
@@ -214,7 +214,7 @@ export class TxBidHelperService {
   }
 
   build_nonce(contract_key: string, order: bigint): string {
-    return `${contract_key}::${Number(order)}`;
+    return `${contract_key}::${order.toString()}`;
   }
 
 }

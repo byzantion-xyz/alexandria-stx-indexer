@@ -35,8 +35,7 @@ export class AcceptBidIndexerService implements IndexerService {
     }
 
     const contract_key = this.stacksTxHelper.extractAndParseContractKey(tx.args, scf);
-    const token_id = this.txHelper.extractArgumentData(tx.args, scf, 'token_id'); 
-    const price = this.txHelper.extractArgumentData(tx.args, scf, 'price');
+    const token_id = this.stacksTxHelper.extractArgumentData(tx.args, scf, 'token_id'); 
 
     const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
 
@@ -47,18 +46,18 @@ export class AcceptBidIndexerService implements IndexerService {
         await this.txBidHelper.acceptBid(bidState, tx, nftMeta);
 
         await this.txHelper.unlistMeta(nftMeta.id, tx);
+
+        const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName.accept_bid, tx, nftMeta, sc);
+        const acceptBidActionParams: CreateAcceptBidActionTO = {
+          ...actionCommonArgs,
+          bid_price: bidState?.bid_price,
+          buyer: bidState?.bid_buyer,
+          seller: tx.signer
+        };
+        await this.createAction(acceptBidActionParams);
       } else {
         this.logger.log(`Too Late`);
       }
-
-      const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName.accept_bid, tx, nftMeta, sc);
-      const acceptBidActionParams: CreateAcceptBidActionTO = {
-        ...actionCommonArgs,
-        bid_price: price,
-        buyer: bidState.bid_buyer,
-        seller: tx.signer
-      };
-      await this.createAction(acceptBidActionParams);
 
       txResult.processed = true;
     } else {

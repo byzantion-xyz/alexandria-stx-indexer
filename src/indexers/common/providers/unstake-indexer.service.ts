@@ -9,7 +9,6 @@ import { CreateActionTO, CreateUnstakeActionTO } from 'src/indexers/common/inter
 import { IndexerService } from 'src/indexers/common/interfaces/indexer-service.interface';
 import { TxProcessResult } from 'src/indexers/common/interfaces/tx-process-result.interface';
 import { Action } from 'src/database/universal/entities/Action';
-import { NftState } from 'src/database/universal/entities/NftState';
 import { SmartContract } from 'src/database/universal/entities/SmartContract';
 import { ActionName, SmartContractType } from 'src/indexers/common/helpers/indexer-enums';
 
@@ -21,11 +20,7 @@ export class UnstakeIndexerService implements IndexerService {
     private txHelper: TxHelperService,
     private txStakingHelper: TxStakingHelperService,
     @InjectRepository(Action)
-    private actionRepository: Repository<Action>,
-    @InjectRepository(NftState)
-    private nftStateRepository: Repository<NftState>,
-    @InjectRepository(SmartContract)
-    private smartContractRepository: Repository<SmartContract>
+    private actionRepository: Repository<Action>
   ) {}
 
   async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {
@@ -47,6 +42,7 @@ export class UnstakeIndexerService implements IndexerService {
       const unstakeActionParams: CreateUnstakeActionTO = {
         ...actionCommonArgs,
         seller: tx.signer,
+        market_name: null
       };
 
       if (this.txStakingHelper.isNewStakingBlock(tx, nftMeta.nft_state)) {

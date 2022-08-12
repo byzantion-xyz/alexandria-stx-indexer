@@ -12,6 +12,7 @@ import { SmartContractFunction } from "src/database/universal/entities/SmartCont
 import { Repository } from "typeorm";
 import { ActionName, SmartContractType } from "src/indexers/common/helpers/indexer-enums";
 import { Action } from "src/database/universal/entities/Action";
+import { StacksTxHelperService } from "./stacks-tx-helper.service";
 
 @Injectable()
 export class UnlistIndexerService implements IndexerService {
@@ -19,6 +20,7 @@ export class UnlistIndexerService implements IndexerService {
 
   constructor(
     private txHelper: TxHelperService,
+    private stacksTxHelper: StacksTxHelperService,
     @InjectRepository(Action)
     private actionRepository: Repository<Action>,
     @InjectRepository(SmartContract)
@@ -28,28 +30,20 @@ export class UnlistIndexerService implements IndexerService {
   async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {
     this.logger.debug(`process() ${tx.hash}`);
     let txResult: TxProcessResult = { processed: false, missing: false };
-    let market_sc: SmartContract;
 
-    const token_id = this.txHelper.extractArgumentData(tx.args, scf, "token_id");
-    let contract_key = this.txHelper.extractArgumentData(tx.args, scf, "contract_key");
-
-    // Check if custodial
-    if (sc.type.includes(SmartContractType.non_fungible_tokens)) {
-      if (contract_key) {
-        market_sc = await this.smartContractRepository.findOneBy({ contract_key });
-      }
-      contract_key = sc.contract_key;
-    }
+    const token_id = this.stacksTxHelper.extractArgumentData(tx.args, scf, "token_id");
+    const contract_key = this.stacksTxHelper.extractArgumentData(tx.args, scf, "contract_key");
 
     const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
 
     if (nftMeta) { 
-      const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName[scf.name], tx, nftMeta, market_sc);
+      const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName[scf.name], tx, nftMeta, sc);
       const unlistActionParams: CreateUnlistActionTO = {
         ...actionCommonArgs,
         list_price: nftMeta.nft_state && nftMeta.nft_state.list_price ? nftMeta.nft_state.list_price : undefined,
         seller: nftMeta.nft_state?.list_seller || undefined,
-        commission_id: nftMeta.nft_state?.commission_id
+        market_name: nftMeta.nft_state?.commission?.market_name || null,
+        commission_id: nftMeta.nft_state?.commission?.id
       };
 
       if (this.txHelper.isNewNftListOrSale(tx, nftMeta.nft_state)) {

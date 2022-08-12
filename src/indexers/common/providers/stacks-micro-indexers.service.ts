@@ -61,7 +61,7 @@ export class StacksMicroIndexers {
     private collectionRemoveOrderBookBidIndexer: IndexerService,
     private collectionMultiOrderBookBidIndexer: IndexerService,
     private idBidIndexer: IndexerService,
-    private multIdBidIndexer: IndexerService,
+    private multiIdBidIndexer: IndexerService,
     private idAcceptBidIndexer: IndexerService,
     private idRemoveBidIndexer: IndexerService,
     private soloIdBidIndexer: IndexerService,

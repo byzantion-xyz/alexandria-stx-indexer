@@ -1,7 +1,7 @@
-import { Column, Entity, Index, JoinColumn, ManyToOne, OneToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
 import { SmartContract } from "./SmartContract";
 import { NftMeta } from "./NftMeta";
-import { Commission } from "./Commission";
+import { NftStateList } from "./NftStateList";
 
 @Index("nft_state_pkey", ["id"], { unique: true })
 @Index("nft_state_meta_id_key", ["meta_id"], { unique: true })
@@ -22,7 +22,7 @@ export class NftState {
     scale: 0,
   })
   bid_price: bigint;
-
+  
   @Column("text", { nullable: true })
   bid_buyer: string | null;
 
@@ -49,28 +49,6 @@ export class NftState {
   bid_contract: SmartContract;
 
   @Column("boolean", { default: () => "false" })
-  listed: boolean;
-
-  @Column("numeric", {
-    nullable: true,
-    precision: 40,
-    scale: 0,
-  })
-  list_price: bigint;
-
-  @Column("text", { nullable: true })
-  list_seller: string | null;
-
-  @Column("bigint", { nullable: true })
-  list_block_height: bigint;
-
-  @Column("timestamp without time zone", { nullable: true })
-  list_block_datetime: Date;
-
-  @Column("bigint", { nullable: true })
-  list_tx_index: bigint;
-
-  @Column("boolean", { default: () => "false" })
   staked: boolean;
 
   @Column("text", { nullable: true })
@@ -88,24 +66,8 @@ export class NftState {
   @Column("timestamp without time zone")
   updated_at: Date;
 
-  @Column("jsonb", { nullable: true })
-  function_args: object | null;
-
-  @Column("uuid", { nullable: true })
-  commission_id: string;
-
-  @Column("uuid", { nullable: true })
-  list_contract_id: string;
-
   @Column("uuid", { nullable: true })
   staked_contract_id: string;
-
-  @ManyToOne(() => SmartContract, (smartContract) => smartContract.nft_state, {
-    onDelete: "RESTRICT",
-    onUpdate: "CASCADE",
-  })
-  @JoinColumn([{ name: "list_contract_id", referencedColumnName: "id" }])
-  list_contract: SmartContract;
 
   @ManyToOne(() => SmartContract, (smartContract) => smartContract.nft_state, {
     onDelete: "RESTRICT",
@@ -121,10 +83,12 @@ export class NftState {
   @JoinColumn([{ name: "meta_id", referencedColumnName: "id" }])
   meta: NftMeta;
 
-  @ManyToOne(() => Commission, (commission) => commission.nft_states, {
-    onDelete: "RESTRICT",
-    onUpdate: "CASCADE",
-  })
-  @JoinColumn([{ name: "commission_id", referencedColumnName: "id" }])
-  commission: Commission;
+  @OneToMany(
+    () => NftStateList, 
+    (nftStateList) => nftStateList, 
+    { cascade: true }
+  )
+  nft_states_list: NftStateList[];
+
+
 }

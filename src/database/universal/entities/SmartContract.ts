@@ -8,6 +8,7 @@ import { NftState } from "./NftState";
 import { Chain } from "./Chain";
 import { SmartContractFunction } from "./SmartContractFunction";
 import { SmartContractType } from "src/indexers/common/helpers/indexer-enums";
+import { NftStateList } from "./NftStateList";
 
 @Index("smart_contract_contract_key_key", ["contract_key"], { unique: true })
 @Index("smart_contract_pkey", ["id"], { unique: true })
@@ -82,8 +83,8 @@ export class SmartContract {
   @OneToMany(() => NftMeta, (nftMeta) => nftMeta.smart_contract)
   nft_metas: NftMeta[];
 
-  @OneToMany(() => NftState, (nftState) => nftState.list_contract)
-  nft_state: NftState[];
+  @OneToMany(() => NftStateList, (nftStateList) => nftStateList.list_contract)
+  nft_states_list: NftStateList[];
 
   @Column()
   chain_id: string;

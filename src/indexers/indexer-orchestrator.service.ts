@@ -44,10 +44,11 @@ export class IndexerOrchestratorService {
     this.logger.debug(`runIndexer() Initialize with options includeMissings:${options.includeMissings}`);
     try {
       await this.setUpChainAndStreamer();
+      if (options.includeMissings && !options.contract_key) {
+        throw new Error('A contract_key is required while running missing transactions');
+      }
 
-      const cursor = options.includeMissings
-      ? await this.txStreamAdapter.fetchMissingTxs(options.contract_key)
-      : await this.txStreamAdapter.fetchTxs(options.contract_key);
+      const cursor = await this.txStreamAdapter.fetchTxs(options);
 
       let txs = [];
       this.logger.log(`Querying transactions cursor batch_size: ${BATCH_SIZE} `);
@@ -192,7 +193,6 @@ export class IndexerOrchestratorService {
 
   isTxStreamAdapter(arg): arg is TxStreamAdapter {
     return (
-      typeof arg.fetchMissingTxs === 'function' &&
       typeof arg.fetchTxs === 'function' &&
       typeof arg.setTxResult === 'function'
     );

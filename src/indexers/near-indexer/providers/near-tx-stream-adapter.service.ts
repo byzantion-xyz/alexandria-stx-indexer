@@ -16,6 +16,7 @@ import { IndexerEventType, SmartContractType } from "src/indexers/common/helpers
 import { SmartContractFunction } from "src/database/universal/entities/SmartContractFunction";
 import { Transaction as TransactionEntity } from "src/database/near-stream/entities/Transaction";
 import { ConfigService } from "@nestjs/config";
+import { IndexerOptions } from "src/indexers/common/interfaces/indexer-options";
 
 const WHITELISTED_ACTIONS = [
   'nft_approve', 
@@ -30,6 +31,7 @@ const WHITELISTED_ACTIONS = [
 
 @Injectable()
 export class NearTxStreamAdapterService implements TxStreamAdapter {
+  chainSymbol = 'Near';
   private readonly logger = new Logger(NearTxStreamAdapterService.name);
 
   constructor(
@@ -44,49 +46,16 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
     private smartContractFunctionRepository: Repository<SmartContractFunction>
   ) {}
 
-  async fetchTxs(contract_key?: string): Promise<any> {
-    const sql = `select * from transaction t inner join receipt r on t.success_receipt_id=r.receipt_id 
-      WHERE processed = false 
-      AND missing = false
-      AND
-      (
-        transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_approve"}}]' OR
-        transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_revoke"}}]' OR
-        transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_buy" }}]' OR
-        transaction->'actions' @> '[{"FunctionCall": { "method_name": "buy" }}]' OR
-        transaction->'actions' @> '[{"FunctionCall": { "method_name": "delete_market_data" }}]' OR
-        transaction->'actions' @> '[{"FunctionCall": { "method_name": "unstake" }}]' OR
-        transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_transfer_call" }}]' OR
-        transaction->'actions' @> '[{"FunctionCall": { "method_name": "withdraw_nft" }}]'
-      )
-      order by t.block_height ASC;
-    `;
+  async fetchTxs(options: IndexerOptions): Promise<any> {
+    const accounts = await this.findSmartContracts(options.contract_key);
+    let accounts_in = this.buildReceiverIdInQuery(accounts);
 
-    const pool = new Pool({
-      connectionString: this.configService.get('NEAR_STREAMER_SQL_DATABASE_URL')
-    });
-    const client = await pool.connect();
-
-    const cursor = client.query(new Cursor(sql));
-    return cursor;
-  }
-
-  async fetchMissingTxs(contract_key?: string): Promise<any> {
-    let accounts_in = "";
-    const accounts = await this.fetchAccounts();
-    if (contract_key) {
-      accounts_in = `'${contract_key}'`;
-    } else {
-      for (let i in accounts) {
-        accounts_in += `'${accounts[i]}',`;
-      }
-      accounts_in = accounts_in.slice(0, -1);
-    }
-
-    const sql = `select * from transaction t inner join receipt r on t.success_receipt_id =r.receipt_id 
-      WHERE receiver_id in (${accounts_in}) 
+    const sql = `select * from transaction t inner join receipt r on t.success_receipt_id=r.receipt_id
+      WHERE receiver_id in (${accounts_in})
+      ${ options.start_block_height ? 'AND t.block_height >=' + options.start_block_height : '' }
+      ${ options.end_block_height ? 'AND t.block_height <='+ options.end_block_height  : '' }
       AND processed = false 
-      AND missing = true
+      AND missing = ${ options.includeMissings ? true : false }
       AND
       (
         transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_approve"}}]' OR
@@ -247,5 +216,28 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
     const result: CommonTx[] = this.transformTxs(txs);
   
     return result;
+  }
+
+  private buildReceiverIdInQuery(scs: SmartContract[]): string {
+    let accounts_in = '';
+    const accounts = scs.map((sc) => sc.contract_key);
+    for (let i in accounts) {
+      accounts_in += `'${accounts[i]}',`;
+    }
+    accounts_in = accounts_in.slice(0, -1);
+
+    return accounts_in;
+  }
+
+  private async findSmartContracts(contract_key?: string): Promise<SmartContract[]> {
+    let accounts = await this.smartContractRepository.find({ 
+      where: { 
+        chain : { symbol: this.chainSymbol },
+        ...( contract_key && { contract_key })
+      }
+    });
+    if (!accounts || !accounts.length) throw new Error('Invalid contract_key');
+    
+    return accounts;
   }
 }

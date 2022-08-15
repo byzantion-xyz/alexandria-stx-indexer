@@ -16,10 +16,12 @@ import { StacksTxHelperService } from './stacks-tx-helper.service';
 import { TransactionEvent } from '@stacks/stacks-blockchain-api-types';
 import { SmartContract } from 'src/database/universal/entities/SmartContract';
 import { NearIndexerController } from 'src/indexers/near-indexer/near-indexer.controller';
+import { IndexerOptions } from 'src/indexers/common/interfaces/indexer-options';
 
 @Injectable()
 export class StacksTxStreamAdapterService implements TxStreamAdapter {
   private readonly logger = new Logger(StacksTxStreamAdapterService.name);
+  chainSymbol = 'Stacks';
 
   constructor (
     private configService: ConfigService,
@@ -30,57 +32,17 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
     private smartContractRepository: Repository<SmartContract>
   ) {}
 
-  async fetchTxs(contract_key?: string): Promise<any> {
-    let accounts_in = "";
-    const accounts = await this.fetchAccounts();
-
-    if (contract_key) {
-      accounts_in = `'${contract_key}'`;
-    } else {
-      for (let i in accounts) {
-        accounts_in += `'${accounts[i]}',`;
-      }
-      accounts_in = accounts_in.slice(0, -1);
-    }
+  async fetchTxs(options: IndexerOptions): Promise<any> {
+    const accounts = await this.findSmartContracts(options.contract_key);
+    let accounts_in = this.buildReceiverIdInQuery(accounts);
 
     const sql = `SELECT * from transaction t
       WHERE t.contract_id IN (${accounts_in})
       AND tx->>'tx_type' = 'contract_call'
       AND tx->>'tx_status' = 'success'
-      AND processed = false 
+      AND processed = false
       AND missing = false
-      ORDER BY t.block_height ASC, tx->>'microblock_sequence' asc, tx->>'index' ASC 
-    `;
-
-    const pool = new Pool({
-      connectionString: this.configService.get('STACKS_STREAMER_SQL_DATABASE_URL')
-    });
-    const client = await pool.connect();
-
-    const cursor = client.query(new Cursor(sql));
-    return cursor;
-  }
-
-  async fetchMissingTxs(contract_key?: string): Promise<any> {
-    let accounts_in = "";
-    const accounts = await this.fetchAccounts();
-
-    if (contract_key) {
-      accounts_in = `'${contract_key}'`;
-    } else {
-      for (let i in accounts) {
-        accounts_in += `'${accounts[i]}',`;
-      }
-      accounts_in = accounts_in.slice(0, -1);
-    }
-
-    const sql = `SELECT * from transaction t
-      WHERE t.contract_id IN (${accounts_in})
-      AND tx->>'tx_type' = 'contract_call'
-      AND tx->>'tx_status' = 'success' 
-      AND processed = false 
-      AND missing = true
-      ORDER BY t.block_height ASC, tx->>'microblock_sequence' asc, tx->>'index' ASC 
+      ORDER BY t.block_height ASC, tx->>'microblock_sequence' asc, tx->>'tx_index' ASC 
     `;
 
     const pool = new Pool({
@@ -190,5 +152,28 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
     const result: CommonTx[] = this.transformTxs(txs);
   
     return result;
+  }
+
+  private buildReceiverIdInQuery(scs: SmartContract[]): string {
+    let accounts_in = '';
+    const accounts = scs.map((sc) => sc.contract_key);
+    for (let i in accounts) {
+      accounts_in += `'${accounts[i]}',`;
+    }
+    accounts_in = accounts_in.slice(0, -1);
+
+    return accounts_in;
+  }
+
+  private async findSmartContracts(contract_key?: string): Promise<SmartContract[]> {
+    let accounts = await this.smartContractRepository.find({ 
+      where: { 
+        chain : { symbol: this.chainSymbol },
+        ...( contract_key && { contract_key })
+      }
+    });
+    if (!accounts || !accounts.length) throw new Error('Invalid contract_key');
+    
+    return accounts;
   }
 }

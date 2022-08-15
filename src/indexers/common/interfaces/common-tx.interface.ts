@@ -9,6 +9,7 @@ export interface CommonTx {
     
     nonce: bigint;
     index?: bigint;
+    sub_block_sequence?: bigint;
     signer: string;
     receiver: string;
     

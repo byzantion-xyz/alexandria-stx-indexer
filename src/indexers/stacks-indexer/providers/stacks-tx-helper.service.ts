@@ -6,9 +6,11 @@ import { BufferCV } from '@stacks/transactions';
 import { principalCV } from '@stacks/transactions/dist/clarity/types/principalCV';
 import { cvToTrueValue, hexToCV, cvToJSON } from 'micro-stacks/clarity';
 import { NftMeta } from 'src/database/universal/entities/NftMeta';
+import { NftState } from 'src/database/universal/entities/NftState';
 import { SmartContract } from 'src/database/universal/entities/SmartContract';
 import { SmartContractFunction } from 'src/database/universal/entities/SmartContractFunction';
 import { TxHelperService } from 'src/indexers/common/helpers/tx-helper.service';
+import { CommonTx } from 'src/indexers/common/interfaces/common-tx.interface';
 import { Repository } from 'typeorm';
 interface FunctionArgs {
   hex: string;
@@ -70,6 +72,28 @@ export class StacksTxHelperService {
     } else {
       return index;
     }
+  }
+
+  isNewerEvent(tx: CommonTx, nft_state: NftState, sc_id: string): boolean {
+    if (!nft_state || !nft_state.nft_states_list || !nft_state.nft_states_list.length) {
+      return false;
+    }
+    const nft_list_state = nft_state.nft_states_list.find(s => s.nft_state_id === sc_id);
+ 
+    return (
+      !nft_list_state ||
+      !nft_list_state.list_block_height ||
+      tx.block_height > nft_list_state.list_block_height ||
+      (
+        tx.block_height === nft_list_state.list_block_height && 
+        (tx.sub_block_sequence && tx.sub_block_sequence > nft_list_state.list_sub_block_sequence)
+      ) ||
+      (
+        tx.block_height === nft_list_state.list_block_height && 
+        tx.sub_block_sequence === nft_list_state.list_sub_block_sequence &&
+        (tx.index && tx.index > nft_list_state.list_tx_index)
+      )
+    );
   }
 
   extractSmartContractLogEvents(events: TransactionEvent[]): TransactionEventSmartContractLogWithData[] {

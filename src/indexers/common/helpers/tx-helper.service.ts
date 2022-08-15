@@ -12,6 +12,8 @@ import { Collection } from "src/database/universal/entities/Collection";
 import { Repository } from "typeorm";
 import { ActionName } from "./indexer-enums";
 import { Commission } from "src/database/universal/entities/Commission";
+import { NftStateList } from "src/database/universal/entities/NftStateList";
+import { makeContractCall } from "@stacks/transactions";
 
 export interface NftStateArguments {
   collection_map_id?: string
@@ -29,22 +31,15 @@ export class TxHelperService {
     @InjectRepository(SmartContract)
     private smartContractRepository: Repository<SmartContract>,
     @InjectRepository(Commission)
-    private commissionRepository: Repository<Commission>
+    private commissionRepository: Repository<Commission>,
+    @InjectRepository(NftStateList)
+    private nftStateListRepository: Repository<NftStateList>
   ) {}
 
   nanoToMiliSeconds(nanoseconds: bigint) {
     return Number(BigInt(nanoseconds) / BigInt(1e6));
   }
   
-  isNewNftListOrSale(tx: CommonTx, nft_state: NftState) {
-    return (
-      !nft_state ||
-      !nft_state.list_block_height ||
-      tx.block_height > nft_state.list_block_height ||
-      (tx.block_height === nft_state.list_block_height && tx.index && tx.index > nft_state.list_tx_index)
-    );
-  }
-
   isNewBid(tx: CommonTx, nft_state: NftState) {
     return (
       !nft_state ||
@@ -71,6 +66,7 @@ export class TxHelperService {
     }
   }
 
+  // TODO: Optimize relations fetched per event type
   async findMetaByContractKey(contract_key: string, token_id: string) {
     const nft_smart_contract = await this.smartContractRepository.findOne({
       where: {
@@ -79,7 +75,10 @@ export class TxHelperService {
       },
       relations: {
         nft_metas: {
-          nft_state: { list_contract: true, staked_contract: true, commission: true },
+          nft_state: { 
+            staked_contract: true,  
+            nft_states_list: { commission: true, list_contract: true }
+          },
           smart_contract: true,
           collection: true
       }}
@@ -100,24 +99,48 @@ export class TxHelperService {
     }
   }
 
-  async unlistMeta(nftMetaId: string, tx: CommonTx) {
-    let update = {
+  async unlistMeta(nftMeta: NftMeta, tx: CommonTx, msc: SmartContract) {
+    let nftStateList = this.nftStateListRepository.create({
       listed: false,
       list_price: null,
       list_seller: null,
-      list_contract_id: null,
-      list_tx_index: tx.index || tx.nonce,
+      list_contract_id: msc.id,
+      list_tx_index: tx.index,
       list_block_height: tx.block_height,
+      list_sub_block_sequence: tx.sub_block_sequence,
       list_block_datetime: null,
       function_args: null,
       commission_id: null
-    };
+    });
 
-    return await this.nftStateRepository.upsert({ meta_id: nftMetaId, ...update }, ["meta_id"]);
+    await this.createOrUpsertNftStateList(nftMeta, nftStateList);
   }
 
-  async listMeta (nftMetaId: string, tx: CommonTx, sc: SmartContract,  price: bigint, commission_id?: string, args?: NftStateArguments) {
-    let update: any = {
+  async createOrUpsertNftStateList(nftMeta: NftMeta, nftStateList: NftStateList) {
+    if (nftMeta.nft_state) {
+      await this.nftStateListRepository.upsert(
+        this.nftStateListRepository.merge(nftStateList, { nft_state_id: nftMeta.nft_state.id}),
+        ["nft_state_id", "list_contract_id"]
+      );
+    } else {
+      let nftState = this.nftStateRepository.create();
+      nftState.meta_id = nftMeta.id;
+      nftState.nft_states_list.push(nftStateList);
+
+      await this.nftStateRepository.save(nftState);
+    }
+  }
+
+  // TODO: Refactor parameters
+  async listMeta (
+    nftMeta: NftMeta, 
+    tx: CommonTx, 
+    sc: SmartContract, 
+    price: bigint, 
+    commission_id?: string, 
+    args?: NftStateArguments
+  ) {
+    let nftStateList = this.nftStateListRepository.create({
       listed: true,
       list_price: price,
       list_contract_id: sc.id,
@@ -125,11 +148,12 @@ export class TxHelperService {
       list_seller: tx.signer,
       list_block_height: tx.block_height,
       list_block_datetime: moment(new Date(tx.block_timestamp)).toDate(),
+      list_sub_block_sequence: tx.sub_block_sequence,
       ... (commission_id && { commission_id }),
       ... (args && { function_args: args }),
-    };
+    });
 
-    await this.nftStateRepository.upsert({ meta_id: nftMetaId, ...update }, ["meta_id"]);
+    await this.createOrUpsertNftStateList(nftMeta, nftStateList);
   }
   
   async bidMeta (nftMetaId: string, tx: CommonTx, sc: SmartContract, price: bigint) {

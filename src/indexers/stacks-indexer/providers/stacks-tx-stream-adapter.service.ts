@@ -38,10 +38,12 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
 
     const sql = `SELECT * from transaction t
       WHERE t.contract_id IN (${accounts_in})
+      ${ options.start_block_height ? 'AND t.block_height >=' + options.start_block_height : '' }
+      ${ options.end_block_height ? 'AND t.block_height <='+ options.end_block_height  : '' }
       AND tx->>'tx_type' = 'contract_call'
       AND tx->>'tx_status' = 'success'
       AND processed = false
-      AND missing = false
+      AND missing = ${ options.includeMissings ? true : false }
       ORDER BY t.block_height ASC, tx->>'microblock_sequence' asc, tx->>'tx_index' ASC 
     `;
 
@@ -108,24 +110,6 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
     }
   }
 
-  async fetchAccounts(): Promise<string[]> {
-    const smartContracts: SmartContract[] = await this.smartContractRepository.find({
-      where: { 
-        chain: { symbol: "Stacks" },
-        contract_key: Not(In([
-          'SP000000000000000000002Q6VF78.bns', 
-          'SP2KAF9RF86PVX3NEE27DFV1CQX0T4WGR41X3S45C.bns-marketplace', 
-          'SP2KAF9RF86PVX3NEE27DFV1CQX0T4WGR41X3S45C.bns-marketplace-v1', 
-          'SP2KAF9RF86PVX3NEE27DFV1CQX0T4WGR41X3S45C.bns-marketplace-v3'
-        ]))
-      }
-    });
-
-    const accounts = smartContracts.map((sc) => sc.contract_key);
-
-    return accounts;
-  }
-
   subscribeToEvents(): Client {
     this.logger.log('subscribeToEvents() subscribe to listen new blocks');
 
@@ -141,11 +125,12 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
 
   async fetchEventData(event): Promise<CommonTx[]> {
     const sql = `SELECT * from transaction t
-      WHERE block_height=${event} AND
-      tx->>'tx_type' = 'contract_call' AND
-      tx->>'tx_status' = 'success' AND
-      processed = false AND  missing = false
-      ORDER BY tx->>'microblock_sequence' asc, tx->>'index' ASC;
+      WHERE block_height=${event} 
+      AND tx->>'tx_type' = 'contract_call' 
+      AND tx->>'tx_status' = 'success' 
+      AND processed = false 
+      AND missing = false
+      ORDER BY tx->>'microblock_sequence' asc, tx->>'tx_index' ASC;
     `;
 
     const txs: StacksTransaction[] = await this.transactionRepository.query(sql);
@@ -166,10 +151,19 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
   }
 
   private async findSmartContracts(contract_key?: string): Promise<SmartContract[]> {
+    // Bns marketplaces excluded until micro indexers are fully implemented.
     let accounts = await this.smartContractRepository.find({ 
       where: { 
         chain : { symbol: this.chainSymbol },
-        ...( contract_key && { contract_key })
+        ...( contract_key 
+          ? { contract_key }
+          : { contract_key: Not(In([
+            'SP000000000000000000002Q6VF78.bns', 
+            'SP2KAF9RF86PVX3NEE27DFV1CQX0T4WGR41X3S45C.bns-marketplace', 
+            'SP2KAF9RF86PVX3NEE27DFV1CQX0T4WGR41X3S45C.bns-marketplace-v1', 
+            'SP2KAF9RF86PVX3NEE27DFV1CQX0T4WGR41X3S45C.bns-marketplace-v3'
+          ])) }
+        )
       }
     });
     if (!accounts || !accounts.length) throw new Error('Invalid contract_key');

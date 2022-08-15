@@ -41,7 +41,7 @@ export class NftState {
   @Column("uuid", { nullable: true })
   bid_contract_id: string;
 
-  @ManyToOne(() => SmartContract, (smartContract) => smartContract.nft_state, {
+  @ManyToOne(() => SmartContract, (smartContract) => smartContract.bid_nft_states, {
     onDelete: "RESTRICT",
     onUpdate: "CASCADE",
   })
@@ -69,7 +69,7 @@ export class NftState {
   @Column("uuid", { nullable: true })
   staked_contract_id: string;
 
-  @ManyToOne(() => SmartContract, (smartContract) => smartContract.nft_state, {
+  @ManyToOne(() => SmartContract, (smartContract) => smartContract.staked_nft_states, {
     onDelete: "RESTRICT",
     onUpdate: "CASCADE",
   })
@@ -89,6 +89,5 @@ export class NftState {
     { cascade: true }
   )
   nft_states_list: NftStateList[];
-
 
 }

@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+/*import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Action } from 'src/database/universal/entities/Action';
 import { SmartContract } from 'src/database/universal/entities/SmartContract';
@@ -66,3 +66,4 @@ export class BnsBidIndexerService implements IndexerService {
     } catch (err) {}
   }
 }
+*/

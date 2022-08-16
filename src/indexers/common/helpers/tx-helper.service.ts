@@ -149,7 +149,7 @@ export class TxHelperService {
     } else {
       let nftState = this.nftStateRepository.create();
       nftState.meta_id = nftMeta.id;
-      nftState.nft_states_list.push(nftStateList);
+      nftState.nft_states_list = [ {...nftStateList, list_contract_id: msc.id }];
 
       await this.nftStateRepository.save(nftState);
     }
@@ -164,7 +164,7 @@ export class TxHelperService {
     } else {
       let nftState = this.nftStateRepository.create();
       nftState.meta_id = nftMeta.id;
-      nftState.nft_states_list.push(nftStateList);
+      nftState.nft_states_list = [nftStateList];
 
       await this.nftStateRepository.save(nftState);
     }

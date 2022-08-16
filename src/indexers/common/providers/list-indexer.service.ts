@@ -44,14 +44,13 @@ export class ListIndexerService implements IndexerService {
 
     // Check if has custodial smart contract
     if (sc.type.includes(SmartContractType.non_fungible_tokens)) {
-      if (sc.custodial_smart_contract) {
-        msc = sc.custodial_smart_contract;
-      }
+      msc = sc.custodial_smart_contract ? sc.custodial_smart_contract :
+        await this.smartContractRepository.findOneBy({ contract_key });
       contract_key = sc.contract_key;
     }
 
     const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
-   
+
     if (nftMeta) {
       const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName[scf.name], tx, nftMeta, msc);
       const nft_state_list = this.txHelper.findStateList(nftMeta.nft_state, msc.id);

@@ -85,7 +85,7 @@ export class NftState {
 
   @OneToMany(
     () => NftStateList, 
-    (nftStateList) => nftStateList, 
+    (nftStateList) => nftStateList.nft_state, 
     { cascade: true }
   )
   nft_states_list: NftStateList[];

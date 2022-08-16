@@ -51,8 +51,8 @@ export class BuyIndexerService implements IndexerService {
 
       const buyActionParams: CreateBuyActionTO = { 
         ...actionCommonArgs,
-        list_price: price || (nft_state_list?.listed ? nft_state_list.list_price : undefined),
-        seller: nft_state_list?.listed ? nft_state_list?.list_seller : undefined,
+        list_price: price || (nft_state_list?.listed ? nft_state_list.list_price : null),
+        seller: nft_state_list?.listed ? nft_state_list?.list_seller : null,
         buyer: tx.signer
       };
 
@@ -62,7 +62,7 @@ export class BuyIndexerService implements IndexerService {
         if (newAction && tx.notify) {
           this.salesBotService.createAndSend(newAction.id);
         }
-      } else  {
+      } else {
         this.logger.log(`Too Late`);
         // Create missing action
         await this.createAction(buyActionParams);

@@ -56,8 +56,7 @@ export class UnlistIndexerService implements IndexerService {
         const unlistActionParams: CreateUnlistActionTO = {
           ...actionCommonArgs,
           list_price: nft_list_state?.list_price,
-          seller: nft_list_state?.list_seller,
-          commission_id: nft_list_state?.commission_id
+          seller: nft_list_state?.list_seller
         };
 
         await this.txHelper.unlistMeta(nftMeta, tx, msc);

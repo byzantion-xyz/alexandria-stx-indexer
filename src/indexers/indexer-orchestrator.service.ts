@@ -82,7 +82,7 @@ export class IndexerOrchestratorService {
           await this.processTransactions(txs);
         });
       } else {
-        this.logger.debug('subscribeeToEvents() Current stream adapter does not support subscriptions');
+        this.logger.debug('subscribeToEvents() Current stream adapter does not support subscriptions');
       }
     } catch (err) {
       this.logger.error(err);

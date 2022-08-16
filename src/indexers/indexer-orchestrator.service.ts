@@ -41,7 +41,7 @@ export class IndexerOrchestratorService {
   ) {}
 
   async runIndexer(options: IndexerOptions) {
-    this.logger.debug(`runIndexer() Initialize with options includeMissings:${options.includeMissings}`);
+    this.logger.debug(`runIndexer() Initialize with options: `, options);
     try {
       await this.setUpChainAndStreamer();
       if (options.includeMissings && !options.contract_key) {
@@ -61,7 +61,7 @@ export class IndexerOrchestratorService {
       
       cursor.close();
 
-      this.logger.debug(`runIndexer() Completed with options includeMissings:${options.includeMissings}`);
+      this.logger.debug(`runIndexer() Completed with options: `, options);
       await this.commonUtil.delay(5000); // Wait for any discord post to be sent
     } catch (err) {
       this.logger.error(err);

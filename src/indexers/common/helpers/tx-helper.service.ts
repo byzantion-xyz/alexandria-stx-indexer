@@ -81,7 +81,7 @@ export class TxHelperService {
   }
 
   findStateList(nftState: NftState, msc_id: string): NftStateList {
-    return nftState?.nft_states_list?.find(s => s.nft_state_id === msc_id);
+    return nftState?.nft_states_list?.find(s => s.list_contract_id === msc_id);
   }
 
   async findCommissionByKey(sc: SmartContract, contract_key: string, key?: string): Promise<Commission> {
@@ -141,7 +141,7 @@ export class TxHelperService {
     } else {
       let nftState = this.nftStateRepository.create();
       nftState.meta_id = nftMeta.id;
-      nftState.nft_states_list = [ {...nftStateList, list_contract_id: msc.id }];
+      nftState.nft_states_list = [this.nftStateListRepository.merge(nftStateList, { list_contract_id: msc.id })];
 
       await this.nftStateRepository.save(nftState);
     }

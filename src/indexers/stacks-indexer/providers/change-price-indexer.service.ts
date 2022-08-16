@@ -29,6 +29,7 @@ export class ChangePriceIndexerService implements IndexerService {
     this.logger.debug(`process() ${tx.hash}`);
     let txResult: TxProcessResult = { processed: false, missing: false };
 
+    const first_market = this.stacksTxHelper.extractArgumentData(tx.args, scf, 'first_market');
     const second_market =  this.stacksTxHelper.extractArgumentData(tx.args, scf, 'second_market');
     const token_id = this.stacksTxHelper.extractArgumentData(tx.args, scf, "token_id");
     const price =  this.stacksTxHelper.extractArgumentData(tx.args, scf, "price");
@@ -38,7 +39,11 @@ export class ChangePriceIndexerService implements IndexerService {
     const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
 
     if (nftMeta) {
+      const unlist_sc = await this.smartContractRepository.findOne({ where: { contract_key: first_market }});
       const list_sc = await this.smartContractRepository.findOne({ where: { contract_key: second_market }});
+      const nft_state_list = this.txHelper.findStateList(nftMeta.nft_state, list_sc.id);
+      const nft_state_unlist = this.txHelper.findStateList(nftMeta.nft_state, unlist_sc.id);
+      
       const commission = await this.txHelper.findCommissionByKey(list_sc, contract_key);
       const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName.relist, tx, nftMeta, sc);
       const relistActionParams: CreateRelistActionTO = {
@@ -48,17 +53,21 @@ export class ChangePriceIndexerService implements IndexerService {
         ... (commission && { commission_id: commission.id })
       };
 
-      if (this.txHelper.isNewNftListOrSale(tx, nftMeta.nft_state)) {
+      // Unlist original market
+      if (this.stacksTxHelper.isNewerEvent(tx, nft_state_unlist)) {
+        await this.txHelper.unlistMeta(nftMeta, tx, unlist_sc);
+      }
+     
+      // List in new market
+      if (this.stacksTxHelper.isNewerEvent(tx, nft_state_list)) {
         const args: NftStateArguments = {
           collection_map_id: collection_map_id || contract_key || null
         };
-        await this.txHelper.listMeta(nftMeta.id, tx, list_sc, price, commission?.id, args);
-
-        await this.createAction(relistActionParams);
+        await this.txHelper.listMeta(nftMeta, tx, list_sc, price, commission?.id, args);
       } else {
         this.logger.log(`Too Late`);
-        await this.createAction(relistActionParams);
       }
+      await this.createAction(relistActionParams);
 
       txResult.processed = true;
     } else {

@@ -54,13 +54,14 @@ export class ListIndexerService implements IndexerService {
    
     if (nftMeta) {
       const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName[scf.name], tx, nftMeta, msc);
+      const nft_state_list = this.txHelper.findStateList(nftMeta.nft_state, msc.id);
       const listActionParams: CreateListActionTO = {
         ...actionCommonArgs,
         list_price: price,
         seller: tx.signer
       };
 
-      if (this.nearTxHelper.isNewerEvent(tx, nftMeta.nft_state, msc.id)) {
+      if (this.nearTxHelper.isNewerEvent(tx, nft_state_list)) {
         await this.txHelper.listMeta(nftMeta, tx, msc, price);
 
         const newAction = await this.createAction(listActionParams);

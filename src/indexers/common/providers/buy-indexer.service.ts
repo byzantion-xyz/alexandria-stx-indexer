@@ -56,8 +56,8 @@ export class BuyIndexerService implements IndexerService {
         buyer: tx.signer
       };
 
-      if (this.nearTxHelper.isNewerEvent(tx, nftMeta.nft_state, sc.id)) {
-        await this.txHelper.unlistMeta(nftMeta, tx, sc);
+      if (this.nearTxHelper.isNewerEvent(tx, nft_state_list)) {
+        await this.txHelper.unlistMetaInAllMarkets(nftMeta, tx, msc);
         const newAction = await this.createAction(buyActionParams);
         if (newAction && tx.notify) {
           this.salesBotService.createAndSend(newAction.id);

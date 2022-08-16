@@ -38,17 +38,19 @@ export class BuyIndexerService implements IndexerService {
 
     if (nftMeta) {
       const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName.buy, tx, nftMeta, sc);
+      const nft_state_list = this.txHelper.findStateList(nftMeta.nft_state, sc.id);
+
       const buyActionParams: CreateBuyActionTO = { 
         ...actionCommonArgs,
-        list_price: nftMeta.nft_state?.listed ? nftMeta.nft_state.list_price : undefined,
-        seller: nftMeta.nft_state && nftMeta.nft_state.listed ? nftMeta.nft_state.list_seller : undefined,
+        list_price: nft_state_list?.listed ? nft_state_list?.list_price : null,
+        seller: nft_state_list?.listed ? nft_state_list?.list_seller : null,
         buyer: tx.signer,
-        market_name: nftMeta.nft_state?.commission?.market_name || null,
-        commission_id: nftMeta.nft_state?.commission?.id
+        market_name: nft_state_list?.commission?.market_name || null,
+        commission_id: nft_state_list?.commission?.id || null
       };
 
-      if (this.txHelper.isNewNftListOrSale(tx, nftMeta.nft_state)) {
-        await this.txHelper.unlistMeta(nftMeta.id, tx);
+      if (this.stacksTxHelper.isNewerEvent(tx, nft_state_list)) {
+        await this.txHelper.unlistMeta(nftMeta, tx, sc);
         const newAction = await this.createAction(buyActionParams);
         if (newAction && tx.notify) {
           //this.salesBotService.createAndSend(newAction.id);

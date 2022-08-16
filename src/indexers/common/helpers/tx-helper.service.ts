@@ -10,7 +10,7 @@ import { SmartContract } from "src/database/universal/entities/SmartContract";
 import { SmartContractFunction } from "src/database/universal/entities/SmartContractFunction";
 import { Collection } from "src/database/universal/entities/Collection";
 import { Repository } from "typeorm";
-import { ActionName } from "./indexer-enums";
+import { ActionName, SmartContractType } from "./indexer-enums";
 import { Commission } from "src/database/universal/entities/Commission";
 import { NftStateList } from "src/database/universal/entities/NftStateList";
 import { makeContractCall } from "@stacks/transactions";
@@ -89,6 +89,10 @@ export class TxHelperService {
     }
   }
 
+  findStateList(nftState: NftState, msc_id: string): NftStateList {
+    return nftState?.nft_states_list?.find(s => s.nft_state_id === msc_id);
+  }
+
   async findCommissionByKey(sc: SmartContract, contract_key: string, key?: string): Promise<Commission> {
     if (!key) {
       key = `${sc.contract_key}::${contract_key}`;
@@ -107,7 +111,7 @@ export class TxHelperService {
       list_contract_id: msc.id,
       list_tx_index: tx.index,
       list_block_height: tx.block_height,
-      list_sub_block_sequence: tx.sub_block_sequence,
+      list_sub_block_seq: tx.sub_block_sequence,
       list_block_datetime: null,
       function_args: null,
       commission_id: null
@@ -123,7 +127,7 @@ export class TxHelperService {
       list_seller: null,
       list_tx_index: tx.index,
       list_block_height: tx.block_height,
-      list_sub_block_sequence: tx.sub_block_sequence,
+      list_sub_block_seq: tx.sub_block_sequence,
       list_block_datetime: null,
       function_args: null,
       commission_id: null
@@ -183,7 +187,7 @@ export class TxHelperService {
       list_seller: tx.signer,
       list_block_height: tx.block_height,
       list_block_datetime: moment(new Date(tx.block_timestamp)).toDate(),
-      list_sub_block_sequence: tx.sub_block_sequence,
+      list_sub_block_seq: tx.sub_block_sequence,
       ... (commission_id && { commission_id }),
       ... (args && { function_args: args }),
     });

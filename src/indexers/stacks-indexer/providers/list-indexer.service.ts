@@ -45,7 +45,7 @@ export class ListIndexerService implements IndexerService {
     let contract_key = this.stacksTxHelper.extractArgumentData(tx.args, scf, "contract_key");
 
     const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
-   
+
     if (nftMeta) {
       const commission = await this.txHelper.findCommissionByKey(sc, contract_key, commission_key);
       const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName[scf.name], tx, nftMeta, sc);
@@ -56,12 +56,14 @@ export class ListIndexerService implements IndexerService {
         ... (commission && { commission_id: commission.id }),
         market_name: commission?.market_name || null
       };
-    
-      if (this.txHelper.isNewNftListOrSale(tx, nftMeta.nft_state)) {
+
+      const nft_state_list = this.txHelper.findStateList(nftMeta.nft_state, sc.id);
+
+      if (this.stacksTxHelper.isNewerEvent(tx, nft_state_list)) {
         const args: NftStateArguments = {
           ... (collection_map_id && { collection_map_id })
         };
-        await this.txHelper.listMeta(nftMeta.id, tx, sc, price, commission?.id, args);
+        await this.txHelper.listMeta(nftMeta, tx, sc, price, commission?.id, args);
 
         const newAction = await this.createAction(listActionParams);
         if (newAction && tx.notify) {

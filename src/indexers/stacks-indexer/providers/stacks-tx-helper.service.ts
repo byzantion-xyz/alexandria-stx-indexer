@@ -7,6 +7,7 @@ import { principalCV } from '@stacks/transactions/dist/clarity/types/principalCV
 import { cvToTrueValue, hexToCV, cvToJSON } from 'micro-stacks/clarity';
 import { NftMeta } from 'src/database/universal/entities/NftMeta';
 import { NftState } from 'src/database/universal/entities/NftState';
+import { NftStateList } from 'src/database/universal/entities/NftStateList';
 import { SmartContract } from 'src/database/universal/entities/SmartContract';
 import { SmartContractFunction } from 'src/database/universal/entities/SmartContractFunction';
 import { TxHelperService } from 'src/indexers/common/helpers/tx-helper.service';
@@ -74,24 +75,19 @@ export class StacksTxHelperService {
     }
   }
 
-  isNewerEvent(tx: CommonTx, nft_state: NftState, sc_id: string): boolean {
-    if (!nft_state || !nft_state.nft_states_list || !nft_state.nft_states_list.length) {
-      return false;
-    }
-    const nft_list_state = nft_state.nft_states_list.find(s => s.nft_state_id === sc_id);
- 
+  isNewerEvent(tx: CommonTx, state_list: NftStateList): boolean { 
     return (
-      !nft_list_state ||
-      !nft_list_state.list_block_height ||
-      tx.block_height > nft_list_state.list_block_height ||
+      !state_list ||
+      !state_list.list_block_height ||
+      tx.block_height > state_list.list_block_height ||
       (
-        tx.block_height === nft_list_state.list_block_height && 
-        (tx.sub_block_sequence && tx.sub_block_sequence > nft_list_state.list_sub_block_sequence)
+        tx.block_height === state_list.list_block_height && 
+        (tx.sub_block_sequence && tx.sub_block_sequence > state_list.list_sub_block_seq)
       ) ||
       (
-        tx.block_height === nft_list_state.list_block_height && 
-        tx.sub_block_sequence === nft_list_state.list_sub_block_sequence &&
-        (tx.index && tx.index > nft_list_state.list_tx_index)
+        tx.block_height === state_list.list_block_height && 
+        tx.sub_block_sequence === state_list.list_sub_block_seq &&
+        (tx.index && tx.index > state_list.list_tx_index)
       )
     );
   }

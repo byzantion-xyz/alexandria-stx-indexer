@@ -28,7 +28,7 @@ export class NftStateList {
   list_tx_index: bigint;
 
   @Column("bigint", { nullable: true })
-  list_sub_block_sequence: bigint;
+  list_sub_block_seq: bigint;
 
   @Column("jsonb", { nullable: true })
   function_args: object | null;

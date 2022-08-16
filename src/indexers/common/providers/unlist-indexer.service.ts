@@ -47,16 +47,16 @@ export class UnlistIndexerService implements IndexerService {
     }
 
     const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
-
-    if (nftMeta) { 
+    
+    if (nftMeta) {
+      const nft_state_list = this.txHelper.findStateList(nftMeta.nft_state, msc.id);
       const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName[scf.name], tx, nftMeta, msc);
-      
-      if (this.nearTxHelper.isNewerEvent(tx, nftMeta.nft_state, msc.id)) {
-        const nft_list_state = nftMeta.nft_state?.nft_states_list?.find(s => s.nft_state_id === msc.id);
+
+      if (this.nearTxHelper.isNewerEvent(tx, nft_state_list)) {
         const unlistActionParams: CreateUnlistActionTO = {
           ...actionCommonArgs,
-          list_price: nft_list_state?.list_price,
-          seller: nft_list_state?.list_seller
+          list_price: nft_state_list?.list_price,
+          seller: nft_state_list?.list_seller
         };
 
         await this.txHelper.unlistMeta(nftMeta, tx, msc);

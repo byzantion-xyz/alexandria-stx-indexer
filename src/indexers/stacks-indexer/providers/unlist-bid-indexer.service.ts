@@ -45,8 +45,6 @@ export class UnlistBidIndexerService implements IndexerService {
       if (bidState && this.txBidHelper.isNewBid(tx, bidState)) {
         await this.txBidHelper.cancelBid(bidState, tx);
 
-        await this.txHelper.unlistMeta(nftMeta.id, tx);
-
         const actionCommonArgs = this.txHelper.setCommonActionParams(
           ActionName.unlist_bid, tx, nftMeta, sc
         );

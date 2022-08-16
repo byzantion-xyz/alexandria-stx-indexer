@@ -15,6 +15,7 @@ import { SmartContractFunction } from "src/database/universal/entities/SmartCont
 import { Repository } from "typeorm";
 import { ActionName, SmartContractType } from "../helpers/indexer-enums";
 import { Action } from "src/database/universal/entities/Action";
+import { NearTxHelperService } from "src/indexers/near-indexer/providers/near-tx-helper.service";
 
 @Injectable()
 export class UnlistIndexerService implements IndexerService {
@@ -22,6 +23,7 @@ export class UnlistIndexerService implements IndexerService {
 
   constructor(
     private txHelper: TxHelperService,
+    private nearTxHelper: NearTxHelperService,
     @InjectRepository(Action)
     private actionRepository: Repository<Action>,
     @InjectRepository(SmartContract)
@@ -31,15 +33,15 @@ export class UnlistIndexerService implements IndexerService {
   async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {
     this.logger.debug(`process() ${tx.hash}`);
     let txResult: TxProcessResult = { processed: false, missing: false };
-    let market_sc: SmartContract;
+    let msc: SmartContract;
 
     const token_id = this.txHelper.extractArgumentData(tx.args, scf, "token_id");
     let contract_key = this.txHelper.extractArgumentData(tx.args, scf, "contract_key");
 
-    // Check if custodial
+    // Check if has custodial smart contract
     if (sc.type.includes(SmartContractType.non_fungible_tokens)) {
-      if (contract_key) {
-        market_sc = await this.smartContractRepository.findOneBy({ contract_key });
+      if (sc.custodial_smart_contract) {
+        msc = sc.custodial_smart_contract;
       }
       contract_key = sc.contract_key;
     }
@@ -47,22 +49,23 @@ export class UnlistIndexerService implements IndexerService {
     const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
 
     if (nftMeta) { 
-      const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName[scf.name], tx, nftMeta, market_sc);
-      const unlistActionParams: CreateUnlistActionTO = {
-        ...actionCommonArgs,
-        list_price: nftMeta.nft_state && nftMeta.nft_state.list_price ? nftMeta.nft_state.list_price : undefined,
-        seller: nftMeta.nft_state?.list_seller || undefined,
-        commission_id: nftMeta.nft_state?.commission_id
-      };
+      const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName[scf.name], tx, nftMeta, msc);
+      
+      if (this.nearTxHelper.isNewerEvent(tx, nftMeta.nft_state, msc.id)) {
+        const nft_list_state = nftMeta.nft_state?.nft_states_list?.find(s => s.nft_state_id === msc.id);
+        const unlistActionParams: CreateUnlistActionTO = {
+          ...actionCommonArgs,
+          list_price: nft_list_state?.list_price,
+          seller: nft_list_state?.list_seller,
+          commission_id: nft_list_state?.commission_id
+        };
 
-      if (this.txHelper.isNewNftListOrSale(tx, nftMeta.nft_state)) {
-        await this.txHelper.unlistMeta(nftMeta.id, tx);
+        await this.txHelper.unlistMeta(nftMeta, tx, msc);
         await this.createAction(unlistActionParams);
       } else {
         this.logger.log(`Too Late`);
-        // Create missing action
-        await this.createAction(unlistActionParams);
-      }      
+      }
+
       txResult.processed = true;
     } else {
       this.logger.log(`NftMeta not found ${contract_key} ${token_id}`);

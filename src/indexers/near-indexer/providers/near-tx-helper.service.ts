@@ -6,7 +6,7 @@ import { CommonTx } from 'src/indexers/common/interfaces/common-tx.interface';
 export class NearTxHelperService {
   private readonly logger = new Logger(NearTxHelperService.name);
 
-  isNewEvent(tx: CommonTx, nft_state: NftState, sc_id: string) {
+  isNewerEvent(tx: CommonTx, nft_state: NftState, sc_id: string) {
     if (!nft_state || !nft_state.nft_states_list || !nft_state.nft_states_list.length) {
       return false;
     }

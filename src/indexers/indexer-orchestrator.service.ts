@@ -105,11 +105,16 @@ export class IndexerOrchestratorService {
 
     try {
       const method_name = transaction.function_name;
-      const finder = {
-        where: { contract_key: transaction.receiver, chain: { symbol: this.chainSymbol } },
-        relations: { smart_contract_functions: true },
-      };
-      const smart_contract = await this.smartContractRepository.findOne(finder);
+      const smart_contract = await this.smartContractRepository.findOne({
+        where: { 
+          contract_key: transaction.receiver, 
+          chain: { symbol: this.chainSymbol } 
+        },
+        relations: {  
+          smart_contract_functions: true,
+          custodial_smart_contract: true
+        },
+      });
 
       if (smart_contract) {
         let smart_contract_function =

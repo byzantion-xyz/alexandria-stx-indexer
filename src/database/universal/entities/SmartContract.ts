@@ -115,4 +115,15 @@ export class SmartContract {
   })
   @JoinColumn([{ name: "default_commission_id", referencedColumnName: "id" }])
   default_commission: Commission;
+
+  @Column("uuid", { nullable: true })
+  custodial_smart_contract_id: string;
+
+  @OneToOne(() => SmartContract, (smartContract) => smartContract.custodial_smart_contract_id, {
+    nullable: true,
+    onDelete: "RESTRICT",
+    onUpdate: "CASCADE",
+  })
+  @JoinColumn([{ name: "custodial_smart_contract_id", referencedColumnName: "id" }])
+  custodial_smart_contract: SmartContract;
 }

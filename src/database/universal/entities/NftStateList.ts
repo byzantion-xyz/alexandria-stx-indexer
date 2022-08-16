@@ -3,6 +3,7 @@ import { SmartContract } from "./SmartContract";
 import { Commission } from "./Commission";
 import { NftState } from "./NftState";
 
+@Index("nft_state_list_nft_state_id_list_contract_id_key", ["nft_state_id", "list_contract_id"], { unique: true })
 @Entity("nft_state_list", { schema: "public" })
 export class NftStateList {
   @PrimaryGeneratedColumn("uuid")
@@ -45,7 +46,7 @@ export class NftStateList {
   @Column("uuid", { nullable: true })
   commission_id: string;
 
-  @ManyToOne(() => Commission, (commission) => commission.nft_states, {
+  @ManyToOne(() => Commission, (commission) => commission.nft_states_list, {
     onDelete: "RESTRICT",
     onUpdate: "CASCADE",
   })

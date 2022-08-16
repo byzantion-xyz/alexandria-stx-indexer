@@ -71,6 +71,7 @@ import { BuyIndexerService as StacksBuyIndexerService } from './stacks-indexer/p
 import { StakeIndexerService as StacksStakeIndexerService } from './stacks-indexer/providers/stake-indexer.service';
 import { UnstakeIndexerService as StacksUnstakeIndexerService } from './stacks-indexer/providers/unstake-indexer.service';
 import { BuyWrapperIndexerService } from './stacks-indexer/providers/buy-wrapper-indexer.service';
+import { NftStateList } from "src/database/universal/entities/NftStateList";
 
 /* Select stream adapter based on chain symbol env variable */
 const TxStreamAdapterProvider = {
@@ -108,7 +109,8 @@ const TxStreamAdapterProvider = {
       Collection,
       BidState,
       NftMetaAttribute,
-      MegapontAttribute
+      MegapontAttribute,
+      NftStateList
     ]),
     TypeOrmModule.forFeature([NearTransaction, Receipt], "NEAR-STREAM"),
     TypeOrmModule.forFeature([StacksTransaction, Block], "STACKS-STREAM"),

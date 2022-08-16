@@ -13,7 +13,9 @@ import { Action, Action as ActionEntity } from "src/database/universal/entities/
 import { SmartContract } from "src/database/universal/entities/SmartContract";
 import { SmartContractFunction } from "src/database/universal/entities/SmartContractFunction";
 import { Repository } from "typeorm";
-import { ActionName } from "../helpers/indexer-enums";
+import { ActionName, SmartContractType } from "../helpers/indexer-enums";
+import { NearTxHelperService } from "src/indexers/near-indexer/providers/near-tx-helper.service";
+import { parseAssetInfoString } from "@stacks/transactions";
 
 @Injectable()
 export class BuyIndexerService implements IndexerService {
@@ -21,6 +23,7 @@ export class BuyIndexerService implements IndexerService {
 
   constructor(
     private txHelper: TxHelperService,
+    private nearTxHelper: NearTxHelperService,
     private salesBotService: SalesBotService,
     @InjectRepository(ActionEntity)
     private actionRepository: Repository<ActionEntity>
@@ -29,24 +32,32 @@ export class BuyIndexerService implements IndexerService {
   async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {
     this.logger.debug(`process() ${tx.hash}`);
     let txResult: TxProcessResult = { processed: false, missing: false };
+    let msc = Object.assign({}, sc);
 
     const token_id = this.txHelper.extractArgumentData(tx.args, scf, "token_id");
     const contract_key = this.txHelper.extractArgumentData(tx.args, scf, "contract_key");
     const price = this.txHelper.extractArgumentData(tx.args, scf, "price");
 
+    // Check if has custodial smart contract
+    if (sc.type.includes(SmartContractType.non_fungible_tokens) && sc.custodial_smart_contract) {
+      msc = sc.custodial_smart_contract;
+    }
+
     const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
 
     if (nftMeta) {
-      const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName[scf.name], tx, nftMeta, sc);
+      const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName[scf.name], tx, nftMeta, msc);
+      const nft_state_list = nftMeta.nft_state?.nft_states_list?.find(s => s.list_contract_id === sc.id);
+
       const buyActionParams: CreateBuyActionTO = { 
         ...actionCommonArgs,
-        list_price: price || (nftMeta.nft_state?.listed ? nftMeta.nft_state.list_price : undefined),
-        seller: nftMeta.nft_state && nftMeta.nft_state.listed ? nftMeta.nft_state.list_seller : undefined,
+        list_price: price || (nft_state_list?.listed ? nft_state_list.list_price : undefined),
+        seller: nft_state_list?.listed ? nft_state_list?.list_seller : undefined,
         buyer: tx.signer
       };
 
-      if (this.txHelper.isNewNftListOrSale(tx, nftMeta.nft_state)) {
-        await this.txHelper.unlistMeta(nftMeta.id, tx);
+      if (this.nearTxHelper.isNewerEvent(tx, nftMeta.nft_state, sc.id)) {
+        await this.txHelper.unlistMeta(nftMeta, tx, sc);
         const newAction = await this.createAction(buyActionParams);
         if (newAction && tx.notify) {
           this.salesBotService.createAndSend(newAction.id);

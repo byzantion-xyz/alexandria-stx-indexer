@@ -10,12 +10,11 @@ import { IndexerEventType } from 'src/indexers/common/helpers/indexer-enums';
 import { CommonTx } from 'src/indexers/common/interfaces/common-tx.interface';
 import { TxProcessResult } from 'src/indexers/common/interfaces/tx-process-result.interface';
 import { CommonTxResult, TxStreamAdapter } from 'src/indexers/common/interfaces/tx-stream-adapter.interface';
-import { In, Not, Repository } from 'typeorm';
+import { In, Not, Repository, MoreThan } from 'typeorm';
 import { StacksTransaction } from '../dto/stacks-transaction.dto';
 import { StacksTxHelperService } from './stacks-tx-helper.service';
 import { TransactionEvent } from '@stacks/stacks-blockchain-api-types';
 import { SmartContract } from 'src/database/universal/entities/SmartContract';
-import { NearIndexerController } from 'src/indexers/near-indexer/near-indexer.controller';
 import { IndexerOptions } from 'src/indexers/common/interfaces/indexer-options';
 
 const EXCLUDED_ACTIONS = ['add-collection', 'add-contract'];
@@ -171,7 +170,8 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
             'SP2KAF9RF86PVX3NEE27DFV1CQX0T4WGR41X3S45C.bns-marketplace-v1', 
             'SP2KAF9RF86PVX3NEE27DFV1CQX0T4WGR41X3S45C.bns-marketplace-v3'
           ])) }
-        )
+        ),
+        smart_contract_functions: MoreThan(0)
       }
     });
     if (!accounts || !accounts.length) throw new Error('Invalid contract_key');

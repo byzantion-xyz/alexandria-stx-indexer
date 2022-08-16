@@ -16,37 +16,8 @@ export class NftState {
   @Column("boolean", { default: () => "false" })
   minted: boolean;
 
-  @Column("numeric", {
-    nullable: true,
-    precision: 40,
-    scale: 0,
-  })
-  bid_price: bigint;
-  
-  @Column("text", { nullable: true })
-  bid_buyer: string | null;
-
-  @Column("bigint", { nullable: true })
-  bid_block_height: bigint;
-
-  @Column("bigint", { nullable: true })
-  bid_tx_index: bigint;
-
-  @Column("boolean", { default: () => "false" })
-  bid: boolean;
-
   @Column("text", { nullable: true })
   mint_tx: string | null;
-
-  @Column("uuid", { nullable: true })
-  bid_contract_id: string;
-
-  @ManyToOne(() => SmartContract, (smartContract) => smartContract.bid_nft_states, {
-    onDelete: "RESTRICT",
-    onUpdate: "CASCADE",
-  })
-  @JoinColumn([{ name: "bid_contract_id", referencedColumnName: "id" }])
-  bid_contract: SmartContract;
 
   @Column("boolean", { default: () => "false" })
   staked: boolean;

@@ -102,9 +102,6 @@ export class SmartContract {
   @OneToMany(() => NftState, (nftState) => nftState.staked_contract, { cascade: true })
   staked_nft_states: NftState[];
 
-  @OneToMany(() => NftState, (nftState) => nftState.bid_contract, { cascade: true })
-  bid_nft_states: NftState[];
-
   @Column("uuid")
   default_commission_id: string;
 

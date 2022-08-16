@@ -39,15 +39,6 @@ export class TxHelperService {
   nanoToMiliSeconds(nanoseconds: bigint) {
     return Number(BigInt(nanoseconds) / BigInt(1e6));
   }
-  
-  isNewBid(tx: CommonTx, nft_state: NftState) {
-    return (
-      !nft_state ||
-      !nft_state.bid_block_height ||
-      tx.block_height > nft_state.bid_block_height ||
-      (tx.block_height === nft_state.bid_block_height && tx.index && tx.index > nft_state.bid_tx_index)
-    );
-  }
 
   extractArgumentData(args: JSON, scf: SmartContractFunction, field: string) {
     if (scf.data && scf.data[field]) {
@@ -193,32 +184,6 @@ export class TxHelperService {
     });
 
     await this.createOrUpsertNftStateList(nftMeta, nftStateList);
-  }
-  
-  async bidMeta (nftMetaId: string, tx: CommonTx, sc: SmartContract, price: bigint) {
-    let update: any = {
-      bid: true,
-      bid_price: price, 
-      bid_contract_id: sc.id,
-      bid_buyer: tx.signer,
-      bid_block_height: tx.block_height,
-      bid_tx_index: tx.index
-    };
-
-    await this.nftStateRepository.upsert({ meta_id: nftMetaId, ...update }, ["meta_id"]);
-  }
-
-  async unlistBidMeta(nftMetaId: string, tx: CommonTx) {
-    let update = {
-      bid: false,
-      bid_price: null,
-      bid_buyer: null,
-      bid_contract_id: null,
-      bid_tx_index: tx.index,
-      bid_block_height: tx.block_height
-    };
-
-    return await this.nftStateRepository.upsert({ meta_id: nftMetaId, ...update }, ["meta_id"]);
   }
 
   async stakeMeta (nftMetaId: string, tx: CommonTx, sc: SmartContract, stake_sc: SmartContract) {

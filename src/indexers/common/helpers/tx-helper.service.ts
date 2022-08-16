@@ -94,7 +94,7 @@ export class TxHelperService {
     }
   }
 
-  async unlistMeta(nftMeta: NftMeta, tx: CommonTx, msc: SmartContract) {
+  async unlistMeta(nftMeta: NftMeta, tx: CommonTx, msc: SmartContract): Promise<NftState> {
     let nftStateList = this.nftStateListRepository.create({
       listed: false,
       list_price: null,
@@ -108,10 +108,10 @@ export class TxHelperService {
       commission_id: null
     });
 
-    await this.createOrUpsertNftStateList(nftMeta, nftStateList);
+    return await this.createOrUpsertNftStateList(nftMeta, nftStateList);
   }
 
-  async unlistMetaInAllMarkets(nftMeta: NftMeta, tx: CommonTx, msc: SmartContract) {
+  async unlistMetaInAllMarkets(nftMeta: NftMeta, tx: CommonTx, msc: SmartContract, seller?: string) {
     let nftStateList = this.nftStateListRepository.create({
       listed: false,
       list_price: null,
@@ -126,10 +126,11 @@ export class TxHelperService {
 
    if (nftMeta.nft_state) {
       nftMeta.nft_state.nft_states_list = nftMeta.nft_state.nft_states_list.map(state => {
-        return this.nftStateListRepository.merge(state, nftStateList);
+        return state.list_seller !== seller ? state :
+          this.nftStateListRepository.merge(state, nftStateList);
       });
 
-      let alreadyExists = nftMeta.nft_state.nft_states_list.find(s => s.list_contract_id === msc.id);
+      let alreadyExists = this.findStateList(nftMeta.nft_state, msc.id);
       if (!alreadyExists) {
         nftMeta.nft_state.nft_states_list.push(
           this.nftStateListRepository.create({ ...nftStateList, list_contract_id: msc.id })
@@ -146,18 +147,19 @@ export class TxHelperService {
     }
   }
 
-  async createOrUpsertNftStateList(nftMeta: NftMeta, nftStateList: NftStateList) {
+  async createOrUpsertNftStateList(nftMeta: NftMeta, nftStateList: NftStateList): Promise<NftState> {
     if (nftMeta.nft_state) {
       await this.nftStateListRepository.upsert(
         this.nftStateListRepository.merge(nftStateList, { nft_state_id: nftMeta.nft_state.id}),
         ["nft_state_id", "list_contract_id"]
       );
+      return nftMeta.nft_state;
     } else {
       let nftState = this.nftStateRepository.create();
       nftState.meta_id = nftMeta.id;
       nftState.nft_states_list = [nftStateList];
 
-      await this.nftStateRepository.save(nftState);
+      return await this.nftStateRepository.save(nftState);
     }
   }
 

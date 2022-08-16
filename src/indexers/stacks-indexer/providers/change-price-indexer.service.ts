@@ -54,8 +54,8 @@ export class ChangePriceIndexerService implements IndexerService {
       };
 
       // Unlist original market
-      if (this.stacksTxHelper.isNewerEvent(tx, nft_state_unlist)) {
-        await this.txHelper.unlistMeta(nftMeta, tx, unlist_sc);
+      if (this.stacksTxHelper.isNewerEvent(tx, nft_state_unlist) && unlist_sc) {
+        nftMeta.nft_state = await this.txHelper.unlistMeta(nftMeta, tx, unlist_sc);
       }
      
       // List in new market

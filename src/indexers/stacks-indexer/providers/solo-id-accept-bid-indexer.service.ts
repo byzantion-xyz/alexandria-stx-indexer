@@ -50,7 +50,7 @@ export class SoloIdAcceptBidIndexerService implements IndexerService {
         
         if (nftMeta) {
           await this.txBidHelper.acceptBid(bidState, tx, nftMeta);
-          await this.txHelper.unlistMetaInAllMarkets(nftMeta, tx, sc);
+          await this.txHelper.unlistMetaInAllMarkets(nftMeta, tx, sc, bidState.bid_seller);
 
           const actionCommonArgs = this.txHelper.setCommonCollectionActionParams(
             ActionName.accept_bid, tx, bidState.collection, sc

@@ -152,9 +152,6 @@ export class TxUpgradeHelperService {
       }
 
       if (name) nftMeta.name = name.replace(/^"(.+(?="$))"$/, '$1');
-      
-      this.logger.log('Updated attributes');
-      this.logger.log(JSON.stringify(nftMeta.attributes, null, 2));
 
       await this.nftMetaRepository.save(nftMeta, { transaction: true });
     } catch (err) {

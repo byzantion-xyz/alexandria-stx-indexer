@@ -18,7 +18,7 @@ import { SmartContract } from 'src/database/universal/entities/SmartContract';
 import { NearIndexerController } from 'src/indexers/near-indexer/near-indexer.controller';
 import { IndexerOptions } from 'src/indexers/common/interfaces/indexer-options';
 
-const EXCLUDED_ACTIONS = ['add_collection'];
+const EXCLUDED_ACTIONS = ['add-collection', 'add-contract'];
 
 @Injectable()
 export class StacksTxStreamAdapterService implements TxStreamAdapter {
@@ -108,7 +108,7 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
         sub_block_sequence: BigInt(tx.tx.microblock_sequence),
         signer: tx.tx.sender_address,
         receiver: tx.tx.contract_call.contract_id,
-        function_name: tx.tx.contract_call.function_name,
+        function_name: function_name,
         args: parsed_args,
         events: tx.tx.events,
         notify,

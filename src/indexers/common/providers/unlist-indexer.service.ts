@@ -40,9 +40,8 @@ export class UnlistIndexerService implements IndexerService {
 
     // Check if has custodial smart contract
     if (sc.type.includes(SmartContractType.non_fungible_tokens)) {
-      if (sc.custodial_smart_contract) {
-        msc = sc.custodial_smart_contract;
-      }
+      msc = sc.custodial_smart_contract ? sc.custodial_smart_contract :
+        await this.smartContractRepository.findOneBy({ contract_key });
       contract_key = sc.contract_key;
     }
 

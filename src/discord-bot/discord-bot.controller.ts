@@ -1,4 +1,4 @@
-import { Injectable, Logger, Controller, Post, Body, UsePipes, ValidationPipe } from '@nestjs/common';
+import { Injectable, Logger, Controller, Post, Body, UsePipes, ValidationPipe, HttpException, HttpStatus } from '@nestjs/common';
 import { Once, InjectDiscordClient } from '@discord-nestjs/core';
 import { Client } from 'discord.js';
 import { DiscordBotDto } from './dto/discord-bot.dto'; 
@@ -49,6 +49,9 @@ export class DiscordBotController {
       return 'Endpoint disabled for production';
     }
     const action = await this.botHelperService.fetchActionData(params.actionId);
+    if (!action) {
+      throw new HttpException('Action not found', HttpStatus.BAD_REQUEST);   
+    }
     const data = await this.botHelperService.createDiscordBotDto(action);
 
     if (action.action === ActionName.buy) {

@@ -18,6 +18,8 @@ import { SmartContract } from 'src/database/universal/entities/SmartContract';
 import { NearIndexerController } from 'src/indexers/near-indexer/near-indexer.controller';
 import { IndexerOptions } from 'src/indexers/common/interfaces/indexer-options';
 
+const EXCLUDED_ACTIONS = ['add_collection'];
+
 @Injectable()
 export class StacksTxStreamAdapterService implements TxStreamAdapter {
   private readonly logger = new Logger(StacksTxStreamAdapterService.name);
@@ -81,6 +83,11 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
 
   transformTx(tx: StacksTransaction): CommonTx {
     try {
+      const function_name = tx.tx.contract_call.function_name;
+      if (EXCLUDED_ACTIONS.includes(function_name)) {
+        return; // Do not process transaction
+      }
+
       const args = tx.tx.contract_call.function_args;
       let parsed_args;
       if (args) {

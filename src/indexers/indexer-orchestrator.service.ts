@@ -45,7 +45,8 @@ export class IndexerOrchestratorService {
     try {
       await this.setUpChainAndStreamer();
       if (options.includeMissings && !options.contract_key) {
-        throw new Error('A contract_key is required while running missing transactions');
+        this.logger.warn('A contract_key is required while running missing transactions');
+        return;
       }
 
       const cursor = await this.txStreamAdapter.fetchTxs(options);

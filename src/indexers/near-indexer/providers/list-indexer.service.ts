@@ -46,6 +46,11 @@ export class ListIndexerService implements IndexerService {
     if (sc.type.includes(SmartContractType.non_fungible_tokens)) {
       msc = sc.custodial_smart_contract ? sc.custodial_smart_contract :
         await this.smartContractRepository.findOneBy({ contract_key });
+      if (!msc) {
+        this.logger.log(`Marketplace smart_contract: ${contract_key} not found`);
+        txResult.missing = true;
+        return txResult;
+      }
       contract_key = sc.contract_key;
     }
 

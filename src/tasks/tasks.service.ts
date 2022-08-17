@@ -24,18 +24,6 @@ export class TasksService {
       }
     }
 
-    @Cron(CronExpression.EVERY_DAY_AT_6AM)
-    handleCronMissingTransactions() {
-      if (process.env.NODE_ENV === 'production') {
-        const options: IndexerOptions = {
-          includeMissings: true
-        }
-        this.indexerOrchestrator.runIndexer(options);
-      } else {
-        this.logger.debug('Not in production environment. Skip near indexer trigger')
-      }
-    }
-
     @Timeout(2000)
     handleIndexerSubscription() {
       this.indexerOrchestrator.subscribeToEvents({ event: IndexerEventType.block });

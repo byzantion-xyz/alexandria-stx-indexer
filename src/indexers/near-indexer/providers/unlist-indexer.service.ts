@@ -33,7 +33,7 @@ export class UnlistIndexerService implements IndexerService {
   async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {
     this.logger.debug(`process() ${tx.hash}`);
     let txResult: TxProcessResult = { processed: false, missing: false };
-    let msc: SmartContract;
+    let msc = Object.assign({}, sc);
 
     const token_id = this.txHelper.extractArgumentData(tx.args, scf, "token_id");
     let contract_key = this.txHelper.extractArgumentData(tx.args, scf, "contract_key");

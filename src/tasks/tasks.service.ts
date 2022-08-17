@@ -13,12 +13,19 @@ export class TasksService {
     ) {}
 
     @Timeout(10000)
-    handleCron() {
+    async handleCron() {
       if (process.env.NODE_ENV === 'production') {
-        const options: IndexerOptions = {
-          includeMissings: false
+        const initial_block = 42000000;
+        const end_block = 80000000;
+        const block_range = 100000;
+        const options: IndexerOptions = { includeMissings: false };
+
+        for (let b = initial_block; b < end_block; b = b + block_range) {
+          options.start_block_height = b;
+          options.end_block_height = b + block_range;
+ 
+          await this.indexerOrchestrator.runIndexer(options);
         }
-        this.indexerOrchestrator.runIndexer(options);
       } else {
         this.logger.debug('Not in production environment. Skip near indexer trigger')
       }

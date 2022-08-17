@@ -10,7 +10,7 @@ interface TransactionsDto {
   end_block_height?: number;
 }
 
-@Controller('near-indexer')
+@Controller('indexer')
 export class NearIndexerController {
   private readonly logger = new Logger(NearIndexerController.name);
 

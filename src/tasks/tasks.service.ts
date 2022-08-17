@@ -17,7 +17,7 @@ export class TasksService {
     @Timeout(10000)
     async handleCron() {
       if (process.env.NODE_ENV === 'production') {
-        const blockConfig = this.configService.get('app.blockRanges')[this.configService.get('app.chainSymbol')];
+        const blockConfig = this.configService.get('indexer.blockRanges')[this.configService.get('indexer.chainSymbol')];
         const initial_block = blockConfig.start_block_height_tip;
         const end_block = blockConfig.end_block_height;
         const block_range = blockConfig.block_range;

@@ -20,4 +20,16 @@ export default registerAs("indexer", () => ({
     ],
     Near: [],
   },
+  blockRanges: {
+    Stacks: {
+      start_block_height: 1,
+      start_block_height_tip: 70000,
+      end_block_height:  80000
+    },
+    Near: {
+      start_block_height: 42000000,
+      start_block_height_tip: 72000000,
+      end_block_height: 80000000
+    }
+  }
 }));

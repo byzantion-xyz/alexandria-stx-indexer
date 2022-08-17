@@ -76,7 +76,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
     const client = await pool.connect();
 
     const cursor = client.query(new Cursor(sql));
-    return cursor;
+    return { cursor, client };
   }
 
   async setTxResult(txHash: string, txResult: TxProcessResult): Promise<void> {

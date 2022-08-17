@@ -1,10 +1,10 @@
 import { Injectable, Module } from "@nestjs/common";
 import { NearIndexerController } from "./near-indexer/near-indexer.controller";
 import { IndexerOrchestratorService } from "./indexer-orchestrator.service";
-import { BuyIndexerService } from "./common/providers/buy-indexer.service";
-import { ListIndexerService } from "./common/providers/list-indexer.service";
+import { BuyIndexerService } from "./near-indexer/providers/buy-indexer.service";
+import { ListIndexerService } from "./near-indexer/providers/list-indexer.service";
 import { TxHelperService } from "./common/helpers/tx-helper.service";
-import { UnlistIndexerService } from "./common/providers/unlist-indexer.service";
+import { UnlistIndexerService } from "./near-indexer/providers/unlist-indexer.service";
 import { DiscordBotModule } from "src/discord-bot/discord-bot.module";
 import { ScrapersModule } from "src/scrapers/scrapers.module";
 import { NearTxStreamAdapterService } from "./near-indexer/providers/near-tx-stream-adapter.service";
@@ -27,9 +27,9 @@ import { TxStreamAdapter } from "./common/interfaces/tx-stream-adapter.interface
 import { TransferIndexerService } from './stacks-indexer/providers/transfer-indexer.service';
 import { Commission } from "src/database/universal/entities/Commission";
 
-import { StakeIndexerService } from "./common/providers/stake-indexer.service";
+import { StakeIndexerService } from "./near-indexer/providers/stake-indexer.service";
 import { TxStakingHelperService } from './common/helpers/tx-staking-helper.service';
-import { UnstakeIndexerService } from './common/providers/unstake-indexer.service';
+import { UnstakeIndexerService } from './near-indexer/providers/unstake-indexer.service';
 import { ChangePriceIndexerService } from './stacks-indexer/providers/change-price-indexer.service';
 //import { BnsRegisterIndexerService } from './stacks-indexer/providers/bns-register-indexer.service';
 import { NearMicroIndexersProvider } from "./common/providers/near-micro-indexers.service";

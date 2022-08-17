@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Cron, CronExpression, Timeout } from '@nestjs/schedule';
 import { IndexerEventType } from 'src/indexers/common/helpers/indexer-enums';
 import { IndexerOptions } from 'src/indexers/common/interfaces/indexer-options';
@@ -9,15 +10,17 @@ export class TasksService {
     private readonly logger = new Logger(TasksService.name);
 
     constructor(
-      private indexerOrchestrator: IndexerOrchestratorService
+      private indexerOrchestrator: IndexerOrchestratorService,
+      private configService: ConfigService
     ) {}
 
     @Timeout(10000)
     async handleCron() {
       if (process.env.NODE_ENV === 'production') {
-        const initial_block = 72000000;
-        const end_block = 80000000;
-        const block_range = 100000;
+        const blockConfig = this.configService.get('app.blockRanges')[this.configService.get('app.chainSymbol')];
+        const initial_block = blockConfig.start_block_height_tip;
+        const end_block = blockConfig.end_block_height;
+        const block_range = blockConfig.block_range;
         const options: IndexerOptions = { includeMissings: false };
 
         for (let b = initial_block; b < end_block; b = b + block_range) {

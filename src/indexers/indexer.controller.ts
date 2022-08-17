@@ -1,6 +1,7 @@
 import { Body, Controller, HttpException, HttpStatus, Post, UsePipes, ValidationPipe } from '@nestjs/common';
 
 import { Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { IndexerOptions } from './common/interfaces/indexer-options';
 import { IndexerOrchestratorService } from './indexer-orchestrator.service';
 
@@ -15,7 +16,8 @@ export class IndexerController {
   private readonly logger = new Logger(IndexerController.name);
 
   constructor(
-    private indexerOrchestrator: IndexerOrchestratorService
+    private indexerOrchestrator: IndexerOrchestratorService,
+    private configService: ConfigService
   ) { }
 
   @Post('run')
@@ -41,10 +43,12 @@ export class IndexerController {
       includeMissings: true, 
       ...params
     }
+
+    const blockConfig = this.configService.get('app.blockRanges')[this.configService.get('app.chainSymbol')];
     // TODO: Query block when contract was deployed and latest block.
-    const initial_block = options.start_block_height || 42000000;
-    const end_block = options.end_block_height || 80000000;
-    const block_range = 1000000;
+    const initial_block = options.start_block_height || blockConfig.start_block_height;
+    const end_block = options.end_block_height || blockConfig.end_block_height;
+    const block_range = blockConfig.block_range;
 
     for (let b = initial_block; b < end_block; b = b + block_range) {
       options.start_block_height = b;

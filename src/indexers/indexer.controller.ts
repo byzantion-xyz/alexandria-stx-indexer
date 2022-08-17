@@ -1,8 +1,8 @@
 import { Body, Controller, HttpException, HttpStatus, Post, UsePipes, ValidationPipe } from '@nestjs/common';
 
 import { Logger } from '@nestjs/common';
-import { IndexerOptions } from '../common/interfaces/indexer-options';
-import { IndexerOrchestratorService } from '../indexer-orchestrator.service';
+import { IndexerOptions } from './common/interfaces/indexer-options';
+import { IndexerOrchestratorService } from './indexer-orchestrator.service';
 
 interface TransactionsDto {
   contract_key?: string;
@@ -11,8 +11,8 @@ interface TransactionsDto {
 }
 
 @Controller('indexer')
-export class NearIndexerController {
-  private readonly logger = new Logger(NearIndexerController.name);
+export class IndexerController {
+  private readonly logger = new Logger(IndexerController.name);
 
   constructor(
     private indexerOrchestrator: IndexerOrchestratorService

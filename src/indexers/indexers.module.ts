@@ -1,5 +1,5 @@
 import { Injectable, Module } from "@nestjs/common";
-import { NearIndexerController } from "./near-indexer/near-indexer.controller";
+import { IndexerController } from "./indexer.controller";
 import { IndexerOrchestratorService } from "./indexer-orchestrator.service";
 import { BuyIndexerService } from "./near-indexer/providers/buy-indexer.service";
 import { ListIndexerService } from "./near-indexer/providers/list-indexer.service";
@@ -115,7 +115,7 @@ const TxStreamAdapterProvider = {
     TypeOrmModule.forFeature([NearTransaction, Receipt], "NEAR-STREAM"),
     TypeOrmModule.forFeature([StacksTransaction, Block], "STACKS-STREAM"),
   ],
-  controllers: [NearIndexerController],
+  controllers: [IndexerController],
   providers: [
     IndexerOrchestratorService,
     /* Helpers */

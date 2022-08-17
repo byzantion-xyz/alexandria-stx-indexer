@@ -36,7 +36,7 @@ export class TasksService {
 
     @Timeout(2000)
     handleIndexerSubscription() {
-      this.indexerOrchestrator.subscribeToEvents({ event: IndexerEventType.block });
+      this.indexerOrchestrator.subscribeToEvents();
     }
 
 }

@@ -70,7 +70,7 @@ export class IndexerOrchestratorService {
     }
   }
 
-  async subscribeToEvents(options: IndexerSubscriptionOptions) {
+  async subscribeToEvents() {
     this.logger.debug(`subscribeToEvents() Initialize`);
 
     try {

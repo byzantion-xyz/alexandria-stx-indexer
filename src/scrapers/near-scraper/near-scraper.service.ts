@@ -149,7 +149,7 @@ export class NearScraperService {
       this.logger.log(`[scraping ${slug}] SCRAPING COMPLETE`);
 
       // Run missing transactions for scraped smart contract
-      await axios.post('https://byz-universal-api-new.onrender.com/near-indexer/run-missing', { contract_key });
+      await axios.post('https://byz-universal-api-new.onrender.com/indexer/run-missing', { contract_key });
       
       return "Success";
     } catch (err) {

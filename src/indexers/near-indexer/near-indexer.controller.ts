@@ -1,4 +1,4 @@
-import { Body, Controller, Post, UsePipes, ValidationPipe } from '@nestjs/common';
+import { Body, Controller, HttpException, HttpStatus, Post, UsePipes, ValidationPipe } from '@nestjs/common';
 
 import { Logger } from '@nestjs/common';
 import { IndexerOptions } from '../common/interfaces/indexer-options';
@@ -15,13 +15,13 @@ export class NearIndexerController {
   private readonly logger = new Logger(NearIndexerController.name);
 
   constructor(
-    private nearIndexer: IndexerOrchestratorService
+    private indexerOrchestrator: IndexerOrchestratorService
   ) { }
 
   @Post('run')
   async indexTransactions(@Body() params: TransactionsDto) {
     if (process.env.NODE_ENV !== 'production') {
-      this.nearIndexer.runIndexer({ 
+      this.indexerOrchestrator.runIndexer({ 
         includeMissings: false,
         ...params
       });
@@ -33,11 +33,25 @@ export class NearIndexerController {
   @Post('run-missing')
   @UsePipes(new ValidationPipe({ transform: true }))
   async indexMissingTransactions(@Body() params: TransactionsDto) {
-    const indexerOptions: IndexerOptions = {
+    if (!params || !params.contract_key) {
+      throw new HttpException('A valid contract_key is required', HttpStatus.BAD_REQUEST);  
+    }
+
+    const options: IndexerOptions = {
       includeMissings: true, 
       ...params
     }
-    this.nearIndexer.runIndexer(indexerOptions);
+    // TODO: Query block when contract was deployed and latest block.
+    const initial_block = options.start_block_height || 42000000;
+    const end_block = options.end_block_height || 80000000;
+    const block_range = 1000000;
+
+    for (let b = initial_block; b < end_block; b = b + block_range) {
+      options.start_block_height = b;
+      options.end_block_height = b + block_range;
+ 
+      await this.indexerOrchestrator.runIndexer(options);
+    }
 
     return 'Ok';
   }

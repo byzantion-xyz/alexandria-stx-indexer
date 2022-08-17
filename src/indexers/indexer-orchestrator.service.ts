@@ -116,6 +116,7 @@ export class IndexerOrchestratorService {
           smart_contract_functions: true,
           custodial_smart_contract: true
         },
+        cache: 60000
       });
 
       if (smart_contract) {

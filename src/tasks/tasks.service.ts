@@ -15,7 +15,7 @@ export class TasksService {
     @Timeout(10000)
     async handleCron() {
       if (process.env.NODE_ENV === 'production') {
-        const initial_block = 42000000;
+        const initial_block = 72000000;
         const end_block = 80000000;
         const block_range = 100000;
         const options: IndexerOptions = { includeMissings: false };

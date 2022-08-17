@@ -1,7 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { CommonTx } from "src/indexers/common/interfaces/common-tx.interface";
 import { TxProcessResult } from "src/indexers/common/interfaces/tx-process-result.interface";
-import { CommonTxResult, TxStreamAdapter } from "src/indexers/common/interfaces/tx-stream-adapter.interface";
+import { CommonTxResult, TxCursorBatch, TxStreamAdapter } from "src/indexers/common/interfaces/tx-stream-adapter.interface";
 import { TxHelperService } from "../../common/helpers/tx-helper.service";
 import * as moment from "moment";
 import { Client, Pool } from 'pg';
@@ -46,7 +46,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
     private smartContractFunctionRepository: Repository<SmartContractFunction>
   ) {}
 
-  async fetchTxs(options: IndexerOptions): Promise<any> {
+  async fetchTxs(options: IndexerOptions): Promise<TxCursorBatch> {
     const accounts = await this.findSmartContracts(options.contract_key);
     let accounts_in = this.buildReceiverIdInQuery(accounts);
 
@@ -76,7 +76,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
     const client = await pool.connect();
 
     const cursor = client.query(new Cursor(sql));
-    return { cursor, client };
+    return { cursor, pool };
   }
 
   async setTxResult(txHash: string, txResult: TxProcessResult): Promise<void> {

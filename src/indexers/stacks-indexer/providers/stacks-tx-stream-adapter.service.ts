@@ -170,8 +170,7 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
             'SP2KAF9RF86PVX3NEE27DFV1CQX0T4WGR41X3S45C.bns-marketplace-v1', 
             'SP2KAF9RF86PVX3NEE27DFV1CQX0T4WGR41X3S45C.bns-marketplace-v3'
           ])) }
-        ),
-        smart_contract_functions: MoreThan(0)
+        )
       }
     });
     if (!accounts || !accounts.length) throw new Error('Invalid contract_key');

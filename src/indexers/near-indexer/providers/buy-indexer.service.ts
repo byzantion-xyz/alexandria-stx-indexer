@@ -1,19 +1,19 @@
 import { Logger, Injectable, NotAcceptableException } from "@nestjs/common";
 
 import { TxProcessResult } from "src/indexers/common/interfaces/tx-process-result.interface";
-import { TxHelperService } from "../helpers/tx-helper.service";
+import { TxHelperService } from "../../common/helpers/tx-helper.service";
 
 import { SalesBotService } from "src/discord-bot/providers/sales-bot.service";
-import { CreateActionCommonArgs, CreateBuyActionTO } from "../interfaces/create-action-common.dto";
+import { CreateActionCommonArgs, CreateBuyActionTO } from "../../common/interfaces/create-action-common.dto";
 import { CommonTx } from "src/indexers/common/interfaces/common-tx.interface";
-import { IndexerService } from "../interfaces/indexer-service.interface";
+import { IndexerService } from "../../common/interfaces/indexer-service.interface";
 
 import { InjectRepository } from "@nestjs/typeorm";
 import { Action, Action as ActionEntity } from "src/database/universal/entities/Action";
 import { SmartContract } from "src/database/universal/entities/SmartContract";
 import { SmartContractFunction } from "src/database/universal/entities/SmartContractFunction";
 import { Repository } from "typeorm";
-import { ActionName, SmartContractType } from "../helpers/indexer-enums";
+import { ActionName, SmartContractType } from "../../common/helpers/indexer-enums";
 import { NearTxHelperService } from "src/indexers/near-indexer/providers/near-tx-helper.service";
 import { parseAssetInfoString } from "@stacks/transactions";
 

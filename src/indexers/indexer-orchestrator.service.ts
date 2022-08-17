@@ -49,7 +49,7 @@ export class IndexerOrchestratorService {
         return;
       }
 
-      const { cursor, client } = await this.txStreamAdapter.fetchTxs(options);
+      const { cursor, pool } = await this.txStreamAdapter.fetchTxs(options);
 
       let txs = [];
       this.logger.log(`Querying transactions cursor batch_size: ${BATCH_SIZE} `);
@@ -61,7 +61,7 @@ export class IndexerOrchestratorService {
       } while (txs.length > 0);
       
       cursor.close();
-      client.end();
+      pool.end();
 
       this.logger.debug(`runIndexer() Completed with options: `, options);
       await this.commonUtil.delay(5000); // Wait for any discord post to be sent

@@ -9,7 +9,7 @@ import { Transaction as TransactionEntity } from 'src/database/stacks-stream/ent
 import { IndexerEventType } from 'src/indexers/common/helpers/indexer-enums';
 import { CommonTx } from 'src/indexers/common/interfaces/common-tx.interface';
 import { TxProcessResult } from 'src/indexers/common/interfaces/tx-process-result.interface';
-import { CommonTxResult, TxStreamAdapter } from 'src/indexers/common/interfaces/tx-stream-adapter.interface';
+import { CommonTxResult, TxCursorBatch, TxStreamAdapter } from 'src/indexers/common/interfaces/tx-stream-adapter.interface';
 import { In, Not, Repository, MoreThan } from 'typeorm';
 import { StacksTransaction } from '../dto/stacks-transaction.dto';
 import { StacksTxHelperService } from './stacks-tx-helper.service';
@@ -33,7 +33,7 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
     private smartContractRepository: Repository<SmartContract>
   ) {}
 
-  async fetchTxs(options: IndexerOptions): Promise<any> {
+  async fetchTxs(options: IndexerOptions): Promise<TxCursorBatch> {
     const accounts = await this.findSmartContracts(options.contract_key);
     let accounts_in = this.buildReceiverIdInQuery(accounts);
 
@@ -54,7 +54,7 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
     const client = await pool.connect();
 
     const cursor = client.query(new Cursor(sql));
-    return { cursor, client };
+    return { cursor, pool };
   }
 
   async setTxResult(txHash: string, txResult: TxProcessResult): Promise<void> {

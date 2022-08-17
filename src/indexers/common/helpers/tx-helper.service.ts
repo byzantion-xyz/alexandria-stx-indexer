@@ -126,7 +126,7 @@ export class TxHelperService {
 
    if (nftMeta.nft_state) {
       nftMeta.nft_state.nft_states_list = nftMeta.nft_state.nft_states_list.map(state => {
-        return state.list_seller !== seller ? state :
+        return seller && state.list_seller !== seller ? state :
           this.nftStateListRepository.merge(state, nftStateList);
       });
 

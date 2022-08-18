@@ -40,21 +40,37 @@ export class TxHelperService {
     return Number(BigInt(nanoseconds) / BigInt(1e6));
   }
 
-  extractArgumentData(args: JSON, scf: SmartContractFunction, field: string) {
-    if (scf.data && scf.data[field]) {
-      // Any data stored directly in smart_contract_function must override arguments
-      return scf.data[field];
+  findAndExtractArgumentData(args: JSON, scf: SmartContractFunction, fields: string[]) {
+    for (let field of fields) {
+      let value = this.extractArgumentData(args, scf, field);
+      if (value) return value;
     }
+  }
 
+  private findArgumentData(args: JSON, scf: SmartContractFunction, field: string) {
     const index = scf.args[field];
     if (typeof index === 'undefined') {
       return undefined;
     } if (index.toString().includes(".")) {
       const indexArr = index.toString().split(".");
-      return args[indexArr[0]][indexArr[1]];
+      // TODO: Use recursive function
+      if (indexArr.length === 2) {
+        return args[indexArr[0]][indexArr[1]];
+      } else if (indexArr.length === 3) {
+        return args[indexArr[0]][indexArr[1]][indexArr[2]];        
+      }
     } else {
       return args[scf.args[field]];
     }
+  }
+
+  extractArgumentData(args: JSON, scf: SmartContractFunction, field: string) {
+    // Any data stored directly in smart_contract_function must override arguments
+    if (scf.data && scf.data[field]) {
+      return scf.data[field];
+    } 
+    
+    return this.findArgumentData(args, scf, field);
   }
 
   // TODO: Optimize relations fetched per event type

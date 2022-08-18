@@ -38,8 +38,7 @@ export class ListIndexerService implements IndexerService {
     let msc: SmartContract;
 
     const token_id = this.txHelper.extractArgumentData(tx.args, scf, "token_id");
-    const price = this.txHelper.extractArgumentData(tx.args, scf, "price");
-    
+    const price = this.txHelper.findAndExtractArgumentData(tx.args, scf, ["price", "token_price"]);
     let contract_key = this.txHelper.extractArgumentData(tx.args, scf, "contract_key");
 
     // Check if has custodial smart contract

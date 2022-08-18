@@ -24,7 +24,7 @@ import { RelistIndexerService } from "src/indexers/stacks-indexer/providers/reli
 import { RenameIndexerService } from "src/indexers/stacks-indexer/providers/rename-indexer.service";
 import { SoloIdAcceptBidIndexerService } from "src/indexers/stacks-indexer/providers/solo-id-accept-bid-indexer.service";
 import { SoloIdBidIndexerService } from "src/indexers/stacks-indexer/providers/solo-id-bid-indexer.service";
-import { SoloIdRemoveBidIndexerService } from "src/indexers/stacks-indexer/providers/solo-id-remove-bid-indexer.service";
+import { SoloIdUnlistBidIndexerService } from "src/indexers/stacks-indexer/providers/solo-id-unlist-bid-indexer.service";
 import { TransferIndexerService } from "src/indexers/stacks-indexer/providers/transfer-indexer.service";
 import { UnlistBidIndexerService } from "src/indexers/stacks-indexer/providers/unlist-bid-indexer.service";
 import { UpgradeIndexerService } from "src/indexers/stacks-indexer/providers/upgrade-indexer.service";
@@ -66,7 +66,7 @@ export class StacksMicroIndexers {
     private idAcceptBidIndexer: IndexerService,
     private idRemoveBidIndexer: IndexerService,
     private soloIdBidIndexer: IndexerService,
-    private soloIdRemoveBidIndexer: IndexerService,
+    private soloIdUnlistBidIndexer: IndexerService,
     private soloIdAcceptBidIndexer: IndexerService,
     private renameIndexer: IndexerService,
     private upgradeIndexer: IndexerService,
@@ -105,7 +105,7 @@ export const StacksMicroIndexersProvider = {
     idAcceptBidIndexer: IdAcceptBidIndexerService,
     idRemoveBidIndexer: IdRemoveBidIndexerService,
     soloIdBidIndexer: SoloIdBidIndexerService,
-    soloIdRemoveBidIndexer: SoloIdRemoveBidIndexerService,
+    soloIdUnlistBidIndexer: SoloIdUnlistBidIndexerService,
     soloIdAcceptBidIndexer: SoloIdAcceptBidIndexerService,
     renameIndexer: RenameIndexerService,
     upgradeIndexer: UpgradeIndexerService,
@@ -140,7 +140,7 @@ export const StacksMicroIndexersProvider = {
       idAcceptBidIndexer,
       idRemoveBidIndexer,
       soloIdBidIndexer,
-      soloIdRemoveBidIndexer,
+      soloIdUnlistBidIndexer,
       soloIdAcceptBidIndexer,
       renameIndexer,
       upgradeIndexer, 
@@ -176,7 +176,7 @@ export const StacksMicroIndexersProvider = {
     IdAcceptBidIndexerService,
     IdRemoveBidIndexerService,
     SoloIdBidIndexerService,
-    SoloIdRemoveBidIndexerService,
+    SoloIdUnlistBidIndexerService,
     SoloIdAcceptBidIndexerService,
     RenameIndexerService,
     UpgradeIndexerService,

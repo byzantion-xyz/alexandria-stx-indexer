@@ -14,8 +14,8 @@ import { Repository } from 'typeorm';
 import { StacksTxHelperService } from './stacks-tx-helper.service';
 
 @Injectable()
-export class SoloIdRemoveBidIndexerService implements IndexerService {
-  private readonly logger = new Logger(SoloIdRemoveBidIndexerService.name);
+export class SoloIdUnlistBidIndexerService implements IndexerService {
+  private readonly logger = new Logger(SoloIdUnlistBidIndexerService.name);
 
   constructor(
     private stacksTxHelper: StacksTxHelperService,

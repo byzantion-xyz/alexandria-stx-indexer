@@ -53,7 +53,7 @@ import { MultiIdBidIndexerService } from './stacks-indexer/providers/multi-id-bi
 import { IdAcceptBidIndexerService } from './stacks-indexer/providers/id-accept-bid-indexer.service';
 import { IdRemoveBidIndexerService } from './stacks-indexer/providers/id-remove-bid-indexer.service';
 import { SoloIdBidIndexerService } from './stacks-indexer/providers/solo-id-bid-indexer.service';
-import { SoloIdRemoveBidIndexerService } from './stacks-indexer/providers/solo-id-remove-bid-indexer.service';
+import { SoloIdUnlistBidIndexerService } from './stacks-indexer/providers/solo-id-unlist-bid-indexer.service';
 import { SoloIdAcceptBidIndexerService } from './stacks-indexer/providers/solo-id-accept-bid-indexer.service';
 import { CollectionBidIndexerService } from './stacks-indexer/providers/collection-bid-indexer.service';
 import { CollectionUnlistBidIndexerService } from './stacks-indexer/providers/collection-unlist-bid-indexer.service';
@@ -161,7 +161,7 @@ const TxStreamAdapterProvider = {
     IdAcceptBidIndexerService,
     IdRemoveBidIndexerService,
     SoloIdBidIndexerService,
-    SoloIdRemoveBidIndexerService,
+    SoloIdUnlistBidIndexerService,
     SoloIdAcceptBidIndexerService,
     CollectionBidIndexerService,
     CollectionUnlistBidIndexerService,

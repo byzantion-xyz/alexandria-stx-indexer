@@ -69,7 +69,8 @@ export class SoloIdAcceptBidIndexerService implements IndexerService {
         }
         
       } else if (bidState) {
-        this.logger.log('Collection bid already "matched" for nonce:', bidState.nonce);
+        this.logger.log(`Solo id bid already "${bidState.status}" with nonce: ${bidState.nonce}`);
+        txResult.processed = true;
       } else {
         this.logger.log(`bid_state not found bid_contract_nonce: ${bid_contract_nonce}`);        
       }

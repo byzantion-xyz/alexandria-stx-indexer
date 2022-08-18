@@ -68,7 +68,8 @@ export class CollectionOrderBookAcceptBidIndexerService implements IndexerServic
           this.logger.log(`NftMeta not found ${contract_key} ${token_id}`);
         }
       } else if (bidState) {
-        this.logger.log('Collection bid already "matched"', bidState.nonce);
+        this.logger.log(`Collection bid already "${bidState.status}" with nonce: ${bidState.nonce}`);
+        txResult.processed = true;
       } else {
         this.logger.log(`bid_state not found bid_contract_nonce: ${bid_contract_nonce}`);        
       }

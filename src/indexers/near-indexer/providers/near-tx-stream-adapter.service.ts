@@ -101,15 +101,20 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
     return accounts;
   }
 
-  // In case of nft_approve, there are diferrent market_type: ['sale', 'add_trade']
+  // In case of nft_approve, there are diferrent market_types: ['sale', 'add_trade']
   // For nft_transfer_call, there are msg: stake and others
+  // fewandfar provides sale_conditions
+  // apollo42 and paras provide market_type
   findPreselectedIndexer(function_name: string, parsed_args: JSON): string {
     let force_indexer: string;
-    if (function_name && parsed_args && parsed_args["msg"]) {
-      // Map market_type on nft_approve to specific global function name
-      if (function_name === "nft_approve") {
-        const market_type = parsed_args["msg"]["market_type"];
+    if (!function_name || !parsed_args || !parsed_args["msg"]) return;
 
+    // Map market_type on nft_approve to specific global function name
+    if (function_name === "nft_approve") {
+      const market_type = parsed_args["msg"]["market_type"];
+      const sale_conditions = parsed_args["msg"]["sale_conditions"];
+
+      if (market_type) {
         switch (market_type) {
           case "sale": force_indexer = "list";
             break;
@@ -117,10 +122,12 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
           case "add_trade":
           case "accept_trade":
           case "accept_offer":
-          case "accept_offer_paras_series":
-          default: 
-            force_indexer = 'unknown';
+          case "accept_offer_paras_series": 
+            force_indexer = 'unknown'; // Not implemented
         }
+      } else if (sale_conditions && sale_conditions.near && !isNaN(sale_conditions.near)) {
+        // Few and Far listing with near token
+        force_indexer = 'list';
       }
     }
 

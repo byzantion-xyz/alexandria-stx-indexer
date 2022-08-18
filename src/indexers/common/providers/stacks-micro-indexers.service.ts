@@ -33,6 +33,7 @@ import { BuyIndexerService } from "src/indexers/stacks-indexer/providers/buy-ind
 import { ListIndexerService } from "src/indexers/stacks-indexer/providers/list-indexer.service";
 import { UnlistIndexerService } from "src/indexers/stacks-indexer/providers/unlist-indexer.service";
 import { BuyWrapperIndexerService } from "src/indexers/stacks-indexer/providers/buy-wrapper-indexer.service";
+import { AdminSoloIdUnlistBidIndexerService } from "src/indexers/stacks-indexer/providers/admin-solo-id-unlist-bid-indexer.service";
 
 // TODO: Try to simplify as a factory
 
@@ -68,6 +69,7 @@ export class StacksMicroIndexers {
     private soloIdBidIndexer: IndexerService,
     private soloIdUnlistBidIndexer: IndexerService,
     private soloIdAcceptBidIndexer: IndexerService,
+    private adminSoloIdUnlistBidIndexer: IndexerService,
     private renameIndexer: IndexerService,
     private upgradeIndexer: IndexerService,
     private upgradeMegaIndexer: IndexerService,
@@ -107,6 +109,7 @@ export const StacksMicroIndexersProvider = {
     soloIdBidIndexer: SoloIdBidIndexerService,
     soloIdUnlistBidIndexer: SoloIdUnlistBidIndexerService,
     soloIdAcceptBidIndexer: SoloIdAcceptBidIndexerService,
+    adminSoloIdUnlistBidIndexer: AdminSoloIdUnlistBidIndexerService,
     renameIndexer: RenameIndexerService,
     upgradeIndexer: UpgradeIndexerService,
     upgradeMegaIndexer: UpgradeMegaIndexerService,
@@ -142,6 +145,7 @@ export const StacksMicroIndexersProvider = {
       soloIdBidIndexer,
       soloIdUnlistBidIndexer,
       soloIdAcceptBidIndexer,
+      adminSoloIdUnlistBidIndexer,
       renameIndexer,
       upgradeIndexer, 
       upgradeMegaIndexer,
@@ -178,6 +182,7 @@ export const StacksMicroIndexersProvider = {
     SoloIdBidIndexerService,
     SoloIdUnlistBidIndexerService,
     SoloIdAcceptBidIndexerService,
+    AdminSoloIdUnlistBidIndexerService,
     RenameIndexerService,
     UpgradeIndexerService,
     UpgradeMegaIndexerService,

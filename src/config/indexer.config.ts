@@ -23,7 +23,7 @@ export default registerAs("indexer", () => ({
   blockRanges: {
     Stacks: {
       start_block_height: 1,
-      start_block_height_tip: 70000,
+      start_block_height_tip: 1,
       end_block_height:  80000,
       block_range: 10000
     },

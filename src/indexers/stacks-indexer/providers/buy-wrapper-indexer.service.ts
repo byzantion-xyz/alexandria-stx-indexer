@@ -25,7 +25,9 @@ export class BuyWrapperIndexerService implements IndexerService {
     private stacksTxHelper: StacksTxHelperService,
     private salesBotService: SalesBotService,
     @InjectRepository(ActionEntity)
-    private actionRepository: Repository<ActionEntity>
+    private actionRepository: Repository<ActionEntity>,
+    @InjectRepository(SmartContract)
+    private smartContractRepository: Repository<SmartContract>,
   ) {}
 
   async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {
@@ -33,11 +35,13 @@ export class BuyWrapperIndexerService implements IndexerService {
     let txResult: TxProcessResult = { processed: false, missing: false };
     const token_id = this.stacksTxHelper.extractArgumentData(tx.args, scf, "token_id");
     const contract_key = this.stacksTxHelper.extractArgumentData(tx.args, scf, "contract_key");
-
+    const market_contract_key = this.stacksTxHelper.extractArgumentData(tx.args, scf, 'market');
     const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
 
-    if (nftMeta && nftMeta.smart_contract.contract_key_wrapper) {
-      let msc = nftMeta.smart_contract;
+    if (nftMeta && (nftMeta.smart_contract.contract_key_wrapper || market_contract_key)) {
+      let msc = nftMeta.smart_contract.contract_key_wrapper ? nftMeta.smart_contract : 
+        await this.smartContractRepository.findOne({ where: { contract_key: market_contract_key }});
+
       const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName.buy, tx, nftMeta, sc);
       const nft_state_list = this.txHelper.findStateList(nftMeta.nft_state, msc.id);
 

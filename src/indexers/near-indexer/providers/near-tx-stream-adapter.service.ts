@@ -156,8 +156,10 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
 
       // Force indexer for special cases.
       let force_indexer = this.findPreselectedIndexer(function_name, parsed_args);
-      if (force_indexer === 'unknown') return; // Do not process unkonwn transactions
-
+      if (force_indexer === 'unknown') {
+        this.logger.warn(`Unable to find a micro indexer for ${function_name} hash: ${tx.transaction.hash}`);
+        return; // Do not process unkonwn transactions
+      }
       // TODO: Generate one transaction per tx.transaction.Action?
       return {
         hash: tx.transaction.hash,

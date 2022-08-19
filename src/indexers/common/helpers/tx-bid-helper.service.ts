@@ -94,7 +94,7 @@ export class TxBidHelperService {
         status: CollectionBidStatus.active,
         nonce: null,
         bid_contract_nonce: null,
-        nft_metas: { meta_id: nftMetaId }
+        ... (nftMetaId &&  { nft_metas: { meta_id: nftMetaId }})
       }
     });
   }

@@ -142,10 +142,10 @@ export class TxHelperService {
 
    if (nftMeta.nft_state) {
       nftMeta.nft_state.nft_states_list = nftMeta.nft_state.nft_states_list.map(state => {
-        if (seller && state.list_seller !== seller || tx.block_height < state.list_block_height) {
+        if ((seller && state.list_seller !== seller) || tx.block_height < state.list_block_height) {
           return state;
         } else {
-          this.nftStateListRepository.merge(state, nftStateList);
+          return this.nftStateListRepository.merge(state, nftStateList);
         }   
       });
 

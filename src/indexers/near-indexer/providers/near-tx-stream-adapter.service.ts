@@ -27,7 +27,8 @@ const WHITELISTED_ACTIONS = [
   'unstake',
   'nft_transfer_call',
   'withdraw_nft',
-  'remove_sale'
+  'remove_sale',
+  'offer'
 ];
 
 @Injectable()

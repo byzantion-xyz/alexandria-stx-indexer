@@ -56,25 +56,25 @@ export class CollectionBidIndexerService implements IndexerService {
         bid_buyer: tx.signer
       };
 
+      const actionCommonArgs = this.txHelper.setCommonCollectionActionParams(
+        ActionName.collection_bid, tx, collection, sc
+      );
+      const actionParams: CreateCollectionBidActionTO = {
+        ...actionCommonArgs,
+        buyer: tx.signer,
+        bid_price: price
+      };
+      
       let bidState = await this.txBidHelper.findActiveBid(collection.id, BidType.collection);
 
       if (this.txBidHelper.isNewBid(tx, bidState)) {
         await this.txBidHelper.createOrReplaceBid(collectionBidArgs, bidState);
-
-        const actionCommonArgs = this.txHelper.setCommonCollectionActionParams(
-          ActionName.collection_bid, tx, collection, sc
-        );
-        const actionParams: CreateCollectionBidActionTO = {
-          ...actionCommonArgs,
-          buyer: tx.signer,
-          bid_price: price
-        };
-        await this.createAction(actionParams);
       } else {
         this.logger.log('Too late bid');
       }
 
-      // Create action
+      await this.createAction(actionParams);
+      
       txResult.processed = true;
     } else {
       this.logger.log(`Missing Collection ${contract_key} ${tx.hash}`);

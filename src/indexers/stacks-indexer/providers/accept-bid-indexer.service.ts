@@ -55,13 +55,16 @@ export class AcceptBidIndexerService implements IndexerService {
           seller: tx.signer
         };
         await this.createAction(acceptBidActionParams);
+        txResult.processed = true;
       } else if (bidState) {
-        this.logger.log(`Too Late`);   
+        this.logger.log(`Too Late`); 
+        txResult.processed = true;  
       } else {
-        this.logger.log(`bid_state not found`);        
+        this.logger.log(`bid_state not found`);
+        txResult.missing = true;        
       }
 
-      txResult.processed = true;
+      
     } else {
       this.logger.log(`NftMeta not found ${contract_key} ${token_id}`);
       txResult.missing = true;

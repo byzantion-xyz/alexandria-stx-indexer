@@ -58,10 +58,12 @@ export class CollectionAcceptBidIndexerService implements IndexerService {
         await this.createAction(actionParams);
       } else if(bidState) {
         this.logger.log('Too late');
+        txResult.processed = true;
       } else {
-        this.logger.log(`bid_state not found for collection: ${nftMeta.collection.slug}`);        
+        this.logger.log(`bid_state not found for collection: ${nftMeta.collection.slug}`);
+        txResult.missing = true;        
       }
-      txResult.processed = true;
+      
     } else {
       this.logger.log(`NftMeta not found ${contract_key} ${token_id} `);
       txResult.missing = true;

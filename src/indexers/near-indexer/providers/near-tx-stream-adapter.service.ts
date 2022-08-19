@@ -68,7 +68,8 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
         transaction->'actions' @> '[{"FunctionCall": { "method_name": "unstake" }}]' OR
         transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_transfer_call" }}]' OR
         transaction->'actions' @> '[{"FunctionCall": { "method_name": "withdraw_nft" }}]' OR
-        transaction->'actions' @> '[{"FunctionCall": { "method_name": "remove_sale" }}]'
+        transaction->'actions' @> '[{"FunctionCall": { "method_name": "remove_sale" }}]' OR 
+        transaction->'actions' @> '[{"FunctionCall": { "method_name": "offer" }}]'
       )
       order by t.block_height ASC;
     `;

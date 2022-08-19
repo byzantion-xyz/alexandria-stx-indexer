@@ -26,7 +26,8 @@ const WHITELISTED_ACTIONS = [
   'delete_market_data', 
   'unstake',
   'nft_transfer_call',
-  'withdraw_nft'
+  'withdraw_nft',
+  'remove_sale'
 ];
 
 @Injectable()
@@ -65,7 +66,8 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
         transaction->'actions' @> '[{"FunctionCall": { "method_name": "delete_market_data" }}]' OR
         transaction->'actions' @> '[{"FunctionCall": { "method_name": "unstake" }}]' OR
         transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_transfer_call" }}]' OR
-        transaction->'actions' @> '[{"FunctionCall": { "method_name": "withdraw_nft" }}]'
+        transaction->'actions' @> '[{"FunctionCall": { "method_name": "withdraw_nft" }}]' OR
+        transaction->'actions' @> '[{"FunctionCall": { "method_name": "remove_sale" }}]'
       )
       order by t.block_height ASC;
     `;

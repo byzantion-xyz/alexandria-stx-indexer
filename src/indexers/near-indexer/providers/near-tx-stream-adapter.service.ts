@@ -107,7 +107,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
   // For nft_transfer_call, there are msg: stake and others
   // fewandfar provides sale_conditions
   // apollo42 and paras provide market_type
-  findPreselectedIndexer(function_name: string, parsed_args: JSON): string {
+  findPreselectedIndexer(tx: Transaction, function_name: string, parsed_args: JSON): string {
     let force_indexer: string;
     if (!function_name || !parsed_args || !parsed_args["msg"]) return;
 
@@ -125,11 +125,16 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
           case "accept_trade":
           case "accept_offer":
           case "accept_offer_paras_series": 
+            this.logger.warn(`Unable to find a micro indexer for ${function_name} "${market_type}"`);
             force_indexer = 'unknown'; // Not implemented
         }
       } else if (sale_conditions && sale_conditions.near && !isNaN(sale_conditions.near)) {
         // Few and Far listing with near token
         force_indexer = 'list';
+      } else if (sale_conditions) {
+        this.logger.warn(`Unable to find a micro indexer for ${function_name} sale_conditions`, sale_conditions);
+      } else {
+        this.logger.warn(`Unable to find a micro indexer for ${function_name} hash: ${tx.transaction.hash}`);
       }
     }
 
@@ -157,9 +162,8 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
           : false;
 
       // Force indexer for special cases.
-      let force_indexer = this.findPreselectedIndexer(function_name, parsed_args);
+      let force_indexer = this.findPreselectedIndexer(tx, function_name, parsed_args);
       if (force_indexer === 'unknown') {
-        this.logger.warn(`Unable to find a micro indexer for ${function_name} hash: ${tx.transaction.hash}`);
         return; // Do not process unkonwn transactions
       }
       // TODO: Generate one transaction per tx.transaction.Action?

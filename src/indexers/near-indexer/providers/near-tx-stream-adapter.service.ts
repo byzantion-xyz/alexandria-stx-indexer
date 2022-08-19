@@ -58,6 +58,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
       ${ options.end_block_height ? 'AND t.block_height <='+ options.end_block_height  : '' }
       AND processed = false 
       AND missing = ${ options.includeMissings ? true : false }
+      AND transaction->'actions' @> '[{"FunctionCall": {}}]'
       AND
       (
         transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_approve"}}]' OR

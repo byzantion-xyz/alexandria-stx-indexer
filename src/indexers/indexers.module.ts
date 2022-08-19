@@ -113,6 +113,7 @@ const TxStreamAdapterProvider = {
       MegapontAttribute,
       NftStateList
     ]),
+    // TODO: Connect only configured chain stream DB
     TypeOrmModule.forFeature([NearTransaction, Receipt], "NEAR-STREAM"),
     TypeOrmModule.forFeature([StacksTransaction, Block], "STACKS-STREAM"),
   ],

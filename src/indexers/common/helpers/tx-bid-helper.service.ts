@@ -57,12 +57,17 @@ export class TxBidHelperService {
     private collectionAttributeRepo: Repository<CollectionAttribute>,
   ) {}
 
-  async createOrReplaceBid(params: CreateCollectionBidStateArgs, bidState?: BidState): Promise<BidState> {
+  async createOrReplaceBid(params: CreateCollectionBidStateArgs, bidState?: BidState, nftMetaId?: string): Promise<BidState> {
     try {
       if (bidState) {
         bidState = this.bidStateRepo.merge(bidState, params);
       } else {
         bidState = this.bidStateRepo.create(params);
+        if (nftMetaId) {
+          const bidStateNftMeta = new BidStateNftMeta();
+          bidStateNftMeta.meta_id = nftMetaId;
+          bidState.nft_metas = [bidStateNftMeta];
+        }
       }
       const saved = await this.bidStateRepo.save(bidState);
 
@@ -81,7 +86,7 @@ export class TxBidHelperService {
     );
   }
 
-  async findActiveBid(collectionId: string, bid_type: BidType) {
+  async findActiveBid(collectionId: string, bid_type: BidType, nftMetaId?: string) {
     return await this.bidStateRepo.findOne({
       where: {
         collection_id: collectionId,
@@ -89,6 +94,7 @@ export class TxBidHelperService {
         status: CollectionBidStatus.active,
         nonce: null,
         bid_contract_nonce: null,
+        nft_metas: { meta_id: nftMetaId }
       }
     });
   }

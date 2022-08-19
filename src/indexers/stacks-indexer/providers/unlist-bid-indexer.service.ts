@@ -40,7 +40,7 @@ export class UnlistBidIndexerService implements IndexerService {
     const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
 
     if (nftMeta) {
-      let bidState = await this.txBidHelper.findActiveBid(nftMeta.collection.id, BidType.solo);
+      let bidState = await this.txBidHelper.findActiveBid(nftMeta.collection.id, BidType.solo, nftMeta.id);
 
       if (bidState && this.txBidHelper.isNewBid(tx, bidState)) {
         await this.txBidHelper.cancelBid(bidState, tx);
@@ -54,8 +54,10 @@ export class UnlistBidIndexerService implements IndexerService {
           buyer: bidState.bid_buyer
         };
         await this.createAction(bidActionParams);
-      } else {
+      } else if (bidState) {
         this.logger.log(`Too Late`);
+      } else {
+        this.logger.log(`bid_state not found`); 
       }
 
       txResult.processed = true;

@@ -118,6 +118,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
     if (function_name === "nft_approve") {
       const market_type = parsed_args["msg"]["market_type"];
       const sale_conditions = parsed_args["msg"]["sale_conditions"];
+      const staking_status = parsed_args["msg"]["staking_status"];
 
       if (market_type) {
         switch (market_type) {
@@ -136,7 +137,10 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
         force_indexer = 'list';
       } else if (sale_conditions) {
         this.logger.warn(`Unable to find a micro indexer for ${function_name} sale_conditions`, sale_conditions);
+      } else if (staking_status) {
+        force_indexer = 'stake';
       } else {
+        force_indexer = 'unknown';
         this.logger.warn(`Unable to find a micro indexer for ${function_name} hash: ${tx.transaction.hash}`);
       }
     }

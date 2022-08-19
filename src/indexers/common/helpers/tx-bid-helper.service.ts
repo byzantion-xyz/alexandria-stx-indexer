@@ -213,9 +213,9 @@ export class TxBidHelperService {
       bidState.cancel_tx_id = tx.hash;
 
       await this.bidStateRepo.save(bidState);
-      this.logger.log(`Cancelled bid order: ${bidState.nonce} `);
+      this.logger.log(`Cancelled bid nonce: ${bidState.nonce || 'Unknown'} `);
     } catch (err) {
-      this.logger.warn('Error saving cancellation ', bidState.nonce, err);
+      this.logger.warn('Error saving cancellation with nonce: ', bidState.nonce || 'Unknown', err);
     }
   }
 

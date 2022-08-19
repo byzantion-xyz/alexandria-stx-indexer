@@ -9,7 +9,7 @@ import { NftMeta } from 'src/database/universal/entities/NftMeta';
 import { SmartContract } from 'src/database/universal/entities/SmartContract';
 import { Collection } from 'src/database/universal/entities/Collection';
 import { TransactionEventSmartContractLogWithData } from 'src/indexers/stacks-indexer/providers/stacks-tx-helper.service';
-import { In, Repository } from 'typeorm';
+import { In, IsNull, Repository } from 'typeorm';
 import { CommonTx } from '../interfaces/common-tx.interface';
 import { BidType, CollectionBidStatus } from './indexer-enums';
 
@@ -92,8 +92,8 @@ export class TxBidHelperService {
         collection_id: collectionId,
         bid_type: bid_type,
         status: CollectionBidStatus.active,
-        nonce: null,
-        bid_contract_nonce: null,
+        nonce: IsNull(),
+        bid_contract_nonce: IsNull(),
         ... (nftMetaId &&  { nft_metas: { meta_id: nftMetaId }})
       }
     });

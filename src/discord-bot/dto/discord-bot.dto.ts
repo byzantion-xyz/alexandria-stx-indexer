@@ -6,6 +6,7 @@ export interface DiscordBotDto {
   collectionSize: number;
   cryptoCurrency: string;
   price: number;
+  marketplace?: string;
   marketplaceLink?: string;
   transactionLink: string;
   seller?: string;

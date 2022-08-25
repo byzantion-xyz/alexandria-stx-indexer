@@ -1,4 +1,5 @@
 import { Injectable, Logger } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import { InjectRepository } from "@nestjs/typeorm";
 import { channel } from "diagnostics_channel";
 import { Collection } from "src/database/universal/entities/Collection";
@@ -8,6 +9,7 @@ import { DiscordServerChannel } from "src/database/universal/entities/DiscordSer
 import { DiscordChannelType } from "src/indexers/common/helpers/indexer-enums";
 import { RelationId, Repository } from "typeorm";
 import { CreateDiscordServer, CreateDiscordServerChannel } from "../interfaces/discord-server.dto";
+import { universalServerDTO } from "../interfaces/universal-server.dto";
 
 @Injectable()
 export class DiscordServerService {
@@ -19,7 +21,8 @@ export class DiscordServerService {
     @InjectRepository(DiscordServer)
     private discordServerRepository: Repository<DiscordServer>,
     @InjectRepository(CollectionOnDiscordServerChannel)
-    private collectionOnDiscordServerChannelRepository: Repository<CollectionOnDiscordServerChannel>
+    private collectionOnDiscordServerChannelRepository: Repository<CollectionOnDiscordServerChannel>,
+    private config: ConfigService
   ) {}
 
   async create(params: CreateDiscordServer) {
@@ -38,22 +41,23 @@ export class DiscordServerService {
       discordServer = this.discordServerRepository.create({
         server_id: params.server_id,
         server_name: params.server_name,
-        active: true
+        active: true,
       });
     }
 
-    discordServer.discord_server_channels = this.discordServerChannelRepository.create(params.channels.map((ch) => ({
+    discordServer.discord_server_channels = this.discordServerChannelRepository.create(
+      params.channels.map((ch) => ({
         channel_id: ch.channel_id,
         name: ch.name,
         purpose: ch.purpose,
         collection_on_discord_server_channels: ch.collections.map((collection_id) => ({ collection_id })),
-      })),
+      }))
     );
 
     await this.discordServerRepository.save(discordServer, { transaction: true });
   }
 
-  async fetchChannelsBySlug(slug: string, purpose: DiscordChannelType) {
+  async getChannelsBySlug(slug: string, purpose: DiscordChannelType) {
     const channels = await this.discordServerChannelRepository.find({
       where: {
         collection_on_discord_server_channels: {
@@ -66,5 +70,28 @@ export class DiscordServerService {
     });
 
     return channels;
+  }
+
+  async getUniversalChannels(marketplace: string, purpose: DiscordChannelType) {
+    if (!marketplace) return [];
+
+    const servers: Array<universalServerDTO> = this.config.get("discord.universal_servers");
+    const server = servers.filter((s) => {
+      return s.marketplace_name === marketplace;
+    });
+
+    if (server[0]) {
+      const channels = await this.discordServerChannelRepository.find({
+        where: {
+          purpose: purpose,
+          discord_server: { active: true, server_id: server[0].server_id },
+        },
+        relations: { discord_server: true },
+      });
+
+      return channels;
+    }
+
+    return [];
   }
 }

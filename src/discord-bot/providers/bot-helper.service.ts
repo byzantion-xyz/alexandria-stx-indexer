@@ -13,7 +13,7 @@ import { Repository } from "typeorm";
 import { CryptoRateService } from "./crypto-rate.service";
 import { Chain } from "src/database/universal/entities/Chain";
 
-const FIAT_CURRENCY = 'USD';
+const FIAT_CURRENCY = "USD";
 
 @Injectable()
 export class BotHelperService {
@@ -44,7 +44,8 @@ export class BotHelperService {
       case "Near":
         transactionLink = `https://explorer.near.org/transactions/${action.tx_id}`;
         if (sc && msc) {
-          marketplaceLink =`https://byzantion.xyz/paras-redirect` +
+          marketplaceLink =
+            `https://byzantion.xyz/paras-redirect` +
             `?base_marketplace_uri=${encodeURIComponent(msc.base_marketplace_uri)}` +
             `&token_uri=${encodeURIComponent(msc.token_uri)}` +
             `&contract_key=${sc.contract_key}` +
@@ -73,6 +74,7 @@ export class BotHelperService {
       ranking: action.nft_meta.ranking,
       collectionSize: action.collection.collection_size,
       price: Number(Number(action.list_price) / Number(Math.pow(10, chain.format_digits))),
+      marketplace: msc.name,
       ...(marketplaceLink && { marketplaceLink }),
       transactionLink,
       ...(action.seller && { seller: action.seller }),
@@ -95,17 +97,8 @@ export class BotHelperService {
   }
 
   async buildMessage(data: DiscordBotDto, server_name: string, color: ColorResolvable, subTitle: string) {
-    const {
-      title,
-      rarity,
-      ranking,
-      collectionSize,
-      price,
-      marketplaceLink,
-      transactionLink,
-      image,
-      cryptoCurrency,
-    } = data;
+    const { title, rarity, ranking, collectionSize, price, marketplaceLink, transactionLink, image, cryptoCurrency } =
+      data;
 
     const embed = new MessageEmbed().setColor(color);
     let attachments = [];
@@ -118,11 +111,7 @@ export class BotHelperService {
     }
 
     // TODO: Add support for chain tokens (i.e banana in stacks)
-    const priceInFiat = await this.cryptoRateService.cryptoToFiat(
-      price,
-      cryptoCurrency,
-      FIAT_CURRENCY
-    );
+    const priceInFiat = await this.cryptoRateService.cryptoToFiat(price, cryptoCurrency, FIAT_CURRENCY);
 
     embed.setDescription(`
       **Rarity Ranking**: ${ranking}/${collectionSize}
@@ -150,9 +139,7 @@ export class BotHelperService {
       try {
         const imgData = await axios.get(image, { responseType: "arraybuffer" });
         const imageBuffer = Buffer.from(imgData.data, "binary");
-        const resizedBuffer = await sharp(imageBuffer)
-          .resize(1024, 1024, { fit: "inside" })
-          .toBuffer();
+        const resizedBuffer = await sharp(imageBuffer).resize(1024, 1024, { fit: "inside" }).toBuffer();
 
         const imgTitle = image.split("/")[image.split("/").length - 1];
         const withEnding = imgTitle.includes(".") ? imgTitle : `${imgTitle}.png`;

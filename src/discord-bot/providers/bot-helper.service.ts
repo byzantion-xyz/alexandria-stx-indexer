@@ -45,7 +45,7 @@ export class BotHelperService {
         transactionLink = `https://explorer.near.org/transactions/${action.tx_id}`;
         if (sc && msc) {
           marketplaceLink =
-            `https://byzantion.xyz/paras-redirect` +
+            `https://byzantion.xyz/market-redirect` +
             `?base_marketplace_uri=${encodeURIComponent(msc.base_marketplace_uri)}` +
             `&token_uri=${encodeURIComponent(msc.token_uri)}` +
             `&contract_key=${sc.contract_key}` +

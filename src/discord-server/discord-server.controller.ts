@@ -43,12 +43,15 @@ export class DiscordServerController {
   @Get("channels")
   async fetchChannels(@Query() params: fetchDiscordServerChannels) {
     this.logger.debug(params);
-    let channels = await this.discordServerService.fetchChannelsBySlug(params.slug, params.purpose);
+    let subChannels = await this.discordServerService.getChannelsBySlug(params.slug, params.purpose);
+    let uniChannels = await this.discordServerService.getUniversalChannels(params.marketplace, params.purpose);
+    const channels = subChannels.concat(uniChannels);
+
     this.logger.log("Channels ");
     for (let channel of channels) {
       this.logger.log(channel);
     }
-    return "Ok";
+    return channels;
   }
 
   async validateAndTransform(params: CreateDiscordServer): Promise<CreateDiscordServer> {

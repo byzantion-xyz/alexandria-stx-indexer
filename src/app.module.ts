@@ -27,12 +27,14 @@ import { TypeOrmModule } from "@nestjs/typeorm";
     ScrapersModule,
     ScheduleModule.forRoot(),
     DiscordModule.forRootAsync({
-      useFactory: () => ({
-        token: "OTE2ODQ2OTkyMDUzODk1MjQ5.YawGTQ.fhbb-QbnNJZk6TYOF4YmkPZvMOU",
+      imports: [ConfigModule],
+      useFactory: (config: ConfigService) => ({
+        token: config.get("DISCORD_BOT_SECRET"),
         discordClientOptions: {
           intents: [Intents.FLAGS.GUILDS],
         },
       }),
+      inject: [ConfigService],
     }),
     IndexersModule,
     CommonModule,

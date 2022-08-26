@@ -52,8 +52,10 @@ export class BotHelperService {
             `&token_id=${action.nft_meta.token_id}` +
             `&tx_link=${encodeURIComponent(transactionLink)}`;
         }
-        if (action.buyer) buyerLink = `https://paras.id/${action.buyer}/collectibles`;
-        if (action.seller) sellerLink = `https://paras.id/${action.seller}/collectibles`;
+        if (msc.base_marketplace_uri.includes("paras.id")) {
+          if (action.buyer) buyerLink = `https://paras.id/${action.buyer}/collectibles`;
+          if (action.seller) sellerLink = `https://paras.id/${action.seller}/collectibles`;
+        }
         break;
 
       case "Stacks":
@@ -89,7 +91,8 @@ export class BotHelperService {
   async sendMessage(message, channel_id: string) {
     const channel = await this.client.channels.fetch(channel_id);
 
-    if (channel.type === "GUILD_TEXT" && process.env.NODE_ENV === "production") {
+    if (channel.type === "GUILD_TEXT") {
+      // && process.env.NODE_ENV === "production") {
       await channel.send(message);
     } else {
       this.logger.warn("Not a valid text channel");

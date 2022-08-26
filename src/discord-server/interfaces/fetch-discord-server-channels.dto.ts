@@ -1,6 +1,7 @@
-import { DiscordChannelType } from "src/indexers/common/helpers/indexer-enums"
+import { DiscordChannelType } from "src/indexers/common/helpers/indexer-enums";
 
 export interface fetchDiscordServerChannels {
-    slug: string
-    purpose: DiscordChannelType
-  }
+  slug: string;
+  purpose: DiscordChannelType;
+  marketplace?: string;
+}

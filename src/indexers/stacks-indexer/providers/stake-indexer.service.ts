@@ -1,18 +1,18 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Action } from 'src/database/universal/entities/Action';
-import { NftState } from 'src/database/universal/entities/NftState';
-import { SmartContract } from 'src/database/universal/entities/SmartContract';
-import { SmartContractFunction } from 'src/database/universal/entities/SmartContractFunction';
-import { ActionName, SmartContractType } from 'src/indexers/common/helpers/indexer-enums';
-import { TxHelperService } from 'src/indexers/common/helpers/tx-helper.service';
-import { TxStakingHelperService } from 'src/indexers/common/helpers/tx-staking-helper.service';
-import { CommonTx } from 'src/indexers/common/interfaces/common-tx.interface';
-import { CreateActionTO, CreateStakeActionTO } from 'src/indexers/common/interfaces/create-action-common.dto';
-import { IndexerService } from 'src/indexers/common/interfaces/indexer-service.interface';
-import { TxProcessResult } from 'src/indexers/common/interfaces/tx-process-result.interface';
-import { Repository } from 'typeorm';
-import { StacksTxHelperService } from './stacks-tx-helper.service';
+import { Injectable, Logger } from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Action } from "src/database/universal/entities/Action";
+import { NftState } from "src/database/universal/entities/NftState";
+import { SmartContract } from "src/database/universal/entities/SmartContract";
+import { SmartContractFunction } from "src/database/universal/entities/SmartContractFunction";
+import { ActionName, SmartContractType } from "src/indexers/common/helpers/indexer-enums";
+import { TxHelperService } from "src/indexers/common/helpers/tx-helper.service";
+import { TxStakingHelperService } from "src/indexers/common/helpers/tx-staking-helper.service";
+import { CommonTx } from "src/indexers/common/interfaces/common-tx.interface";
+import { CreateActionTO, CreateStakeActionTO } from "src/indexers/common/interfaces/create-action-common.dto";
+import { IndexerService } from "src/indexers/common/interfaces/indexer-service.interface";
+import { TxProcessResult } from "src/indexers/common/interfaces/tx-process-result.interface";
+import { Repository } from "typeorm";
+import { StacksTxHelperService } from "./stacks-tx-helper.service";
 
 @Injectable()
 export class StakeIndexerService implements IndexerService {
@@ -42,10 +42,13 @@ export class StakeIndexerService implements IndexerService {
     if (sc.type.includes(SmartContractType.staking)) {
       stake_contract = sc.contract_key;
       contract_key = this.stacksTxHelper.extractArgumentData(tx.args, scf, "contract_key");
+      if (!contract_key) {
+        contract_key = this.extractNftContractFromEvents(tx.events);
+      }
     }
-    
-    const stake_sc = await this.smartContractRepository.findOne({ where: { contract_key: stake_contract }});
-    
+
+    const stake_sc = await this.smartContractRepository.findOne({ where: { contract_key: stake_contract } });
+
     if (!stake_sc || !stake_sc.type.includes(SmartContractType.staking)) {
       this.logger.log(`Stake contract: ${stake_contract} not found`);
       txResult.missing = true;
@@ -59,7 +62,7 @@ export class StakeIndexerService implements IndexerService {
       const stakeActionParams: CreateStakeActionTO = {
         ...actionCommonArgs,
         seller: tx.signer,
-        market_name: null
+        market_name: null,
       };
 
       if (this.txStakingHelper.isNewStakingBlock(tx, nftMeta.nft_state)) {
@@ -78,7 +81,7 @@ export class StakeIndexerService implements IndexerService {
 
     return txResult;
   }
-  
+
   async createAction(params: CreateActionTO): Promise<Action> {
     try {
       const action = this.actionRepository.create(params);
@@ -86,5 +89,9 @@ export class StakeIndexerService implements IndexerService {
       this.logger.log(`New action ${params.action}: ${saved.id} `);
       return saved;
     } catch (err) {}
+  }
+
+  private extractNftContractFromEvents(events: Array<any>) {
+    return events ? events[0].asset.asset_id.split("::")[0] : null;
   }
 }

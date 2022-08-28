@@ -15,8 +15,7 @@ import { NftMeta } from "src/database/universal/entities/NftMeta";
 import { NftState } from "src/database/universal/entities/NftState";
 import { SmartContract } from "src/database/universal/entities/SmartContract";
 import { SmartContractFunction } from "src/database/universal/entities/SmartContractFunction";
-import { Transaction as NearTransaction } from "src/database/near-stream/entities/Transaction";
-import { Receipt } from "src/database/near-stream/entities/Receipt";
+import { FunctionCallEvent as NearFunctionCallEvent } from "src/database/near-stream/entities/FunctionCallEvent";
 import { StacksTxStreamAdapterService } from "./stacks-indexer/providers/stacks-tx-stream-adapter.service";
 import { Chain } from "src/database/universal/entities/Chain";
 import { Block } from "src/database/stacks-stream/entities/Block";
@@ -114,7 +113,7 @@ const TxStreamAdapterProvider = {
       NftStateList
     ]),
     // TODO: Connect only configured chain stream DB
-    TypeOrmModule.forFeature([NearTransaction, Receipt], "NEAR-STREAM"),
+    TypeOrmModule.forFeature([NearFunctionCallEvent], "NEAR-STREAM"),
     TypeOrmModule.forFeature([StacksTransaction, Block], "STACKS-STREAM"),
   ],
   controllers: [IndexerController],

@@ -37,7 +37,7 @@ export class UnstakeIndexerService implements IndexerService {
     const token_id = this.stacksTxHelper.extractArgumentData(tx.args, scf, "token_id");
     let contract_key = this.stacksTxHelper.extractArgumentData(tx.args, scf, "contract_key");
     if (!contract_key) {
-      contract_key = this.extractNftContractFromEvents(tx.events);
+      contract_key = this.stacksTxHelper.extractNftContractFromEvents(tx.events);
     }
 
     if (!sc.type.includes(SmartContractType.staking)) {
@@ -79,9 +79,5 @@ export class UnstakeIndexerService implements IndexerService {
       this.logger.log(`New action ${params.action}: ${saved.id} `);
       return saved;
     } catch (err) {}
-  }
-
-  private extractNftContractFromEvents(events: Array<any>) {
-    return events ? events[1].asset.asset_id.split("::")[0] : null;
   }
 }

@@ -1,9 +1,9 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { NftState } from 'src/database/universal/entities/NftState';
-import { SmartContract } from 'src/database/universal/entities/SmartContract';
-import { Repository } from 'typeorm';
-import { CommonTx } from '../interfaces/common-tx.interface';
+import { Injectable, Logger } from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { NftState } from "src/database/universal/entities/NftState";
+import { SmartContract } from "src/database/universal/entities/SmartContract";
+import { Repository } from "typeorm";
+import { CommonTx } from "../interfaces/common-tx.interface";
 
 @Injectable()
 export class TxStakingHelperService {
@@ -13,7 +13,7 @@ export class TxStakingHelperService {
     @InjectRepository(NftState)
     private nftStateRepository: Repository<NftState>,
     @InjectRepository(SmartContract)
-    private smartContractRepository: Repository<SmartContract>,
+    private smartContractRepository: Repository<SmartContract>
   ) {}
 
   isNewStakingBlock(tx: CommonTx, nft_state: NftState) {
@@ -25,4 +25,3 @@ export class TxStakingHelperService {
     );
   }
 }
-

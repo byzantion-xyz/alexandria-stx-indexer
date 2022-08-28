@@ -1,5 +1,6 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
+import { CommonUtilService } from "src/common/helpers/common-util/common-util.service";
 import { Action } from "src/database/universal/entities/Action";
 import { NftState } from "src/database/universal/entities/NftState";
 import { SmartContract } from "src/database/universal/entities/SmartContract";
@@ -43,7 +44,7 @@ export class StakeIndexerService implements IndexerService {
       stake_contract = sc.contract_key;
       contract_key = this.stacksTxHelper.extractArgumentData(tx.args, scf, "contract_key");
       if (!contract_key) {
-        contract_key = this.extractNftContractFromEvents(tx.events);
+        contract_key = this.stacksTxHelper.extractNftContractFromEvents(tx.events);
       }
     }
 
@@ -89,9 +90,5 @@ export class StakeIndexerService implements IndexerService {
       this.logger.log(`New action ${params.action}: ${saved.id} `);
       return saved;
     } catch (err) {}
-  }
-
-  private extractNftContractFromEvents(events: Array<any>) {
-    return events ? events[0].asset.asset_id.split("::")[0] : null;
   }
 }

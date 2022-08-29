@@ -39,7 +39,7 @@ import { Collection } from "src/database/universal/entities/Collection";
 //import { BnsAcceptBidIndexerService } from './stacks-indexer/providers/bns-accept-bid-indexer.service';
 import { BidIndexerService } from './stacks-indexer/providers/bid-indexer.service';
 import { UnlistBidIndexerService } from './stacks-indexer/providers/unlist-bid-indexer.service';
-import { AcceptBidIndexerService } from './stacks-indexer/providers/accept-bid-indexer.service';
+import { AcceptBidIndexerService as StacksAcceptBidIndexerService } from './stacks-indexer/providers/accept-bid-indexer.service';
 import { BidState } from "src/database/universal/entities/BidState";
 import { CollectionOrderBookBidIndexerService } from './stacks-indexer/providers/collection-order-book-bid-indexer.service';
 import { TxBidHelperService } from './common/helpers/tx-bid-helper.service';
@@ -72,6 +72,7 @@ import { UnstakeIndexerService as StacksUnstakeIndexerService } from './stacks-i
 import { BuyWrapperIndexerService } from './stacks-indexer/providers/buy-wrapper-indexer.service';
 import { NftStateList } from "src/database/universal/entities/NftStateList";
 import { AdminSoloIdUnlistBidIndexerService } from './stacks-indexer/providers/admin-solo-id-unlist-bid-indexer.service';
+import { AcceptBidIndexerService } from "./near-indexer/providers/accept-bid-indexer.service";
 
 /* Select stream adapter based on chain symbol env variable */
 const TxStreamAdapterProvider = {
@@ -137,6 +138,7 @@ const TxStreamAdapterProvider = {
     UnlistIndexerService,
     StakeIndexerService,
     UnstakeIndexerService,
+    AcceptBidIndexerService,
     /* Stacks micro indexers */
     //BnsRegisterIndexerService,
     //BnsBidIndexerService,
@@ -151,7 +153,7 @@ const TxStreamAdapterProvider = {
     ChangePriceIndexerService,
     BidIndexerService,
     UnlistBidIndexerService,
-    AcceptBidIndexerService,
+    StacksAcceptBidIndexerService,
     CollectionOrderBookBidIndexerService,
     TxBidHelperService,
     CollectionOrderBookAcceptBidIndexerService,

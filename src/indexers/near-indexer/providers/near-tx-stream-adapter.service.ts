@@ -84,6 +84,9 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
           case "sale": force_indexer = "list";
             break;
 
+          case "accept_offer": force_indexer = "accept_bid";
+            break;
+
           default:
             this.logger.warn(`Unable to find a micro indexer for ${function_name} "${market_type}"`);
             force_indexer = 'unknown'; // Not implemented

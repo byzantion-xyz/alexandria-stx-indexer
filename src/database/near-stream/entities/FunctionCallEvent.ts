@@ -25,4 +25,10 @@ export class FunctionCallEvent {
 
   @Column()
   readonly executed_block_timestamp!: number;
+
+  @Column({ default: false })
+  processed: boolean;
+
+  @Column({ default: false })
+  missing: boolean;
 }

@@ -40,6 +40,8 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
     const sql = `select * from function_call_event where receiver_id in (${accounts_in})
       ${ options.start_block_height ? 'and executed_block_height >=' + options.start_block_height : '' }
       ${ options.end_block_height ? 'and executed_block_height <='+ options.end_block_height  : '' }
+      and processed = false
+      and missing = ${ options.includeMissings }                                  
       order by executed_block_height asc;
     `;
 
@@ -53,12 +55,14 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
   }
 
   async setTxResult(txHash: string, txResult: TxProcessResult): Promise<void> {
-    // TODO: Uncomment this code after testing is done
-    // if (txResult.processed && !txResult.missing) {
-    //   await this.functionCallEventRepository.delete(
-    //       {originating_receipt_id: txHash}
-    //   );
-    // }
+    if (txResult.processed || txResult.missing) {
+       await this.functionCallEventRepository.update({ originating_receipt_id: txHash },
+           {
+             processed: txResult.processed,
+             missing: txResult.missing,
+           }
+       );
+     }
   }
 
   // In case of nft_approve, there are diferrent market_types: ['sale', 'add_trade']
@@ -159,7 +163,8 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
   }
 
   async fetchEventData(event): Promise<CommonTx[]> {
-    const sql = `select * from function_call_event originating_receipt_id ='${event}'`;
+    const sql = `select * from function_call_event 
+         where originating_receipt_id= '${event}' and processed = false and missing = false`;
 
     const fc_events: FunctionCallEvent[] = await this.functionCallEventRepository.query(sql);
     const result: CommonTx[] = this.transformTxs(fc_events);

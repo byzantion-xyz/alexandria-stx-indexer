@@ -29,7 +29,7 @@ export default registerAs("indexer", () => ({
     },
     Near: {
       start_block_height: 42000000,
-      start_block_height_tip: 73049443,
+      start_block_height_tip: 73048155,
       end_block_height: 75000000,
       block_range: 100000,
     },

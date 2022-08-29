@@ -1,35 +1,20 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { CommonTx } from "src/indexers/common/interfaces/common-tx.interface";
 import { TxProcessResult } from "src/indexers/common/interfaces/tx-process-result.interface";
-import { CommonTxResult, TxCursorBatch, TxStreamAdapter } from "src/indexers/common/interfaces/tx-stream-adapter.interface";
+import { TxCursorBatch, TxStreamAdapter } from "src/indexers/common/interfaces/tx-stream-adapter.interface";
 import { TxHelperService } from "../../common/helpers/tx-helper.service";
 import * as moment from "moment";
 import { Client, Pool } from 'pg';
 import * as Cursor from 'pg-cursor';
 import { NearTxHelperService } from "./near-tx-helper.service";
-import { Transaction } from "../interfaces/near-transaction.dto";
-import { ExecutionStatus, ExecutionStatusBasic } from "near-api-js/lib/providers/provider";
+import { FunctionCallEvent } from "../interfaces/near-function-call-event.dto";
 import { SmartContract } from "src/database/universal/entities/SmartContract";
-import { InjectEntityManager, InjectRepository } from "@nestjs/typeorm";
-import { EntityManager, Repository } from "typeorm";
-import { IndexerEventType, SmartContractType } from "src/indexers/common/helpers/indexer-enums";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
 import { SmartContractFunction } from "src/database/universal/entities/SmartContractFunction";
-import { Transaction as TransactionEntity } from "src/database/near-stream/entities/Transaction";
+import { FunctionCallEvent as FunctionCallEventEntity } from "src/database/near-stream/entities/FunctionCallEvent";
 import { ConfigService } from "@nestjs/config";
 import { IndexerOptions } from "src/indexers/common/interfaces/indexer-options";
-
-const WHITELISTED_ACTIONS = [
-  'nft_approve', 
-  'nft_revoke', 
-  'nft_buy', 
-  'buy', 
-  'delete_market_data', 
-  'unstake',
-  'nft_transfer_call',
-  'withdraw_nft',
-  'remove_sale',
-  'offer'
-];
 
 @Injectable()
 export class NearTxStreamAdapterService implements TxStreamAdapter {
@@ -40,8 +25,8 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
     private txHelper: TxHelperService,
     private nearTxHelper: NearTxHelperService,
     private configService: ConfigService,
-    @InjectRepository(TransactionEntity, "NEAR-STREAM")
-    private transactionRepository: Repository<TransactionEntity>,
+    @InjectRepository(FunctionCallEventEntity, "NEAR-STREAM")
+    private functionCallEventRepository: Repository<FunctionCallEventEntity>,
     @InjectRepository(SmartContract)
     private smartContractRepository: Repository<SmartContract>,
     @InjectRepository(SmartContractFunction)
@@ -52,27 +37,12 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
     const accounts = await this.findSmartContracts(options.contract_key);
     let accounts_in = this.buildReceiverIdInQuery(accounts);
 
-    const sql = `select * from transaction t inner join receipt r on t.success_receipt_id=r.receipt_id
-      WHERE receiver_id in (${accounts_in})
-      ${ options.start_block_height ? 'AND t.block_height >=' + options.start_block_height : '' }
-      ${ options.end_block_height ? 'AND t.block_height <='+ options.end_block_height  : '' }
-      AND processed = false 
-      AND missing = ${ options.includeMissings ? true : false }
-      AND transaction->'actions' @> '[{"FunctionCall": {}}]'
-      AND
-      (
-        transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_approve"}}]' OR
-        transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_revoke"}}]' OR
-        transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_buy" }}]' OR
-        transaction->'actions' @> '[{"FunctionCall": { "method_name": "buy" }}]' OR
-        transaction->'actions' @> '[{"FunctionCall": { "method_name": "delete_market_data" }}]' OR
-        transaction->'actions' @> '[{"FunctionCall": { "method_name": "unstake" }}]' OR
-        transaction->'actions' @> '[{"FunctionCall": { "method_name": "nft_transfer_call" }}]' OR
-        transaction->'actions' @> '[{"FunctionCall": { "method_name": "withdraw_nft" }}]' OR
-        transaction->'actions' @> '[{"FunctionCall": { "method_name": "remove_sale" }}]' OR 
-        transaction->'actions' @> '[{"FunctionCall": { "method_name": "offer" }}]'
-      )
-      order by t.block_height ASC;
+    const sql = `select * from function_call_event where receiver_id in (${accounts_in})
+      ${ options.start_block_height ? 'and executed_block_height >=' + options.start_block_height : '' }
+      ${ options.end_block_height ? 'and executed_block_height <='+ options.end_block_height  : '' }
+      and processed = false
+      and missing = ${ options.includeMissings }                                  
+      order by executed_block_height asc;
     `;
 
     const pool = new Pool({
@@ -86,31 +56,20 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
 
   async setTxResult(txHash: string, txResult: TxProcessResult): Promise<void> {
     if (txResult.processed || txResult.missing) {
-      await this.transactionRepository.update(
-        { hash: txHash },
-        {
-          processed: txResult.processed,
-          missing: txResult.missing,
-        }
-      );
-    }
-  }
-
-  async fetchAccounts(): Promise<string[]> {
-    const smartContracts: SmartContract[] = await this.smartContractRepository.find({
-      where: { chain: { symbol: "Near" } }
-    });
-
-    const accounts = smartContracts.map((sc) => sc.contract_key);
-
-    return accounts;
+       await this.functionCallEventRepository.update({ originating_receipt_id: txHash },
+           {
+             processed: txResult.processed,
+             missing: txResult.missing,
+           }
+       );
+     }
   }
 
   // In case of nft_approve, there are diferrent market_types: ['sale', 'add_trade']
   // For nft_transfer_call, there are msg: stake and others
   // fewandfar provides sale_conditions
   // apollo42 and paras provide market_type
-  findPreselectedIndexer(tx: Transaction, function_name: string, parsed_args: JSON): string {
+  findPreselectedIndexer(tx: FunctionCallEvent, function_name: string, parsed_args: JSON): string {
     let force_indexer: string;
     if (!function_name || !parsed_args || !parsed_args["msg"]) return;
 
@@ -139,102 +98,77 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
         force_indexer = 'stake';
       } else {
         force_indexer = 'unknown';
-        this.logger.warn(`Unable to find a micro indexer for ${function_name} hash: ${tx.transaction.hash}`);
+        this.logger.warn(`Unable to find a micro indexer for ${function_name} originating receipt: ${tx.originating_receipt_id}`);
       }
     }
 
     return force_indexer;
   }
 
-  transformTx(tx: Transaction): CommonTx {
+  transformTx(tx: FunctionCallEvent): CommonTx {
     try {
-      let function_name = tx.transaction.actions[0].FunctionCall?.method_name;
-      if (!WHITELISTED_ACTIONS.includes(function_name)) {
-        return; // Do not process transaction
-      }
-
-      const args = tx.transaction.actions[0].FunctionCall?.args;
-      let parsed_args;
-      if (args) {
-        parsed_args = this.nearTxHelper.parseBase64Arguments(args);
-      }
-
-      const notify =
-        moment(
-          new Date(this.txHelper.nanoToMiliSeconds(tx.block_timestamp))
-        ).utc() > moment().subtract(2, "hours").utc()
-          ? true
-          : false;
+      const parsed_args = this.nearTxHelper.parseBase64Arguments(tx.args);
 
       // Force indexer for special cases.
-      let force_indexer = this.findPreselectedIndexer(tx, function_name, parsed_args);
+      let force_indexer = this.findPreselectedIndexer(tx, tx.method, parsed_args);
       if (force_indexer === 'unknown') {
         return; // Do not process unkonwn transactions
       }
-      // TODO: Generate one transaction per tx.transaction.Action?
+
+      const executed_at = moment(new Date(this.txHelper.nanoToMiliSeconds(tx.executed_block_timestamp)));
+      const notify = executed_at.utc() > moment().subtract(2, "hours").utc();
+
       return {
-        hash: tx.transaction.hash,
-        block_hash: tx.block_hash,
-        block_timestamp: this.txHelper.nanoToMiliSeconds(tx.block_timestamp),
-        block_height: tx.block_height,
-        nonce: tx.transaction.nonce,
-        signer: tx.transaction.signer_id,
-        receiver: tx.transaction.receiver_id,
-        function_name: function_name,
+        hash: tx.originating_receipt_id,
+        block_hash: tx.executed_block_hash,
+        block_timestamp: this.txHelper.nanoToMiliSeconds(tx.executed_block_timestamp),
+        block_height: tx.executed_block_height,
+        signer: tx.signer_id,
+        receiver: tx.receiver_id,
+        function_name: tx.method,
         args: parsed_args,
         notify,
         indexer_name: force_indexer
       };
     } catch (err) {
-      this.logger.warn(`transormTx() has failed for tx hash: ${tx.hash}`);
+      this.logger.warn(`transormTx() has failed for tx originating_receipt_id: ${tx.originating_receipt_id}`);
       this.logger.warn(err);
     }
   }
 
-  determineIfSuccessTx(status: ExecutionStatus | ExecutionStatusBasic): boolean {
-    if (typeof (status as ExecutionStatus).SuccessReceiptId !== 'undefined' || 
-      typeof (status as ExecutionStatus).SuccessValue !== 'undefined') {
-      return true;
-    } else {
-      return false;
-    }
-  }
-
-  transformTxs(txs: Transaction[]): CommonTx[] {
+  transformTxs(txs: FunctionCallEvent[]): CommonTx[] {
     let result: CommonTx[] = [];
+
     for (let tx of txs) {
-      if (this.determineIfSuccessTx(tx.execution_outcome.outcome.status) && 
-        this.determineIfSuccessTx(tx.outcome.execution_outcome.outcome.status)) {
-        const transformed_tx = this.transformTx(tx);
-        if (transformed_tx) result.push(transformed_tx);
+      const transformed_tx = this.transformTx(tx);
+      if (transformed_tx) {
+        result.push(transformed_tx);
       }
-    }    
+    }
+
     return result;
   }
 
   subscribeToEvents(): Client {
-    this.logger.log('subscribeToEvents() subscribe to listen new transactions');
+    this.logger.log('subscribeToEvents() subscribe to listen new function call events');
 
     const client = new Client(this.configService.get('NEAR_STREAMER_SQL_DATABASE_URL'));
     client.connect();
-  
-    client.query('LISTEN new_receipt;', (err, res) => {
-      this.logger.log('Listening DB transaction notifications');
+
+    client.query('LISTEN new_function_call_event;', (err, res) => {
+      this.logger.log('Listening DB `function_call_event` notifications');
     });
 
     return client;
   }
 
   async fetchEventData(event): Promise<CommonTx[]> {
-    const sql = `select * from transaction t inner join receipt r on t.success_receipt_id =r.receipt_id 
-      WHERE r.receipt_id ='${event}' 
-      AND processed = false 
-      AND missing = false;
-    `;
+    const sql = `select * from function_call_event 
+         where originating_receipt_id= '${event}' and processed = false and missing = false`;
 
-    const txs: Transaction[] = await this.transactionRepository.query(sql);
-    const result: CommonTx[] = this.transformTxs(txs);
-  
+    const fc_events: FunctionCallEvent[] = await this.functionCallEventRepository.query(sql);
+    const result: CommonTx[] = this.transformTxs(fc_events);
+
     return result;
   }
 
@@ -250,14 +184,14 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
   }
 
   private async findSmartContracts(contract_key?: string): Promise<SmartContract[]> {
-    let accounts = await this.smartContractRepository.find({ 
-      where: { 
+    let accounts = await this.smartContractRepository.find({
+      where: {
         chain : { symbol: this.chainSymbol },
         ...( contract_key && { contract_key })
       }
     });
     if (!accounts || !accounts.length) throw new Error('Invalid contract_key');
-    
+
     return accounts;
   }
 }

@@ -31,7 +31,7 @@ export class UnstakeIndexerService implements IndexerService {
     const contract_key = this.txHelper.extractArgumentData(tx.args, scf, "contract_key");
  
     if (!sc.type.includes(SmartContractType.staking)) {
-      this.logger.log(`Stake contract: ${contract_key} does not have staking type`);
+      this.logger.log(`Stake contract: ${sc.contract_key} does not have staking type`);
       txResult.missing = true;
       return txResult;
     }

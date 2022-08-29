@@ -14,7 +14,7 @@ export class TasksService {
       private configService: ConfigService
     ) {}
 
-    /*@Timeout(10000)
+    @Timeout(10000)
     async handleCron() {
       if (process.env.NODE_ENV === 'production') {
         const blockConfig = this.configService.get('indexer.blockRanges')[this.configService.get('indexer.chainSymbol')];
@@ -32,7 +32,7 @@ export class TasksService {
       } else {
         this.logger.debug('Not in production environment. Skip near indexer trigger')
       }
-    }*/
+    }
 
     @Timeout(2000)
     handleIndexerSubscription() {

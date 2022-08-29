@@ -39,7 +39,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
 
     const sql = `select * from function_call_event where receiver_id in (${accounts_in})
       ${ options.start_block_height ? 'and executed_block_height >=' + options.start_block_height : '' }
-      ${ options.end_block_height ? 'and executed_block_height <='+ options.end_block_height  : '' }
+      ${ options.end_block_height ? 'and executed_block_height <'+ options.end_block_height  : '' }
       and processed = false
       and missing = ${ options.includeMissings }                                  
       order by executed_block_height asc;

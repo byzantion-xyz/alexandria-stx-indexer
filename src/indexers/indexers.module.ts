@@ -23,7 +23,7 @@ import { Transaction as StacksTransaction } from "src/database/stacks-stream/ent
 import { StacksTxHelperService } from "./stacks-indexer/providers/stacks-tx-helper.service";
 import { ConfigService } from "@nestjs/config";
 import { TxStreamAdapter } from "./common/interfaces/tx-stream-adapter.interface";
-import { TransferIndexerService } from './stacks-indexer/providers/transfer-indexer.service';
+import { TransferIndexerService as StacksTransferIndexerService } from './stacks-indexer/providers/transfer-indexer.service';
 import { Commission } from "src/database/universal/entities/Commission";
 
 import { StakeIndexerService } from "./near-indexer/providers/stake-indexer.service";
@@ -73,6 +73,7 @@ import { BuyWrapperIndexerService } from './stacks-indexer/providers/buy-wrapper
 import { NftStateList } from "src/database/universal/entities/NftStateList";
 import { AdminSoloIdUnlistBidIndexerService } from './stacks-indexer/providers/admin-solo-id-unlist-bid-indexer.service';
 import { AcceptBidIndexerService } from "./near-indexer/providers/accept-bid-indexer.service";
+import { TransferIndexerService } from './near-indexers/providers/transfer-indexer.service';
 
 /* Select stream adapter based on chain symbol env variable */
 const TxStreamAdapterProvider = {
@@ -139,6 +140,7 @@ const TxStreamAdapterProvider = {
     StakeIndexerService,
     UnstakeIndexerService,
     AcceptBidIndexerService,
+    TransferIndexerService,
     /* Stacks micro indexers */
     //BnsRegisterIndexerService,
     //BnsBidIndexerService,
@@ -149,7 +151,7 @@ const TxStreamAdapterProvider = {
     StacksBuyIndexerService,
     StacksStakeIndexerService,
     StacksUnstakeIndexerService,
-    TransferIndexerService,
+    StacksTransferIndexerService,
     ChangePriceIndexerService,
     BidIndexerService,
     UnlistBidIndexerService,

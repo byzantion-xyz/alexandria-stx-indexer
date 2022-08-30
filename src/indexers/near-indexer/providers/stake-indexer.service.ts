@@ -63,10 +63,10 @@ export class StakeIndexerService implements IndexerService {
 
       if (this.txStakingHelper.isNewStakingBlock(tx, nftMeta.nft_state)) {
         await this.txHelper.stakeMeta(nftMeta.id, tx, sc, stake_sc);
+        
+        await this.createAction(stakeActionParams);
 
         await this.txHelper.unlistMetaInAllMarkets(nftMeta, tx);
-
-        await this.createAction(stakeActionParams);
       } else {
         this.logger.log(`Too Late`);
         await this.createAction(stakeActionParams);

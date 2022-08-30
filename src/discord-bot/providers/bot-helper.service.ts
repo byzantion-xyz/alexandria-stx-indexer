@@ -42,7 +42,7 @@ export class BotHelperService {
 
     switch (chain.symbol) {
       case "Near":
-        transactionLink = `https://explorer.near.org/transactions/${action.tx_id}`;
+        transactionLink = `https://explorer.near.org/receipts/${action.tx_id}`;
         if (sc && msc) {
           marketplaceLink =
             `https://byzantion.xyz/market-redirect` +

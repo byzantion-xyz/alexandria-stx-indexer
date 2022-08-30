@@ -6,6 +6,7 @@ import { BuyIndexerService } from "../../near-indexer/providers/buy-indexer.serv
 import { ListIndexerService } from "../../near-indexer/providers/list-indexer.service";
 import { UnlistIndexerService } from "../../near-indexer/providers/unlist-indexer.service";
 import { AcceptBidIndexerService } from "src/indexers/near-indexer/providers/accept-bid-indexer.service";
+import { TransferIndexerService } from "src/indexers/near-indexers/providers/transfer-indexer.service";
 
 @Injectable()
 export class NearMicroIndexers {
@@ -15,7 +16,8 @@ export class NearMicroIndexers {
     private unlistIndexer: IndexerService,
     private stakeIndexer: IndexerService,
     private unstakeIndexer: IndexerService,
-    private acceptBidIndexer: IndexerService
+    private acceptBidIndexer: IndexerService,
+    private transferIndexer: IndexerService
   ) {} 
 }
 
@@ -27,9 +29,18 @@ export const NearMicroIndexersProvider = {
     unlistIndexer: UnlistIndexerService,
     stakeIndexer: StakeIndexerService,
     unstakeIndexer: UnstakeIndexerService,
-    acceptBidIndexer: AcceptBidIndexerService
+    acceptBidIndexer: AcceptBidIndexerService,
+    transferIndexer: TransferIndexerService,
   ) => {
-    return new NearMicroIndexers(buyIndexer, listIndexer, unlistIndexer, stakeIndexer, unstakeIndexer, acceptBidIndexer);
+    return new NearMicroIndexers(
+      buyIndexer, 
+      listIndexer, 
+      unlistIndexer, 
+      stakeIndexer, 
+      unstakeIndexer, 
+      acceptBidIndexer,
+      transferIndexer
+    );
   },
   inject: [
     BuyIndexerService, 
@@ -37,6 +48,7 @@ export const NearMicroIndexersProvider = {
     UnlistIndexerService, 
     StakeIndexerService, 
     UnstakeIndexerService,
-    AcceptBidIndexerService
+    AcceptBidIndexerService,
+    TransferIndexerService
   ],
 };

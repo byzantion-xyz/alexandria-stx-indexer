@@ -33,16 +33,16 @@ export class TransferIndexerService implements IndexerService {
     const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
 
     if (nftMeta) {
-      const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName.transfer, tx, nftMeta);
-      const listActionParams: CreateTransferActionTO = { 
-        ...actionCommonArgs, 
-        buyer,
-        seller: tx.signer,
-      };
+      //const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName.transfer, tx, nftMeta);
+      //const listActionParams: CreateTransferActionTO = { 
+      //  ...actionCommonArgs, 
+      //  buyer,
+      //  seller: tx.signer,
+      //};
 
       await this.txHelper.unlistMetaInAllMarkets(nftMeta, tx);
 
-      await this.createAction(listActionParams);
+      //await this.createAction(listActionParams);
       txResult.processed = true;
     } else {
       this.logger.log(`NftMeta not found ${contract_key} ${token_id}`);

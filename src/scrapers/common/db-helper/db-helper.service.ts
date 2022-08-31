@@ -20,7 +20,8 @@ const scf = [{
     token_id: "token_id",
     list_action: "msg.market_type",
     contract_key: "account_id",
-    token_price: "msg.sale_conditions.near"
+    token_price: "msg.sale_conditions.near",
+    buyer: "msg.buyer_id"
   },
   name: "list",
   function_name: "nft_approve",

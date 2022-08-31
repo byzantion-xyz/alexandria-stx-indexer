@@ -18,7 +18,8 @@ export default registerAs("indexer", () => ({
         },
       },
     ],
-    Near: [{
+    Near: [
+    {
       function_name: "nft_transfer",
       name: "transfer",
       args: {
@@ -34,6 +35,13 @@ export default registerAs("indexer", () => ({
         "buyer": "receiver_id",
         "price": "balance"
       }
+    }, 
+    {
+      function_name: "nft_burn",
+      name: 'burn',
+      args: {
+        "token_id": "token_id"
+      }
     }],
   },
   blockRanges: {
@@ -45,7 +53,7 @@ export default registerAs("indexer", () => ({
     },
     Near: {
       start_block_height: 42000000,
-      start_block_height_tip: 73000000,
+      start_block_height_tip: 71000000,
       end_block_height: 75000000,
       block_range: 100000,
     },

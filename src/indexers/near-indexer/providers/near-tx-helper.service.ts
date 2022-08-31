@@ -19,7 +19,7 @@ export class NearTxHelperService {
     return Number(BigInt(nanoseconds) / BigInt(1e6));
   }
 
-  parseBase64Arguments(args: string) {
+  parseBase64Arguments(args: string, hash: string) {
     try {
       let json = JSON.parse(Buffer.from(args, 'base64').toString());
       if (json.msg) {
@@ -29,7 +29,7 @@ export class NearTxHelperService {
       }
       return json;
     } catch (err) {
-      this.logger.warn('parseBase64Arguments() failed. ', err);
+      this.logger.warn(`parseBase64Arguments() failed for originating receipt id: ${hash}. `, err);
     }
   }
 

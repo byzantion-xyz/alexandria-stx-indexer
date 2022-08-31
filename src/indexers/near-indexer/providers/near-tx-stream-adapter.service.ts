@@ -111,7 +111,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
 
   transformTx(tx: FunctionCallEvent): CommonTx {
     try {
-      const parsed_args = this.nearTxHelper.parseBase64Arguments(tx.args);
+      const parsed_args = this.nearTxHelper.parseBase64Arguments(tx.args, tx.originating_receipt_id);
 
       // Force indexer for special cases.
       let force_indexer = this.findPreselectedIndexer(tx, tx.method, parsed_args);

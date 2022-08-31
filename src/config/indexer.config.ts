@@ -25,6 +25,15 @@ export default registerAs("indexer", () => ({
         "token_id": "token_id",
         "buyer": "receiver_id"
       }
+    },
+    {
+      function_name: "nft_transfer_payout",
+      name: "transfer",
+      args: {
+        "token_id": "token_id",
+        "buyer": "receiver_id",
+        "price": "balance"
+      }
     }],
   },
   blockRanges: {

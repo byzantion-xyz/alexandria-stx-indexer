@@ -96,7 +96,8 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
         force_indexer = 'list';
       } else if (sale_conditions) {
         force_indexer = 'unknown';
-        this.logger.warn(`Unable to find a micro indexer for ${function_name} sale_conditions`, sale_conditions);
+        this.logger.warn(`Unable to find a micro indexer for ${function_name} ` +
+        ` originating receipt: ${tx.originating_receipt_id} sale_conditions`, sale_conditions);
       } else if (staking_status) {
         force_indexer = 'stake';
       } else {

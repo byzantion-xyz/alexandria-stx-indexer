@@ -33,6 +33,8 @@ export class BurnIndexerService implements IndexerService {
 
     if (nftMeta) {
       await this.txHelper.unlistMetaInAllMarkets(nftMeta, tx, msc);
+      
+      await this.txHelper.burnMeta(nftMeta.id);
     } else {
       this.logger.log(`NftMeta not found ${contract_key} ${token_id}`);
       txResult.missing = true;

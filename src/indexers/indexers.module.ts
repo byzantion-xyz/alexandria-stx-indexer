@@ -74,6 +74,7 @@ import { NftStateList } from "src/database/universal/entities/NftStateList";
 import { AdminSoloIdUnlistBidIndexerService } from './stacks-indexer/providers/admin-solo-id-unlist-bid-indexer.service';
 import { AcceptBidIndexerService } from "./near-indexer/providers/accept-bid-indexer.service";
 import { TransferIndexerService } from './near-indexers/providers/transfer-indexer.service';
+import { BurnIndexerService } from './near-indexers/providers/burn-indexer.service';
 
 /* Select stream adapter based on chain symbol env variable */
 const TxStreamAdapterProvider = {
@@ -177,7 +178,8 @@ const TxStreamAdapterProvider = {
     TxUpgradeHelperService,
     UpgradeMegaIndexerService,
     BuyWrapperIndexerService,
-    AdminSoloIdUnlistBidIndexerService
+    AdminSoloIdUnlistBidIndexerService,
+    BurnIndexerService
   ],
   exports: [IndexerOrchestratorService],
 })

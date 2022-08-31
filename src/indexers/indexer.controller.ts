@@ -49,10 +49,9 @@ export class IndexerController {
     const initial_block: number = options.start_block_height || blockConfig.start_block_height;
     const end_block: number = options.end_block_height || blockConfig.end_block_height;
     const block_range: number = blockConfig.block_range;
-
-    for (let b = initial_block; b < end_block; b = b + block_range) {
+    for (let b = initial_block; b < end_block; b = Number(b + block_range)) {      
       options.start_block_height = b;
-      options.end_block_height = b + block_range;
+      options.end_block_height = Number(b) + Number(block_range);
  
       await this.indexerOrchestrator.runIndexer(options);
     }

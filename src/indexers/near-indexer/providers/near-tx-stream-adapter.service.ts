@@ -78,8 +78,9 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
       const market_type = parsed_args["msg"]["market_type"];
       const sale_conditions = parsed_args["msg"]["sale_conditions"];
       const staking_status = parsed_args["msg"]["staking_status"];
+      const is_auction = parsed_args["msg"]["is_auction"];
 
-      if (market_type) {
+      if (market_type && !is_auction) {
         switch (market_type) {
           case "sale": force_indexer = "list";
             break;

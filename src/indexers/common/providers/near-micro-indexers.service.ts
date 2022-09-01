@@ -6,8 +6,8 @@ import { BuyIndexerService } from "../../near-indexer/providers/buy-indexer.serv
 import { ListIndexerService } from "../../near-indexer/providers/list-indexer.service";
 import { UnlistIndexerService } from "../../near-indexer/providers/unlist-indexer.service";
 import { AcceptBidIndexerService } from "src/indexers/near-indexer/providers/accept-bid-indexer.service";
-import { TransferIndexerService } from "src/indexers/near-indexers/providers/transfer-indexer.service";
-import { BurnIndexerService } from "src/indexers/near-indexers/providers/burn-indexer.service";
+import { TransferIndexerService } from "src/indexers/near-indexer/providers/transfer-indexer.service";
+import { BurnIndexerService } from "src/indexers/near-indexer/providers/burn-indexer.service";
 
 @Injectable()
 export class NearMicroIndexers {

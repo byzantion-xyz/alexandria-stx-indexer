@@ -161,7 +161,7 @@ export class BotHelperService {
     embed.setTimestamp();
 
     embed.setFooter({
-      text: "Powered by Byzantion.xyz",
+      text: "powered by Byzantion",
       iconURL: "https://res.cloudinary.com/daxts7gzz/image/upload/v1656619671/byz-logo-2.webp",
     });
 

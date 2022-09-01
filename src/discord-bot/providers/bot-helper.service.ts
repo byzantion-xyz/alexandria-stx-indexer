@@ -32,9 +32,10 @@ export class BotHelperService {
     const msc: SmartContract = action.marketplace_smart_contract;
     const sc: SmartContract = action.nft_meta.smart_contract;
     const chain: Chain = action.nft_meta.chain;
+    const slug: string = action.collection?.slug;
 
-    // TODO: Use byzantion links for all chains when new marketplace is on production
-    // i.e: `https://byzantion.xyz/collection/${action.collection.slug}/${action.nft_meta.token_id}`
+    // TODO: Use tradeport links for all chains when new marketplace is on production
+    // i.e: `https://tradeport.xyz/collection/${action.collection.slug}/${action.nft_meta.token_id}`
     let marketplaceLink: string;
     let transactionLink: string;
     let sellerLink: string;
@@ -44,25 +45,27 @@ export class BotHelperService {
       case "Near":
         transactionLink = `https://explorer.near.org/receipts/${action.tx_id}`;
         if (sc && msc) {
-          marketplaceLink =
-            `https://byzantion.xyz/market-redirect` +
-            `?base_marketplace_uri=${encodeURIComponent(msc.base_marketplace_uri)}` +
-            `&token_uri=${encodeURIComponent(msc.token_uri)}` +
-            `&contract_key=${sc.contract_key}` +
-            `&token_id=${action.nft_meta.token_id}` +
-            `&tx_link=${encodeURIComponent(transactionLink)}`;
-        }
-        if (msc.base_marketplace_uri.includes("paras.id")) {
-          if (action.buyer) buyerLink = `https://paras.id/${action.buyer}/collectibles`;
-          if (action.seller) sellerLink = `https://paras.id/${action.seller}/collectibles`;
+          if (msc.base_marketplace_uri.includes("fewfar")) {
+            marketplaceLink =
+              `https://tradeport.xyz/market-redirect` +
+              `?base_marketplace_uri=${encodeURIComponent(msc.base_marketplace_uri)}` +
+              `&token_uri=${encodeURIComponent(msc.token_uri)}` +
+              `&contract_key=${sc.contract_key}` +
+              `&token_id=${action.nft_meta.token_id}` +
+              `&tx_link=${encodeURIComponent(transactionLink)}`;
+          } else {
+            marketplaceLink = `https://tradeport.xyz/collection/${slug}/${action.nft_meta.token_id}?utm_source=byzantion_bot&slug=${slug}&action=${action.action}`;
+            if (action.buyer) buyerLink = `${msc.base_marketplace_uri}/${action.buyer}`;
+            if (action.seller) sellerLink = `${msc.base_marketplace_uri}/${action.seller}`;
+          }
         }
         break;
 
       case "Stacks":
-        marketplaceLink = `https://byzantion.xyz/collection/${action.collection.slug}/${action.nft_meta.token_id}`;
+        marketplaceLink = `https://tradeport.xyz/collection/${action.collection.slug}/${action.nft_meta.token_id}`;
         transactionLink = `https://explorer.stacks.co/txid/${action.tx_id}?chain=mainnet`;
-        if (action.buyer) buyerLink = `https://byzantion.xyz/${action.buyer}`;
-        if (action.seller) sellerLink = `https://byzantion.xyz/${action.seller}`;
+        if (action.buyer) buyerLink = `https://tradeport.xyz/${action.buyer}`;
+        if (action.seller) sellerLink = `https://tradeport.xyz/${action.seller}`;
         break;
 
       default:
@@ -109,7 +112,8 @@ export class BotHelperService {
 
     embed.setTitle(`${title} ${subTitle}`);
     if (marketplaceLink) {
-      embed.setURL(`${marketplaceLink}&server_name=${encodeURIComponent(server_name)}`);
+      embed.setURL(`${marketplaceLink}&discord_server=${encodeURIComponent(server_name)}`);
+      // embed.setURL(marketplaceLink);
     }
 
     // TODO: Add support for chain tokens (i.e banana in stacks)
@@ -157,7 +161,7 @@ export class BotHelperService {
     embed.setTimestamp();
 
     embed.setFooter({
-      text: "Powered by Byzantion.xyz",
+      text: "powered by Byzantion",
       iconURL: "https://res.cloudinary.com/daxts7gzz/image/upload/v1656619671/byz-logo-2.webp",
     });
 

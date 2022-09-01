@@ -26,7 +26,12 @@ export class ListBotService {
       if (!channels || !channels.length) return;
 
       for (let channel of channels) {
-        let messageContent = await this.botHelper.buildMessage(data, channel.discord_server.server_id, color, subTitle);
+        let messageContent = await this.botHelper.buildMessage(
+          data,
+          channel.discord_server.server_name,
+          color,
+          subTitle
+        );
         // this.logger.debug(messageContent);
         await this.botHelper.sendMessage(messageContent, channel.channel_id);
       }

@@ -59,7 +59,7 @@ export class IdBidIndexerService implements IndexerService {
         await this.txBidHelper.createTokenIdsBid(collectionBidArgs, token_id_list, trait);
         
         const actionCommonArgs = this.txHelper.setCommonCollectionActionParams(
-          ActionName.collection_bid, tx, collection, sc
+          ActionName.attribute_bid, tx, collection, sc
         );
         const acceptBidActionParams: CreateIdBidActionTO = {
           ...actionCommonArgs,

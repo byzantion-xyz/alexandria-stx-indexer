@@ -99,12 +99,14 @@ export class TxBidHelperService {
     });
   }
 
-  async createTokenIdsBid(params: CreateAttributeBidStateArgs, token_ids: [string], trait?: any[]): Promise<BidState> {
+  async createTokenIdsBid(params: CreateAttributeBidStateArgs, token_ids: [string], trait?: [any]): Promise<BidState> {
     const bidState = this.bidStateRepo.create(params);
+    bidState.nft_metas = [];
+    bidState.attributes = [];
     return await this.setTokenIdsAndAttributes(bidState, token_ids, trait);
   }
   
-  async setTokenIdsAndAttributes(bidState: BidState, token_ids: [string], trait?: any[]): Promise<BidState> {
+  async setTokenIdsAndAttributes(bidState: BidState, token_ids: [string], trait?: [any]): Promise<BidState> {
     try {
       const nftMetas = await this.nftMetaRepo.find({ where: { token_id: In(token_ids) } });
       for (let meta of nftMetas) {
@@ -113,20 +115,21 @@ export class TxBidHelperService {
         bidState.nft_metas.push(bidStateNftMeta);
       }
   
-      for (let attr of trait) {
-        const bid_attribute = new BidAttribute();
-        const collectionAttribute = await this.collectionAttributeRepo.findOne({ where: { 
-          collection_id: bidState.collection_id, 
-          trait_type: attr.trait_type,
-          value: attr.value
-        }});
-        bid_attribute.collection_attribute_id = collectionAttribute.id;
-        bidState.attributes.push(bid_attribute);
+      if (trait && trait.length) {
+        for (let attr of trait) {
+          const bid_attribute = new BidAttribute();
+          const collectionAttribute = await this.collectionAttributeRepo.findOne({ where: { 
+            collection_id: bidState.collection_id, 
+            trait_type: attr.trait_type,
+            value: attr.value
+          }});
+          bid_attribute.collection_attribute_id = collectionAttribute.id;
+          bidState.attributes.push(bid_attribute);
+        }
       }
-
       const saved = await this.bidStateRepo.save(bidState);
 
-      this.logger.log(`New attribute Bid: ${bidState.bid_type}: ${saved.id} `);
+      this.logger.log(`New bid_state bid_type: ${bidState.bid_type} id: ${saved.id} `);
 
       return saved;
     } catch (err) {}

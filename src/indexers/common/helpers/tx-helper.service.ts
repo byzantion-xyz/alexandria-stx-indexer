@@ -101,8 +101,8 @@ export class TxHelperService {
   }
 
   isListedInAnyMarketplace(nftState: NftState): boolean {
-    const list =  nftState?.nft_states_list?.find(s => s.listed = true);
-    return list && list.listed ? true : false;
+    const list =  nftState?.nft_states_list?.find(s => s.listed === true);
+    return list ? true : false;
   }
 
   async findCommissionByKey(sc: SmartContract, contract_key: string, key?: string): Promise<Commission> {

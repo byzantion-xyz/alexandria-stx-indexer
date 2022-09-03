@@ -42,7 +42,6 @@ export class TransferIndexerService implements IndexerService {
       //  seller: tx.signer,
       //};
 
-
       if (this.txHelper.isListedInAnyMarketplace(nftMeta.nft_state)) {
         await this.txHelper.unlistMetaInAllMarkets(nftMeta, tx);
       }

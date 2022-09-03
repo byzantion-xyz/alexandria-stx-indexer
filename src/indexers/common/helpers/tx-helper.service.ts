@@ -100,6 +100,10 @@ export class TxHelperService {
     return nftState?.nft_states_list?.find(s => s.list_contract_id === msc_id);
   }
 
+  isListedInAnyMarketplace(nftState: NftState) {
+    return nftState?.nft_states_list?.find(s => s.listed = true);
+  }
+
   async findCommissionByKey(sc: SmartContract, contract_key: string, key?: string): Promise<Commission> {
     if (!key) {
       key = `${sc.contract_key}::${contract_key}`;

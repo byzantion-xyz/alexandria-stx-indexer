@@ -9,7 +9,7 @@ import { TxProcessResult } from "src/indexers/common/interfaces/tx-process-resul
 import { TxHelperService } from "src/indexers/common/helpers/tx-helper.service";
 
 import { Repository } from "typeorm";
-import { ActionName } from "src/indexers/common/helpers/indexer-enums";
+import { ActionName, SmartContractType } from "src/indexers/common/helpers/indexer-enums";
 import { SmartContractFunction } from "src/database/universal/entities/SmartContractFunction";
 
 @Injectable()
@@ -19,7 +19,9 @@ export class TransferIndexerService implements IndexerService {
   constructor(
     private txHelper: TxHelperService,
     @InjectRepository(Action)
-    private actionRepository: Repository<Action>
+    private actionRepository: Repository<Action>,
+    @InjectRepository(SmartContract)
+    private smartContractRepository: Repository<SmartContract>
   ) {}
 
   async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {
@@ -40,7 +42,17 @@ export class TransferIndexerService implements IndexerService {
       //  seller: tx.signer,
       //};
 
-      await this.txHelper.unlistMetaInAllMarkets(nftMeta, tx);
+
+      if (this.txHelper.isListedInAnyMarketplace(nftMeta.nft_state)) {
+        await this.txHelper.unlistMetaInAllMarkets(nftMeta, tx);
+      }
+
+      if (nftMeta.nft_state && nftMeta.nft_state.staked) {
+        const signer_sc = await this.smartContractRepository.findOneBy({ contract_key: tx.signer });
+        if (signer_sc && signer_sc.type.includes(SmartContractType.staking)) {
+          await this.txHelper.unstakeMeta(nftMeta.id, tx);
+        }
+      }
 
       //await this.createAction(listActionParams);
       txResult.processed = true;

@@ -51,10 +51,7 @@ export class TransferIndexerService implements IndexerService {
       // Unstake staked meta when is transferred from staking contract
       if (nftMeta.nft_state && nftMeta.nft_state.staked && 
         this.txStakingHelper.isNewStakingBlock(tx, nftMeta.nft_state)) {
-        const signer_sc = await this.smartContractRepository.findOneBy({ contract_key: tx.signer });
-        if (signer_sc && signer_sc.type.includes(SmartContractType.staking)) {
-          await this.txHelper.unstakeMeta(nftMeta.id, tx);
-        }
+        await this.txHelper.unstakeMeta(nftMeta.id, tx);
       }
 
       //await this.createAction(listActionParams);

@@ -76,12 +76,11 @@ export class DiscordServerService {
     if (!marketplace) return [];
 
     const servers: Array<universalServerDTO> = this.config.get("discord.universal_servers");
-    const server_objs = servers.filter((s) => {
+    const server_ids = servers.filter((s) => {
       return s.marketplace_name.includes(marketplace);
-    });
-    const server_ids = server_objs.map((s) => {
+    }).map((s) => {
       return s.server_id;
-    })
+    });
 
     if (server_ids) {
       const channels = await this.discordServerChannelRepository.find({

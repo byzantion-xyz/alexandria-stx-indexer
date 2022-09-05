@@ -7,7 +7,7 @@ import { CollectionOnDiscordServerChannel } from "src/database/universal/entitie
 import { DiscordServer } from "src/database/universal/entities/DiscordServer";
 import { DiscordServerChannel } from "src/database/universal/entities/DiscordServerChannel";
 import { DiscordChannelType } from "src/indexers/common/helpers/indexer-enums";
-import { RelationId, Repository } from "typeorm";
+import { RelationId, In, Repository } from "typeorm";
 import { CreateDiscordServer, CreateDiscordServerChannel } from "../interfaces/discord-server.dto";
 import { universalServerDTO } from "../interfaces/universal-server.dto";
 
@@ -76,15 +76,17 @@ export class DiscordServerService {
     if (!marketplace) return [];
 
     const servers: Array<universalServerDTO> = this.config.get("discord.universal_servers");
-    const server = servers.filter((s) => {
-      return s.marketplace_name === marketplace;
+    const server_ids = servers.filter((s) => {
+      return s.marketplace_name.includes(marketplace);
+    }).map((s) => {
+      return s.server_id;
     });
 
-    if (server[0]) {
+    if (server_ids) {
       const channels = await this.discordServerChannelRepository.find({
         where: {
           purpose: purpose,
-          discord_server: { active: true, server_id: server[0].server_id },
+          discord_server: { active: true, server_id: In(server_ids) },
         },
         relations: { discord_server: true },
       });

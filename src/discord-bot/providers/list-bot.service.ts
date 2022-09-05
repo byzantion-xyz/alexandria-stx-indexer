@@ -46,4 +46,10 @@ export class ListBotService {
 
     await this.send(data);
   }
+
+  async getUniversalChannels() {
+    //CHANGE 'byzantion' TO OTHER MARKET FOR TESTING
+    const res = await this.discordServerSvc.getUniversalChannels('apollo', DiscordChannelType.sales)
+    return res;
+  }
 }

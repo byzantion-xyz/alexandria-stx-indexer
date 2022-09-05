@@ -71,10 +71,10 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
   // apollo42 and paras provide market_type
   findPreselectedIndexer(tx: FunctionCallEvent, function_name: string, parsed_args: JSON): string {
     let force_indexer: string;
-    if (!function_name || !parsed_args || !parsed_args["msg"]) return;
+    if (!function_name || !parsed_args) force_indexer = 'unknown';
 
     // Map market_type on nft_approve to specific global function name
-    if (function_name === "nft_approve") {
+    if (function_name === "nft_approve" && parsed_args["msg"]) {
       const market_type = parsed_args["msg"]["market_type"];
       const sale_conditions = parsed_args["msg"]["sale_conditions"];
       const staking_status = parsed_args["msg"]["staking_status"];

@@ -29,6 +29,15 @@ export class DiscordBotController {
     private saleBotService: SalesBotService
   ) {}
 
+  // FOR TESTING
+  @Post("test")
+  @UsePipes(new ValidationPipe({ transform: true }))
+  async getUniversalChannels() {
+
+    const res = await this.listBotService.getUniversalChannels();
+    return res;
+  }
+
   @Post("listing")
   @UsePipes(new ValidationPipe({ transform: true }))
   async postListing(@Body() listing: DiscordBotDto) {

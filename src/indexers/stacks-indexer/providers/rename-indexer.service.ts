@@ -37,6 +37,8 @@ export class RenameIndexerService implements IndexerService {
     if (nftMeta) {
       nftMeta.name = `#${nftMeta.token_id} - ${name}`;
       await this.nftMetaRepository.save(nftMeta);
+
+      txResult.processed = true;
     } else {
       this.logger.log(`NftMeta not found ${contract_key} ${token_id}`);
       txResult.missing = true;

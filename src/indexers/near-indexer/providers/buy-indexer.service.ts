@@ -53,7 +53,7 @@ export class BuyIndexerService implements IndexerService {
       const buyActionParams: CreateBuyActionTO = { 
         ...actionCommonArgs,
         list_price: price || (nft_state_list?.listed ? nft_state_list.list_price : null),
-        seller: nft_state_list?.listed ? nft_state_list?.list_seller : (seller || null),
+        seller: seller || (nft_state_list?.listed ? nft_state_list?.list_seller : null),
         buyer: tx.signer
       };
 

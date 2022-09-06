@@ -55,7 +55,7 @@ export default registerAs("indexer", () => ({
       start_block_height: 42000000,
       start_block_height_tip: 73000000,
       end_block_height: 75000000,
-      block_range: 100000,
+      block_range: 250000,
     },
   },
 }));

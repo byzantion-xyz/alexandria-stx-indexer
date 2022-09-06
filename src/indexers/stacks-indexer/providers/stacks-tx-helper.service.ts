@@ -67,6 +67,11 @@ export class StacksTxHelperService {
   }
 
   extractArgumentData(args: [], scf: SmartContractFunction, field: string) {
+    // Any data stored directly in smart_contract_function must override arguments
+    if (scf.data && scf.data[field]) {
+      return scf.data[field];
+    }
+
     const index = scf.args[field];
     if (typeof index === "undefined") {
       return undefined;

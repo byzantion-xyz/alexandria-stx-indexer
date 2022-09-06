@@ -37,6 +37,7 @@ export class BuyIndexerService implements IndexerService {
     const token_id = this.txHelper.extractArgumentData(tx.args, scf, "token_id");
     const contract_key = this.txHelper.extractArgumentData(tx.args, scf, "contract_key");
     const price = this.txHelper.extractArgumentData(tx.args, scf, "price");
+    const seller = this.txHelper.extractArgumentData(tx.args, scf, "seller");
 
     // Check if has custodial smart contract
     if (sc.type.includes(SmartContractType.non_fungible_tokens) && sc.custodial_smart_contract) {
@@ -52,7 +53,7 @@ export class BuyIndexerService implements IndexerService {
       const buyActionParams: CreateBuyActionTO = { 
         ...actionCommonArgs,
         list_price: price || (nft_state_list?.listed ? nft_state_list.list_price : null),
-        seller: nft_state_list?.listed ? nft_state_list?.list_seller : null,
+        seller: seller || (nft_state_list?.listed ? nft_state_list?.list_seller : null),
         buyer: tx.signer
       };
 

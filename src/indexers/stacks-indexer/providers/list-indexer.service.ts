@@ -67,7 +67,7 @@ export class ListIndexerService implements IndexerService {
 
         const newAction = await this.createAction(listActionParams);
         if (newAction && tx.notify) {
-          //this.listBotService.createAndSend(newAction.id);
+          this.listBotService.createAndSend(newAction.id);
         }
       } else {
         this.logger.log(`Too Late`);

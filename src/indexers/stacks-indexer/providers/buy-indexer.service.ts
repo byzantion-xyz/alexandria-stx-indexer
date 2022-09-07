@@ -53,7 +53,7 @@ export class BuyIndexerService implements IndexerService {
         await this.txHelper.unlistMetaInAllMarkets(nftMeta, tx, sc, buyActionParams.seller);
         const newAction = await this.createAction(buyActionParams);
         if (newAction && tx.notify) {
-          //this.salesBotService.createAndSend(newAction.id);
+          this.salesBotService.createAndSend(newAction.id);
         }
       } else  {
         this.logger.log(`Too Late`);

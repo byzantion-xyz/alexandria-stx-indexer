@@ -114,7 +114,7 @@ export class BotHelperService {
 
     const roundedRarity: number = rarity ? Math.round(rarity * 100) / 100 : 0;
 
-    embed.setTitle(`${title} ${options.titleSuffix}`);
+    embed.setTitle(`${options.titlePrefix} ${title} ${options.titleSuffix}`);
     if (marketplaceLink) {
       embed.setURL(`${marketplaceLink}&discord_server=${encodeURIComponent(server_name)}`);
       // embed.setURL(marketplaceLink);

@@ -97,7 +97,7 @@ export class BotHelperService {
 
   async sendMessage(message, channel_id: string) {
     const channel = await this.client.channels.fetch(channel_id);
-
+    
     if (channel.type === "GUILD_TEXT" && process.env.NODE_ENV === "production") {
       await channel.send(message);
     } else {
@@ -190,16 +190,20 @@ export class BotHelperService {
       const options: ActionOption = actionOptions.find(ac => ac.name === data.action_name);
       if (!options) return;
       
-      this.logger.log('send() options: ', { options });
+      //this.logger.log('send() options: ', { options });
       const subChannels = await this.discordServerSvc.getChannelsBySlug(data.slug, options.purpose);
       const uniChannels = await this.discordServerSvc.getUniversalChannels(data.marketplace, options.purpose);
       const channels = subChannels.concat(uniChannels);
-      this.logger.log('send() channels: ', { channels });
+      //this.logger.log('send() channels: ', { channels });
+      
+      //let messageContent = await this.buildMessage(data, 'test server', options);
+      //this.logger.log('sendMessage() message: ', { messageContent });
+
       if (!channels || !channels.length) return;
 
       for (let channel of channels) {
         let messageContent = await this.buildMessage(data, channel.discord_server.server_name, options);
-       
+
         await this.sendMessage(messageContent, channel.channel_id);
       }
     } catch (err) {

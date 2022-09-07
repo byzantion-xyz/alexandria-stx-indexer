@@ -1,5 +1,4 @@
 import {
-  Injectable,
   Logger,
   Controller,
   Post,
@@ -11,12 +10,7 @@ import {
 } from "@nestjs/common";
 import { Once, InjectDiscordClient } from "@discord-nestjs/core";
 import { Client } from "discord.js";
-import { DiscordBotDto } from "./dto/discord-bot.dto";
-import { ListBotService } from "./providers/list-bot.service";
-import { SalesBotService } from "./providers/sales-bot.service";
 import { BotHelperService } from "./providers/bot-helper.service";
-import { ActionName } from "src/indexers/common/helpers/indexer-enums";
-import { Action } from "rxjs/internal/scheduler/Action";
 
 @Controller("api/discord-bot")
 export class DiscordBotController {
@@ -24,9 +18,7 @@ export class DiscordBotController {
 
   constructor(
     @InjectDiscordClient() private readonly client: Client,
-    private botHelperService: BotHelperService,
-    private listBotService: ListBotService,
-    private saleBotService: SalesBotService
+    private botHelperService: BotHelperService
   ) {}
 
   // FOR TESTING
@@ -34,11 +26,11 @@ export class DiscordBotController {
   @UsePipes(new ValidationPipe({ transform: true }))
   async getUniversalChannels() {
 
-    const res = await this.listBotService.getUniversalChannels();
+    const res = await this.botHelperService.getUniversalChannels();
     return res;
   }
 
-  @Post("listing")
+  /*@Post("listing")
   @UsePipes(new ValidationPipe({ transform: true }))
   async postListing(@Body() listing: DiscordBotDto) {
     if (process.env.NODE_ENV === "production") {
@@ -47,9 +39,9 @@ export class DiscordBotController {
 
     await this.listBotService.send(listing);
     return "Ok";
-  }
+  }*/
 
-  @Post("sale")
+  /*@Post("sale")
   @UsePipes(new ValidationPipe({ transform: true }))
   async postSale(@Body() sale: DiscordBotDto) {
     if (process.env.NODE_ENV === "production") {
@@ -58,12 +50,12 @@ export class DiscordBotController {
 
     await this.saleBotService.send(sale);
     return "Ok";
-  }
+  }*/
 
   /* For testing purposes */
   @Post("action")
   @UsePipes(new ValidationPipe({ transform: true }))
-  async postAction(@Body() params: { actionId: string; purpose: string }) {
+  async postAction(@Body() params: { actionId: string }) {
     if (process.env.NODE_ENV === "production") {
       return "Endpoint disabled for production";
     }
@@ -73,11 +65,7 @@ export class DiscordBotController {
     }
     const data = await this.botHelperService.createDiscordBotDto(action);
 
-    // if (action.action === ActionName.buy) {
-    //   await this.saleBotService.send(data);
-    // } else if (action.action === ActionName.list) {
-    //   await this.listBotService.send(data);
-    // }
+    await this.botHelperService.send(data);
     return data;
   }
 

@@ -1,3 +1,5 @@
+import { ActionName, DiscordChannelType } from "src/indexers/common/helpers/indexer-enums";
+
 export interface DiscordBotDto {
   slug: string;
   title: string;
@@ -14,4 +16,5 @@ export interface DiscordBotDto {
   sellerLink?: string;
   buyerLink?: string;
   image: string;
+  action_name: ActionName;
 }

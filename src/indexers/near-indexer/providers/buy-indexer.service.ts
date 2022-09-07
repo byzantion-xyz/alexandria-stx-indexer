@@ -3,19 +3,18 @@ import { Logger, Injectable, NotAcceptableException } from "@nestjs/common";
 import { TxProcessResult } from "src/indexers/common/interfaces/tx-process-result.interface";
 import { TxHelperService } from "../../common/helpers/tx-helper.service";
 
-import { SalesBotService } from "src/discord-bot/providers/sales-bot.service";
 import { CreateActionCommonArgs, CreateBuyActionTO } from "../../common/interfaces/create-action-common.dto";
 import { CommonTx } from "src/indexers/common/interfaces/common-tx.interface";
 import { IndexerService } from "../../common/interfaces/indexer-service.interface";
 
 import { InjectRepository } from "@nestjs/typeorm";
-import { Action, Action as ActionEntity } from "src/database/universal/entities/Action";
+import { Action as ActionEntity } from "src/database/universal/entities/Action";
 import { SmartContract } from "src/database/universal/entities/SmartContract";
 import { SmartContractFunction } from "src/database/universal/entities/SmartContractFunction";
 import { Repository } from "typeorm";
 import { ActionName, SmartContractType } from "../../common/helpers/indexer-enums";
 import { NearTxHelperService } from "src/indexers/near-indexer/providers/near-tx-helper.service";
-import { parseAssetInfoString } from "@stacks/transactions";
+import { BotHelperService } from "src/discord-bot/providers/bot-helper.service";
 
 @Injectable()
 export class BuyIndexerService implements IndexerService {
@@ -24,7 +23,7 @@ export class BuyIndexerService implements IndexerService {
   constructor(
     private txHelper: TxHelperService,
     private nearTxHelper: NearTxHelperService,
-    private salesBotService: SalesBotService,
+    private botHelper: BotHelperService,
     @InjectRepository(ActionEntity)
     private actionRepository: Repository<ActionEntity>
   ) {}
@@ -61,7 +60,7 @@ export class BuyIndexerService implements IndexerService {
         await this.txHelper.unlistMetaInAllMarkets(nftMeta, tx, msc);
         const newAction = await this.createAction(buyActionParams);
         if (newAction && tx.notify) {
-          this.salesBotService.createAndSend(newAction.id);
+          this.botHelper.createAndSend(newAction.id);
         }
       } else {
         this.logger.log(`Too Late`);

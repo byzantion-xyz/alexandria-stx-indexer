@@ -7,11 +7,13 @@ import * as sharp from "sharp";
 import { DiscordBotDto } from "src/discord-bot/dto/discord-bot.dto";
 import { Action } from "src/database/universal/entities/Action";
 import { Collection } from "src/database/universal/entities/Collection";
-import { NftMeta } from "src/database/universal/entities/NftMeta";
 import { SmartContract } from "src/database/universal/entities/SmartContract";
 import { Repository } from "typeorm";
 import { CryptoRateService } from "./crypto-rate.service";
 import { Chain } from "src/database/universal/entities/Chain";
+import { ActionName, DiscordChannelType } from "src/indexers/common/helpers/indexer-enums";
+import { DiscordServerService } from "src/discord-server/providers/discord-server.service";
+import { ActionOption, actionOptions } from "../interfaces/action-option.interface";
 
 const FIAT_CURRENCY = "USD";
 
@@ -25,7 +27,8 @@ export class BotHelperService {
     @InjectRepository(Action)
     private actionRepository: Repository<Action>,
     @InjectRepository(Collection)
-    private collectionRepository: Repository<Collection>
+    private collectionRepository: Repository<Collection>,
+    private discordServerSvc: DiscordServerService
   ) {}
 
   createDiscordBotDto(action: Action): DiscordBotDto {
@@ -88,6 +91,7 @@ export class BotHelperService {
       ...(action.buyer && { buyerLink }),
       image: action.nft_meta.image,
       cryptoCurrency: chain.coin,
+      action_name: action.action
     };
   }
 
@@ -101,16 +105,16 @@ export class BotHelperService {
     }
   }
 
-  async buildMessage(data: DiscordBotDto, server_name: string, color: ColorResolvable, subTitle: string) {
+  async buildMessage(data: DiscordBotDto, server_name: string, options: ActionOption) {
     const { title, rarity, ranking, collectionSize, price, marketplaceLink, transactionLink, image, cryptoCurrency } =
       data;
 
-    const embed = new MessageEmbed().setColor(color);
+    const embed = new MessageEmbed().setColor(options.color);
     let attachments = [];
 
     const roundedRarity: number = rarity ? Math.round(rarity * 100) / 100 : 0;
 
-    embed.setTitle(`${title} ${subTitle}`);
+    embed.setTitle(`${title} ${options.titleSuffix}`);
     if (marketplaceLink) {
       embed.setURL(`${marketplaceLink}&discord_server=${encodeURIComponent(server_name)}`);
       // embed.setURL(marketplaceLink);
@@ -179,5 +183,40 @@ export class BotHelperService {
     });
 
     return action;
+  }
+
+  async send(data: DiscordBotDto) {
+    try {
+      const options: ActionOption = actionOptions.find(ac => ac.name === data.action_name);
+      if (!options) return;
+      
+      this.logger.log('send() options: ', { options });
+      const subChannels = await this.discordServerSvc.getChannelsBySlug(data.slug, options.purpose);
+      const uniChannels = await this.discordServerSvc.getUniversalChannels(data.marketplace, options.purpose);
+      const channels = subChannels.concat(uniChannels);
+      this.logger.log('send() channels: ', { channels });
+      if (!channels || !channels.length) return;
+
+      for (let channel of channels) {
+        let messageContent = await this.buildMessage(data, channel.discord_server.server_name, options);
+       
+        await this.sendMessage(messageContent, channel.channel_id);
+      }
+    } catch (err) {
+      this.logger.warn("Discord error", err);
+    }
+  }
+
+  async createAndSend(actionId: string) {
+    const action = await this.fetchActionData(actionId);
+    const data = await this.createDiscordBotDto(action);
+
+    await this.send(data);
+  }
+
+  async getUniversalChannels() {
+    //CHANGE 'byzantion' TO OTHER MARKET FOR TESTING
+    const res = await this.discordServerSvc.getUniversalChannels('apollo', DiscordChannelType.listings)
+    return res;
   }
 }

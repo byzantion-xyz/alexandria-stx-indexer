@@ -3,7 +3,6 @@ import { Logger, Injectable } from "@nestjs/common";
 import { TxProcessResult } from "src/indexers/common/interfaces/tx-process-result.interface";
 import { TxHelperService } from "src/indexers/common/helpers/tx-helper.service";
 
-import { SalesBotService } from "src/discord-bot/providers/sales-bot.service";
 import { CreateBuyActionTO } from "src/indexers/common/interfaces/create-action-common.dto";
 import { CommonTx } from "src/indexers/common/interfaces/common-tx.interface";
 import { IndexerService } from "src/indexers/common/interfaces/indexer-service.interface";
@@ -15,6 +14,7 @@ import { SmartContractFunction } from "src/database/universal/entities/SmartCont
 import { Repository } from "typeorm";
 import { ActionName } from "src/indexers/common/helpers/indexer-enums";
 import { StacksTxHelperService } from "./stacks-tx-helper.service";
+import { BotHelperService } from "src/discord-bot/providers/bot-helper.service";
 
 @Injectable()
 export class BuyIndexerService implements IndexerService {
@@ -23,11 +23,11 @@ export class BuyIndexerService implements IndexerService {
   constructor(
     private txHelper: TxHelperService,
     private stacksTxHelper: StacksTxHelperService,
-    private salesBotService: SalesBotService,
+    private botHelper: BotHelperService,
     @InjectRepository(ActionEntity)
     private actionRepository: Repository<ActionEntity>
   ) {}
-
+  
   async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {
     this.logger.debug(`process() ${tx.hash}`);
     let txResult: TxProcessResult = { processed: false, missing: false };
@@ -53,7 +53,7 @@ export class BuyIndexerService implements IndexerService {
         await this.txHelper.unlistMetaInAllMarkets(nftMeta, tx, sc, buyActionParams.seller);
         const newAction = await this.createAction(buyActionParams);
         if (newAction && tx.notify) {
-          this.salesBotService.createAndSend(newAction.id);
+          this.botHelper.createAndSend(newAction.id);
         }
       } else  {
         this.logger.log(`Too Late`);

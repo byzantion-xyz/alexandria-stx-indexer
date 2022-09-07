@@ -1,7 +1,6 @@
 import { Logger, Injectable } from "@nestjs/common";
 import { TxProcessResult } from "src/indexers/common/interfaces/tx-process-result.interface";
 import { NftStateArguments, TxHelperService } from "src/indexers/common/helpers/tx-helper.service";
-import { ListBotService } from "src/discord-bot/providers/list-bot.service";
 import { MissingCollectionService } from "src/scrapers/near-scraper/providers/missing-collection.service";
 import { CreateListActionTO } from "src/indexers/common/interfaces/create-action-common.dto";
 
@@ -16,6 +15,7 @@ import { Repository } from "typeorm";
 import { ActionName, SmartContractType } from "src/indexers/common/helpers/indexer-enums";
 import { NftState } from "src/database/universal/entities/NftState";
 import { StacksTxHelperService } from "./stacks-tx-helper.service";
+import { BotHelperService } from "src/discord-bot/providers/bot-helper.service";
 
 @Injectable()
 export class ListIndexerService implements IndexerService {
@@ -24,7 +24,7 @@ export class ListIndexerService implements IndexerService {
   constructor(
     private txHelper: TxHelperService,
     private stacksTxHelper: StacksTxHelperService,
-    private listBotService: ListBotService,
+    private botHelper: BotHelperService,
     private missingCollectionService: MissingCollectionService,
     @InjectRepository(Action)
     private actionRepository: Repository<Action>,
@@ -67,7 +67,7 @@ export class ListIndexerService implements IndexerService {
 
         const newAction = await this.createAction(listActionParams);
         if (newAction && tx.notify) {
-          this.listBotService.createAndSend(newAction.id);
+          this.botHelper.createAndSend(newAction.id);
         }
       } else {
         this.logger.log(`Too Late`);

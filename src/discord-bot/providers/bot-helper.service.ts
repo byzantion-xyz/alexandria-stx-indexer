@@ -75,13 +75,16 @@ export class BotHelperService {
         this.logger.warn(`Invalid chain symbol ${chain.symbol}`);
     }
 
+    const purpose = actionOptions[action.action].purpose;
+    const price = purpose === DiscordChannelType.bids ? action.bid_price : action.list_price;
+
     return {
       slug: action.collection.slug,
       title: action.nft_meta.name,
       rarity: action.nft_meta.rarity,
       ranking: action.nft_meta.ranking,
       collectionSize: action.collection.collection_size,
-      price: Number(Number(action.list_price) / Number(Math.pow(10, chain.format_digits))),
+      price: Number(Number(price) / Number(Math.pow(10, chain.format_digits))),
       marketplace: msc.name,
       ...(marketplaceLink && { marketplaceLink }),
       transactionLink,

@@ -75,8 +75,8 @@ export class BotHelperService {
         this.logger.warn(`Invalid chain symbol ${chain.symbol}`);
     }
 
-    const purpose = actionOptions[action.action].purpose;
-    const price = purpose === DiscordChannelType.bids ? action.bid_price : action.list_price;
+    const options: ActionOption = actionOptions.find(ac => ac.name === action.action);
+    const price = options.purpose === DiscordChannelType.bids ? action.bid_price : action.list_price;
 
     return {
       slug: action.collection.slug,

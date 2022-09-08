@@ -196,7 +196,7 @@ export class TxBidHelperService {
     };
   }
 
-  async acceptSoloBid(bidState: BidState, tx: CommonTx, nftMeta: NftMeta) {
+  async acceptSoloBid(bidState: BidState, tx: CommonTx) {
     try {
       let update = {
         status: CollectionBidStatus.matched,

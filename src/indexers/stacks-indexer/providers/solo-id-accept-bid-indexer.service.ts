@@ -64,15 +64,17 @@ export class SoloIdAcceptBidIndexerService implements IndexerService {
           };
     
           await this.createAction(acceptBidActionParams);
+          txResult.processed = true;
         } else {
           this.logger.log(`NftMeta not found ${contract_key} ${token_id}`);
+          txResult.missing = true;
         }
-        
       } else if (bidState) {
         this.logger.log(`Solo id bid already "${bidState.status}" with nonce: ${bidState.nonce}`);
         txResult.processed = true;
       } else {
-        this.logger.log(`bid_state not found bid_contract_nonce: ${bid_contract_nonce}`);        
+        this.logger.log(`bid_state not found bid_contract_nonce: ${bid_contract_nonce}`);
+        txResult.missing = true;       
       }
 
     } else {

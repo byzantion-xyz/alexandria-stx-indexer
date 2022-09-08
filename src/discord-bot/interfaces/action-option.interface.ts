@@ -55,12 +55,14 @@ export const actionOptions: ActionOption[] = [
   {
     name: ActionName.list,
     color: 'YELLOW',
+    titlePrefix: '',
     titleSuffix: 'has been listed for sale',
     purpose: DiscordChannelType.listings
   },
  {
     name: ActionName.buy,
     color: 'BLUE',
+    titlePrefix: '',
     titleSuffix: 'has been sold',
     purpose: DiscordChannelType.sales
   }

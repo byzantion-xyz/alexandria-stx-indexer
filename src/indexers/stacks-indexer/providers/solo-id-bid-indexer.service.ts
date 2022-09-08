@@ -59,7 +59,7 @@ export class SoloIdBidIndexerService implements IndexerService {
         await this.txBidHelper.createSoloBid(collectionBidArgs, token_id);
 
         const actionCommonArgs = this.txHelper.setCommonActionParams(
-          ActionName.bid, tx, nftMeta, sc
+          ActionName.solo_bid, tx, nftMeta, sc
         );
         const acceptBidActionParams: CreateSoloBidActionTO = {
           ...actionCommonArgs,

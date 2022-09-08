@@ -43,13 +43,13 @@ export class SoloIdAcceptBidIndexerService implements IndexerService {
         relations: { collection: { smart_contract: true } }
       });
 
-      if (bidState && bidState.status !== CollectionBidStatus.matched) {
+      if (bidState && bidState.status === CollectionBidStatus.active) {
         const { contract_key } = bidState.collection.smart_contract;
 
         const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id.toString());
-        
+
         if (nftMeta) {
-          await this.txBidHelper.acceptBid(bidState, tx, nftMeta);
+          await this.txBidHelper.acceptSoloBid(bidState, tx, nftMeta);
           await this.txHelper.unlistMetaInAllMarkets(nftMeta, tx, sc, bidState.bid_seller);
 
           const actionCommonArgs = this.txHelper.setCommonCollectionActionParams(

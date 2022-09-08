@@ -14,7 +14,6 @@ import { SmartContractFunction } from "src/database/universal/entities/SmartCont
 import { Repository } from "typeorm";
 import { ActionName } from "src/indexers/common/helpers/indexer-enums";
 import { StacksTxHelperService } from "./stacks-tx-helper.service";
-import { BotHelperService } from "src/discord-bot/providers/bot-helper.service";
 
 @Injectable()
 export class BuyIndexerService implements IndexerService {
@@ -23,7 +22,6 @@ export class BuyIndexerService implements IndexerService {
   constructor(
     private txHelper: TxHelperService,
     private stacksTxHelper: StacksTxHelperService,
-    private botHelper: BotHelperService,
     @InjectRepository(ActionEntity)
     private actionRepository: Repository<ActionEntity>
   ) {}
@@ -51,10 +49,7 @@ export class BuyIndexerService implements IndexerService {
 
       if (this.stacksTxHelper.isNewerEvent(tx, nft_state_list)) {
         await this.txHelper.unlistMetaInAllMarkets(nftMeta, tx, sc, buyActionParams.seller);
-        const newAction = await this.createAction(buyActionParams);
-        if (newAction && tx.notify) {
-          this.botHelper.createAndSend(newAction.id);
-        }
+        await this.createAction(buyActionParams);
       } else  {
         this.logger.log(`Too Late`);
         // Create missing action

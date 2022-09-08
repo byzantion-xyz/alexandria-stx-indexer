@@ -8,11 +8,12 @@ import { TypeOrmModule } from "@nestjs/typeorm";
 import { CryptoRate } from "src/database/universal/entities/CryptoRate";
 import { Action } from "src/database/universal/entities/Action";
 import { Collection } from "src/database/universal/entities/Collection";
+import { BotNotifyService } from './providers/bot-notify.service';
 
 @Module({
   imports: [DiscordModule.forFeature(), DiscordServerModule, TypeOrmModule.forFeature([CryptoRate, Action, Collection])],
   controllers: [DiscordBotController],
-  providers: [BotHelperService, CryptoRateService],
-  exports: [BotHelperService],
+  providers: [BotHelperService, CryptoRateService, BotNotifyService],
+  exports: [BotNotifyService],
 })
 export class DiscordBotModule {}

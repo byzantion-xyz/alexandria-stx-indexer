@@ -15,7 +15,6 @@ import { Repository } from "typeorm";
 import { ActionName, SmartContractType } from "../../common/helpers/indexer-enums";
 import { NftState } from "src/database/universal/entities/NftState";
 import { NearTxHelperService } from "src/indexers/near-indexer/providers/near-tx-helper.service";
-import { BotHelperService } from "src/discord-bot/providers/bot-helper.service";
 
 @Injectable()
 export class ListIndexerService implements IndexerService {
@@ -24,7 +23,6 @@ export class ListIndexerService implements IndexerService {
   constructor(
     private txHelper: TxHelperService,
     private nearTxHelper: NearTxHelperService,
-    private botHelper: BotHelperService,
     private missingCollectionService: MissingCollectionService,
     @InjectRepository(Action)
     private actionRepository: Repository<Action>,
@@ -71,11 +69,7 @@ export class ListIndexerService implements IndexerService {
 
       if (this.nearTxHelper.isNewerEvent(tx, nft_state_list)) {
         await this.txHelper.listMeta(nftMeta, tx, msc, price);
-
-        const newAction = await this.createAction(listActionParams);
-        if (newAction && tx.notify) {
-          this.botHelper.createAndSend(newAction.id);
-        }
+        await this.createAction(listActionParams);
       } else {
         this.logger.log(`Too Late`);
         await this.createAction(listActionParams);

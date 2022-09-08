@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Cron, CronExpression, Timeout } from '@nestjs/schedule';
+import { BotNotifyService } from 'src/discord-bot/providers/bot-notify.service';
 import { IndexerEventType } from 'src/indexers/common/helpers/indexer-enums';
 import { IndexerOptions } from 'src/indexers/common/interfaces/indexer-options';
 import { IndexerOrchestratorService } from 'src/indexers/indexer-orchestrator.service';
@@ -11,7 +12,8 @@ export class TasksService {
 
     constructor(
       private indexerOrchestrator: IndexerOrchestratorService,
-      private configService: ConfigService
+      private configService: ConfigService,
+      private botNotify: BotNotifyService
     ) {}
 
     @Timeout(10000)
@@ -37,6 +39,11 @@ export class TasksService {
     @Timeout(2000)
     handleIndexerSubscription() {
       this.indexerOrchestrator.subscribeToEvents();
+    }
+
+    @Timeout(1000)
+    handleActionsSubscription() {
+      this.botNotify.subscribeToActions();
     }
 
 }

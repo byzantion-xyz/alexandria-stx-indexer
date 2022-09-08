@@ -33,8 +33,8 @@ export class BotHelperService {
 
   createDiscordBotDto(action: Action): DiscordBotDto {
     const msc: SmartContract = action.marketplace_smart_contract;
-    const sc: SmartContract = action.nft_meta.smart_contract;
-    const chain: Chain = action.nft_meta.chain;
+    const sc: SmartContract = action.smart_contract;
+    const chain: Chain = action.smart_contract.chain;
     const slug: string = action.collection?.slug;
 
     // TODO: Use tradeport links for all chains when new marketplace is on production
@@ -57,7 +57,9 @@ export class BotHelperService {
               `&token_id=${action.nft_meta.token_id}` +
               `&tx_link=${encodeURIComponent(transactionLink)}`;
           } else {
-            marketplaceLink = `https://tradeport.xyz/collection/${slug}/${action.nft_meta.token_id}?utm_source=byzantion_bot&slug=${slug}&action=${action.action}`;
+            marketplaceLink = `https://tradeport.xyz/collection/${slug}`
+             + (action.nft_meta ? `/${action.nft_meta.token_id}`: ``) 
+             + `?utm_source=byzantion_bot&slug=${slug}&action=${action.action}`;
             if (action.buyer) buyerLink = `${msc.base_marketplace_uri}/${action.buyer}`;
             if (action.seller) sellerLink = `${msc.base_marketplace_uri}/${action.seller}`;
           }
@@ -65,7 +67,8 @@ export class BotHelperService {
         break;
 
       case "Stacks":
-        marketplaceLink = `https://tradeport.xyz/collection/${action.collection.slug}/${action.nft_meta.token_id}`;
+        marketplaceLink = `https://tradeport.xyz/collection/${action.collection.slug}`
+          + (action.nft_meta ? `/${action.nft_meta.token_id}` : ``);
         transactionLink = `https://explorer.stacks.co/txid/${action.tx_id}?chain=mainnet`;
         if (action.buyer) buyerLink = `https://tradeport.xyz/${action.buyer}`;
         if (action.seller) sellerLink = `https://tradeport.xyz/${action.seller}`;
@@ -80,9 +83,9 @@ export class BotHelperService {
 
     return {
       slug: action.collection.slug,
-      title: action.nft_meta.name,
-      rarity: action.nft_meta.rarity,
-      ranking: action.nft_meta.ranking,
+      title: action.nft_meta ? action.nft_meta.name : action.collection.title,
+      ... (action.nft_meta && { rarity: action.nft_meta.rarity }),
+      ... (action.nft_meta && { ranking: action.nft_meta.ranking }),
       collectionSize: action.collection.collection_size,
       price: Number(Number(price) / Number(Math.pow(10, chain.format_digits))),
       marketplace: msc.name,
@@ -92,7 +95,7 @@ export class BotHelperService {
       ...(action.buyer && { buyer: action.buyer }),
       ...(action.seller && { sellerLink }),
       ...(action.buyer && { buyerLink }),
-      image: action.nft_meta.image,
+      image: action.nft_meta ? action.nft_meta.image : action.collection.cover_image,
       cryptoCurrency: chain.coin,
       action_name: action.action
     };
@@ -179,8 +182,9 @@ export class BotHelperService {
     const action = await this.actionRepository.findOne({
       where: { id: actionId },
       relations: {
-        nft_meta: { nft_state: true, smart_contract: true, chain: true },
+        nft_meta: { nft_state: true },
         collection: true,
+        smart_contract: { chain: true },
         marketplace_smart_contract: true,
       },
     });

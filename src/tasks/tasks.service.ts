@@ -12,7 +12,8 @@ export class TasksService {
 
     constructor(
       private indexerOrchestrator: IndexerOrchestratorService,
-      private configService: ConfigService
+      private configService: ConfigService,
+      private botNotify: BotNotifyService
     ) {}
 
     @Timeout(10000)

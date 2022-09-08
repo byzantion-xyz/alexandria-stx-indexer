@@ -69,8 +69,7 @@ export class ListIndexerService implements IndexerService {
 
       if (this.nearTxHelper.isNewerEvent(tx, nft_state_list)) {
         await this.txHelper.listMeta(nftMeta, tx, msc, price);
-
-        const newAction = await this.createAction(listActionParams);
+        await this.createAction(listActionParams);
       } else {
         this.logger.log(`Too Late`);
         await this.createAction(listActionParams);

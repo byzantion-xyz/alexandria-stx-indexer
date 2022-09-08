@@ -63,7 +63,7 @@ export class ListIndexerService implements IndexerService {
         };
         await this.txHelper.listMeta(nftMeta, tx, sc, price, commission?.id, args);
 
-        const newAction = await this.createAction(listActionParams);
+        await this.createAction(listActionParams);
       } else {
         this.logger.log(`Too Late`);
         await this.createAction(listActionParams);

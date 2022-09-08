@@ -196,6 +196,23 @@ export class TxBidHelperService {
     };
   }
 
+  async acceptSoloBid(bidState: BidState, tx: CommonTx, nftMeta: NftMeta) {
+    try {
+      let update = {
+        status: CollectionBidStatus.matched,
+        bid_seller: tx.signer,
+        match_tx_id: tx.hash
+      };
+
+      bidState = this.bidStateRepo.merge(bidState, update);
+
+      await this.bidStateRepo.save(bidState);
+      this.logger.log(`Accept solo bid nonce: ${bidState.nonce || 'unknown' }`);
+    } catch (err) {
+      this.logger.warn('Error saving solo bid acceptance ', bidState.nonce, err);
+    }
+  }
+
   async acceptBid(bidState: BidState, tx: CommonTx, nftMeta: NftMeta) {
     try {
       bidState.status = CollectionBidStatus.matched;
@@ -204,10 +221,12 @@ export class TxBidHelperService {
       const bidStateNftMeta = new BidStateNftMeta();
       bidStateNftMeta.meta_id = nftMeta.id;
       bidState.nft_metas = [bidStateNftMeta];
-    
+
       await this.bidStateRepo.save(bidState);
       this.logger.log(`Accept bid nonce: ${bidState.nonce || 'unknown' }`);
-    } catch (err) { this.logger.warn('Error saving acceptance', bidState.nonce, err); }
+    } catch (err) { 
+      this.logger.warn(`Error saving bid acceptance nonce: ${bidState.nonce} `, err); 
+    }
   }
 
   async cancelBid(bidState: BidState, tx: CommonTx) {

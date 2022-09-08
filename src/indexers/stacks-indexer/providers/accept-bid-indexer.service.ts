@@ -43,7 +43,7 @@ export class AcceptBidIndexerService implements IndexerService {
       let bidState = await this.txBidHelper.findActiveBid(nftMeta.collection.id, BidType.solo, nftMeta.id);
 
       if (bidState && this.txBidHelper.isNewBid(tx, bidState)) {
-        await this.txBidHelper.acceptBid(bidState, tx, nftMeta);
+        await this.txBidHelper.acceptSoloBid(bidState, tx);
 
         await this.txHelper.unlistMetaInAllMarkets(nftMeta, tx, sc, bidState.bid_seller);
 

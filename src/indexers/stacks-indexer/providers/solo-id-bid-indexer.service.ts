@@ -41,16 +41,15 @@ export class SoloIdBidIndexerService implements IndexerService {
     if (event) {
       const { offer, buyer } = event.data.data;
       const contract_key = this.stacksTxHelper.extractContractKeyFromEvent(event);
-      const collection = await this.collectionRepository.findOne({ where: { 
-        smart_contract: { contract_key }}
-      });
+      const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
+
       const bid_sc = await this.smartContractRepository.findOne({ where: { 
         contract_key: event.contract_log.contract_id 
       }});
 
-      if (contract_key && collection && bid_sc) {
+      if (contract_key && nftMeta && bid_sc) {
         const bidCommonArgs = this.txBidHelper.setCommonBidArgs(
-          tx, bid_sc, event, collection, BidType.solo
+          tx, bid_sc, event, nftMeta.collection, BidType.solo
         );
         const collectionBidArgs: CreateBidStateArgs = {
           ... bidCommonArgs,
@@ -59,8 +58,8 @@ export class SoloIdBidIndexerService implements IndexerService {
         };
         await this.txBidHelper.createSoloBid(collectionBidArgs, token_id);
 
-        const actionCommonArgs = this.txHelper.setCommonCollectionActionParams(
-          ActionName.solo_bid, tx, collection, sc
+        const actionCommonArgs = this.txHelper.setCommonActionParams(
+          ActionName.bid, tx, nftMeta, sc
         );
         const acceptBidActionParams: CreateSoloBidActionTO = {
           ...actionCommonArgs,

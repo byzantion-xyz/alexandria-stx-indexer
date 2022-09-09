@@ -44,7 +44,7 @@ export class TasksService {
     @Timeout(1000)
     handleActionsSubscription() {
       const chainSymbol = this.configService.get('indexer.chainSymbol');
-      if (chainSymbol === 'Near') {
+      if (chainSymbol === 'Near' && process.env.NODE_ENV === 'production') {
         this.botNotify.subscribeToActions();
       }
     }

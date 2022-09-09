@@ -108,7 +108,10 @@ export class TxBidHelperService {
   
   async setTokenIdsAndAttributes(bidState: BidState, token_ids: [string], trait?: [any]): Promise<BidState> {
     try {
-      const nftMetas = await this.nftMetaRepo.find({ where: { token_id: In(token_ids) } });
+      const nftMetas = await this.nftMetaRepo.find({ where: { 
+        collection_id: bidState.collection_id, token_id: In(token_ids) } 
+      });
+
       for (let meta of nftMetas) {
         const bidStateNftMeta = new BidStateNftMeta();
         bidStateNftMeta.meta_id = meta.id;

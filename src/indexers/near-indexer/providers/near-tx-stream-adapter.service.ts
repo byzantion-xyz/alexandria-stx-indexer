@@ -4,7 +4,7 @@ import { TxProcessResult } from "src/indexers/common/interfaces/tx-process-resul
 import { TxCursorBatch, TxStreamAdapter } from "src/indexers/common/interfaces/tx-stream-adapter.interface";
 import { TxHelperService } from "../../common/helpers/tx-helper.service";
 import * as moment from "moment";
-import { Client, Pool } from 'pg';
+import { Client, Pool, PoolClient } from 'pg';
 import * as Cursor from 'pg-cursor';
 import { NearTxHelperService } from "./near-tx-helper.service";
 import { FunctionCallEvent } from "../interfaces/near-function-call-event.dto";
@@ -18,6 +18,7 @@ import { IndexerOptions } from "src/indexers/common/interfaces/indexer-options";
 
 @Injectable()
 export class NearTxStreamAdapterService implements TxStreamAdapter {
+  private poolClient: PoolClient;
   chainSymbol = 'Near';
   private readonly logger = new Logger(NearTxStreamAdapterService.name);
 
@@ -33,6 +34,17 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
     private smartContractFunctionRepository: Repository<SmartContractFunction>
   ) {}
 
+  async connectPool(): Promise<any> {
+    const pool = new Pool({
+      connectionString: this.configService.get('NEAR_STREAMER_SQL_DATABASE_URL')
+    });
+    this.poolClient = await pool.connect();
+  }
+
+  async closePool(): Promise<any> {
+    await this.poolClient.release();
+  }
+    
   async fetchTxs(options: IndexerOptions): Promise<TxCursorBatch> {
     const accounts = await this.findSmartContracts(options.contract_key);
     let accounts_in = this.buildReceiverIdInQuery(accounts);
@@ -45,13 +57,8 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
       order by executed_block_height asc;
     `;
 
-    const pool = new Pool({
-      connectionString: this.configService.get('NEAR_STREAMER_SQL_DATABASE_URL')
-    });
-    const client = await pool.connect();
-
-    const cursor = client.query(new Cursor(sql));
-    return { cursor, pool };
+    const cursor = this.poolClient.query(new Cursor(sql));
+    return { cursor };
   }
 
   async setTxResult(txHash: string, txResult: TxProcessResult): Promise<void> {

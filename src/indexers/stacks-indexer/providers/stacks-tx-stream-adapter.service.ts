@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Client, Pool } from 'pg';
+import { Client, Pool, PoolClient } from 'pg';
 import * as Cursor from 'pg-cursor';
 import * as moment from "moment";
 
@@ -21,6 +21,7 @@ const EXCLUDED_ACTIONS = ['add-collection', 'add-contract'];
 
 @Injectable()
 export class StacksTxStreamAdapterService implements TxStreamAdapter {
+  private poolClient: PoolClient;
   private readonly logger = new Logger(StacksTxStreamAdapterService.name);
   chainSymbol = 'Stacks';
 
@@ -32,6 +33,17 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
     @InjectRepository(SmartContract)
     private smartContractRepository: Repository<SmartContract>
   ) {}
+
+  async connectPool(): Promise<any> {
+    const pool = new Pool({
+      connectionString: this.configService.get('STACKS_STREAMER_SQL_DATABASE_URL')
+    });
+    this.poolClient = await pool.connect();
+  }
+
+  async closePool(): Promise<any> {
+    await this.poolClient.release();
+  }
 
   async fetchTxs(options: IndexerOptions): Promise<TxCursorBatch> {
     const accounts = await this.findSmartContracts(options.contract_key);
@@ -48,13 +60,8 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
       ORDER BY t.block_height ASC, tx->>'microblock_sequence' asc, tx->>'tx_index' ASC 
     `;
 
-    const pool = new Pool({
-      connectionString: this.configService.get('STACKS_STREAMER_SQL_DATABASE_URL')
-    });
-    const client = await pool.connect();
-
-    const cursor = client.query(new Cursor(sql));
-    return { cursor, pool };
+    const cursor = this.poolClient.query(new Cursor(sql));
+    return { cursor };
   }
 
   async setTxResult(txHash: string, txResult: TxProcessResult): Promise<void> {

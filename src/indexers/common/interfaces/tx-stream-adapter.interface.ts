@@ -1,6 +1,6 @@
 import { TxProcessResult } from "src/indexers/common/interfaces/tx-process-result.interface";
 import { CommonTx } from "./common-tx.interface";
-import { Client, Pool } from 'pg';
+import { Client, Pool, PoolClient } from 'pg';
 import { IndexerOptions } from "./indexer-options";
 
 export interface CommonTxResult {
@@ -13,13 +13,14 @@ export interface ProcessedTxsResult {
 }
 
 export interface TxCursorBatch {
-  cursor: any,
-  pool: Pool
+  cursor: any
 }
 
 export interface TxStreamAdapter {
+  connectPool(): Promise<PoolClient>;
   fetchTxs(options: IndexerOptions): Promise<TxCursorBatch>;
   setTxResult(txHash: string, txResult: TxProcessResult): void;
+  closePool(): Promise<any>;
 
   subscribeToEvents?(): Client;
   fetchEventData?(event: any): Promise<CommonTx[]>;

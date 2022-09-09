@@ -48,7 +48,7 @@ export class IndexerOrchestratorService {
         this.logger.warn('A contract_key is required while running missing transactions');
         return;
       }
-      const pool = await this.txStreamAdapter.connectPool();
+      await this.txStreamAdapter.connectPool();
       const { cursor } = await this.txStreamAdapter.fetchTxs(options);
 
       let txs = [];

@@ -43,6 +43,7 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
   }
 
   async closePool(): Promise<any> {
+    this.poolClient.release();
     await this.pool.end();
   }
 

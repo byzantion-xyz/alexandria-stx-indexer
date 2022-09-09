@@ -68,7 +68,9 @@ export class BotHelperService {
 
       case "Stacks":
         marketplaceLink = `https://tradeport.xyz/collection/${action.collection.slug}`
-          + (action.nft_meta ? `/${action.nft_meta.token_id}` : ``);
+          + (action.nft_meta ? `/${action.nft_meta.token_id}` : ``) 
+          + `?utm_source=byzantion_bot&slug=${slug}&action=${action.action}`;
+
         transactionLink = `https://explorer.stacks.co/txid/${action.tx_id}?chain=mainnet`;
         if (action.buyer) buyerLink = `https://tradeport.xyz/${action.buyer}`;
         if (action.seller) sellerLink = `https://tradeport.xyz/${action.seller}`;

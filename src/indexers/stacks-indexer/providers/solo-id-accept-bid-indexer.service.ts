@@ -38,22 +38,19 @@ export class SoloIdAcceptBidIndexerService implements IndexerService {
     if (event) {
       const token_id: bigint = event.data.data['item-id'];
       const bid_contract_nonce = this.txBidHelper.build_nonce(sc.contract_key, event.data.order);
-      const bidState = await this.bidStateRepository.findOne({ 
-        where: { bid_contract_nonce }, 
-        relations: { collection: { smart_contract: true } }
-      });
+      const bidState = await this.txBidHelper.findSoloBidStateByNonce(bid_contract_nonce);
 
       if (bidState && bidState.status === CollectionBidStatus.active) {
-        const { contract_key } = bidState.collection.smart_contract;
+        const { contract_key } = bidState.nft_metas[0].meta.smart_contract;
 
         const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id.toString());
 
         if (nftMeta) {
           await this.txBidHelper.acceptSoloBid(bidState, tx);
           await this.txHelper.unlistMetaInAllMarkets(nftMeta, tx, sc, bidState.bid_seller);
-
-          const actionCommonArgs = this.txHelper.setCommonCollectionActionParams(
-            ActionName.accept_bid, tx, bidState.collection, sc
+  
+          const actionCommonArgs = this.txHelper.setCommonActionParams(
+            ActionName.accept_bid, tx, nftMeta, sc
           );
           const acceptBidActionParams: CreateAcceptBidActionTO = {
             ...actionCommonArgs,
@@ -62,7 +59,7 @@ export class SoloIdAcceptBidIndexerService implements IndexerService {
             buyer: bidState.bid_buyer,
             seller: bidState.bid_seller
           };
-    
+
           await this.createAction(acceptBidActionParams);
           txResult.processed = true;
         } else {

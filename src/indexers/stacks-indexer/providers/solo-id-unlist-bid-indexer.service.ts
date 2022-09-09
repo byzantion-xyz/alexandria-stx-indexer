@@ -34,13 +34,13 @@ export class SoloIdUnlistBidIndexerService implements IndexerService {
 
     if (event) {
       const nonce = this.txBidHelper.build_nonce(sc.contract_key, event.data.order);
-      const bidState = await this.txBidHelper.findBidStateByNonce(nonce);
+      const bidState = await this.txBidHelper.findSoloBidStateByNonce(nonce);
 
       if (bidState && bidState.status === CollectionBidStatus.active) {
         await this.txBidHelper.cancelBid(bidState, tx);
 
-        const actionCommonArgs = this.txHelper.setCommonCollectionActionParams(
-          ActionName.unlist_bid, tx, bidState.collection, sc
+        const actionCommonArgs = this.txHelper.setCommonActionParams(
+          ActionName.unlist_bid, tx, bidState.nft_metas[0].meta, sc
         );
         const actionParams: CreateCancelBidActionTO = {
           ...actionCommonArgs,

@@ -11,6 +11,7 @@ import {
 import { Once, InjectDiscordClient } from "@discord-nestjs/core";
 import { Client } from "discord.js";
 import { BotHelperService } from "./providers/bot-helper.service";
+import { DiscordChannelType } from "src/indexers/common/helpers/indexer-enums";
 
 @Controller("api/discord-bot")
 export class DiscordBotController {
@@ -24,9 +25,9 @@ export class DiscordBotController {
   // FOR TESTING
   @Post("test")
   @UsePipes(new ValidationPipe({ transform: true }))
-  async getUniversalChannels() {
+  async getUniversalChannels(@Body() params: { market_name: string, purpose: DiscordChannelType }) {
 
-    const res = await this.botHelperService.getUniversalChannels();
+    const res = await this.botHelperService.getUniversalChannels(params.market_name, params.purpose);
     return res;
   }
 

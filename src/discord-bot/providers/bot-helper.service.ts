@@ -2,7 +2,7 @@ import { InjectDiscordClient } from "@discord-nestjs/core";
 import { Injectable, Logger } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import axios from "axios";
-import { Client, ColorResolvable, MessageAttachment, MessageEmbed } from "discord.js";
+import { Client, MessageAttachment, MessageEmbed } from "discord.js";
 import * as sharp from "sharp";
 import { DiscordBotDto } from "src/discord-bot/dto/discord-bot.dto";
 import { Action } from "src/database/universal/entities/Action";
@@ -11,7 +11,7 @@ import { SmartContract } from "src/database/universal/entities/SmartContract";
 import { Repository } from "typeorm";
 import { CryptoRateService } from "./crypto-rate.service";
 import { Chain } from "src/database/universal/entities/Chain";
-import { ActionName, DiscordChannelType } from "src/indexers/common/helpers/indexer-enums";
+import { DiscordChannelType } from "src/indexers/common/helpers/indexer-enums";
 import { DiscordServerService } from "src/discord-server/providers/discord-server.service";
 import { ActionOption, actionOptions } from "../interfaces/action-option.interface";
 
@@ -26,8 +26,6 @@ export class BotHelperService {
     private readonly cryptoRateService: CryptoRateService,
     @InjectRepository(Action)
     private actionRepository: Repository<Action>,
-    @InjectRepository(Collection)
-    private collectionRepository: Repository<Collection>,
     private discordServerSvc: DiscordServerService
   ) {}
 
@@ -37,8 +35,6 @@ export class BotHelperService {
     const chain: Chain = action.smart_contract.chain;
     const slug: string = action.collection?.slug;
 
-    // TODO: Use tradeport links for all chains when new marketplace is on production
-    // i.e: `https://tradeport.xyz/collection/${action.collection.slug}/${action.nft_meta.token_id}`
     let marketplaceLink: string;
     let transactionLink: string;
     let sellerLink: string;
@@ -128,7 +124,6 @@ export class BotHelperService {
       // embed.setURL(marketplaceLink);
     }
 
-    // TODO: Add support for chain tokens (i.e banana in stacks)
     const priceInFiat = await this.cryptoRateService.cryptoToFiat(price, cryptoCurrency, FIAT_CURRENCY);
 
     embed.setDescription(`
@@ -199,11 +194,9 @@ export class BotHelperService {
       const options: ActionOption = actionOptions.find(ac => ac.name === data.action_name);
       if (!options) return;
       
-      //this.logger.log('send() options: ', { options });
       const subChannels = await this.discordServerSvc.getChannelsBySlug(data.slug, options.purpose);
       const uniChannels = await this.discordServerSvc.getUniversalChannels(data.marketplace, options.purpose);
       const channels = subChannels.concat(uniChannels);
-      //this.logger.log('send() channels: ', { channels });
       
       //let messageContent = await this.buildMessage(data, 'test server', options);
       //this.logger.log('sendMessage() message: ', { messageContent });
@@ -227,9 +220,8 @@ export class BotHelperService {
     await this.send(data);
   }
 
-  async getUniversalChannels() {
-    //CHANGE 'byzantion' TO OTHER MARKET FOR TESTING
-    const res = await this.discordServerSvc.getUniversalChannels('few-and-far', DiscordChannelType.listings)
+  async getUniversalChannels(market_name: string, purpose: DiscordChannelType) {
+    const res = await this.discordServerSvc.getUniversalChannels(market_name, purpose)
     return res;
   }
 }

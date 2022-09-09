@@ -22,6 +22,7 @@ const EXCLUDED_ACTIONS = ['add-collection', 'add-contract'];
 @Injectable()
 export class StacksTxStreamAdapterService implements TxStreamAdapter {
   private poolClient: PoolClient;
+  private pool: Pool;
   private readonly logger = new Logger(StacksTxStreamAdapterService.name);
   chainSymbol = 'Stacks';
 
@@ -35,14 +36,15 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
   ) {}
 
   async connectPool(): Promise<any> {
-    const pool = new Pool({
+    this.pool = new Pool({
       connectionString: this.configService.get('STACKS_STREAMER_SQL_DATABASE_URL')
     });
-    this.poolClient = await pool.connect();
+    this.poolClient = await this.pool.connect();
   }
 
   async closePool(): Promise<any> {
-    await this.poolClient.release();
+    this.poolClient.release();
+    await this.pool.end();
   }
 
   async fetchTxs(options: IndexerOptions): Promise<TxCursorBatch> {

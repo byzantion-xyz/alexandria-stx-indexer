@@ -19,6 +19,7 @@ import { IndexerOptions } from "src/indexers/common/interfaces/indexer-options";
 @Injectable()
 export class NearTxStreamAdapterService implements TxStreamAdapter {
   private poolClient: PoolClient;
+  private pool: Pool;
   chainSymbol = 'Near';
   private readonly logger = new Logger(NearTxStreamAdapterService.name);
 
@@ -35,14 +36,15 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
   ) {}
 
   async connectPool(): Promise<any> {
-    const pool = new Pool({
+    this.pool = new Pool({
       connectionString: this.configService.get('NEAR_STREAMER_SQL_DATABASE_URL')
     });
-    this.poolClient = await pool.connect();
+    this.poolClient = await this.pool.connect();
   }
 
   async closePool(): Promise<any> {
     await this.poolClient.release();
+    await this.pool.end();
   }
     
   async fetchTxs(options: IndexerOptions): Promise<TxCursorBatch> {

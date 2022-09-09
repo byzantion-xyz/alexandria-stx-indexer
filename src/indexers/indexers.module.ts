@@ -5,35 +5,22 @@ import { BuyIndexerService } from "./near-indexer/providers/buy-indexer.service"
 import { ListIndexerService } from "./near-indexer/providers/list-indexer.service";
 import { TxHelperService } from "./common/helpers/tx-helper.service";
 import { UnlistIndexerService } from "./near-indexer/providers/unlist-indexer.service";
-import { DiscordBotModule } from "src/discord-bot/discord-bot.module";
 import { ScrapersModule } from "src/scrapers/scrapers.module";
 import { NearTxStreamAdapterService } from "./near-indexer/providers/near-tx-stream-adapter.service";
-import { NearTxHelperService } from "./near-indexer/providers/near-tx-helper.service";
 import { TypeOrmModule } from "@nestjs/typeorm";
-import { Action } from "src/database/universal/entities/Action";
-import { NftMeta } from "src/database/universal/entities/NftMeta";
-import { NftState } from "src/database/universal/entities/NftState";
-import { SmartContract } from "src/database/universal/entities/SmartContract";
-import { SmartContractFunction } from "src/database/universal/entities/SmartContractFunction";
-import { FunctionCallEvent as NearFunctionCallEvent } from "src/database/near-stream/entities/FunctionCallEvent";
+
 import { StacksTxStreamAdapterService } from "./stacks-indexer/providers/stacks-tx-stream-adapter.service";
-import { Chain } from "src/database/universal/entities/Chain";
 import { Block } from "src/database/stacks-stream/entities/Block";
 import { Transaction as StacksTransaction } from "src/database/stacks-stream/entities/Transaction";
 import { StacksTxHelperService } from "./stacks-indexer/providers/stacks-tx-helper.service";
-import { ConfigService } from "@nestjs/config";
-import { TxStreamAdapter } from "./common/interfaces/tx-stream-adapter.interface";
 import { TransferIndexerService as StacksTransferIndexerService } from './stacks-indexer/providers/transfer-indexer.service';
-import { Commission } from "src/database/universal/entities/Commission";
 
 import { StakeIndexerService } from "./near-indexer/providers/stake-indexer.service";
-import { TxStakingHelperService } from './common/helpers/tx-staking-helper.service';
 import { UnstakeIndexerService } from './near-indexer/providers/unstake-indexer.service';
 import { ChangePriceIndexerService } from './stacks-indexer/providers/change-price-indexer.service';
 //import { BnsRegisterIndexerService } from './stacks-indexer/providers/bns-register-indexer.service';
 import { NearMicroIndexersProvider } from "./common/providers/near-micro-indexers.service";
 import { StacksMicroIndexersProvider } from "./common/providers/stacks-micro-indexers.service";
-import { Collection } from "src/database/universal/entities/Collection";
 //import { BnsBidIndexerService } from './stacks-indexer/providers/bns-bid-indexer.service';
 //import { BnsUnlistBidIndexerService } from './stacks-indexer/providers/bns-unlist-bid-indexer.service';
 //import { BnsAcceptBidIndexerService } from './stacks-indexer/providers/bns-accept-bid-indexer.service';
@@ -75,62 +62,29 @@ import { AdminSoloIdUnlistBidIndexerService } from './stacks-indexer/providers/a
 import { AcceptBidIndexerService } from "./near-indexer/providers/accept-bid-indexer.service";
 import { TransferIndexerService } from './near-indexer/providers/transfer-indexer.service';
 import { BurnIndexerService } from './near-indexer/providers/burn-indexer.service';
-
-/* Select stream adapter based on chain symbol env variable */
-const TxStreamAdapterProvider = {
-  provide: "TxStreamAdapter",
-  useFactory: async (
-    config: ConfigService,
-    nearTxStreamAdapterService: NearTxStreamAdapterService,
-    stacksTxStreamAdapterService: StacksTxStreamAdapterService
-  ): Promise<TxStreamAdapter> => {
-    switch (config.get("indexer.chainSymbol")) {
-      case "Near": return nearTxStreamAdapterService;
-      case "Stacks": return stacksTxStreamAdapterService;
-      default:
-        throw new Error(
-          `Unable to find stream adapter for ${config.get("indexer.chainSymbol")}`
-        );
-    }
-  },
-  inject: [ConfigService, NearTxStreamAdapterService, StacksTxStreamAdapterService]
-};
+import { NearIndexerModule } from './near-indexer/near-indexer.module';
+import { CommonIndexerModule } from './common/common-indexer.module';
 
 @Module({
   imports: [
-    DiscordBotModule,
     ScrapersModule,
-    TypeOrmModule.forFeature([
-      NftMeta,
-      NftState,
-      Action,
-      SmartContract,
-      SmartContractFunction,
-      CollectionAttribute,
-      Chain,
-      Commission,
-      Collection,
-      BidState,
-      NftMetaAttribute,
-      MegapontAttribute,
-      NftStateList
-    ]),
-    // TODO: Connect only configured chain stream DB
-    TypeOrmModule.forFeature([NearFunctionCallEvent], "NEAR-STREAM"),
     TypeOrmModule.forFeature([StacksTransaction, Block], "STACKS-STREAM"),
+    CommonIndexerModule,
+    NearIndexerModule,
   ],
   controllers: [IndexerController],
   providers: [
     IndexerOrchestratorService,
     /* Helpers */
-    TxHelperService,
-    NearTxHelperService,
+  
     StacksTxHelperService,
-    TxStakingHelperService,
+   
     /* Stream adapters */
-    NearTxStreamAdapterService,
     StacksTxStreamAdapterService,
-    TxStreamAdapterProvider,
+    
+    /* Chain modules */
+    NearIndexerModule,
+
     /* Micro indexers factory */
     NearMicroIndexersProvider,
     StacksMicroIndexersProvider,

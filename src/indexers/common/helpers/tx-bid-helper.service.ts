@@ -153,7 +153,19 @@ export class TxBidHelperService {
   async findBidStateByNonce(nonce: string): Promise<BidState> {
     return await this.bidStateRepo.findOne({
       where: { bid_contract_nonce: nonce },
-      relations: { collection: { smart_contract: true }}
+      relations: { 
+        collection: { smart_contract: true },
+        nft_metas: { meta: true }
+      }
+    });
+  }
+
+  async findSoloBidStateByNonce(nonce: string): Promise<BidState> {
+    return await this.bidStateRepo.findOne({
+      where: { bid_contract_nonce: nonce, bid_type: BidType.solo },
+      relations: { 
+        nft_metas: { meta: { collection: true, smart_contract: true } }
+      }
     });
   }
 
@@ -201,15 +213,12 @@ export class TxBidHelperService {
 
   async acceptSoloBid(bidState: BidState, tx: CommonTx) {
     try {
-      let update = {
+      await this.bidStateRepo.update({ id: bidState.id }, {
         status: CollectionBidStatus.matched,
         bid_seller: tx.signer,
         match_tx_id: tx.hash
-      };
+      });
 
-      bidState = this.bidStateRepo.merge(bidState, update);
-
-      await this.bidStateRepo.save(bidState);
       this.logger.log(`Accept solo bid nonce: ${bidState.nonce || 'unknown' }`);
     } catch (err) {
       this.logger.warn('Error saving solo bid acceptance ', bidState.nonce, err);
@@ -234,10 +243,11 @@ export class TxBidHelperService {
 
   async cancelBid(bidState: BidState, tx: CommonTx) {
     try {
-      bidState.status = CollectionBidStatus.cancelled;
-      bidState.cancel_tx_id = tx.hash;
-
-      await this.bidStateRepo.save(bidState);
+      await this.bidStateRepo.update({ id: bidState.id }, {
+        status: CollectionBidStatus.cancelled,
+        cancel_tx_id: tx.hash
+      });
+      
       this.logger.log(`Cancelled bid nonce: ${bidState.nonce || 'Unknown'} `);
     } catch (err) {
       this.logger.warn('Error saving cancellation with nonce: ', bidState.nonce || 'Unknown', err);

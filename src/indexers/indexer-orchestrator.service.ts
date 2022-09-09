@@ -201,7 +201,9 @@ export class IndexerOrchestratorService {
   isTxStreamAdapter(arg): arg is TxStreamAdapter {
     return (
       typeof arg.fetchTxs === 'function' &&
-      typeof arg.setTxResult === 'function'
+      typeof arg.setTxResult === 'function' && 
+      typeof arg.connectPool === 'function' &&
+      typeof arg.closePool === 'function'
     );
   }
 

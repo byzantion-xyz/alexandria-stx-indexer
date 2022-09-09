@@ -5,8 +5,7 @@ import { ScrapersModule } from "src/scrapers/scrapers.module";
 import { TypeOrmModule } from "@nestjs/typeorm";
 
 import { StacksTxStreamAdapterService } from "./stacks-indexer/providers/stacks-tx-stream-adapter.service";
-import { Block } from "src/database/stacks-stream/entities/Block";
-import { Transaction as StacksTransaction } from "src/database/stacks-stream/entities/Transaction";
+
 import { StacksTxHelperService } from "./stacks-indexer/providers/stacks-tx-helper.service";
 import { TransferIndexerService as StacksTransferIndexerService } from './stacks-indexer/providers/transfer-indexer.service';
 
@@ -20,7 +19,6 @@ import { BidIndexerService } from './stacks-indexer/providers/bid-indexer.servic
 import { UnlistBidIndexerService } from './stacks-indexer/providers/unlist-bid-indexer.service';
 import { AcceptBidIndexerService as StacksAcceptBidIndexerService } from './stacks-indexer/providers/accept-bid-indexer.service';
 import { CollectionOrderBookBidIndexerService } from './stacks-indexer/providers/collection-order-book-bid-indexer.service';
-import { TxBidHelperService } from './common/helpers/tx-bid-helper.service';
 import { CollectionOrderBookAcceptBidIndexerService } from './stacks-indexer/providers/collection-order-book-accept-bid-indexer.service';
 import { CollectionRemoveOrderBookBidIndexerService } from './stacks-indexer/providers/collection-remove-order-book-bid-indexer.service';
 import { CollectionMultiOrderBookBidIndexerService } from './stacks-indexer/providers/collection-multi-order-book-bid-indexer.service';
@@ -48,31 +46,23 @@ import { BuyWrapperIndexerService } from './stacks-indexer/providers/buy-wrapper
 import { AdminSoloIdUnlistBidIndexerService } from './stacks-indexer/providers/admin-solo-id-unlist-bid-indexer.service';
 import { NearIndexerModule } from './near-indexer/near-indexer.module';
 import { CommonIndexerModule } from './common/common-indexer.module';
+import { StacksIndexerModule } from './stacks-indexer/stacks-indexer.module';
 
 @Module({
   imports: [
     ScrapersModule,
-    TypeOrmModule.forFeature([StacksTransaction, Block], "STACKS-STREAM"),
     CommonIndexerModule,
+    /* Chain indexer modules */
     NearIndexerModule,
+    StacksIndexerModule,
   ],
   controllers: [IndexerController],
   providers: [
     IndexerOrchestratorService,
-    /* Helpers */
-  
-    StacksTxHelperService,
-   
-    /* Stream adapters */
-    StacksTxStreamAdapterService,
-    
-    /* Chain modules */
-    NearIndexerModule,
-
+      
     /* Micro indexers factory */
    
     StacksMicroIndexersProvider,
-
   
     /* Stacks micro indexers */
     //BnsRegisterIndexerService,

@@ -21,7 +21,6 @@ import { ScrapersModule } from 'src/scrapers/scrapers.module';
     CommonIndexerModule,
     TypeOrmModule.forFeature([NearFunctionCallEvent], "NEAR-STREAM"),
   ],
-  controllers: [],
   providers: [
     NearTxHelperService,
     { provide: 'TxStreamAdapter',  useClass: NearTxStreamAdapterService },

@@ -43,7 +43,6 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
   }
 
   async closePool(): Promise<any> {
-    await this.poolClient.release();
     await this.pool.end();
   }
     

@@ -101,10 +101,6 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
         parsed_args = this.stacksTxHelper.parseHexArguments(args);
       }
 
-      const notify = moment(new Date((tx.tx.burn_block_time))).utc() > moment().subtract(2, "hours").utc()
-        ? true
-        : false;
-
       return {
         hash: tx.hash,
         block_hash: tx.tx.block_hash,
@@ -117,8 +113,7 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
         receiver: tx.tx.contract_call.contract_id,
         function_name: function_name,
         args: parsed_args,
-        events: tx.tx.events,
-        notify,
+        events: tx.tx.events
       };
     } catch (err) {
       this.logger.warn(`transormTx() has failed for tx hash: ${tx.hash}`);

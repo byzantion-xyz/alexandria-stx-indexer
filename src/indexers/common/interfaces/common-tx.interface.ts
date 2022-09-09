@@ -17,6 +17,4 @@ export interface CommonTx {
     indexer_name?: string;
     args: any;
     events?: StacksTransactionEvent[] ; // TODO: Add near events
-
-    notify: boolean;
 }

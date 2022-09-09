@@ -129,7 +129,6 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
       }
 
       const executed_at = moment(new Date(this.txHelper.nanoToMiliSeconds(tx.executed_block_timestamp)));
-      const notify = executed_at.utc() > moment().subtract(2, "hours").utc();
 
       return {
         hash: tx.originating_receipt_id,
@@ -140,7 +139,6 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
         receiver: tx.receiver_id,
         function_name: tx.method,
         args: parsed_args,
-        notify,
         indexer_name: force_indexer
       };
     } catch (err) {

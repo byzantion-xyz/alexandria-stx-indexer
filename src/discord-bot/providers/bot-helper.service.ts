@@ -227,7 +227,7 @@ export class BotHelperService {
 
   async getUniversalChannels() {
     //CHANGE 'byzantion' TO OTHER MARKET FOR TESTING
-    const res = await this.discordServerSvc.getUniversalChannels('apollo', DiscordChannelType.listings)
+    const res = await this.discordServerSvc.getUniversalChannels('few-and-far', DiscordChannelType.listings)
     return res;
   }
 }

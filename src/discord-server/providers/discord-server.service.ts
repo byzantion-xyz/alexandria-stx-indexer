@@ -75,12 +75,9 @@ export class DiscordServerService {
   async getUniversalChannels(marketplace: string, purpose: DiscordChannelType) {
     if (!marketplace) return [];
 
-    const servers: Array<universalServerDTO> = this.config.get("discord.universal_servers");
-    const server_ids = servers.filter((s) => {
-      return s.marketplace_name.includes(marketplace);
-    }).map((s) => {
-      return s.server_id;
-    });
+    const universalServers: Array<universalServerDTO> = this.config.get("discord.universal_servers");
+    let servers = universalServers.filter((s) => s.marketplace_name.includes(marketplace) || s.marketplace_name.includes('all'));
+    const server_ids = servers.map((s) => s.server_id);
 
     if (server_ids) {
       const channels = await this.discordServerChannelRepository.find({

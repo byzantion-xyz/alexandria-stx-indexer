@@ -15,31 +15,34 @@ import { TransferIndexerService } from './providers/transfer-indexer.service';
 import { BurnIndexerService } from './providers/burn-indexer.service';
 import { ScrapersModule } from 'src/scrapers/scrapers.module';
 
+const microIndexers = [
+  BuyIndexerService,
+  ListIndexerService,
+  UnlistIndexerService,
+  StakeIndexerService,
+  UnstakeIndexerService,
+  AcceptBidIndexerService,
+  TransferIndexerService,
+  BurnIndexerService
+];
+
 @Module({
   imports: [
     ScrapersModule,
     CommonIndexerModule,
-    TypeOrmModule.forFeature([NearFunctionCallEvent], "NEAR-STREAM"),
+    //TypeOrmModule.forFeature([NearFunctionCallEvent], "NEAR-STREAM"),
   ],
   providers: [
     NearTxHelperService,
-    { provide: 'TxStreamAdapter',  useClass: NearTxStreamAdapterService },
+    //{ provide: 'TxStreamAdapter',  useClass: NearTxStreamAdapterService },
     NearMicroIndexersProvider,
     /* Near Micro indexers */
-    BuyIndexerService,
-    ListIndexerService,
-    UnlistIndexerService,
-    StakeIndexerService,
-    UnstakeIndexerService,
-    AcceptBidIndexerService,
-    TransferIndexerService,
-    BurnIndexerService
+    ...microIndexers
   ],
   exports: [
-    { provide: 'TxStreamAdapter', useClass: NearTxStreamAdapterService },
+    //{ provide: 'TxStreamAdapter', useClass: NearTxStreamAdapterService },
     NearTxHelperService,
-    TypeOrmModule,
-    NearMicroIndexersProvider
+    ...microIndexers
   ]
 })
 export class NearIndexerModule {}

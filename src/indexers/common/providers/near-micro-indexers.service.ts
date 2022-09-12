@@ -10,7 +10,7 @@ import { TransferIndexerService } from "src/indexers/near-indexer/providers/tran
 import { BurnIndexerService } from "src/indexers/near-indexer/providers/burn-indexer.service";
 
 @Injectable()
-export class NearMicroIndexers {
+export class MicroIndexers {
   constructor(
     private buyIndexer: IndexerService,
     private listIndexer: IndexerService,
@@ -24,7 +24,7 @@ export class NearMicroIndexers {
 }
 
 export const NearMicroIndexersProvider = {
-  provide: 'NearMicroIndexers',
+  provide: 'MicroIndexers',
   useFactory: (
     buyIndexer: BuyIndexerService,
     listIndexer: ListIndexerService,
@@ -35,7 +35,7 @@ export const NearMicroIndexersProvider = {
     transferIndexer: TransferIndexerService,
     burnIndexer: BurnIndexerService
   ) => {
-    return new NearMicroIndexers(
+    return new MicroIndexers(
       buyIndexer, 
       listIndexer, 
       unlistIndexer, 

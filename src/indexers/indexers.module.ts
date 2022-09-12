@@ -5,14 +5,15 @@ import { ScrapersModule } from "src/scrapers/scrapers.module";
 import { NearIndexerModule } from './near-indexer/near-indexer.module';
 import { CommonIndexerModule } from './common/common-indexer.module';
 import { StacksIndexerModule } from './stacks-indexer/stacks-indexer.module';
+import { ChainModule } from "./chain.module";
 
 @Module({
   imports: [
     ScrapersModule,
     CommonIndexerModule,
     /* Chain indexer modules */
-    NearIndexerModule,
-    StacksIndexerModule,
+    ChainModule.register({ chainSymbol: 'Near' }),
+    //StacksIndexerModule,
   ],
   controllers: [IndexerController],
   providers: [

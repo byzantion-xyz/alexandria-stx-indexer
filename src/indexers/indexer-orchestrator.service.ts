@@ -15,9 +15,8 @@ import {
 } from "./common/interfaces/indexer-options";
 import { SmartContractFunction } from "src/database/universal/entities/SmartContractFunction";
 import { CommonUtilService } from "src/common/helpers/common-util/common-util.service";
-import { NearMicroIndexers } from "./common/providers/near-micro-indexers.service";
-import { StacksMicroIndexers } from "./common/providers/stacks-micro-indexers.service";
 import { MissingCollectionService } from "src/scrapers/near-scraper/providers/missing-collection.service";
+import { MicroIndexers } from "./common/providers/near-micro-indexers.service";
 
 const BATCH_SIZE = 1000;
 
@@ -28,8 +27,7 @@ export class IndexerOrchestratorService {
   private readonly logger = new Logger(IndexerOrchestratorService.name);
 
   constructor(
-    @Inject('NearMicroIndexers') private nearMicroIndexers: NearMicroIndexers,
-    @Inject('StacksMicroIndexers') private stacksMicroIndexers: StacksMicroIndexers,
+    @Inject('MicroIndexers') private microIndexers: MicroIndexers,
     private configService: ConfigService,
     @InjectRepository(SmartContract)
     private smartContractRepository: Repository<SmartContract>,
@@ -160,13 +158,7 @@ export class IndexerOrchestratorService {
 
   getMicroIndexer(name: string) {
     const indexerName = this.commonUtil.toCamelCase(name) + "Indexer";
-    let microIndexer;
-    switch (this.chainSymbol) {
-      case "Near": microIndexer = this.nearMicroIndexers[indexerName];
-        break;
-      case "Stacks": microIndexer = this.stacksMicroIndexers[indexerName];
-        break;
-    }
+    let microIndexer = this.microIndexers[indexerName];
     if (!microIndexer || !this.isMicroIndexer(microIndexer)) {
       throw new Error(`No micro indexer defined for the context: ${name}`);
     }

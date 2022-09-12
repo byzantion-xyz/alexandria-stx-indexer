@@ -38,7 +38,7 @@ import { AdminSoloIdUnlistBidIndexerService } from "src/indexers/stacks-indexer/
 // TODO: Try to simplify as a factory
 
 @Injectable()
-export class StacksMicroIndexers {
+export class MicroIndexers {
   constructor(
     private buyIndexer: IndexerService,
     private listIndexer: IndexerService,
@@ -78,7 +78,7 @@ export class StacksMicroIndexers {
 }
 
 export const StacksMicroIndexersProvider = {
-  provide: 'StacksMicroIndexers',
+  provide: 'MicroIndexers',
   useFactory: (
     buyIndexer: BuyIndexerService,
     listIndexer: ListIndexerService,
@@ -115,7 +115,7 @@ export const StacksMicroIndexersProvider = {
     upgradeMegaIndexer: UpgradeMegaIndexerService,
     buyWrapperIndexer: BuyWrapperIndexerService
   ) => {
-    return new StacksMicroIndexers(
+    return new MicroIndexers(
       buyIndexer, 
       listIndexer,
       unlistIndexer, 

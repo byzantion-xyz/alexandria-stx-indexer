@@ -6,7 +6,6 @@ import { Block } from "src/database/stacks-stream/entities/Block";
 import { Transaction as StacksTransaction } from "src/database/stacks-stream/entities/Transaction";
 import { StacksTxStreamAdapterService } from './providers/stacks-tx-stream-adapter.service';
 import { StacksTxHelperService } from './providers/stacks-tx-helper.service';
-import { StacksMicroIndexersProvider } from '../common/providers/stacks-micro-indexers.service';
 import { ListIndexerService } from './providers/list-indexer.service';
 import { UnlistIndexerService } from './providers/unlist-indexer.service';
 import { BuyIndexerService } from './providers/buy-indexer.service';

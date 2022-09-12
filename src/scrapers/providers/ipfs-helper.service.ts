@@ -86,6 +86,7 @@ export class IpfsHelperService {
       .replace('dev.nagmi.art/', pinataGatewayUrl)
       .replace('https://cloudflare-ipfs.com/ipfs/', pinataGatewayUrl)
       .replace('https://nearnaut.mypinata.cloud/ipfs/', pinataGatewayUrl)
+      .split('?')[0]
   };
   
   async checkIfPinning(pinHash) {

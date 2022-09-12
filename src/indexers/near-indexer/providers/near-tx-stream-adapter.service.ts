@@ -27,7 +27,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
     private txHelper: TxHelperService,
     private nearTxHelper: NearTxHelperService,
     private configService: ConfigService,
-    @InjectRepository(FunctionCallEventEntity, "NEAR-STREAM")
+    @InjectRepository(FunctionCallEventEntity, "CHAIN-STREAM")
     private functionCallEventRepository: Repository<FunctionCallEventEntity>,
     @InjectRepository(SmartContract)
     private smartContractRepository: Repository<SmartContract>,

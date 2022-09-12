@@ -29,7 +29,7 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
   constructor (
     private configService: ConfigService,
     private stacksTxHelper: StacksTxHelperService,
-    @InjectRepository(TransactionEntity, "STACKS-STREAM")
+    @InjectRepository(TransactionEntity, "CHAIN-STREAM")
     private transactionRepository: Repository<TransactionEntity>,
     @InjectRepository(SmartContract)
     private smartContractRepository: Repository<SmartContract>

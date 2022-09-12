@@ -1,5 +1,4 @@
 import { DynamicModule, Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { ScrapersModule } from 'src/scrapers/scrapers.module';
 import { CommonIndexerModule } from './common/common-indexer.module';
 
@@ -37,10 +36,7 @@ export class ChainModule {
       imports: [
         ScrapersModule,
         CommonIndexerModule,
-        options.chainSymbol === 'Near' ? NearIndexerModule : StacksIndexerModule,
-        options.chainSymbol === 'Near' ? 
-          TypeOrmModule.forFeature([NearFunctionCallEvent], "NEAR-STREAM") : 
-          TypeOrmModule.forFeature([StacksTransaction, Block], "STACKS-STREAM"),
+        options.chainSymbol === 'Near' ? NearIndexerModule : StacksIndexerModule
       ],
       providers: [
         NearTxHelperService,
@@ -53,7 +49,6 @@ export class ChainModule {
       exports: [
         { provide: 'TxStreamAdapter', useExisting: 'TxStreamAdapter' },
         NearTxHelperService,
-        TypeOrmModule,
         options.chainSymbol === 'Near' ? NearMicroIndexersProvider : StacksMicroIndexersProvider
       ]
     };

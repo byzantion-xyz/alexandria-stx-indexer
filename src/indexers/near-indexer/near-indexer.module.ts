@@ -37,7 +37,7 @@ const microIndexers = [
     ...microIndexers,
     { 
       provide: 'MicroIndexers', 
-      useFactory: (buy, list, unlist, stake, unstake, accept, transfer, burn) => [buy, list, unlist, stake, unstake, accept, transfer, burn],
+      useFactory: (...microIndexers) => microIndexers,
       inject: [...microIndexers]
     }
   ],

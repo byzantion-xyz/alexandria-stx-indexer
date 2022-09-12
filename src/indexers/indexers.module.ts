@@ -25,7 +25,7 @@ export class IndexersModule {
       imports: [
         ScrapersModule,
         CommonIndexerModule,
-        options.chainSymbol === 'Near' ? NearIndexerModule : StacksIndexerModule
+        IndexerModule
       ],
       providers: [
         IndexerOrchestratorService 

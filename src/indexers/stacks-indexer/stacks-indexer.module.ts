@@ -86,19 +86,20 @@ const microIndexers = [
   ],
   providers: [
     StacksTxHelperService,
-    //{ provide: 'TxStreamAdapter',  useClass: StacksTxStreamAdapterService },
-    /* Stacks micro indexers */
-    ...microIndexers,
     { provide: 'TxStreamAdapter', useClass: StacksTxStreamAdapterService },
-    StacksMicroIndexersProvider,
+    ...microIndexers,
+    { 
+      provide: 'MicroIndexers', 
+      useFactory: (...microIndexers) => microIndexers,
+      inject: [...microIndexers]
+    }
   ],
   exports: [
     //{ provide: 'TxStreamAdapter', useClass: StacksTxStreamAdapterService },
     StacksTxHelperService,
-    ...microIndexers,
     TypeOrmModule,
     { provide: 'TxStreamAdapter', useClass: StacksTxStreamAdapterService },
-    StacksMicroIndexersProvider
+    { provide: 'MicroIndexers', useExisting: 'MicroIndexers'}
   ]
 })
 export class StacksIndexerModule {}

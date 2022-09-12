@@ -9,14 +9,10 @@ import { ConfigService } from "@nestjs/config";
 import { Chain } from "src/database/universal/entities/Chain";
 import { CommonTxResult, ProcessedTxsResult, TxStreamAdapter } from "src/indexers/common/interfaces/tx-stream-adapter.interface";
 import { IndexerService } from "./common/interfaces/indexer-service.interface";
-import {
-  IndexerOptions,
-  IndexerSubscriptionOptions,
-} from "./common/interfaces/indexer-options";
+import { IndexerOptions } from "./common/interfaces/indexer-options";
 import { SmartContractFunction } from "src/database/universal/entities/SmartContractFunction";
 import { CommonUtilService } from "src/common/helpers/common-util/common-util.service";
 import { MissingCollectionService } from "src/scrapers/near-scraper/providers/missing-collection.service";
-import { MicroIndexers } from "./common/providers/near-micro-indexers.service";
 
 const BATCH_SIZE = 1000;
 

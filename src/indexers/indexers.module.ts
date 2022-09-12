@@ -11,10 +11,11 @@ import { ConfigModule, ConfigService } from "@nestjs/config";
 
 @Module({
   imports: [
+    ConfigModule.forRoot(),
     ScrapersModule,
     CommonIndexerModule,
     /* Chain indexer modules */
-    ChainModule.register({ chainSymbol: 'Near' }),
+    ChainModule.register({ chainSymbol: process.env.CHAIN_SYMBOL }),
     //StacksIndexerModule,
   ],
   controllers: [IndexerController],

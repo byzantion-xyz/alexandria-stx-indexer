@@ -30,7 +30,6 @@ const microIndexers = [
   imports: [
     ScrapersModule,
     CommonIndexerModule,
-    //TypeOrmModule.forFeature([NearFunctionCallEvent], "NEAR-STREAM"),
   ],
   providers: [
     NearTxHelperService,
@@ -42,7 +41,7 @@ const microIndexers = [
   exports: [
     //{ provide: 'TxStreamAdapter', useClass: NearTxStreamAdapterService },
     NearTxHelperService,
-    ...microIndexers
+    ...microIndexers,
   ]
 })
 export class NearIndexerModule {}

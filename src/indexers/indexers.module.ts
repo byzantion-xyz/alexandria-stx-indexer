@@ -15,20 +15,6 @@ import { ConfigModule, ConfigService } from "@nestjs/config";
     CommonIndexerModule,
     /* Chain indexer modules */
     ChainModule.register({ chainSymbol: 'Near' }),
-    TypeOrmModule.forRootAsync({
-      name: "CHAIN-STREAM",
-      imports: [ConfigModule],
-      useFactory: async (config: ConfigService) => ({
-        url: config.get("CHAIN_STREAMER_SQL_DATABASE_URL"),
-        type: "postgres",
-        synchronize: false,
-        logging: false,
-        entities: [__dirname + `/database/${config.get('indexer.chainSymbol').toLowerCase()}-stream/entities/*{.ts,.js}`],
-        migrations: [`src/database/${config.get('indexer.chainSymbol').toLowerCase()}-stream/migrations/*{.ts,.js}`],
-        subscribers: [],
-      }),
-      inject: [ConfigService],
-    })
     //StacksIndexerModule,
   ],
   controllers: [IndexerController],
@@ -36,8 +22,7 @@ import { ConfigModule, ConfigService } from "@nestjs/config";
     IndexerOrchestratorService 
   ],
   exports: [
-    IndexerOrchestratorService,
-    TypeOrmModule
+    IndexerOrchestratorService
   ],
 })
 export class IndexersModule {}

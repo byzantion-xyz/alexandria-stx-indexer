@@ -23,6 +23,7 @@ import { StacksMicroIndexersProvider } from './common/providers/stacks-micro-ind
 import { MissingCollectionService } from 'src/scrapers/near-scraper/providers/missing-collection.service';
 import { NearIndexerModule } from './near-indexer/near-indexer.module';
 import { StacksIndexerModule } from './stacks-indexer/stacks-indexer.module';
+import { TypeOrmModule } from '@nestjs/typeorm';
 
 interface ChainOptions {
   chainSymbol: string;
@@ -36,6 +37,8 @@ export class ChainModule {
       imports: [
         ScrapersModule,
         CommonIndexerModule,
+        TypeOrmModule.forFeature([StacksTransaction, Block], "CHAIN-STREAM"),
+        TypeOrmModule.forFeature([NearFunctionCallEvent], "CHAIN-STREAM"),
         options.chainSymbol === 'Near' ? NearIndexerModule : StacksIndexerModule
       ],
       providers: [
@@ -49,7 +52,8 @@ export class ChainModule {
       exports: [
         { provide: 'TxStreamAdapter', useExisting: 'TxStreamAdapter' },
         NearTxHelperService,
-        options.chainSymbol === 'Near' ? NearMicroIndexersProvider : StacksMicroIndexersProvider
+        options.chainSymbol === 'Near' ? NearMicroIndexersProvider : StacksMicroIndexersProvider,
+        TypeOrmModule
       ]
     };
   }

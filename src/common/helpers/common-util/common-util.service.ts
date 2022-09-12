@@ -17,6 +17,10 @@ export class CommonUtilService {
     return e.replace(/_([a-z])/g, (g) => g[1].toUpperCase());
   }
 
+  toPascalCase(e: string) {
+    return e.replace(/\w\S*/g, m => m.charAt(0).toUpperCase() + m.substr(1).toLowerCase());
+  }
+
   // Finds a nested value within an array of objects, by key
   findByKey(obj: any, kee: string) {
     if (kee in obj) return obj[kee];

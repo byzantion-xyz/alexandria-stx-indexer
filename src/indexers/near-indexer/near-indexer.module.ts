@@ -4,7 +4,6 @@ import { CommonIndexerModule } from '../common/common-indexer.module';
 import { NearTxHelperService } from './providers/near-tx-helper.service';
 import { NearTxStreamAdapterService } from './providers/near-tx-stream-adapter.service';
 import { FunctionCallEvent as NearFunctionCallEvent } from "src/database/near-stream/entities/FunctionCallEvent";
-import { NearMicroIndexersProvider } from '../common/providers/near-micro-indexers.service';
 import { BuyIndexerService } from './providers/buy-indexer.service';
 import { ListIndexerService } from './providers/list-indexer.service';
 import { UnlistIndexerService } from './providers/unlist-indexer.service';
@@ -34,20 +33,19 @@ const microIndexers = [
   ],
   providers: [
     NearTxHelperService,
-    //{ provide: 'TxStreamAdapter',  useClass: NearTxStreamAdapterService },
-    NearMicroIndexersProvider,
-    /* Near Micro indexers */
-    ...microIndexers,
     { provide: 'TxStreamAdapter', useClass: NearTxStreamAdapterService },
-    NearMicroIndexersProvider
+    ...microIndexers,
+    { 
+      provide: 'MicroIndexers', 
+      useFactory: (buy, list, unlist, stake, unstake, accept, transfer, burn) => [buy, list, unlist, stake, unstake, accept, transfer, burn],
+      inject: [...microIndexers]
+    }
   ],
   exports: [
-    //{ provide: 'TxStreamAdapter', useClass: NearTxStreamAdapterService },
     NearTxHelperService,
-    ...microIndexers,
     TypeOrmModule,
     { provide: 'TxStreamAdapter', useClass: NearTxStreamAdapterService },
-    NearMicroIndexersProvider
+    { provide: 'MicroIndexers', useExisting: 'MicroIndexers'}
   ]
 })
 export class NearIndexerModule {}

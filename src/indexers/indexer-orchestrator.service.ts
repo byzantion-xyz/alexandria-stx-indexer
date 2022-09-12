@@ -27,7 +27,7 @@ export class IndexerOrchestratorService {
   private readonly logger = new Logger(IndexerOrchestratorService.name);
 
   constructor(
-    @Inject('MicroIndexers') private microIndexers: MicroIndexers,
+    @Inject('MicroIndexers') private microIndexers: Array<IndexerService>,
     private configService: ConfigService,
     @InjectRepository(SmartContract)
     private smartContractRepository: Repository<SmartContract>,
@@ -157,8 +157,8 @@ export class IndexerOrchestratorService {
   }
 
   getMicroIndexer(name: string) {
-    const indexerName = this.commonUtil.toCamelCase(name) + "Indexer";
-    let microIndexer = this.microIndexers[indexerName];
+    const indexerName = this.commonUtil.toPascalCase(name) + "IndexerService";
+    let microIndexer = this.microIndexers.find(indexer => indexer.constructor.name === indexerName);
     if (!microIndexer || !this.isMicroIndexer(microIndexer)) {
       throw new Error(`No micro indexer defined for the context: ${name}`);
     }

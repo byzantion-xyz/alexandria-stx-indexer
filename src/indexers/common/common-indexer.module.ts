@@ -3,7 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { TxHelperService } from './helpers/tx-helper.service';
 import { NftMeta } from 'src/database/universal/entities/NftMeta';
 import { NftState } from 'src/database/universal/entities/NftState';
-import { Action } from 'near-api-js/lib/transaction';
+import { Action } from 'src/database/universal/entities/Action';
 import { SmartContract } from 'src/database/universal/entities/SmartContract';
 import { SmartContractFunction } from 'src/database/universal/entities/SmartContractFunction';
 import { CollectionAttribute } from 'src/database/universal/entities/CollectionAttribute';

@@ -81,18 +81,24 @@ const microIndexers = [
 @Module({
   imports: [
     ScrapersModule,
-    CommonIndexerModule
+    CommonIndexerModule,
+    TypeOrmModule.forFeature([StacksTransaction, Block], "CHAIN-STREAM"),
   ],
   providers: [
     StacksTxHelperService,
     //{ provide: 'TxStreamAdapter',  useClass: StacksTxStreamAdapterService },
     /* Stacks micro indexers */
     ...microIndexers,
+    { provide: 'TxStreamAdapter', useClass: StacksTxStreamAdapterService },
+    StacksMicroIndexersProvider,
   ],
   exports: [
     //{ provide: 'TxStreamAdapter', useClass: StacksTxStreamAdapterService },
     StacksTxHelperService,
-    ...microIndexers
+    ...microIndexers,
+    TypeOrmModule,
+    { provide: 'TxStreamAdapter', useClass: StacksTxStreamAdapterService },
+    StacksMicroIndexersProvider
   ]
 })
 export class StacksIndexerModule {}

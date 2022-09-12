@@ -36,7 +36,7 @@ import { TypeOrmModule } from "@nestjs/typeorm";
       }),
       inject: [ConfigService],
     }),
-    IndexersModule,
+    IndexersModule.register({ chainSymbol: process.env.CHAIN_SYMBOL }),
     CommonModule,
     DiscordBotModule,
     DiscordServerModule,

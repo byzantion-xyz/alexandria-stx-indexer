@@ -218,8 +218,8 @@ export class BotHelperService {
       );
       const channels = subChannels.concat(uniChannels);
       
-      let messageContent = await this.buildMessage(data, 'test server', options);
-      this.logger.log('sendMessage() message: ', { messageContent });
+      //let messageContent = await this.buildMessage(data, 'test server', options);
+      //this.logger.log('sendMessage() message: ', { messageContent });
 
       if (!channels || !channels.length) return;
 

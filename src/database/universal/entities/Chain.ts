@@ -1,5 +1,6 @@
 import { Column, Entity, Index, OneToMany } from "typeorm";
 import { CryptoRate } from "./CryptoRate";
+import { DiscordServerChannel } from "./DiscordServerChannel";
 import { NftMeta } from "./NftMeta";
 import { SmartContract } from "./SmartContract";
 
@@ -32,6 +33,9 @@ export class Chain {
 
   @OneToMany(() => NftMeta, (nftMeta) => nftMeta.chain)
   nft_metas: NftMeta[];
+
+  @OneToMany(()=> DiscordServerChannel, (discordServerChannel) => discordServerChannel.chain )
+  discord_server_channels: DiscordServerChannel[];
 
   @OneToMany(() => SmartContract, (smartContract) => smartContract.chain)
   smart_contracts: SmartContract[];

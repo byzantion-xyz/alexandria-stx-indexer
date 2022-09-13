@@ -6,7 +6,6 @@ import { Client, MessageAttachment, MessageEmbed } from "discord.js";
 import * as sharp from "sharp";
 import { DiscordBotDto } from "src/discord-bot/dto/discord-bot.dto";
 import { Action } from "src/database/universal/entities/Action";
-import { Collection } from "src/database/universal/entities/Collection";
 import { SmartContract } from "src/database/universal/entities/SmartContract";
 import { Repository } from "typeorm";
 import { CryptoRateService } from "./crypto-rate.service";
@@ -14,6 +13,7 @@ import { Chain } from "src/database/universal/entities/Chain";
 import { DiscordChannelType } from "src/indexers/common/helpers/indexer-enums";
 import { DiscordServerService } from "src/discord-server/providers/discord-server.service";
 import { ActionOption, actionOptions } from "../interfaces/action-option.interface";
+import { ConfigService } from "@nestjs/config";
 
 const FIAT_CURRENCY = "USD";
 
@@ -23,13 +23,14 @@ export class BotHelperService {
 
   constructor(
     @InjectDiscordClient() private client: Client,
+    private configService: ConfigService,
     private readonly cryptoRateService: CryptoRateService,
     @InjectRepository(Action)
     private actionRepository: Repository<Action>,
     private discordServerSvc: DiscordServerService
   ) {}
 
-  createDiscordBotDto(action: Action): DiscordBotDto {
+  async createDiscordBotDto(action: Action): Promise<DiscordBotDto> {
     const msc: SmartContract = action.marketplace_smart_contract;
     const sc: SmartContract = action.smart_contract;
     const chain: Chain = action.smart_contract.chain;
@@ -39,6 +40,8 @@ export class BotHelperService {
     let transactionLink: string;
     let sellerLink: string;
     let buyerLink: string;
+    let seller: string;
+    let buyer: string;
 
     switch (chain.symbol) {
       case "Near":
@@ -60,6 +63,9 @@ export class BotHelperService {
             if (action.seller) sellerLink = `${msc.base_marketplace_uri}/${action.seller}`;
           }
         }
+        if (action.seller) seller = action.seller;
+        if (action.buyer) buyer = action.buyer;
+
         break;
 
       case "Stacks":
@@ -68,35 +74,60 @@ export class BotHelperService {
           + `?utm_source=byzantion_bot&slug=${slug}&action=${action.action}`;
 
         transactionLink = `https://explorer.stacks.co/txid/${action.tx_id}?chain=mainnet`;
-        if (action.buyer) buyerLink = `https://tradeport.xyz/${action.buyer}`;
-        if (action.seller) sellerLink = `https://tradeport.xyz/${action.seller}`;
+        
+        if (action.seller) {
+          sellerLink = `https://tradeport.xyz/${action.seller}`;
+          seller = await this.findBnsName(action.seller);
+        }
+        if (action.buyer) {
+          buyerLink = `https://tradeport.xyz/${action.buyer}`;
+          buyer = await this.findBnsName(action.buyer);
+        }
+
         break;
 
       default:
         this.logger.warn(`Invalid chain symbol ${chain.symbol}`);
     }
 
+    if (seller && seller.length > 20) seller = seller.slice(0, 5) + "..." + seller.slice(-5);
+    if (buyer && buyer.length > 20) buyer = buyer.slice(0, 5) + "..." + buyer.slice(-5);
+
     const options: ActionOption = actionOptions.find(ac => ac.name === action.action);
     const price = options.purpose === DiscordChannelType.bids ? action.bid_price : action.list_price;
 
     return {
-      slug: action.collection.slug,
+      slug: slug,
       title: action.nft_meta ? action.nft_meta.name : action.collection.title,
-      ... (action.nft_meta && { rarity: action.nft_meta.rarity }),
-      ... (action.nft_meta && { ranking: action.nft_meta.ranking }),
+      ... (action.nft_meta && { 
+        rarity: action.nft_meta.rarity, 
+        ranking: action.nft_meta.ranking
+      }),
       collectionSize: action.collection.collection_size,
       price: Number(Number(price) / Number(Math.pow(10, chain.format_digits))),
       marketplace: msc.name,
       ...(marketplaceLink && { marketplaceLink }),
       transactionLink,
-      ...(action.seller && { seller: action.seller }),
-      ...(action.buyer && { buyer: action.buyer }),
-      ...(action.seller && { sellerLink }),
-      ...(action.buyer && { buyerLink }),
+      ...(seller && { seller, sellerLink }),
+      ...(buyer && { buyer, buyerLink }),
       image: action.nft_meta ? action.nft_meta.image : action.collection.cover_image,
       cryptoCurrency: chain.coin,
-      action_name: action.action
+      chainId: chain.id,
+      actionName: action.action
     };
+  }
+
+  async findBnsName(principal: string): Promise<string> {
+    try {
+      if (!principal) return;
+      const url = this.configService.get('discord.stacksNodeApiUrl') + `/addresses/stacks/${principal}`;
+      const { data, status } = await axios.get(url, { timeout: 5000 });
+      
+      return status === 200 && data && data.names[0] ? data.names[0] : principal;
+    } catch (err) {
+      this.logger.warn(err);
+      return principal;
+    }
   }
 
   async sendMessage(message, channel_id: string) {
@@ -121,7 +152,6 @@ export class BotHelperService {
     embed.setTitle(`${options.titlePrefix} ${title} ${options.titleSuffix}`);
     if (marketplaceLink) {
       embed.setURL(`${marketplaceLink}&discord_server=${encodeURIComponent(server_name)}`);
-      // embed.setURL(marketplaceLink);
     }
 
     const priceInFiat = await this.cryptoRateService.cryptoToFiat(price, cryptoCurrency, FIAT_CURRENCY);
@@ -132,20 +162,8 @@ export class BotHelperService {
       **Price**: ${Number(price).toFixed(2)} ${cryptoCurrency} ($${priceInFiat} ${FIAT_CURRENCY})
     `);
 
-    let seller: string;
-    if (data.seller) {
-      seller = data.seller;
-      if (data.seller && data.seller.length > 20) seller = data.seller.slice(0, 5) + "..." + data.seller.slice(-5);
-    }
-
-    let buyer: string;
-    if (data.buyer) {
-      buyer = data.buyer;
-      if (data.buyer && data.buyer.length > 20) buyer = data.buyer.slice(0, 5) + "..." + data.buyer.slice(-5);
-    }
-
-    if (seller) embed.addField(`Seller`, `[${seller}](${data.sellerLink})`, true);
-    if (buyer) embed.addField(`Buyer`, `[${buyer}](${data.buyerLink})`, true);
+    if (data.seller) embed.addField(`Seller`, `[${data.seller}](${data.sellerLink})`, true);
+    if (data.buyer) embed.addField(`Buyer`, `[${data.buyer}](${data.buyerLink})`, true);
     if (transactionLink) embed.addField("Transaction", `[View](${transactionLink})`, true);
 
     if (image) {
@@ -191,11 +209,13 @@ export class BotHelperService {
 
   async send(data: DiscordBotDto) {
     try {
-      const options: ActionOption = actionOptions.find(ac => ac.name === data.action_name);
+      const options: ActionOption = actionOptions.find(ac => ac.name === data.actionName);
       if (!options) return;
-      
+
       const subChannels = await this.discordServerSvc.getChannelsBySlug(data.slug, options.purpose);
-      const uniChannels = await this.discordServerSvc.getUniversalChannels(data.marketplace, options.purpose);
+      const uniChannels = await this.discordServerSvc.getUniversalChannels(
+        data.marketplace, options.purpose, data.chainId
+      );
       const channels = subChannels.concat(uniChannels);
       
       //let messageContent = await this.buildMessage(data, 'test server', options);
@@ -220,8 +240,7 @@ export class BotHelperService {
     await this.send(data);
   }
 
-  async getUniversalChannels(market_name: string, purpose: DiscordChannelType) {
-    const res = await this.discordServerSvc.getUniversalChannels(market_name, purpose)
-    return res;
+  async getUniversalChannels(market_name: string, purpose: DiscordChannelType, chainId: string) {
+    return await this.discordServerSvc.getUniversalChannels(market_name, purpose, chainId);
   }
 }

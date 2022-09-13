@@ -12,6 +12,7 @@ import { Once, InjectDiscordClient } from "@discord-nestjs/core";
 import { Client } from "discord.js";
 import { BotHelperService } from "./providers/bot-helper.service";
 import { DiscordChannelType } from "src/indexers/common/helpers/indexer-enums";
+import { FetchUniversalChannels } from "src/discord-server/interfaces/fetch-universal-channels.interface";
 
 @Controller("api/discord-bot")
 export class DiscordBotController {
@@ -25,33 +26,11 @@ export class DiscordBotController {
   // FOR TESTING
   @Post("test")
   @UsePipes(new ValidationPipe({ transform: true }))
-  async getUniversalChannels(@Body() params: { market_name: string, purpose: DiscordChannelType }) {
-
-    const res = await this.botHelperService.getUniversalChannels(params.market_name, params.purpose);
+  async getUniversalChannels(@Body() params: FetchUniversalChannels) {
+    const { marketplace, purpose, chainId } = params;
+    const res = await this.botHelperService.getUniversalChannels(marketplace, purpose, chainId);
     return res;
   }
-
-  /*@Post("listing")
-  @UsePipes(new ValidationPipe({ transform: true }))
-  async postListing(@Body() listing: DiscordBotDto) {
-    if (process.env.NODE_ENV === "production") {
-      return "Endpoint disabled for production";
-    }
-
-    await this.listBotService.send(listing);
-    return "Ok";
-  }*/
-
-  /*@Post("sale")
-  @UsePipes(new ValidationPipe({ transform: true }))
-  async postSale(@Body() sale: DiscordBotDto) {
-    if (process.env.NODE_ENV === "production") {
-      return "Endpoint disabled for production";
-    }
-
-    await this.saleBotService.send(sale);
-    return "Ok";
-  }*/
 
   /* For testing purposes */
   @Post("action")

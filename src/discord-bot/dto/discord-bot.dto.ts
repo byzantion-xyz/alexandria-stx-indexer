@@ -17,5 +17,5 @@ export interface DiscordBotDto {
   buyerLink?: string;
   image: string;
   actionName: ActionName;
-  chainSymbol: string;
+  chainId: string;
 }

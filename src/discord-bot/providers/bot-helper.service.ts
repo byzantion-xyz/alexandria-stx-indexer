@@ -112,7 +112,7 @@ export class BotHelperService {
       ...(buyer && { buyer, buyerLink }),
       image: action.nft_meta ? action.nft_meta.image : action.collection.cover_image,
       cryptoCurrency: chain.coin,
-      chainSymbol: chain.symbol,
+      chainId: chain.id,
       actionName: action.action
     };
   }
@@ -214,7 +214,7 @@ export class BotHelperService {
 
       const subChannels = await this.discordServerSvc.getChannelsBySlug(data.slug, options.purpose);
       const uniChannels = await this.discordServerSvc.getUniversalChannels(
-        data.marketplace, options.purpose, data.chainSymbol
+        data.marketplace, options.purpose, data.chainId
       );
       const channels = subChannels.concat(uniChannels);
       
@@ -240,7 +240,7 @@ export class BotHelperService {
     await this.send(data);
   }
 
-  async getUniversalChannels(market_name: string, purpose: DiscordChannelType, symbol: string) {
-    return await this.discordServerSvc.getUniversalChannels(market_name, purpose, symbol);
+  async getUniversalChannels(market_name: string, purpose: DiscordChannelType, chainId: string) {
+    return await this.discordServerSvc.getUniversalChannels(market_name, purpose, chainId);
   }
 }

@@ -44,7 +44,7 @@ export class DiscordServerController {
   async fetchChannels(@Query() params: FetchDiscordServerChannels) {
     this.logger.debug(params);
     let subChannels = await this.discordServerService.getChannelsBySlug(params.slug, params.purpose);
-    let uniChannels = await this.discordServerService.getUniversalChannels(params.marketplace, params.purpose, params.chainSymbol);
+    let uniChannels = await this.discordServerService.getUniversalChannels(params.marketplace, params.purpose, params.chainId);
     const channels = subChannels.concat(uniChannels);
 
     this.logger.log("Channels ");

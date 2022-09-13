@@ -27,8 +27,8 @@ export class DiscordBotController {
   @Post("test")
   @UsePipes(new ValidationPipe({ transform: true }))
   async getUniversalChannels(@Body() params: FetchUniversalChannels) {
-    const { marketplace, purpose, chainSymbol } = params;
-    const res = await this.botHelperService.getUniversalChannels(marketplace, purpose, chainSymbol);
+    const { marketplace, purpose, chainId } = params;
+    const res = await this.botHelperService.getUniversalChannels(marketplace, purpose, chainId);
     return res;
   }
 

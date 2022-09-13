@@ -5,7 +5,7 @@ import { CollectionOnDiscordServerChannel } from "src/database/universal/entitie
 import { DiscordServer } from "src/database/universal/entities/DiscordServer";
 import { DiscordServerChannel } from "src/database/universal/entities/DiscordServerChannel";
 import { DiscordChannelType } from "src/indexers/common/helpers/indexer-enums";
-import { In, Repository, IsNull } from "typeorm";
+import { In, Repository, IsNull, Any } from "typeorm";
 import { CreateDiscordServer } from "../interfaces/discord-server.dto";
 import { UniversalServerDTO } from "../interfaces/universal-server.dto";
 
@@ -70,7 +70,7 @@ export class DiscordServerService {
     return channels;
   }
 
-  async getUniversalChannels(marketplace: string, purpose: DiscordChannelType, symbol: string) {
+  async getUniversalChannels(marketplace: string, purpose: DiscordChannelType, chainId: string) {
     if (!marketplace) return [];
 
     const universalServers: Array<UniversalServerDTO> = this.config.get("discord.universalServers");
@@ -81,8 +81,8 @@ export class DiscordServerService {
     if (server_ids) {
       const channels = await this.discordServerChannelRepository.find({
         where: [
-           { purpose: purpose, discord_server: { active: true, server_id: In(server_ids) }, chain_id: IsNull()},
-           { purpose: purpose, discord_server: { active: true, server_id: In(server_ids) }, chain: { symbol }},
+          { purpose: purpose, discord_server: { active: true, server_id: In(server_ids) }, chain_id: IsNull() },
+          { purpose: purpose, discord_server: { active: true, server_id: In(server_ids) }, chain_id: chainId },
         ],
         relations: { discord_server: true },
       });

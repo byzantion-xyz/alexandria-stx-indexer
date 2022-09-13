@@ -1,15 +1,13 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { InjectRepository } from "@nestjs/typeorm";
-import { channel } from "diagnostics_channel";
-import { Collection } from "src/database/universal/entities/Collection";
 import { CollectionOnDiscordServerChannel } from "src/database/universal/entities/CollectionOnDiscordServerChannel";
 import { DiscordServer } from "src/database/universal/entities/DiscordServer";
 import { DiscordServerChannel } from "src/database/universal/entities/DiscordServerChannel";
 import { DiscordChannelType } from "src/indexers/common/helpers/indexer-enums";
-import { RelationId, In, Repository } from "typeorm";
-import { CreateDiscordServer, CreateDiscordServerChannel } from "../interfaces/discord-server.dto";
-import { universalServerDTO } from "../interfaces/universal-server.dto";
+import { In, Repository, IsNull } from "typeorm";
+import { CreateDiscordServer } from "../interfaces/discord-server.dto";
+import { UniversalServerDTO } from "../interfaces/universal-server.dto";
 
 @Injectable()
 export class DiscordServerService {
@@ -72,19 +70,20 @@ export class DiscordServerService {
     return channels;
   }
 
-  async getUniversalChannels(marketplace: string, purpose: DiscordChannelType) {
+  async getUniversalChannels(marketplace: string, purpose: DiscordChannelType, symbol: string) {
     if (!marketplace) return [];
 
-    const universalServers: Array<universalServerDTO> = this.config.get("discord.universalServers");
-    let servers = universalServers.filter((s) => s.marketplace_name.includes(marketplace) || s.marketplace_name.includes('all'));
-    const server_ids = servers.map((s) => s.server_id);
+    const universalServers: Array<UniversalServerDTO> = this.config.get("discord.universalServers");
+    const server_ids = universalServers
+      .filter((s) => s.marketplace_name.includes(marketplace) || s.marketplace_name.includes('all'))
+      .map(s => s.server_id);
 
     if (server_ids) {
       const channels = await this.discordServerChannelRepository.find({
-        where: {
-          purpose: purpose,
-          discord_server: { active: true, server_id: In(server_ids) },
-        },
+        where: [
+           { purpose: purpose, discord_server: { active: true, server_id: In(server_ids) }, chain_id: IsNull()},
+           { purpose: purpose, discord_server: { active: true, server_id: In(server_ids) }, chain: { symbol }},
+        ],
         relations: { discord_server: true },
       });
 

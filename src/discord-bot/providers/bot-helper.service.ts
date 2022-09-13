@@ -6,7 +6,6 @@ import { Client, MessageAttachment, MessageEmbed } from "discord.js";
 import * as sharp from "sharp";
 import { DiscordBotDto } from "src/discord-bot/dto/discord-bot.dto";
 import { Action } from "src/database/universal/entities/Action";
-import { Collection } from "src/database/universal/entities/Collection";
 import { SmartContract } from "src/database/universal/entities/SmartContract";
 import { Repository } from "typeorm";
 import { CryptoRateService } from "./crypto-rate.service";
@@ -113,7 +112,8 @@ export class BotHelperService {
       ...(buyer && { buyer, buyerLink }),
       image: action.nft_meta ? action.nft_meta.image : action.collection.cover_image,
       cryptoCurrency: chain.coin,
-      action_name: action.action
+      chainSymbol: chain.symbol,
+      actionName: action.action
     };
   }
 
@@ -152,7 +152,6 @@ export class BotHelperService {
     embed.setTitle(`${options.titlePrefix} ${title} ${options.titleSuffix}`);
     if (marketplaceLink) {
       embed.setURL(`${marketplaceLink}&discord_server=${encodeURIComponent(server_name)}`);
-      // embed.setURL(marketplaceLink);
     }
 
     const priceInFiat = await this.cryptoRateService.cryptoToFiat(price, cryptoCurrency, FIAT_CURRENCY);
@@ -210,15 +209,17 @@ export class BotHelperService {
 
   async send(data: DiscordBotDto) {
     try {
-      const options: ActionOption = actionOptions.find(ac => ac.name === data.action_name);
+      const options: ActionOption = actionOptions.find(ac => ac.name === data.actionName);
       if (!options) return;
-      
+
       const subChannels = await this.discordServerSvc.getChannelsBySlug(data.slug, options.purpose);
-      const uniChannels = await this.discordServerSvc.getUniversalChannels(data.marketplace, options.purpose);
+      const uniChannels = await this.discordServerSvc.getUniversalChannels(
+        data.marketplace, options.purpose, data.chainSymbol
+      );
       const channels = subChannels.concat(uniChannels);
       
-      //let messageContent = await this.buildMessage(data, 'test server', options);
-      //this.logger.log('sendMessage() message: ', { messageContent });
+      let messageContent = await this.buildMessage(data, 'test server', options);
+      this.logger.log('sendMessage() message: ', { messageContent });
 
       if (!channels || !channels.length) return;
 
@@ -239,8 +240,7 @@ export class BotHelperService {
     await this.send(data);
   }
 
-  async getUniversalChannels(market_name: string, purpose: DiscordChannelType) {
-    const res = await this.discordServerSvc.getUniversalChannels(market_name, purpose)
-    return res;
+  async getUniversalChannels(market_name: string, purpose: DiscordChannelType, symbol: string) {
+    return await this.discordServerSvc.getUniversalChannels(market_name, purpose, symbol);
   }
 }

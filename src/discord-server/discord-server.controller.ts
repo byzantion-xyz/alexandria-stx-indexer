@@ -14,7 +14,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { Collection } from "src/database/universal/entities/Collection";
 import { Repository } from "typeorm";
 import { CreateDiscordServer } from "./interfaces/discord-server.dto";
-import { fetchDiscordServerChannels } from "./interfaces/fetch-discord-server-channels.dto";
+import { FetchDiscordServerChannels } from "./interfaces/fetch-discord-server-channels.dto";
 import { DiscordHelperService } from "./providers/discord-helper.service";
 import { DiscordServerService } from "./providers/discord-server.service";
 
@@ -41,10 +41,10 @@ export class DiscordServerController {
   }
 
   @Get("channels")
-  async fetchChannels(@Query() params: fetchDiscordServerChannels) {
+  async fetchChannels(@Query() params: FetchDiscordServerChannels) {
     this.logger.debug(params);
     let subChannels = await this.discordServerService.getChannelsBySlug(params.slug, params.purpose);
-    let uniChannels = await this.discordServerService.getUniversalChannels(params.marketplace, params.purpose);
+    let uniChannels = await this.discordServerService.getUniversalChannels(params.marketplace, params.purpose, params.chainSymbol);
     const channels = subChannels.concat(uniChannels);
 
     this.logger.log("Channels ");

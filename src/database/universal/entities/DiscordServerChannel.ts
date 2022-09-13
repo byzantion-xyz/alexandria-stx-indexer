@@ -1,4 +1,5 @@
 import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { Chain } from "./Chain";
 import { CollectionOnDiscordServerChannel } from "./CollectionOnDiscordServerChannel";
 import { DiscordServer } from "./DiscordServer";
 
@@ -40,4 +41,14 @@ export class DiscordServerChannel {
   })
   @JoinColumn([{ name: "discord_server_id", referencedColumnName: "id" }])
   discord_server: DiscordServer;
+
+  @Column("uuid", { nullable: true })
+  chain_id: string;
+
+  @ManyToOne(() => Chain, (chain) => chain.discord_server_channels, {
+    onDelete: "RESTRICT",
+    onUpdate: "CASCADE",
+  })
+  @JoinColumn([{ name: "chain_id", referencedColumnName: "id" }])
+  chain: Chain;
 }

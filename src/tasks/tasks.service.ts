@@ -18,7 +18,8 @@ export class TasksService {
 
     @Timeout(10000)
     async handleCron() {
-      if (process.env.NODE_ENV === 'production') {
+      const runPendingTransactions = this.configService.get('indexer.runPendingTransactions');
+      if (runPendingTransactions) {
         const blockConfig = this.configService.get('indexer.blockRanges')[this.configService.get('indexer.chainSymbol')];
         const initial_block = blockConfig.start_block_height_tip;
         const end_block = blockConfig.end_block_height;
@@ -31,22 +32,21 @@ export class TasksService {
  
           await this.indexerOrchestrator.runIndexer(options);
         }
-      } else {
-        this.logger.debug('Not in production environment. Skip near indexer trigger')
       }
     }
 
     @Timeout(2000)
     handleIndexerSubscription() {
-      if (process.env.NODE_ENV === 'production') {
+      const streamerSubscription = this.configService.get('indexer.enableStreamerSubscription');
+      if (streamerSubscription) {
         this.indexerOrchestrator.subscribeToEvents();
       }
     }
 
     @Timeout(1000)
     handleActionsSubscription() {
-      const chainSymbol = this.configService.get('indexer.chainSymbol');
-      if (chainSymbol === 'Near' && process.env.NODE_ENV === 'production') {
+      const actionsSubscription = this.configService.get('discord.enableActionsSubscription');
+      if (actionsSubscription) {
         this.botNotify.subscribeToActions();
       }
     }

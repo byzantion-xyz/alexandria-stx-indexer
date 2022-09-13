@@ -38,7 +38,9 @@ export class TasksService {
 
     @Timeout(2000)
     handleIndexerSubscription() {
-      this.indexerOrchestrator.subscribeToEvents();
+      if (process.env.NODE_ENV === 'production') {
+        this.indexerOrchestrator.subscribeToEvents();
+      }
     }
 
     @Timeout(1000)

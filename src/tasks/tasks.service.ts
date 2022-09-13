@@ -32,8 +32,6 @@ export class TasksService {
  
           await this.indexerOrchestrator.runIndexer(options);
         }
-      } else {
-        this.logger.debug('Not in production environment. Skip near indexer trigger')
       }
     }
 

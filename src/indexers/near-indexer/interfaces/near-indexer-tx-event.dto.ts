@@ -25,8 +25,8 @@ export interface Receipt {
     status: string;
     result: string;
 
-    function_calls: Array<FunctionCall>;
-    logs: Array<string>;
+    function_calls: FunctionCall[];
+    logs: string[];
 
     receipts?: Receipt[];
 }
@@ -34,5 +34,11 @@ export interface Receipt {
 export interface FunctionCall {
 
     method_name: string;
-    args: string;
+    args: JSON;
+}
+
+export interface NftEvent {
+
+    event: string,
+    data: JSON
 }

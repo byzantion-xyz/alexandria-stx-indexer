@@ -46,7 +46,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
     this.poolClient.release();
     await this.pool.end();
   }
-    
+
   async fetchTxs(options: IndexerOptions): Promise<TxCursorBatch> {
     const accounts = await this.findSmartContracts(options.contract_key);
     let accounts_in = this.buildReceiverIdInQuery(accounts);
@@ -128,8 +128,6 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
       if (force_indexer === 'unknown') {
         return; // Do not process unkonwn transactions
       }
-
-      const executed_at = moment(new Date(this.txHelper.nanoToMiliSeconds(tx.executed_block_timestamp)));
 
       return {
         hash: tx.originating_receipt_id,

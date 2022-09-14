@@ -34,10 +34,13 @@ export class NearTxHelperService {
   }
 
   findEventData(r: Receipt[], event_name: string): FunctionCall {
-    if (!r || !r.length) return undefined;
-    
-    let receipt = r.find(r => r.function_calls.find(fc => fc.method_name === event_name));
+    const receipt = this.findReceiptWithEvent(r, event_name);
     return receipt ? receipt.function_calls.find(f => f.method_name === event_name) : undefined;
+  }
+
+  findReceiptWithEvent(r: Receipt[], event_name: string): Receipt {
+    if (!r || !r.length) return undefined;
+    return r.find(r => r.function_calls.find(fc => fc.method_name === event_name));
   }
 
 }

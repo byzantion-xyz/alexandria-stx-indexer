@@ -16,6 +16,8 @@ import { ActionName, SmartContractType } from "../../common/helpers/indexer-enum
 import { NftState } from "src/database/universal/entities/NftState";
 import { NearTxHelperService } from "src/indexers/near-indexer/providers/near-tx-helper.service";
 
+const NFT_LIST_EVENT = 'nft_on_approve';
+
 @Injectable()
 export class ListIndexerService implements IndexerService {
   private readonly logger = new Logger(ListIndexerService.name);
@@ -33,30 +35,26 @@ export class ListIndexerService implements IndexerService {
   async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {
     this.logger.debug(`process() ${tx.hash}`);
     let txResult: TxProcessResult = { processed: false, missing: false };
-    let msc = Object.assign({}, sc);
 
-    const token_id = this.txHelper.extractArgumentData(tx.args, scf, "token_id");
-    const price = this.txHelper.findAndExtractArgumentData(tx.args, scf, ["price", "token_price"]);
-    let contract_key = this.txHelper.extractArgumentData(tx.args, scf, "contract_key");
+    const receipt = this.nearTxHelper.findReceiptWithEvent(tx.receipts, NFT_LIST_EVENT);
+    if (!receipt) {
+      this.logger.debug(`No ${NFT_LIST_EVENT} found for tx hash: ${tx.hash}`);
+      txResult.processed = true;
+      return txResult;
+    }
+    const approve = this.nearTxHelper.findEventData([receipt], NFT_LIST_EVENT);
 
-    // Check if has custodial smart contract
-    if (sc.type.includes(SmartContractType.non_fungible_tokens)) {
-      const account_sc = await this.smartContractRepository.findOneBy({ contract_key });
-      if (account_sc && account_sc.type.includes(SmartContractType.marketplace)) {
-        msc = account_sc;
-      } else {
-        msc = sc.custodial_smart_contract ? sc.custodial_smart_contract : account_sc;
-      }
+    const token_id = this.txHelper.extractArgumentData(approve.args, scf, "token_id");
+    const price = this.txHelper.findAndExtractArgumentData(approve.args, scf, ["price"]);
 
-      if (!msc) {
-        this.logger.log(`Marketplace smart_contract: ${contract_key} not found`);
-        txResult.missing = true;
-        return txResult;
-      }
-      contract_key = sc.contract_key;
+    const msc = await this.smartContractRepository.findOneBy({ contract_key: receipt.receiver_id });
+    if (!msc) {
+      this.logger.log(`Marketplace smart_contract: ${sc.contract_key} not found`);
+      txResult.missing = true;
+      return txResult;
     }
 
-    const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
+    const nftMeta = await this.txHelper.findMetaByContractKey(sc.contract_key, token_id);
 
     if (nftMeta) {
       const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName[scf.name], tx, nftMeta, msc);
@@ -76,7 +74,7 @@ export class ListIndexerService implements IndexerService {
       }
       txResult.processed = true;
     } else {
-      this.logger.log(`NftMeta not found ${contract_key} ${token_id}`);
+      this.logger.log(`NftMeta not found ${sc.contract_key} ${token_id}`);
 
       //this.missingCollectionService.scrapeMissing({ contract_key, token_id });
       txResult.missing = true;

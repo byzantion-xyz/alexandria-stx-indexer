@@ -15,6 +15,9 @@ import { Repository } from "typeorm";
 import { ActionName, SmartContractType } from "../../common/helpers/indexer-enums";
 import { NearTxHelperService } from "src/indexers/near-indexer/providers/near-tx-helper.service";
 
+const NFT_BUY_EVENT = 'nft_transfer_payout';
+const RESOLVE_PURCHASE_EVENT = 'resolve_purchase';
+
 @Injectable()
 export class BuyIndexerService implements IndexerService {
   private readonly logger = new Logger(BuyIndexerService.name);
@@ -30,11 +33,19 @@ export class BuyIndexerService implements IndexerService {
     this.logger.debug(`process() ${tx.hash}`);
     let txResult: TxProcessResult = { processed: false, missing: false };
     let msc = Object.assign({}, sc);
+    
+    const payout = this.nearTxHelper.findEventData(tx.receipts, NFT_BUY_EVENT);
+    const purchase = this.nearTxHelper.findEventData(tx.receipts, RESOLVE_PURCHASE_EVENT);
+    if (!payout || !purchase) {
+      this.logger.debug(`No ${NFT_BUY_EVENT} found for tx hash: ${tx.hash}`);
+      txResult.processed = true;
+      return txResult;
+    }
 
     const token_id = this.txHelper.extractArgumentData(tx.args, scf, "token_id");
     const contract_key = this.txHelper.extractArgumentData(tx.args, scf, "contract_key");
     const price = this.txHelper.extractArgumentData(tx.args, scf, "price");
-    const seller = this.txHelper.extractArgumentData(tx.args, scf, "seller");
+    const seller = this.txHelper.extractArgumentData(purchase.args, scf, 'seller');
 
     // Check if has custodial smart contract
     if (sc.type.includes(SmartContractType.non_fungible_tokens) && sc.custodial_smart_contract) {
@@ -49,8 +60,8 @@ export class BuyIndexerService implements IndexerService {
 
       const buyActionParams: CreateBuyActionTO = { 
         ...actionCommonArgs,
-        list_price: price || (nft_state_list?.listed ? nft_state_list.list_price : null),
-        seller: seller || (nft_state_list?.listed ? nft_state_list?.list_seller : null),
+        list_price: price,
+        seller: seller,
         buyer: tx.signer
       };
 

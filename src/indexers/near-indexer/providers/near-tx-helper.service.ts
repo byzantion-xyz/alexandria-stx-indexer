@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { NftState } from 'src/database/universal/entities/NftState';
 import { NftStateList } from 'src/database/universal/entities/NftStateList';
 import { CommonTx } from 'src/indexers/common/interfaces/common-tx.interface';
+import { FunctionCall, Receipt } from '../interfaces/near-indexer-tx-event.dto';
 
 @Injectable()
 export class NearTxHelperService {
@@ -31,6 +31,13 @@ export class NearTxHelperService {
     } catch (err) {
       this.logger.warn(`parseBase64Arguments() failed for originating receipt id: ${hash}. `, err);
     }
+  }
+
+  findEventData(r: Receipt[], event_name: string): FunctionCall {
+    if (!r || !r.length) return undefined;
+    
+    let receipt = r.find(r => r.function_calls.find(fc => fc.method_name === event_name));
+    return receipt ? receipt.function_calls.find(f => f.method_name === event_name) : undefined;
   }
 
 }

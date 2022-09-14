@@ -6,7 +6,7 @@ export interface Transaction {
     signer_id: string;
     receiver_id: string;
 
-    receipts: Array<Receipt>;
+    receipts: Receipt[];
     contains_event: boolean;
 
     block_hash: string;
@@ -28,7 +28,7 @@ export interface Receipt {
     function_calls: Array<FunctionCall>;
     logs: Array<string>;
 
-    originating_receipt_id?: string;
+    receipts?: Receipt[];
 }
 
 export interface FunctionCall {

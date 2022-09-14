@@ -13,6 +13,7 @@ import { AcceptBidIndexerService } from './providers/accept-bid-indexer.service'
 import { TransferIndexerService } from './providers/transfer-indexer.service';
 import { BurnIndexerService } from './providers/burn-indexer.service';
 import { ScrapersModule } from 'src/scrapers/scrapers.module';
+import { RelistIndexerService } from './providers/relist-indexer.service';
 
 const microIndexers = [
   BuyIndexerService,
@@ -22,7 +23,8 @@ const microIndexers = [
   UnstakeIndexerService,
   AcceptBidIndexerService,
   TransferIndexerService,
-  BurnIndexerService
+  BurnIndexerService,
+  RelistIndexerService
 ];
 
 @Module({

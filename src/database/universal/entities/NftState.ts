@@ -31,6 +31,15 @@ export class NftState {
   @Column("bigint", { nullable: true })
   staked_tx_index: bigint;
 
+  @Column("text", { nullable: true })
+  owner: string | null;
+
+  @Column("bigint", { nullable: true })
+  owner_block_height: bigint;
+
+  @Column("bigint", { nullable: true })
+  owner_tx_id: string | null;
+
   @Column("uuid")
   meta_id: string;
 

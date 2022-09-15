@@ -43,6 +43,14 @@ import { SmartContractFunction } from "src/database/universal/entities/SmartCont
 })
 export class ScrapersModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(ApiProtectMiddleware).forRoutes({ path: "near-scraper/status", method: RequestMethod.GET });
+    consumer
+      .apply(ApiProtectMiddleware)
+      .forRoutes(
+        { path: "near-scraper/scrape", method: RequestMethod.POST },
+        { path: "near-scraper/update-rarities", method: RequestMethod.POST },
+        { path: "near-scraper/create-collection-attributes", method: RequestMethod.POST },
+        { path: "near-scraper/pin-multiple-images", method: RequestMethod.POST },
+        { path: "near-scraper/status", method: RequestMethod.GET }
+      );
   }
 }

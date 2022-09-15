@@ -53,7 +53,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
       }
     });
 
-    if (contracts || !contracts.length) {
+    if (!contracts || !contracts.length) {
       throw new Error(`Couldn't find matching smart contracts: ${options}`)
     }
 

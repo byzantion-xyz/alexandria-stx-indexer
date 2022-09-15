@@ -49,7 +49,7 @@ export class ListIndexerService implements IndexerService {
 
     const msc = await this.smartContractRepository.findOneBy({ contract_key: receipt.receiver_id });
     if (!msc) {
-      this.logger.log(`Marketplace smart_contract: ${sc.contract_key} not found`);
+      this.logger.log(`Marketplace smart_contract: ${receipt.receiver_id} not found`);
       txResult.missing = true;
       return txResult;
     }

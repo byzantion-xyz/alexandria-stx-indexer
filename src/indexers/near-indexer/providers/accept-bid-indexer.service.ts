@@ -11,6 +11,10 @@ import { CreateAcceptBidActionTO, CreateActionTO } from 'src/indexers/common/int
 import { IndexerService } from 'src/indexers/common/interfaces/indexer-service.interface';
 import { TxProcessResult } from 'src/indexers/common/interfaces/tx-process-result.interface';
 import { Repository } from 'typeorm';
+import { NearTxHelperService } from './near-tx-helper.service';
+
+const NFT_BUY_EVENT = 'nft_transfer_payout';
+const RESOLVE_OFFER = 'resolve_offer';
 
 @Injectable()
 export class AcceptBidIndexerService implements IndexerService {
@@ -18,6 +22,7 @@ export class AcceptBidIndexerService implements IndexerService {
 
   constructor(
     private txHelper: TxHelperService,
+    private nearTxHelper: NearTxHelperService,
     private txBidHelper: TxBidHelperService,
     @InjectRepository(Action)
     private actionRepository: Repository<Action>,
@@ -28,22 +33,25 @@ export class AcceptBidIndexerService implements IndexerService {
   async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {
     this.logger.debug(`process() ${tx.hash}`);
     let txResult: TxProcessResult = { processed: false, missing: false };
-    let msc: SmartContract;
+
+    const payout = this.nearTxHelper.findEventData(tx.receipts, NFT_BUY_EVENT);
+    const receipt = this.nearTxHelper.findReceiptWithEvent(tx.receipts, RESOLVE_OFFER);
+    if (!payout || !receipt) {
+      this.logger.debug(`No ${NFT_BUY_EVENT} found for tx hash: ${tx.hash}`);
+      txResult.processed = true;
+      return txResult;
+    }
 
     const token_id = this.txHelper.extractArgumentData(tx.args, scf, 'token_id'); 
     const price = this.txHelper.extractArgumentData(tx.args, scf, "price");
     const buyer = this.txHelper.extractArgumentData(tx.args, scf, 'buyer');
-    let contract_key = this.txHelper.extractArgumentData(tx.args, scf, 'contract_key');
+    const contract_key = sc.contract_key;
 
-    if (sc.type.includes(SmartContractType.non_fungible_tokens)) {
-      msc = sc.custodial_smart_contract ? sc.custodial_smart_contract :
-        await this.smartContractRepository.findOneBy({ contract_key });
-      if (!msc) {
-        this.logger.log(`Marketplace smart_contract: ${contract_key} not found`);
-        txResult.missing = true;
-        return txResult;
-      }
-      contract_key = sc.contract_key;
+    const msc = await this.smartContractRepository.findOneBy({ contract_key: receipt.receiver_id });
+    if (!msc) {
+      this.logger.log(`Marketplace smart_contract: ${receipt.receiver_id} not found`);
+      txResult.missing = true;
+      return txResult;
     }
 
     const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);

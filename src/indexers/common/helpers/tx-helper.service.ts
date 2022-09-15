@@ -244,7 +244,13 @@ export class TxHelperService {
   }
 
   async burnMeta(nftMetaId: string) {
-    await this.nftStateRepository.upsert({ meta_id: nftMetaId, burned: true }, ["meta_id"]);
+    await this.nftStateRepository.upsert({
+      meta_id: nftMetaId, 
+      burned: true,
+      owner: null,
+      owner_block_height: null,
+      owner_tx_id: null    
+    }, ["meta_id"]);
   }
 
   async mintMeta(nftMeta: NftMeta, tx: CommonTx, owner: string) {
@@ -259,7 +265,7 @@ export class TxHelperService {
       })
     }, ["meta_id"]);
   }
-
+  
   setCommonActionParams(
     action: ActionName, 
     tx: CommonTx, 

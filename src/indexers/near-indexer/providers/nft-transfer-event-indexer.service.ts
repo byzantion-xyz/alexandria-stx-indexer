@@ -53,10 +53,10 @@ export class NftTransferEventIndexerService implements IndexerService {
 
       // Unstake staked meta when is transferred from staking contract
       if (nftMeta.nft_state && nftMeta.nft_state.staked && 
-        this.txStakingHelper.isNewStakingBlock(tx, nftMeta.nft_state)) {
-        if (sc.type.includes(SmartContractType.staking)) {
-          await this.txHelper.unstakeMeta(nftMeta.id, tx);
-        }
+        this.txStakingHelper.isNewStakingBlock(tx, nftMeta.nft_state) &&
+        sc.type.includes(SmartContractType.staking)
+      ) {
+        await this.txHelper.unstakeMeta(nftMeta.id, tx);
       }
 
       // TODO: Cancel any active older bids when bids are implemented on NEAR

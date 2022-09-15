@@ -1,4 +1,4 @@
-import { Module } from "@nestjs/common";
+import { MiddlewareConsumer, Module, RequestMethod } from "@nestjs/common";
 import { AppController } from "./app.controller";
 import { AppService } from "./app.service";
 import { ConfigModule, ConfigService } from "@nestjs/config";
@@ -11,6 +11,8 @@ import { TasksModule } from "./tasks/tasks.module";
 import appConfig from "./config/app.config";
 import indexerConfig from "./config/indexer.config";
 import { TypeOrmModule } from "@nestjs/typeorm";
+import { ApiProtectMiddleware } from "./common/middleware/apiprotect.middleware";
+import { ApiKey } from "./database/universal/entities/ApiKey";
 
 @Module({
   imports: [
@@ -24,6 +26,7 @@ import { TypeOrmModule } from "@nestjs/typeorm";
     IndexersModule.register({ chainSymbol: process.env.CHAIN_SYMBOL }),
     CommonModule,
     TasksModule,
+    TypeOrmModule.forFeature([ApiKey]),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: async (config: ConfigService) => ({
@@ -41,18 +44,24 @@ import { TypeOrmModule } from "@nestjs/typeorm";
       name: "CHAIN-STREAM",
       imports: [ConfigModule],
       useFactory: async (config: ConfigService) => ({
-        url: config.get(`${config.get('indexer.chainSymbol').toUpperCase()}_STREAMER_SQL_DATABASE_URL`),
+        url: config.get(`${config.get("indexer.chainSymbol").toUpperCase()}_STREAMER_SQL_DATABASE_URL`),
         type: "postgres",
         synchronize: false,
         logging: false,
-        entities: [__dirname + `/database/${config.get('indexer.chainSymbol').toLowerCase()}-stream/entities/*{.ts,.js}`],
-        migrations: [`src/database/${config.get('indexer.chainSymbol').toLowerCase()}-stream/migrations/*{.ts,.js}`],
+        entities: [
+          __dirname + `/database/${config.get("indexer.chainSymbol").toLowerCase()}-stream/entities/*{.ts,.js}`,
+        ],
+        migrations: [`src/database/${config.get("indexer.chainSymbol").toLowerCase()}-stream/migrations/*{.ts,.js}`],
         subscribers: [],
       }),
       inject: [ConfigService],
-    })
+    }),
   ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(ApiProtectMiddleware).forRoutes({ path: "*", method: RequestMethod.ALL });
+  }
+}

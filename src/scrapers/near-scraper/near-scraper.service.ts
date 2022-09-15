@@ -4,6 +4,7 @@ import { IpfsHelperService } from "../providers/ipfs-helper.service";
 import { runScraperData } from "./dto/run-scraper-data.dto";
 import { ContractConnectionService } from "./providers/contract-connection-service";
 import { DbHelperService } from "../common/db-helper/db-helper.service";
+import { ConfigService } from "@nestjs/config";
 
 const axios = require("axios").default;
 const https = require("https");
@@ -21,7 +22,8 @@ export class NearScraperService {
   constructor(
     private dbHelper: DbHelperService,
     private readonly ipfsHelperService: IpfsHelperService,
-    private readonly contractConnectionService: ContractConnectionService
+    private readonly contractConnectionService: ContractConnectionService,
+    private config: ConfigService
   ) {}
 
   async scrape(data: runScraperData) {
@@ -149,7 +151,15 @@ export class NearScraperService {
       this.logger.log(`[scraping ${slug}] SCRAPING COMPLETE`);
 
       // Run missing transactions for scraped smart contract
-      await axios.post("https://byz-universal-api-new.onrender.com/indexer/run-missing", { contract_key });
+      await axios.post(
+        this.config.get("nearIndexerRunMissingUrl"),
+        { contract_key },
+        {
+          headers: {
+            "x-api-key": this.config.get("byzApiKey"),
+          },
+        }
+      );
 
       return "Success";
     } catch (err) {

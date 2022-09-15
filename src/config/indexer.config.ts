@@ -39,6 +39,14 @@ export default registerAs("indexer", () => ({
         }
       }, 
       {
+        function_name: 'nft_mint',
+        name: 'mint',
+        args: {
+          "owner": "owner_id",
+          "token_ids": "token_ids"
+        }
+      },
+      {
         function_name: "nft_burn",
         name: 'burn',
         args: {

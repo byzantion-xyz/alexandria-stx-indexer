@@ -240,6 +240,19 @@ export class TxHelperService {
     await this.nftStateRepository.upsert({ meta_id: nftMetaId, burned: true }, ["meta_id"]);
   }
 
+  async mintMeta(nftMeta: NftMeta, tx: CommonTx, owner: string) {
+    await this.nftStateRepository.upsert({
+      meta_id: nftMeta.id,
+      minted: true,
+      mint_tx: tx.hash,
+      ...((!nftMeta.nft_state || !nftMeta.nft_state.owner) && {
+        owner: owner,
+        owner_block_height: tx.block_height,
+        owner_tx_id: tx.hash
+      })
+    }, ["meta_id"]);
+  }
+
   setCommonActionParams(
     action: ActionName, 
     tx: CommonTx, 

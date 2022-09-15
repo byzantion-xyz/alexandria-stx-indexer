@@ -14,6 +14,7 @@ import { TransferIndexerService } from './providers/transfer-indexer.service';
 import { BurnIndexerService } from './providers/burn-indexer.service';
 import { ScrapersModule } from 'src/scrapers/scrapers.module';
 import { RelistIndexerService } from './providers/relist-indexer.service';
+import { NftMintEventIndexerService } from './providers/nft-mint-event-indexer.service';
 
 const microIndexers = [
   BuyIndexerService,
@@ -24,7 +25,8 @@ const microIndexers = [
   AcceptBidIndexerService,
   TransferIndexerService,
   BurnIndexerService,
-  RelistIndexerService
+  RelistIndexerService,
+  NftMintEventIndexerService
 ];
 
 @Module({

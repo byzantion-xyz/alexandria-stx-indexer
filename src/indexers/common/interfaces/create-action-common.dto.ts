@@ -70,6 +70,7 @@ export interface CreateMultiAttributeBidActionTO extends CreateBidActionTO {
 
 export interface CreateSoloBidActionTO extends CreateBidActionTO {}
 
+export interface CreateMintActionTO extends CreateActionCommonArgs {};
 
 export type CreateActionTO = CreateListActionTO | 
   CreateUnlistActionTO | 
@@ -86,4 +87,5 @@ export type CreateActionTO = CreateListActionTO |
   CreateMultiAttributeBidActionTO |
   CreateCancelBidActionTO |
   CreateSoloBidActionTO |
-  CreateUnlistCollectionBidActionTO;
+  CreateUnlistCollectionBidActionTO |
+  CreateMintActionTO;

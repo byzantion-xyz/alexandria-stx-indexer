@@ -25,19 +25,12 @@ export default registerAs("indexer", () => ({
         function_name: "nft_transfer",
         name: "transfer",
         args: {
-          "token_id": "token_id",
-          "buyer": "receiver_id"
+          "seller": "old_owner_id",
+          "buyer": "new_owner_id",
+          "token_ids": "token_ids",
+          "authorized_id": "authorized_id"
         }
       },
-      {
-        function_name: "nft_transfer_payout",
-        name: "transfer",
-        args: {
-          "token_id": "token_id",
-          "buyer": "receiver_id",
-          "price": "balance"
-        }
-      }, 
       {
         function_name: 'nft_mint',
         name: 'mint',

@@ -11,6 +11,10 @@ import { TxProcessResult } from 'src/indexers/common/interfaces/tx-process-resul
 import { Action } from 'src/database/universal/entities/Action';
 import { SmartContract } from 'src/database/universal/entities/SmartContract';
 import { ActionName, SmartContractType } from 'src/indexers/common/helpers/indexer-enums';
+import { NearTxHelperService } from './near-tx-helper.service';
+
+const NFT_TRANSFER_EVENT = 'nft_transfer';
+const RESOLVE_WITHDRAW = 'callback_post_withdraw_nft';
 
 @Injectable()
 export class UnstakeIndexerService implements IndexerService {
@@ -18,6 +22,7 @@ export class UnstakeIndexerService implements IndexerService {
 
   constructor(
     private txHelper: TxHelperService,
+    private nearTxHelper: NearTxHelperService,
     private txStakingHelper: TxStakingHelperService,
     @InjectRepository(Action)
     private actionRepository: Repository<Action>
@@ -27,9 +32,17 @@ export class UnstakeIndexerService implements IndexerService {
     this.logger.debug(`process() ${tx.hash}`);
     let txResult: TxProcessResult = { processed: false, missing: false };
 
+    const transfer = this.nearTxHelper.findReceiptWithEvent(tx.receipts, NFT_TRANSFER_EVENT);
+    const withdraw = this.nearTxHelper.findReceiptWithEvent(tx.receipts, RESOLVE_WITHDRAW);
+
+    if (!transfer || !withdraw) {
+      this.logger.debug(`No ${NFT_TRANSFER_EVENT} event found for tx hash ${tx.hash}`);
+      return txResult;
+    }
+
     const token_id = this.txHelper.extractArgumentData(tx.args, scf, "token_id");
     const contract_key = this.txHelper.extractArgumentData(tx.args, scf, "contract_key");
- 
+
     if (!sc.type.includes(SmartContractType.staking)) {
       this.logger.log(`Stake contract: ${sc.contract_key} does not have staking type`);
       txResult.missing = true;

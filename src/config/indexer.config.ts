@@ -23,7 +23,7 @@ export default registerAs("indexer", () => ({
     Near: [
       {
         function_name: "nft_transfer",
-        name: "transfer",
+        name: "nft_transfer_event",
         args: {
           "seller": "old_owner_id",
           "buyer": "new_owner_id",
@@ -33,7 +33,7 @@ export default registerAs("indexer", () => ({
       },
       {
         function_name: 'nft_mint',
-        name: 'mint',
+        name: 'nft_mint_event',
         args: {
           "owner": "owner_id",
           "token_ids": "token_ids"
@@ -41,7 +41,7 @@ export default registerAs("indexer", () => ({
       },
       {
         function_name: "nft_burn",
-        name: 'burn',
+        name: 'nft_burn_event',
         args: {
           "token_ids": "token_ids",
           "owner": "owner_id"

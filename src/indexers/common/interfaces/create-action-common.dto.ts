@@ -70,8 +70,12 @@ export interface CreateMultiAttributeBidActionTO extends CreateBidActionTO {
 
 export interface CreateSoloBidActionTO extends CreateBidActionTO {}
 
-export interface CreateMintActionTO extends CreateActionCommonArgs {};
-export interface CreateBurnActionTO extends CreateActionCommonArgs {};
+export interface CreateMintActionTO extends CreateActionCommonArgs {
+  buyer: string;
+};
+export interface CreateBurnActionTO extends CreateActionCommonArgs {
+  seller: string
+};
 
 export type CreateActionTO = CreateListActionTO | 
   CreateUnlistActionTO | 

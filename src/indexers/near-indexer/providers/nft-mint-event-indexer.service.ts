@@ -38,7 +38,7 @@ export class NftMintEventIndexerService implements IndexerService {
 
     const token_ids: [string] = this.txHelper.extractArgumentData(tx.args, scf, "token_ids");
     const token_id = token_ids[0];
-    const owner = this.txHelper.extractArgumentData(tx.args, scf, "owner");
+    const buyer = this.txHelper.extractArgumentData(tx.args, scf, "owner");
     const contract_key = receipt.receiver_id;
 
     // Check if has custodial smart contract
@@ -49,9 +49,12 @@ export class NftMintEventIndexerService implements IndexerService {
     const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id[0]);
 
     if (nftMeta) {
-      await this.txHelper.mintMeta(nftMeta, tx, owner);
+      await this.txHelper.mintMeta(nftMeta, tx, buyer);
       const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName.mint, tx, nftMeta, msc);
-      const mintActionParams: CreateMintActionTO = { ...actionCommonArgs };
+      const mintActionParams: CreateMintActionTO = { 
+        ...actionCommonArgs,
+        buyer 
+      };
 
       await this.createAction(mintActionParams);
       txResult.processed = true;

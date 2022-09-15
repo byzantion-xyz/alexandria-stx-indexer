@@ -314,4 +314,21 @@ export class TxHelperService {
 
   }
 
+  isNewOwnerEvent(tx: CommonTx, nft_state: NftState): boolean {
+    return (
+      !nft_state ||
+      !nft_state.owner_block_height ||
+      tx.block_height > nft_state.owner_block_height
+    );
+  }
+
+  async setNewMetaOwner(nftMeta: NftMeta, tx: CommonTx, owner: string) {
+    await this.nftStateRepository.upsert({
+      meta_id: nftMeta.id,
+      owner: owner,
+      owner_block_height: tx.block_height,
+      owner_tx_id: tx.hash
+    }, ["meta_id"]);
+  }
+
 }

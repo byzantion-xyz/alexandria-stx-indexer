@@ -59,6 +59,10 @@ export class NftTransferEventIndexerService implements IndexerService {
         await this.txHelper.unstakeMeta(nftMeta.id, tx);
       }
 
+      if (this.txHelper.isNewOwnerEvent(tx, nftMeta.nft_state)) {
+        await this.txHelper.setNewMetaOwner(nftMeta, tx, buyer);
+      }
+
       // TODO: Cancel any active older bids when bids are implemented on NEAR
 
       await this.createAction(transferActionParams);

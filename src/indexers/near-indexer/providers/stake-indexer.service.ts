@@ -12,6 +12,10 @@ import { CreateActionTO, CreateStakeActionTO } from 'src/indexers/common/interfa
 import { IndexerService } from 'src/indexers/common/interfaces/indexer-service.interface';
 import { TxProcessResult } from 'src/indexers/common/interfaces/tx-process-result.interface';
 import { Repository } from 'typeorm';
+import { NearTxHelperService } from './near-tx-helper.service';
+
+const NFT_TRANSFER_EVENT = 'nft_on_transfer';
+const RESOLVE_TRANSFER = 'nft_resolve_transfer';
 
 @Injectable()
 export class StakeIndexerService implements IndexerService {
@@ -19,6 +23,7 @@ export class StakeIndexerService implements IndexerService {
 
   constructor(
     private txHelper: TxHelperService,
+    private nearTxHelper: NearTxHelperService,
     private txStakingHelper: TxStakingHelperService,
     @InjectRepository(Action)
     private actionRepository: Repository<Action>,
@@ -32,22 +37,22 @@ export class StakeIndexerService implements IndexerService {
     this.logger.debug(`process() ${tx.hash}`);
     let txResult: TxProcessResult = { processed: false, missing: false };
 
-    const token_id = this.txHelper.extractArgumentData(tx.args, scf, "token_id");
-    let stake_contract;
-    let contract_key;
+    const transfer = this.nearTxHelper.findEventData(tx.receipts, NFT_TRANSFER_EVENT);
+    const receipt = this.nearTxHelper.findReceiptWithEvent(tx.receipts, RESOLVE_TRANSFER);
 
-    // Check when staking is executed on staking sc or in nft contract.
-    if (sc.type.includes(SmartContractType.staking)) {
-      stake_contract = sc.contract_key;
-      contract_key = this.txHelper.extractArgumentData(tx.args, scf, "contract_key");
-    } else {
-      stake_contract = this.txHelper.extractArgumentData(tx.args, scf, "contract_key");
-      contract_key = sc.contract_key;
+    if (!transfer || !receipt) {
+      this.logger.debug(`No ${NFT_TRANSFER_EVENT} event found for tx hash: ${tx.hash}`);
+      return txResult;
     }
-    const stake_sc = await this.smartContractRepository.findOne({ where: { contract_key: stake_contract }});
+
+    const token_id = this.txHelper.extractArgumentData(tx.args, scf, "token_id");
+    const contract_key = sc.contract_key;
+    const stake_account = receipt.receiver_id;
+   
+    const stake_sc = await this.smartContractRepository.findOne({ where: { contract_key: stake_account }});
     
     if (!stake_sc || !stake_sc.type.includes(SmartContractType.staking)) {
-      this.logger.log(`Stake contract: ${stake_contract} not found`);
+      this.logger.warn(`Stake contract: ${stake_account} not found`);
       txResult.missing = true;
       return txResult;
     }

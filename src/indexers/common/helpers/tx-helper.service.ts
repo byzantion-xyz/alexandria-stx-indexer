@@ -105,6 +105,13 @@ export class TxHelperService {
     return list ? true : false;
   }
 
+  isListedPreviously(nftState: NftState, tx: CommonTx): boolean {
+    const listings = nftState?.nft_states_list?.filter(s => 
+      s.listed === true && s.list_block_height < tx.block_height
+    );
+    return listings && listings.length ? true : false;
+  }
+
   async findCommissionByKey(sc: SmartContract, contract_key: string, key?: string): Promise<Commission> {
     if (!key) {
       key = `${sc.contract_key}::${contract_key}`;

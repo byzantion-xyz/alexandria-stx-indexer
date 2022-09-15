@@ -40,16 +40,4 @@ import { SmartContractFunction } from "src/database/universal/entities/SmartCont
   ],
   exports: [MissingCollectionService],
 })
-export class ScrapersModule {
-  // configure(consumer: MiddlewareConsumer) {
-  //   consumer
-  //     .apply(ApiProtectMiddleware)
-  //     .forRoutes(
-  //       { path: "near-scraper/scrape", method: RequestMethod.POST },
-  //       { path: "near-scraper/update-rarities", method: RequestMethod.POST },
-  //       { path: "near-scraper/create-collection-attributes", method: RequestMethod.POST },
-  //       { path: "near-scraper/pin-multiple-images", method: RequestMethod.POST },
-  //       { path: "near-scraper/status", method: RequestMethod.GET }
-  //     );
-  // }
-}
+export class ScrapersModule {}

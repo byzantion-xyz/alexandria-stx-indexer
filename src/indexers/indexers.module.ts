@@ -15,15 +15,6 @@ interface ChainOptions {
 
 @Module({})
 export class IndexersModule {
-  // configure(consumer: MiddlewareConsumer) {
-  //   consumer
-  //     .apply(ApiProtectMiddleware)
-  //     .forRoutes(
-  //       { path: "indexer/run", method: RequestMethod.POST },
-  //       { path: "indexer/run-missing", method: RequestMethod.POST }
-  //     );
-  // }
-
   static register(options: ChainOptions): DynamicModule {
     let IndexerModule;
     switch (options.chainSymbol) {

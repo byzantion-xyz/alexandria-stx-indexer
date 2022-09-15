@@ -1,19 +1,3 @@
-export interface Transaction {
-
-    hash: string;
-    nonce: bigint;
-
-    signer_id: string;
-    receiver_id: string;
-
-    receipts: Receipt[];
-    contains_event: boolean;
-
-    block_hash: string;
-    block_height: bigint;
-    block_timestamp: bigint;
-}
-
 export interface Receipt {
 
     id: string;
@@ -29,12 +13,13 @@ export interface Receipt {
     logs: string[];
 
     receipts?: Receipt[];
+    originating_receipt_id: string;
 }
 
 export interface FunctionCall {
 
     method_name: string;
-    args: JSON;
+    args: any;
 }
 
 export interface NftEvent {

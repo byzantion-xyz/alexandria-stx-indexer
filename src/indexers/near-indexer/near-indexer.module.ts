@@ -3,7 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { CommonIndexerModule } from '../common/common-indexer.module';
 import { NearTxHelperService } from './providers/near-tx-helper.service';
 import { NearTxStreamAdapterService } from './providers/near-tx-stream-adapter.service';
-import { FunctionCallEvent as NearFunctionCallEvent } from "src/database/near-stream/entities/FunctionCallEvent";
+import { IndexerTxEvent as NearIndexerTxEvent } from "src/database/near-stream/entities/IndexerTxEvent";
 import { BuyIndexerService } from './providers/buy-indexer.service';
 import { ListIndexerService } from './providers/list-indexer.service';
 import { UnlistIndexerService } from './providers/unlist-indexer.service';
@@ -29,14 +29,14 @@ const microIndexers = [
   imports: [
     ScrapersModule,
     CommonIndexerModule,
-    TypeOrmModule.forFeature([NearFunctionCallEvent], "CHAIN-STREAM"),
+    TypeOrmModule.forFeature([NearIndexerTxEvent], "CHAIN-STREAM"),
   ],
   providers: [
     NearTxHelperService,
     { provide: 'TxStreamAdapter', useClass: NearTxStreamAdapterService },
     ...microIndexers,
-    { 
-      provide: 'MicroIndexers', 
+    {
+      provide: 'MicroIndexers',
       useFactory: (...microIndexers) => microIndexers,
       inject: [...microIndexers]
     }

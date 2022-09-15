@@ -6,12 +6,12 @@ import { TxHelperService } from "../../common/helpers/tx-helper.service";
 import { Client, Pool, PoolClient } from 'pg';
 import * as Cursor from 'pg-cursor';
 import { NearTxHelperService } from "./near-tx-helper.service";
-import {FunctionCall, NftEvent, Receipt, Transaction as TxEvent} from "../interfaces/near-indexer-tx-event.dto";
+import {FunctionCall, NftEvent, Receipt} from "../interfaces/near-indexer-tx-event.dto";
 import { SmartContract } from "src/database/universal/entities/SmartContract";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { SmartContractFunction } from "src/database/universal/entities/SmartContractFunction";
-import { IndexerTxEvent as IndexerTxEventEntity } from "src/database/near-stream/entities/IndexerTxEvent";
+import { IndexerTxEvent as TxEvent } from "src/database/near-stream/entities/IndexerTxEvent";
 import { ConfigService } from "@nestjs/config";
 import { IndexerOptions } from "src/indexers/common/interfaces/indexer-options";
 
@@ -26,8 +26,8 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
     private txHelper: TxHelperService,
     private nearTxHelper: NearTxHelperService,
     private configService: ConfigService,
-    @InjectRepository(IndexerTxEventEntity, "CHAIN-STREAM")
-    private txEventRepository: Repository<IndexerTxEventEntity>,
+    @InjectRepository(TxEvent, "CHAIN-STREAM")
+    private txEventRepository: Repository<TxEvent>,
     @InjectRepository(SmartContract)
     private smartContractRepository: Repository<SmartContract>,
     @InjectRepository(SmartContractFunction)
@@ -111,13 +111,13 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
   transformTx(tx: TxEvent): CommonTx[] {
     const commonTxs: CommonTx[] = [];
 
-    tx.receipts.forEach((rcpt) => {
+    this.nearTxHelper.getReceiptTree(tx).forEach((rcpt) => {
       this.findAndTransformFunctionCalls(rcpt, tx, commonTxs);
 
       if (tx.contains_event) {
         this.findAndTransformNftEvents(rcpt, tx, commonTxs);
       }
-    })
+    });
 
     // TODO...
 

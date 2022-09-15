@@ -6,7 +6,7 @@ export class IndexerTxEvent {
     @PrimaryColumn()
     hash: string;
 
-    @Column()
+    @Column('bigint')
     nonce: bigint;
 
     @Column()
@@ -15,8 +15,8 @@ export class IndexerTxEvent {
     @Column()
     receiver_id: string;
 
-    @Column()
-    receipts: JSON;
+    @Column('jsonb')
+    receipts: JSON[];
 
     @Column()
     contains_event: boolean;
@@ -24,11 +24,11 @@ export class IndexerTxEvent {
     @Column()
     readonly block_hash!: string;
 
-    @Column()
-    readonly block_height!: number;
+    @Column('bigint')
+    readonly block_height!: bigint;
 
-    @Column()
-    readonly block_timestamp!: number;
+    @Column('bigint')
+    readonly block_timestamp!: bigint;
 
     @Column()
     processed: boolean;

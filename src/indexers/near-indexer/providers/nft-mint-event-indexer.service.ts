@@ -4,7 +4,7 @@ import { Action } from 'src/database/universal/entities/Action';
 import { NftState } from 'src/database/universal/entities/NftState';
 import { SmartContract } from 'src/database/universal/entities/SmartContract';
 import { SmartContractFunction } from 'src/database/universal/entities/SmartContractFunction';
-import { ActionName } from 'src/indexers/common/helpers/indexer-enums';
+import { ActionName, SmartContractType } from 'src/indexers/common/helpers/indexer-enums';
 import { TxHelperService } from 'src/indexers/common/helpers/tx-helper.service';
 import { CommonTx } from 'src/indexers/common/interfaces/common-tx.interface';
 import { CreateActionTO, CreateMintActionTO } from 'src/indexers/common/interfaces/create-action-common.dto';
@@ -32,6 +32,7 @@ export class NftMintEventIndexerService implements IndexerService {
   async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {
     this.logger.debug(`process() ${tx.hash}`);
     let txResult: TxProcessResult = { processed: false, missing: false };
+    let msc: SmartContract;
 
     const receipt = tx.receipts[0];  
 
@@ -40,11 +41,16 @@ export class NftMintEventIndexerService implements IndexerService {
     const owner = this.txHelper.extractArgumentData(tx.args, scf, "owner");
     const contract_key = receipt.receiver_id;
 
+    // Check if has custodial smart contract
+    if (sc.type.includes(SmartContractType.non_fungible_tokens) && sc.custodial_smart_contract) {
+      msc = sc.custodial_smart_contract;
+    }
+
     const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id[0]);
 
     if (nftMeta) {
       await this.txHelper.mintMeta(nftMeta, tx, owner);
-      const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName.mint, tx, nftMeta);
+      const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName.mint, tx, nftMeta, msc);
       const mintActionParams: CreateMintActionTO = { ...actionCommonArgs };
 
       await this.createAction(mintActionParams);

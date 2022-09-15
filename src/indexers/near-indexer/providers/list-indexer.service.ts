@@ -38,18 +38,22 @@ export class ListIndexerService implements IndexerService {
 
     const receipt = this.nearTxHelper.findReceiptWithEvent(tx.receipts, NFT_LIST_EVENT);
     if (!receipt) {
-      this.logger.debug(`No ${NFT_LIST_EVENT} found for tx hash: ${tx.hash}`);
+      this.logger.warn(`No ${NFT_LIST_EVENT} found for tx hash: ${tx.hash}`);
       txResult.processed = true;
       return txResult;
     }
     const approve = this.nearTxHelper.findEventData([receipt], NFT_LIST_EVENT);
 
     const token_id = this.txHelper.extractArgumentData(approve.args, scf, "token_id");
-    const price = this.txHelper.findAndExtractArgumentData(approve.args, scf, ["price"]);
+    const price = this.txHelper.findAndExtractArgumentData(approve.args, scf, ["price", "token_price"]);
+    if (isNaN(price)) {
+      this.logger.warn(`Unable to find list price for tx hash ${tx.hash}`);
+      return txResult;
+    }
 
     const msc = await this.smartContractRepository.findOneBy({ contract_key: receipt.receiver_id });
     if (!msc) {
-      this.logger.log(`Marketplace smart_contract: ${receipt.receiver_id} not found`);
+      this.logger.warn(`Marketplace smart_contract: ${receipt.receiver_id} not found`);
       txResult.missing = true;
       return txResult;
     }

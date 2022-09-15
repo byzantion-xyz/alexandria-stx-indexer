@@ -60,7 +60,7 @@ export class NftTransferEventIndexerService implements IndexerService {
         }
       }
 
-      // TODO: Cancel any active older bids
+      // TODO: Cancel any active older bids when bids are implemented on NEAR
 
       await this.createAction(transferActionParams);
       txResult.processed = true;

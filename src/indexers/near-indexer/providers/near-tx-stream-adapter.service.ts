@@ -14,6 +14,7 @@ import { SmartContractFunction } from "src/database/universal/entities/SmartCont
 import { IndexerTxEvent as TxEvent } from "src/database/near-stream/entities/IndexerTxEvent";
 import { ConfigService } from "@nestjs/config";
 import { IndexerOptions } from "src/indexers/common/interfaces/indexer-options";
+import ExpiryMap = require('expiry-map');
 
 @Injectable()
 export class NearTxStreamAdapterService implements TxStreamAdapter {
@@ -21,6 +22,8 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
   private pool: Pool;
   chainSymbol = 'Near';
   private readonly logger = new Logger(NearTxStreamAdapterService.name);
+
+  private readonly txResults = new ExpiryMap(30000);
 
   constructor(
     private txHelper: TxHelperService,
@@ -69,7 +72,25 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
   }
 
   async setTxResult(hash: string, result: TxProcessResult): Promise<void> {
-    // TODO...
+    const txResult: [number, boolean] = this.txResults.get(hash);
+
+    if (!txResult) {
+      throw new Error(`Couldn't set TxProcessResult: ${hash}`)
+    }
+
+    if (txResult[0] <= 1) {
+      this.txResults.delete(hash);
+
+      // TODO: Uncomment this when ready
+      // await this.txEventRepository.update({ hash: hash },
+      //     {
+      //       processed: true,
+      //       missing: txResult[1] || result.missing,
+      //     }
+      // );
+    } else {
+      this.txResults.set(hash, [txResult[0] - 1, txResult[1] || result.missing]);
+    }
   }
 
   async closePool(): Promise<any> {
@@ -119,7 +140,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
       }
     });
 
-    // TODO...
+    this.txResults.set(tx.hash, [commonTxs.length, false]);
 
     return commonTxs;
   }

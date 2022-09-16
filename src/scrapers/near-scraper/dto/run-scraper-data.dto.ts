@@ -9,4 +9,5 @@ export interface runScraperData {
     pin_multiple_images?: boolean,
     force_scrape?: boolean,
     rescrape?: boolean,
+    is_recurring_scrape?: boolean,
 }

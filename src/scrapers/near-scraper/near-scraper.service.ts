@@ -29,7 +29,12 @@ export class NearScraperService {
   async scrape(data: runScraperData) {
     this.logger.log(`START SCRAPE`);
     const { slug: slugInput, contract_key, token_id, starting_token_id, ending_token_id } = data;
-    const { scrape_non_custodial_from_paras = false, force_scrape = false, rescrape = false } = data;
+    const {
+      scrape_non_custodial_from_paras = false,
+      force_scrape = false,
+      rescrape = false,
+      is_recurring_scrape = false,
+    } = data;
     let isParasCustodialCollection = false;
     if (contract_key == "x.paras.near" || slugInput) isParasCustodialCollection = true;
 
@@ -151,7 +156,7 @@ export class NearScraperService {
       this.logger.log(`[scraping ${slug}] SCRAPING COMPLETE`);
 
       // Run missing transactions for scraped smart contract
-      await axios.post(
+      axios.post(
         this.config.get("nearIndexerRunMissingUrl"),
         { contract_key },
         {
@@ -160,6 +165,11 @@ export class NearScraperService {
           },
         }
       );
+
+      // Trigger a rebuild of the front end if collection is not a recurring scrape
+      if (!is_recurring_scrape) {
+        axios.get("https://api.vercel.com/v1/integrations/deploy/prj_jRU3iOk4NNl6jkVyz8fkwH66ZxFo/5yg1U0G9GR");
+      }
 
       return "Success";
     } catch (err) {

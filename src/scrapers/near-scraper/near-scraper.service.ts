@@ -161,7 +161,7 @@ export class NearScraperService {
         { contract_key },
         {
           headers: {
-            "x-api-key": this.config.get("byzApiKey"),
+            "x-api-key": process.env.BYZ_API_KEY,
           },
         }
       );

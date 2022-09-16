@@ -48,7 +48,7 @@ export default registerAs("indexer", () => ({
         }
       }, 
       {
-        function_name: 'nft_apporve',
+        function_name: 'nft_approve',
         name: 'list',
         args: {
           price: "msg.price",

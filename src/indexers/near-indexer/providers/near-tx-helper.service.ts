@@ -65,9 +65,8 @@ export class NearTxHelperService {
 
   findReceiptWithEvent(r: Receipt[], event_name: string): Receipt {
     if (!r || !r.length) return undefined;
-
     return r.map(r => r.receipts).flat()
-      .find(r => r.function_calls.find(fc => fc.method_name === event_name));
+      .find(r => r && r.function_calls.find(fc => fc.method_name === event_name));
   }
 
   isReceiptForEvent(r: Receipt, event_name: string): boolean {

@@ -5,14 +5,9 @@ import { ConfigModule, ConfigService } from "@nestjs/config";
 import { IndexersModule } from "./indexers/indexers.module";
 import { CommonModule } from "./common/common.module";
 import { ScrapersModule } from "./scrapers/scrapers.module";
-import { DiscordModule } from "@discord-nestjs/core";
-import { Intents } from "discord.js";
-import { DiscordBotModule } from "./discord-bot/discord-bot.module";
-import { DiscordServerModule } from "./discord-server/discord-server.module";
 import { ScheduleModule } from "@nestjs/schedule";
 import { TasksModule } from "./tasks/tasks.module";
 
-import discordConfig from "./config/discord.config";
 import appConfig from "./config/app.config";
 import indexerConfig from "./config/indexer.config";
 import { TypeOrmModule } from "@nestjs/typeorm";
@@ -21,25 +16,13 @@ import { TypeOrmModule } from "@nestjs/typeorm";
   imports: [
     ConfigModule.forRoot({
       envFilePath: ["config.env", ".env"],
-      load: [discordConfig, appConfig, indexerConfig],
+      load: [appConfig, indexerConfig],
       isGlobal: true,
     }),
     ScrapersModule,
     ScheduleModule.forRoot(),
-    DiscordModule.forRootAsync({
-      imports: [ConfigModule],
-      useFactory: (config: ConfigService) => ({
-        token: config.get("DISCORD_BOT_SECRET"),
-        discordClientOptions: {
-          intents: [Intents.FLAGS.GUILDS],
-        },
-      }),
-      inject: [ConfigService],
-    }),
     IndexersModule.register({ chainSymbol: process.env.CHAIN_SYMBOL }),
     CommonModule,
-    DiscordBotModule,
-    DiscordServerModule,
     TasksModule,
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],

@@ -1,4 +1,4 @@
-import { MiddlewareConsumer, Module, NestModule, RequestMethod } from "@nestjs/common";
+import { Module } from "@nestjs/common";
 import { NearScraperController } from "./near-scraper/near-scraper.controller";
 import { NearScraperService } from "./near-scraper/near-scraper.service";
 import { IpfsHelperService } from "./providers/ipfs-helper.service";
@@ -13,7 +13,6 @@ import { CollectionCreator } from "src/database/universal/entities/CollectionCre
 import { NftMeta } from "src/database/universal/entities/NftMeta";
 import { NftMetaAttribute } from "src/database/universal/entities/NftMetaAttribute";
 import { CollectionAttribute } from "src/database/universal/entities/CollectionAttribute";
-import { ApiProtectMiddleware } from "src/common/middleware/apiprotect.middleware";
 import { ApiKey } from "src/database/universal/entities/ApiKey";
 import { SmartContractFunction } from "src/database/universal/entities/SmartContractFunction";
 
@@ -41,8 +40,4 @@ import { SmartContractFunction } from "src/database/universal/entities/SmartCont
   ],
   exports: [MissingCollectionService],
 })
-export class ScrapersModule implements NestModule {
-  configure(consumer: MiddlewareConsumer) {
-    consumer.apply(ApiProtectMiddleware).forRoutes({ path: "near-scraper/status", method: RequestMethod.GET });
-  }
-}
+export class ScrapersModule {}

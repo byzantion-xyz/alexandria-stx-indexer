@@ -53,12 +53,15 @@ export class NftMintEventIndexerService implements IndexerService {
     const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id[0]);
 
     if (nftMeta) {
-      await this.txHelper.mintMeta(nftMeta, tx, buyer);
       const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName.mint, tx, nftMeta, msc);
       const mintActionParams: CreateMintActionTO = { 
         ...actionCommonArgs,
         buyer 
       };
+      
+      if (!nftMeta.nft_state || !nftMeta.nft_state.minted) {
+        await this.txHelper.mintMeta(nftMeta, tx, buyer);
+      }
 
       await this.createAction(mintActionParams);
       txResult.processed = true;
@@ -70,8 +73,14 @@ export class NftMintEventIndexerService implements IndexerService {
     return txResult;
   }
 
-  async createAction(params: CreateActionTO): Promise<Action> {
-    throw new Error('Method not implemented.');
+  async createAction(params: CreateMintActionTO): Promise<Action> {
+    try {
+      const action = this.actionRepository.create(params);
+      const saved = await this.actionRepository.save(action);
+      this.logger.log(`New action ${params.action}: ${saved.id} `);
+
+      return saved;
+    } catch (err) { }
   }
 
 }

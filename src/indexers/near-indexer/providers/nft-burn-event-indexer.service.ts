@@ -24,6 +24,10 @@ export class NftBurnEventIndexerService implements IndexerService {
 
     const token_ids = this.txHelper.extractArgumentData(tx.args, scf, 'token_ids');
     const seller = this.txHelper.extractArgumentData(tx.args, scf, 'owner');
+    if (!token_ids || !token_ids.length) {
+      this.logger.warn(`Unable to find token_ids tx hash: ${tx.hash}`);
+      return txResult;
+    }
     const token_id = token_ids[0];
     const contract_key = sc.contract_key;
 

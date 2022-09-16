@@ -37,6 +37,10 @@ export class NftMintEventIndexerService implements IndexerService {
     const receipt = tx.receipts[0];  
 
     const token_ids: [string] = this.txHelper.extractArgumentData(tx.args, scf, "token_ids");
+    if (!token_ids || !token_ids.length) {
+      this.logger.warn(`Unable to find token_ids tx hash: ${tx.hash}`);
+      return txResult;
+    }
     const token_id = token_ids[0];
     const buyer = this.txHelper.extractArgumentData(tx.args, scf, "owner");
     const contract_key = receipt.receiver_id;

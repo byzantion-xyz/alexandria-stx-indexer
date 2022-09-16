@@ -30,11 +30,16 @@ export class NftTransferEventIndexerService implements IndexerService {
     this.logger.debug(`process() ${tx.hash}`);
     let txResult: TxProcessResult = { processed: false, missing: false };
 
-    const { contract_key } = sc;
     const token_ids: [string] = this.txHelper.extractArgumentData(tx.args, scf, 'token_ids');
+    if (!token_ids || !token_ids.length) {
+      this.logger.warn(`Unable to find token_ids tx hash: ${tx.hash}`);
+      return txResult;
+    }
     const token_id = token_ids[0];
+    
     const seller = this.txHelper.extractArgumentData(tx.args, scf, 'seller');
     const buyer = this.txHelper.extractArgumentData(tx.args, scf, 'buyer');
+    const { contract_key } = sc;
 
     const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
 
@@ -82,6 +87,6 @@ export class NftTransferEventIndexerService implements IndexerService {
       this.logger.log(`New action ${params.action}: ${saved.id} `);
 
       return saved;
-    } catch (err) {}
+    } catch (err) { this.logger.warn(err); }
   }
 }

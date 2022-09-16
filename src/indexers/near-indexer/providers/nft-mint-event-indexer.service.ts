@@ -1,18 +1,15 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Action } from 'src/database/universal/entities/Action';
-import { NftState } from 'src/database/universal/entities/NftState';
 import { SmartContract } from 'src/database/universal/entities/SmartContract';
 import { SmartContractFunction } from 'src/database/universal/entities/SmartContractFunction';
 import { ActionName, SmartContractType } from 'src/indexers/common/helpers/indexer-enums';
 import { TxHelperService } from 'src/indexers/common/helpers/tx-helper.service';
 import { CommonTx } from 'src/indexers/common/interfaces/common-tx.interface';
-import { CreateActionTO, CreateMintActionTO } from 'src/indexers/common/interfaces/create-action-common.dto';
+import { CreateMintActionTO } from 'src/indexers/common/interfaces/create-action-common.dto';
 import { IndexerService } from 'src/indexers/common/interfaces/indexer-service.interface';
 import { TxProcessResult } from 'src/indexers/common/interfaces/tx-process-result.interface';
 import { Repository } from 'typeorm';
-import { runInThisContext } from 'vm';
-import { NearTxHelperService } from './near-tx-helper.service';
 
 @Injectable()
 export class NftMintEventIndexerService implements IndexerService {
@@ -20,13 +17,8 @@ export class NftMintEventIndexerService implements IndexerService {
 
   constructor(
     private txHelper: TxHelperService,
-    private nearTxHelper: NearTxHelperService,
     @InjectRepository(Action)
     private actionRepository: Repository<Action>,
-    @InjectRepository(NftState)
-    private nftStateRepository: Repository<NftState>,
-    @InjectRepository(SmartContract)
-    private smartContractRepository: Repository<SmartContract>
   ) {}
 
   async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {
@@ -50,7 +42,7 @@ export class NftMintEventIndexerService implements IndexerService {
       msc = sc.custodial_smart_contract;
     }
 
-    const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id[0]);
+    const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
 
     if (nftMeta) {
       const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName.mint, tx, nftMeta, msc);

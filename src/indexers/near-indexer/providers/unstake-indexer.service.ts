@@ -14,7 +14,7 @@ import { ActionName, SmartContractType } from 'src/indexers/common/helpers/index
 import { NearTxHelperService } from './near-tx-helper.service';
 
 const NFT_TRANSFER_EVENT = 'nft_transfer';
-const RESOLVE_WITHDRAW = 'callback_post_withdraw_nft';
+//const RESOLVE_WITHDRAW = ['withdraw_nft_callback', 'callback_post_withdraw_nft'];
 
 @Injectable()
 export class UnstakeIndexerService implements IndexerService {
@@ -31,11 +31,9 @@ export class UnstakeIndexerService implements IndexerService {
   async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {
     this.logger.debug(`process() ${tx.hash}`);
     let txResult: TxProcessResult = { processed: false, missing: false };
-
+    
     const transfer = this.nearTxHelper.findReceiptWithEvent(tx.receipts, NFT_TRANSFER_EVENT);
-    const withdraw = this.nearTxHelper.findReceiptWithEvent(tx.receipts, RESOLVE_WITHDRAW);
-
-    if (!transfer || !withdraw) {
+    if (!transfer) {
       this.logger.debug(`No ${NFT_TRANSFER_EVENT} event found for tx hash ${tx.hash}`);
       return txResult;
     }

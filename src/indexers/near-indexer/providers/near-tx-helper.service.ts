@@ -19,14 +19,17 @@ export class NearTxHelperService {
   getReceiptTree(tx: IndexerTxEvent) : Receipt[] {
     const receipts = tx.receipts.map((r) => {
       const rcpt = Object.assign({} as Receipt, r);
+
       rcpt.function_calls
           .forEach((fc) => fc.args = this.decodeBase64Args(fc.args));
+
       return rcpt;
     });
 
     const groups = receipts.reduce((acc, r) => {
       acc[r.originating_receipt_id] = acc[r.originating_receipt_id] || [];
       acc[r.originating_receipt_id].push(r);
+
       return acc;
     }, {});
 

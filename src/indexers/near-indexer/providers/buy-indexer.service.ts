@@ -3,7 +3,7 @@ import { Logger, Injectable, NotAcceptableException } from "@nestjs/common";
 import { TxProcessResult } from "src/indexers/common/interfaces/tx-process-result.interface";
 import { TxHelperService } from "../../common/helpers/tx-helper.service";
 
-import { CreateActionCommonArgs, CreateBuyActionTO } from "../../common/interfaces/create-action-common.dto";
+import { CreateBuyActionTO } from "../../common/interfaces/create-action-common.dto";
 import { CommonTx } from "src/indexers/common/interfaces/common-tx.interface";
 import { IndexerService } from "../../common/interfaces/indexer-service.interface";
 
@@ -66,12 +66,11 @@ export class BuyIndexerService implements IndexerService {
 
       if (this.nearTxHelper.isNewerEvent(tx, nft_state_list)) {
         await this.txHelper.unlistMetaInAllMarkets(nftMeta, tx, msc);
-        await this.createAction(buyActionParams);
       } else {
         this.logger.log(`Too Late`);
-        // Create missing action
-        await this.createAction(buyActionParams);
       }
+      await this.createAction(buyActionParams);
+
       txResult.processed = true;
     } else {
       this.logger.log(`NftMeta not found ${contract_key} ${token_id}`);

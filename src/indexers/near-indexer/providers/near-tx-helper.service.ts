@@ -70,4 +70,8 @@ export class NearTxHelperService {
     return receipt && receipt.receipts && receipt.receipts[0] ? receipt.receipts[0] : undefined;
   }
 
+  isReceiptForEvent(r: Receipt, event_name: string): boolean {
+    return r && r.function_calls.find(fc => fc.method_name === event_name) ? true : false;
+  }
+
 }

@@ -12,6 +12,9 @@ import { Repository } from "typeorm";
 import { ActionName, SmartContractType } from "src/indexers/common/helpers/indexer-enums";
 import { SmartContractFunction } from "src/database/universal/entities/SmartContractFunction";
 import { TxStakingHelperService } from "src/indexers/common/helpers/tx-staking-helper.service";
+import { NearTxHelperService } from "./near-tx-helper.service";
+
+const NFT_TRANSFER_EVENT = 'nft_transfer';
 
 @Injectable()
 export class NftTransferEventIndexerService implements IndexerService {
@@ -19,17 +22,20 @@ export class NftTransferEventIndexerService implements IndexerService {
 
   constructor(
     private txHelper: TxHelperService,
+    private nearTxHelper: NearTxHelperService,
     private txStakingHelper: TxStakingHelperService,
     @InjectRepository(Action)
-    private actionRepository: Repository<Action>,
-    @InjectRepository(SmartContract)
-    private smartContractRepository: Repository<SmartContract>
+    private actionRepository: Repository<Action>
   ) {}
 
   async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {
     this.logger.debug(`process() ${tx.hash}`);
     let txResult: TxProcessResult = { processed: false, missing: false };
-
+    
+    if (!this.nearTxHelper.isReceiptForEvent(tx.receipts[0], NFT_TRANSFER_EVENT)) {
+      this.logger.debug(`No ${NFT_TRANSFER_EVENT} event found for tx hash ${tx.hash}`);
+      return txResult;
+    }
     const token_ids: [string] = this.txHelper.extractArgumentData(tx.args, scf, 'token_ids');
     if (!token_ids || !token_ids.length) {
       this.logger.warn(`Unable to find token_ids tx hash: ${tx.hash}`);
@@ -39,7 +45,7 @@ export class NftTransferEventIndexerService implements IndexerService {
     
     const seller = this.txHelper.extractArgumentData(tx.args, scf, 'seller');
     const buyer = this.txHelper.extractArgumentData(tx.args, scf, 'buyer');
-    const { contract_key } = sc;
+    const contract_key = tx.receipts[0].receiver_id;
 
     const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
 

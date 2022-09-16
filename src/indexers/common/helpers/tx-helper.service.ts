@@ -70,7 +70,11 @@ export class TxHelperService {
       return scf.data[field];
     } 
     
-    return this.findArgumentData(args, scf, field);
+    if (Array.isArray(args)) {
+      return this.findArgumentData(args[0], scf, field);
+    } else {
+      return this.findArgumentData(args, scf, field);
+    }
   }
 
   // TODO: Optimize relations fetched per event type

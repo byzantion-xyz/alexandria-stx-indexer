@@ -35,15 +35,14 @@ export class ListIndexerService implements IndexerService {
   async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {
     this.logger.debug(`process() ${tx.hash}`);
     let txResult: TxProcessResult = { processed: false, missing: false };
-
     const receipt = this.nearTxHelper.findReceiptWithEvent(tx.receipts, NFT_LIST_EVENT);
     if (!receipt) {
       this.logger.warn(`No ${NFT_LIST_EVENT} found for tx hash: ${tx.hash}`);
       txResult.processed = true;
       return txResult;
     }
-    const approve = this.nearTxHelper.findEventData([receipt], NFT_LIST_EVENT);
 
+    const approve = this.nearTxHelper.findEventData(tx.receipts, NFT_LIST_EVENT);
     const token_id = this.txHelper.extractArgumentData(approve.args, scf, "token_id");
     const price = this.txHelper.findAndExtractArgumentData(approve.args, scf, ["price", "token_price"]);
     if (isNaN(price)) {

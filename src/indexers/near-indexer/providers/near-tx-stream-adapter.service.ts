@@ -188,7 +188,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
           signer: tx.signer_id,
           receiver: tx.receiver_id,
           function_name: nft.event,
-          indexer_name: nft.event.replace('_', '-'),
+          indexer_name: nft.event + '_event',
           args: nft.data,
           receipts: [rcpt]
         });

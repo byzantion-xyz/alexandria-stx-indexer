@@ -33,12 +33,11 @@ export class BuyIndexerService implements IndexerService {
     this.logger.debug(`process() ${tx.hash}`);
     let txResult: TxProcessResult = { processed: false, missing: false };
     let msc = Object.assign({}, sc);
-    
+
     const payout = this.nearTxHelper.findEventData(tx.receipts, NFT_BUY_EVENT);
     const purchase = this.nearTxHelper.findEventData(tx.receipts, RESOLVE_PURCHASE_EVENT);
     if (!payout || !purchase) {
       this.logger.debug(`No ${NFT_BUY_EVENT} found for tx hash: ${tx.hash}`);
-      txResult.processed = true;
       return txResult;
     }
 

@@ -176,10 +176,6 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
 
     this.txResults.set(tx.hash, [commonTxs.length, false]);
 
-    if (commonTxs.length) {
-      return commonTxs;
-    }
-
     return commonTxs;
   }
 

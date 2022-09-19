@@ -203,6 +203,8 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
         if (fc.args['msg']?.['staking_status']) {
           return 'stake';
         }
+
+        break;
       }
       case 'nft_transfer': {
         return 'def';

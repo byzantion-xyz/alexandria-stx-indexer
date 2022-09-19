@@ -14,8 +14,6 @@ import { SmartContractFunction } from "src/database/universal/entities/SmartCont
 import { TxStakingHelperService } from "src/indexers/common/helpers/tx-staking-helper.service";
 import { NearTxHelperService } from "./near-tx-helper.service";
 
-const NFT_TRANSFER_EVENTS = ['nft_transfer_payout', 'nft_resolve_transfer', 'nft_transfer'];
-
 @Injectable()
 export class NftTransferEventIndexerService implements IndexerService {
   private readonly logger = new Logger(NftTransferEventIndexerService.name);
@@ -32,11 +30,8 @@ export class NftTransferEventIndexerService implements IndexerService {
     this.logger.debug(`process() ${tx.hash}`);
     let txResult: TxProcessResult = { processed: false, missing: false };
     
-    const receipt = this.nearTxHelper.findReceiptWithSomeEvent(tx.receipts, NFT_TRANSFER_EVENTS);
-    if (!receipt) {
-      this.logger.debug(`None of ${NFT_TRANSFER_EVENTS} events found for tx hash ${tx.hash}`);
-      return txResult;
-    }
+    const receipt = tx.receipts[0];
+
     const token_ids: [string] = this.txHelper.extractArgumentData(tx.args, scf, 'token_ids');
     if (!token_ids || !token_ids.length) {
       this.logger.warn(`Unable to find token_ids tx hash: ${tx.hash}`);

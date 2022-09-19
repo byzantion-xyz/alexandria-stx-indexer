@@ -204,6 +204,10 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
           return 'stake';
         }
       }
+      case 'nft_mint_and_approve' : {
+        // https://explorer.near.org/transactions/A3ds6iJfgXaPD8hcP42CPzcpaxEwQjsQLiywi9ZYY841
+        return 'buy';
+      }
       case 'nft_transfer': {
         return 'def';
       }

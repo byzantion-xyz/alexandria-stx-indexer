@@ -140,7 +140,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
           ? this.nearTxHelper.getEvents(rcpt) : [];
 
       if (events.length
-          && events.every((e) => e.standard === NEAR_FT_STANDARD ||  e.standard === NEAR_FARMING_STANDARD)) {
+          && events.every(([e, _]) => e.standard === NEAR_FT_STANDARD ||  e.standard === NEAR_FARMING_STANDARD)) {
         return;
       }
 
@@ -149,9 +149,9 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
         return;
       }
 
-      if (!events.length || !events.every((e) => e.event === 'nft_mint' || e.event === 'nft_burn')) {
+      if (!events.length || !events.every(([e, _]) => e.event === 'nft_mint' || e.event === 'nft_burn')) {
         rcpt.function_calls.forEach((fc) => {
-          const indexer = this.defineFunctionCallIndexer(fc, events, rcpt, tx);
+          const indexer = this.defineFunctionCallIndexer(fc, rcpt, events);
 
           if (indexer) {
             commonTxs.push({
@@ -164,12 +164,12 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
         });
       }
 
-      events.forEach((e) => {
+      events.forEach(([e, r]) => {
         commonTxs.push({
           function_name: e.event + '_event',
           indexer_name: e.event + '_event',
           args: e.data,
-          ...this.transformTxBase(commonTxs.length, rcpt, tx)
+          ...this.transformTxBase(commonTxs.length, r, tx)
         });
       });
     });
@@ -179,7 +179,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
     return commonTxs;
   }
 
-  private defineFunctionCallIndexer(fc: FunctionCall, events: NftOrFtEvent[], rcpt: Receipt, tx: TxEvent) : string {
+  private defineFunctionCallIndexer(fc: FunctionCall, rcpt: Receipt,  events: [NftOrFtEvent, Receipt][]) : string {
     switch (fc.method_name) {
       case 'nft_approve' : {
         // https://nearblocks.io/txns/Efcw51xC9xxYj3fBq9UhmNgmfCNdETHjPga9vkS8ULLy#execution
@@ -204,15 +204,11 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
           return 'stake';
         }
       }
-      case 'nft_mint_and_approve' : {
-        // https://explorer.near.org/transactions/A3ds6iJfgXaPD8hcP42CPzcpaxEwQjsQLiywi9ZYY841
-        return 'buy';
-      }
       case 'nft_transfer': {
         return 'def';
       }
       case 'offer' : {
-        if (events.some((e) => e.event === 'nft_transfer')) {
+        if (events.some(([e, _]) => e.event === 'nft_transfer')) {
           return 'buy';
         } else {
           return 'bid';

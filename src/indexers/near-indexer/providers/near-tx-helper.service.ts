@@ -59,11 +59,11 @@ export class NearTxHelperService {
     }
   }
 
-  getEvents(rcpt: Receipt, acc: NftOrFtEvent[] = []) : NftOrFtEvent[] {
+  getEvents(rcpt: Receipt, acc: [NftOrFtEvent, Receipt][] = []) : [NftOrFtEvent, Receipt][] {
       rcpt.logs.forEach((l) => {
          if (l.startsWith(NEAR_EVENT_PREFIX)) {
              const event: NftOrFtEvent = JSON.parse(l.replace(NEAR_EVENT_PREFIX, ''))
-             acc.push(event);
+             acc.push([event, rcpt]);
          }
       });
 

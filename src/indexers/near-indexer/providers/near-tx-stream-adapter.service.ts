@@ -145,7 +145,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
       }
 
       // https://nearblocks.io/txns/FiMZPjsEM6hWsN6eQKXC76NLtcjYsKtjtuV1QxhmSJy1#execution
-      if (!this.nearTxHelper.getLogs(rcpt).some((l) => l.includes('Insufficient storage paid'))) {
+      if (this.nearTxHelper.getLogs(rcpt).some((l) => l.includes('Insufficient storage paid'))) {
         return;
       }
 

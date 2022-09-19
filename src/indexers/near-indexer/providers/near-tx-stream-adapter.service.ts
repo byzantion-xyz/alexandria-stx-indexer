@@ -166,7 +166,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
 
       events.forEach((e) => {
         commonTxs.push({
-          function_name: e.event,
+          function_name: e.event + '_event',
           indexer_name: e.event + '_event',
           args: e.data,
           ...this.transformTxBase(commonTxs.length, rcpt, tx)
@@ -211,7 +211,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
         if (events.some((e) => e.event === 'nft_transfer')) {
           return 'buy';
         } else {
-          return 'list';
+          return 'bid';
         }
       }
       default: {

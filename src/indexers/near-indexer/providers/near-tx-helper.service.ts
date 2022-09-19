@@ -3,8 +3,11 @@ import { NftStateList } from 'src/database/universal/entities/NftStateList';
 import { CommonTx } from 'src/indexers/common/interfaces/common-tx.interface';
 import {IndexerTxEvent} from "../../../database/near-stream/entities/IndexerTxEvent";
 import {FunctionCall, NftOrFtEvent, Receipt} from "../interfaces/near-indexer-tx-event.dto";
+import * as _ from 'lodash';
 
 export const NEAR_EVENT_PREFIX = "EVENT_JSON:";
+
+const flatten = (item) => [item, _.flatMapDeep(item.receipts, flatten)];
 
 @Injectable()
 export class NearTxHelperService {
@@ -66,14 +69,7 @@ export class NearTxHelperService {
 
   findReceiptWithEvent(r: Receipt[], event_name: string): Receipt {
     if (!r || !r.length) return undefined;
-    return r.flatMap(r => r.receipts)
-      .find(r => r && r.function_calls.find(fc => fc.method_name === event_name));
-  }
-
-  findReceiptWithEventInNested(r: Receipt[], event_name: string): Receipt {
-    if (!r || !r.length) return undefined;
-    return r.flatMap(r => r.receipts)
-      .flatMap(r => r.receipts)
+    return _.flatMapDeep(r, flatten)
       .find(r => r && r.function_calls.find(fc => fc.method_name === event_name));
   }
 

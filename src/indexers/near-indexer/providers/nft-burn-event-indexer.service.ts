@@ -38,7 +38,7 @@ export class NftBurnEventIndexerService implements IndexerService {
     const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
 
     if (nftMeta)  {
-      const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName.burn, tx, nftMeta);
+      const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName.burn, tx, nftMeta, msc);
       const burnActionParams: CreateBurnActionTO = { ...actionCommonArgs, seller };
 
       if (!nftMeta.nft_state || !nftMeta.nft_state.burned) {

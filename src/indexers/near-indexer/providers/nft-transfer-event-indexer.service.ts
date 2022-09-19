@@ -32,10 +32,7 @@ export class NftTransferEventIndexerService implements IndexerService {
     this.logger.debug(`process() ${tx.hash}`);
     let txResult: TxProcessResult = { processed: false, missing: false };
     
-    if (!this.nearTxHelper.isReceiptForEvent(tx.receipts[0], NFT_TRANSFER_EVENT)) {
-      this.logger.debug(`No ${NFT_TRANSFER_EVENT} event found for tx hash ${tx.hash}`);
-      return txResult;
-    }
+    const receipt = tx.receipts[0];
     const token_ids: [string] = this.txHelper.extractArgumentData(tx.args, scf, 'token_ids');
     if (!token_ids || !token_ids.length) {
       this.logger.warn(`Unable to find token_ids tx hash: ${tx.hash}`);
@@ -45,7 +42,7 @@ export class NftTransferEventIndexerService implements IndexerService {
     
     const seller = this.txHelper.extractArgumentData(tx.args, scf, 'seller');
     const buyer = this.txHelper.extractArgumentData(tx.args, scf, 'buyer');
-    const contract_key = tx.receipts[0].receiver_id;
+    const contract_key = receipt.receiver_id;
 
     const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
 

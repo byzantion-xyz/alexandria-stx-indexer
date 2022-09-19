@@ -89,6 +89,10 @@ export class NftTransferEventIndexerService implements IndexerService {
       this.logger.log(`New action ${params.action}: ${saved.id} `);
 
       return saved;
-    } catch (err) { this.logger.warn(err); }
+    } catch (err) { 
+      if (err && (!err.constraint || err.constraint !== 'action_tx_id_tx_index_idx')) {
+        this.logger.warn(err);
+      }
+    }
   }
 }

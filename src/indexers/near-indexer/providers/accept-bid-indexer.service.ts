@@ -34,8 +34,8 @@ export class AcceptBidIndexerService implements IndexerService {
     this.logger.debug(`process() ${tx.hash}`);
     let txResult: TxProcessResult = { processed: false, missing: false };
 
-    const payout = this.nearTxHelper.findEventData(tx.receipts, NFT_BUY_EVENT);
-    const receipt = this.nearTxHelper.findReceiptWithEvent(tx.receipts, RESOLVE_OFFER);
+    const payout = this.nearTxHelper.findReceiptWithEventInNested(tx.receipts, NFT_BUY_EVENT);
+    const receipt = this.nearTxHelper.findReceiptWithEventInNested(tx.receipts, RESOLVE_OFFER);
     if (!payout || !receipt) {
       this.logger.debug(`No ${NFT_BUY_EVENT} found for tx hash: ${tx.hash}`);
       txResult.processed = true;

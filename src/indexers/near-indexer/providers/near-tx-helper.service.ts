@@ -70,6 +70,13 @@ export class NearTxHelperService {
       .find(r => r && r.function_calls.find(fc => fc.method_name === event_name));
   }
 
+  findReceiptWithEventInNested(r: Receipt[], event_name: string): Receipt {
+    if (!r || !r.length) return undefined;
+    return r.flatMap(r => r.receipts)
+      .flatMap(r => r.receipts)
+      .find(r => r && r.function_calls.find(fc => fc.method_name === event_name));
+  }
+
   isReceiptForEvent(r: Receipt, event_name: string): boolean {
     return r && r.function_calls.find(fc => fc.method_name === event_name) ? true : false;
   }

@@ -22,8 +22,9 @@ export interface FunctionCall {
     args: any;
 }
 
-export interface NftEvent {
+export interface NftOrFtEvent {
 
+    standard: string,
     event: string,
     data: JSON
 }

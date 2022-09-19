@@ -6,7 +6,7 @@ import { TxHelperService } from "../../common/helpers/tx-helper.service";
 import { Client, Pool, PoolClient } from 'pg';
 import * as Cursor from 'pg-cursor';
 import { NearTxHelperService } from "./near-tx-helper.service";
-import {FunctionCall, NftEvent, Receipt} from "../interfaces/near-indexer-tx-event.dto";
+import {FunctionCall, NftOrFtEvent, Receipt} from "../interfaces/near-indexer-tx-event.dto";
 import { SmartContract } from "src/database/universal/entities/SmartContract";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
@@ -15,6 +15,9 @@ import { IndexerTxEvent as TxEvent } from "src/database/near-stream/entities/Ind
 import { ConfigService } from "@nestjs/config";
 import { IndexerOptions } from "src/indexers/common/interfaces/indexer-options";
 import ExpiryMap = require('expiry-map');
+
+export const NEAR_FT_STANDARD = 'nep141';
+export const NEAR_FARMING_STANDARD = 'ref-farming';
 
 @Injectable()
 export class NearTxStreamAdapterService implements TxStreamAdapter {
@@ -133,11 +136,42 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
     const commonTxs: CommonTx[] = [];
 
     this.nearTxHelper.getReceiptTree(tx).forEach((rcpt) => {
-      this.findAndTransformFunctionCalls(rcpt, tx, commonTxs);
+      const events = (tx.contains_event)
+          ? this.nearTxHelper.getEvents(rcpt) : [];
 
-      if (tx.contains_event) {
-        this.findAndTransformNftEvents(rcpt, tx, commonTxs);
+      if (events.length
+          && events.every((e) => e.standard === NEAR_FT_STANDARD ||  e.standard === NEAR_FARMING_STANDARD)) {
+        return;
       }
+
+      // https://nearblocks.io/txns/FiMZPjsEM6hWsN6eQKXC76NLtcjYsKtjtuV1QxhmSJy1#execution
+      if (!this.nearTxHelper.getLogs(rcpt).some((l) => l.includes('Insufficient storage paid'))) {
+        return;
+      }
+
+      if (!events.length || !events.every((e) => e.event === 'nft_mint' || e.event === 'nft_burn')) {
+        rcpt.function_calls.forEach((fc) => {
+          const indexer = this.defineFunctionCallIndexer(fc, events, rcpt, tx);
+
+          if (indexer) {
+            commonTxs.push({
+              function_name: fc.method_name,
+              indexer_name: (indexer !== 'def') ? indexer : null,
+              args: fc.args,
+              ...this.transformTxBase(commonTxs.length, rcpt, tx)
+            });
+          }
+        });
+      }
+
+      events.forEach((e) => {
+        commonTxs.push({
+          function_name: e.event + '_event',
+          indexer_name: e.event + '_event',
+          args: e.data,
+          ...this.transformTxBase(commonTxs.length, rcpt, tx)
+        });
+      });
     });
 
     this.txResults.set(tx.hash, [commonTxs.length, false]);
@@ -145,60 +179,62 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
     return commonTxs;
   }
 
-  findAndTransformFunctionCalls(rcpt: Receipt, tx: TxEvent, commonTxs: CommonTx[]) {
-    rcpt.function_calls.forEach((fc) => {
-      const indexer = this.defineFunctionCallIndexer(fc, rcpt, tx);
+  private defineFunctionCallIndexer(fc: FunctionCall, events: NftOrFtEvent[], rcpt: Receipt, tx: TxEvent) : string {
+    switch (fc.method_name) {
+      case 'nft_approve' : {
+        // https://nearblocks.io/txns/Efcw51xC9xxYj3fBq9UhmNgmfCNdETHjPga9vkS8ULLy#execution
+        if (!fc.args['msg']?.['is_auction']) {
+          switch (fc.args['msg']?.['market_type']) {
+            case 'accept_offer': {
+              return 'accept_bid';
+            }
+            case 'sale': {
+              return 'list';
+            }
+          }
+        }
 
-      if (indexer) {
-        commonTxs.push({
-          hash : tx.hash,
-          block_hash: tx.block_hash,
-          block_timestamp: this.txHelper.nanoToMiliSeconds(tx.block_timestamp),
-          block_height: tx.block_height,
-          nonce: tx.nonce,
-          index: BigInt(commonTxs.length),
-          signer: tx.signer_id,
-          receiver: tx.receiver_id,
-          function_name: fc.method_name,
-          indexer_name: (indexer !== 'def') ? indexer : null,
-          args: fc.args,
-          receipts: [rcpt]
-        });
+        // https://nearblocks.io/en/txns/EZrwG2ABowDgiHwthJNGi4Ep3keXqJcDTo3FP6BD4Eq6#execution
+        if (fc.args['msg']?.['sale_conditions']?.['near']) {
+          return 'list';
+        }
+
+        // https://nearblocks.io/txns/CeZJdjf3Uzk6hMevABugTg5D2EgCbgeVyP7KbLTzFamd#execution
+        if (fc.args['msg']?.['staking_status']) {
+          return 'stake';
+        }
       }
-    });
+      case 'nft_transfer': {
+        return 'def';
+      }
+      case 'offer' : {
+        if (events.some((e) => e.event === 'nft_transfer')) {
+          return 'buy';
+        } else {
+          return 'bid';
+        }
+      }
+      default: {
+        return 'def';
+      }
+    }
+
+    this.logger.warn(`Couldn't define function call micro indexer: ${rcpt}`);
+
+    return null;
   }
 
-  defineFunctionCallIndexer(fc: FunctionCall, rcpt: Receipt, tx: TxEvent) : string {
-    // TODO...
-    return 'def';
-  }
-
-  findAndTransformNftEvents(rcpt: Receipt, tx: TxEvent, commonTxs: CommonTx[]) {
-    const prefix = 'EVENT_JSON:';
-
-    rcpt.logs.forEach((l) => {
-      if (l.startsWith(prefix)) {
-        const nft: NftEvent = JSON.parse(l.replace(prefix, ''))
-
-        commonTxs.push({
-          hash : tx.hash,
-          block_hash: tx.block_hash,
-          block_timestamp: this.txHelper.nanoToMiliSeconds(tx.block_timestamp),
-          block_height: tx.block_height,
-          nonce: tx.nonce,
-          index: BigInt(commonTxs.length),
-          signer: tx.signer_id,
-          receiver: tx.receiver_id,
-          function_name: nft.event + '_event',
-          indexer_name: nft.event + '_event',
-          args: nft.data,
-          receipts: [rcpt]
-        });
-      }
-    });
-
-    rcpt.receipts?.forEach((r) => {
-      this.findAndTransformNftEvents(r, tx, commonTxs)
-    });
+  private transformTxBase(i: number, rctp: Receipt, tx: TxEvent) {
+    return {
+      hash : tx.hash,
+      block_hash: tx.block_hash,
+      block_timestamp: this.txHelper.nanoToMiliSeconds(tx.block_timestamp),
+      block_height: tx.block_height,
+      nonce: tx.nonce,
+      index: BigInt(i),
+      signer: tx.signer_id,
+      receiver: tx.receiver_id,
+      rctp: [rctp]
+    }
   }
 }

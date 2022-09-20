@@ -1,9 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { SmartContractFunction } from 'src/database/universal/entities/SmartContractFunction';
 import { TxHelperService } from 'src/indexers/common/helpers/tx-helper.service';
-import { TxStakingHelperService } from 'src/indexers/common/helpers/tx-staking-helper.service';
+import { TxStakingHelper } from 'src/indexers/common/helpers/tx-staking-helper';
 import { CommonTx } from 'src/indexers/common/interfaces/common-tx.interface';
-import { CreateActionTO, CreateUnstakeActionTO } from 'src/indexers/common/interfaces/create-action-common.dto';
+import { CreateUnstakeActionTO } from 'src/indexers/common/interfaces/create-action-common.dto';
 import { IndexerService } from 'src/indexers/common/interfaces/indexer-service.interface';
 import { TxProcessResult } from 'src/indexers/common/interfaces/tx-process-result.interface';
 import { Action } from 'src/database/universal/entities/Action';
@@ -22,7 +22,7 @@ export class UnstakeIndexerService implements IndexerService {
   constructor(
     private txHelper: TxHelperService,
     private nearTxHelper: NearTxHelperService,
-    private txStakingHelper: TxStakingHelperService,
+    private txStakingHelper: TxStakingHelper,
     private txActionService: TxActionService
   ) {}
 

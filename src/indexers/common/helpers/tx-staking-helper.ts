@@ -1,20 +1,12 @@
 import { Injectable, Logger } from "@nestjs/common";
-import { InjectRepository } from "@nestjs/typeorm";
 import { NftState } from "src/database/universal/entities/NftState";
-import { SmartContract } from "src/database/universal/entities/SmartContract";
-import { Repository } from "typeorm";
 import { CommonTx } from "../interfaces/common-tx.interface";
 
 @Injectable()
-export class TxStakingHelperService {
-  private readonly logger = new Logger(TxStakingHelperService.name);
+export class TxStakingHelper {
+  private readonly logger = new Logger(TxStakingHelper.name);
 
-  constructor(
-    @InjectRepository(NftState)
-    private nftStateRepository: Repository<NftState>,
-    @InjectRepository(SmartContract)
-    private smartContractRepository: Repository<SmartContract>
-  ) {}
+  constructor() {}
 
   isNewStakingBlock(tx: CommonTx, nft_state: NftState) {
     return (

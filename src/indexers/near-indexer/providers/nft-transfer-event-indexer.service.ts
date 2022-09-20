@@ -9,7 +9,7 @@ import { TxHelperService } from "src/indexers/common/helpers/tx-helper.service";
 
 import { ActionName, SmartContractType } from "src/indexers/common/helpers/indexer-enums";
 import { SmartContractFunction } from "src/database/universal/entities/SmartContractFunction";
-import { TxStakingHelperService } from "src/indexers/common/helpers/tx-staking-helper.service";
+import { TxStakingHelper } from "src/indexers/common/helpers/tx-staking-helper";
 import { TxActionService } from "src/indexers/common/providers/tx-action.service";
 
 @Injectable()
@@ -19,7 +19,7 @@ export class NftTransferEventIndexerService implements IndexerService {
   constructor(
     private txHelper: TxHelperService,
     private txActionService: TxActionService,
-    private txStakingHelper: TxStakingHelperService
+    private txStakingHelper: TxStakingHelper
   ) {}
 
   async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {

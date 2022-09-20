@@ -7,7 +7,7 @@ import { SmartContract } from "src/database/universal/entities/SmartContract";
 import { SmartContractFunction } from "src/database/universal/entities/SmartContractFunction";
 import { ActionName, SmartContractType } from "src/indexers/common/helpers/indexer-enums";
 import { TxHelperService } from "src/indexers/common/helpers/tx-helper.service";
-import { TxStakingHelperService } from "src/indexers/common/helpers/tx-staking-helper.service";
+import { TxStakingHelper } from "src/indexers/common/helpers/tx-staking-helper";
 import { CommonTx } from "src/indexers/common/interfaces/common-tx.interface";
 import { CreateActionTO, CreateStakeActionTO } from "src/indexers/common/interfaces/create-action-common.dto";
 import { IndexerService } from "src/indexers/common/interfaces/indexer-service.interface";
@@ -22,7 +22,7 @@ export class StakeIndexerService implements IndexerService {
   constructor(
     private txHelper: TxHelperService,
     private stacksTxHelper: StacksTxHelperService,
-    private txStakingHelper: TxStakingHelperService,
+    private txStakingHelper: TxStakingHelper,
     @InjectRepository(Action)
     private actionRepository: Repository<Action>,
     @InjectRepository(NftState)

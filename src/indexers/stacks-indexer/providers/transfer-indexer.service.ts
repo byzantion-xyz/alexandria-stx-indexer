@@ -1,5 +1,4 @@
 import { Injectable, Logger } from "@nestjs/common";
-import { InjectRepository } from "@nestjs/typeorm";
 import { Action } from "src/database/universal/entities/Action";
 import { SmartContract } from "src/database/universal/entities/SmartContract";
 import { CommonTx } from "src/indexers/common/interfaces/common-tx.interface";
@@ -8,10 +7,10 @@ import { IndexerService } from "src/indexers/common/interfaces/indexer-service.i
 import { TxProcessResult } from "src/indexers/common/interfaces/tx-process-result.interface";
 import { TxHelperService } from "src/indexers/common/helpers/tx-helper.service";
 
-import { Repository } from "typeorm";
 import { ActionName } from "src/indexers/common/helpers/indexer-enums";
 import { SmartContractFunction } from "src/database/universal/entities/SmartContractFunction";
 import { StacksTxHelperService } from "./stacks-tx-helper.service";
+import { TxActionService } from "src/indexers/common/providers/tx-action.service";
 
 @Injectable()
 export class TransferIndexerService implements IndexerService {
@@ -20,8 +19,7 @@ export class TransferIndexerService implements IndexerService {
   constructor(
     private txHelper: TxHelperService,
     private stacksTxHelper: StacksTxHelperService,
-    @InjectRepository(Action)
-    private actionRepository: Repository<Action>
+    private txActionService: TxActionService
   ) {}
 
   async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {
@@ -64,12 +62,6 @@ export class TransferIndexerService implements IndexerService {
   }
 
   async createAction(params: CreateTransferActionTO): Promise<Action> {
-    try {
-      const action = this.actionRepository.create(params);
-      const saved = await this.actionRepository.save(action);
-      this.logger.log(`New action ${params.action}: ${saved.id} `);
-
-      return saved;
-    } catch (err) {}
+    return await this.txActionService.saveAction(params);
   }
 }

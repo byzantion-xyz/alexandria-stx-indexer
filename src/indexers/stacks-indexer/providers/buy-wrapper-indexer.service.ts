@@ -14,6 +14,7 @@ import { SmartContractFunction } from "src/database/universal/entities/SmartCont
 import { Repository } from "typeorm";
 import { ActionName } from "src/indexers/common/helpers/indexer-enums";
 import { StacksTxHelperService } from "./stacks-tx-helper.service";
+import { TxActionService } from "src/indexers/common/providers/tx-action.service";
 
 @Injectable()
 export class BuyWrapperIndexerService implements IndexerService {
@@ -22,10 +23,9 @@ export class BuyWrapperIndexerService implements IndexerService {
   constructor(
     private txHelper: TxHelperService,
     private stacksTxHelper: StacksTxHelperService,
-    @InjectRepository(ActionEntity)
-    private actionRepository: Repository<ActionEntity>,
     @InjectRepository(SmartContract)
     private smartContractRepository: Repository<SmartContract>,
+    private txActionService: TxActionService
   ) {}
 
   async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {
@@ -73,12 +73,6 @@ export class BuyWrapperIndexerService implements IndexerService {
   }
 
   async createAction(params: CreateBuyActionTO): Promise<ActionEntity> {
-    try {
-      const action = this.actionRepository.create(params);
-      const saved = await this.actionRepository.save(action);
-      this.logger.log(`New action ${params.action}: ${saved.id} `);
-
-      return saved;
-    } catch (err) {}
+    return await this.txActionService.saveAction(params);
   }
 }

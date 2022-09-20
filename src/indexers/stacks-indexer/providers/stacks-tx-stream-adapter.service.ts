@@ -66,10 +66,10 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
     return { cursor };
   }
 
-  async setTxResult(txHash: string, txResult: TxProcessResult): Promise<void> {
+  async setTxResult(tx: CommonTx, txResult: TxProcessResult): Promise<void> {
     if (txResult.processed || txResult.missing) {
       await this.transactionRepository.update(
-        { hash: txHash },
+        { hash: tx.hash },
         {
           processed: txResult.processed,
           missing: txResult.missing,
@@ -126,7 +126,7 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
 
     const client = new Client(this.configService.get('STACKS_STREAMER_SQL_DATABASE_URL'));
     client.connect();
-  
+
     client.query('LISTEN new_block;', (err, res) => {
       this.logger.log('Listening DB block notifications');
     });
@@ -146,7 +146,7 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
 
     const txs: StacksTransaction[] = await this.transactionRepository.query(sql);
     const result: CommonTx[] = this.transformTxs(txs);
-  
+
     return result;
   }
 
@@ -163,22 +163,22 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
 
   private async findSmartContracts(contract_key?: string): Promise<SmartContract[]> {
     // Bns marketplaces excluded until micro indexers are fully implemented.
-    let accounts = await this.smartContractRepository.find({ 
-      where: { 
+    let accounts = await this.smartContractRepository.find({
+      where: {
         chain : { symbol: this.chainSymbol },
-        ...( contract_key 
+        ...( contract_key
           ? { contract_key }
           : { contract_key: Not(In([
-            'SP000000000000000000002Q6VF78.bns', 
-            'SP2KAF9RF86PVX3NEE27DFV1CQX0T4WGR41X3S45C.bns-marketplace', 
-            'SP2KAF9RF86PVX3NEE27DFV1CQX0T4WGR41X3S45C.bns-marketplace-v1', 
+            'SP000000000000000000002Q6VF78.bns',
+            'SP2KAF9RF86PVX3NEE27DFV1CQX0T4WGR41X3S45C.bns-marketplace',
+            'SP2KAF9RF86PVX3NEE27DFV1CQX0T4WGR41X3S45C.bns-marketplace-v1',
             'SP2KAF9RF86PVX3NEE27DFV1CQX0T4WGR41X3S45C.bns-marketplace-v3'
           ])) }
         )
       }
     });
     if (!accounts || !accounts.length) throw new Error('Invalid contract_key');
-    
+
     return accounts;
   }
 }

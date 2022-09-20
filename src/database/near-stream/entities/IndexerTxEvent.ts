@@ -33,6 +33,6 @@ export class IndexerTxEvent {
     @Column()
     processed: boolean;
 
-    @Column()
-    missing: boolean;
+    @Column('text', { array: true })
+    missing: string[];
 }

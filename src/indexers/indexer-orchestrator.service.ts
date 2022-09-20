@@ -53,7 +53,7 @@ export class IndexerOrchestratorService {
         const common_txs: CommonTx[] = this.txStreamAdapter.transformTxs(txs);
         await this.processTransactions(common_txs);
       } while (txs.length > 0);
-      
+
       cursor.close();
       await this.txStreamAdapter.closePool();
 
@@ -73,7 +73,7 @@ export class IndexerOrchestratorService {
 
         client.on("notification", async (event) => {
           const txs: CommonTx[] = await this.txStreamAdapter.fetchEventData(event.payload);
-          
+
           await this.processTransactions(txs);
         });
       } else {
@@ -89,7 +89,7 @@ export class IndexerOrchestratorService {
     for await (const tx of transactions) {
       const txResult: TxProcessResult = await this.processTransaction(tx);
       if (txResult.processed) processed++;
-      await this.txStreamAdapter.setTxResult(tx.hash, txResult);
+      await this.txStreamAdapter.setTxResult(tx, txResult);
     }
 
     return { total: processed };
@@ -101,11 +101,11 @@ export class IndexerOrchestratorService {
     try {
       const method_name = transaction.function_name;
       const smart_contract = await this.smartContractRepository.findOne({
-        where: { 
-          contract_key: transaction.receiver, 
-          chain: { symbol: this.chainSymbol } 
+        where: {
+          contract_key: transaction.receiver,
+          chain: { symbol: this.chainSymbol }
         },
-        relations: {  
+        relations: {
           smart_contract_functions: true,
           custodial_smart_contract: true
         },
@@ -167,7 +167,7 @@ export class IndexerOrchestratorService {
       throw new Error(`CHAIN_SYMBOL must be provided as environment variable`);
     }
     const chain = await this.chainRepository.findOneByOrFail({ symbol: this.chainSymbol });
-  
+
     if (
       !this.txStreamAdapter ||
       !this.isTxStreamAdapter(this.txStreamAdapter)
@@ -189,7 +189,7 @@ export class IndexerOrchestratorService {
   isTxStreamAdapter(arg): arg is TxStreamAdapter {
     return (
       typeof arg.fetchTxs === 'function' &&
-      typeof arg.setTxResult === 'function' && 
+      typeof arg.setTxResult === 'function' &&
       typeof arg.connectPool === 'function' &&
       typeof arg.closePool === 'function'
     );

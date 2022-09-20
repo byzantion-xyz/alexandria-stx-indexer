@@ -70,7 +70,7 @@ export class UnstakeIndexerService implements IndexerService {
     return txResult;
   }
 
-  async createAction(params: CreateActionTO): Promise<Action> {
+  async createAction(params: CreateUnstakeActionTO): Promise<Action> {
     return await this.txActionService.saveAction(params);
 
   }

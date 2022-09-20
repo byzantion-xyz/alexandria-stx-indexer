@@ -66,7 +66,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
                     and block_height >= ${options.start_block_height ?? 0}
                     and block_height <= ${options.end_block_height ?? Number.MAX_SAFE_INTEGER}
                     and processed = false
-                    and missing = ${options.includeMissings}                                  
+                    and missing ${!options.includeMissings ? `is` : `is not`} null                                   
                  order by block_height asc`;
 
     const cursor = this.poolClient.query(new Cursor(sql));
@@ -74,25 +74,28 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
     return { cursor };
   }
 
-  async setTxResult(hash: string, result: TxProcessResult): Promise<void> {
-    const txResult: [number, boolean] = this.txResults.get(hash);
+  async setTxResult(tx: CommonTx, result: TxProcessResult): Promise<void> {
+    const txResult: [number, string[]] = this.txResults.get(tx.hash);
 
     if (!txResult) {
-      throw new Error(`Couldn't set TxProcessResult: ${hash}`)
+      throw new Error(`Couldn't set TxProcessResult: ${tx.hash}`)
+    }
+
+    if (result.missing) {
+      txResult[1].push(`${tx.function_name}:${tx.receipts[0].id}`);
     }
 
     if (txResult[0] <= 1) {
-      this.txResults.delete(hash);
+      this.txResults.delete(tx.hash);
 
-      // TODO: Uncomment this when ready
-      // await this.txEventRepository.update({ hash: hash },
-      //     {
-      //       processed: true,
-      //       missing: txResult[1] || result.missing,
-      //     }
-      // );
+      await this.txEventRepository.update({ hash: tx.hash },
+          {
+            processed: true,
+            missing: txResult[1],
+          }
+      );
     } else {
-      this.txResults.set(hash, [txResult[0] - 1, txResult[1] || result.missing]);
+      this.txResults.set(tx.hash, [txResult[0] - 1, txResult[1]]);
     }
   }
 
@@ -174,7 +177,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
       });
     });
 
-    this.txResults.set(tx.hash, [commonTxs.length, false]);
+    this.txResults.set(tx.hash, [commonTxs.length, []]);
 
     return commonTxs;
   }
@@ -221,7 +224,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
       }
     }
 
-    this.logger.warn(`Couldn't define function call micro indexer: ${rcpt}`);
+    this.logger.warn(`Couldn't define '${fc.method_name}' function call micro indexer: ${rcpt.id}`);
 
     return null;
   }

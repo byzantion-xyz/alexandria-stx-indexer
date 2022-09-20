@@ -6,13 +6,12 @@ import { CreateRelistActionTO } from "../../common/interfaces/create-action-comm
 import { CommonTx } from "src/indexers/common/interfaces/common-tx.interface";
 import { IndexerService } from "../../common/interfaces/indexer-service.interface";
 
-import { InjectRepository } from "@nestjs/typeorm";
 import { Action } from "src/database/universal/entities/Action";
 import { SmartContract } from "src/database/universal/entities/SmartContract";
 import { SmartContractFunction } from "src/database/universal/entities/SmartContractFunction";
-import { Repository } from "typeorm";
 import { ActionName } from "../../common/helpers/indexer-enums";
 import { NearTxHelperService } from "src/indexers/near-indexer/providers/near-tx-helper.service";
+import { TxActionService } from "src/indexers/common/providers/tx-action.service";
 
 @Injectable()
 export class RelistIndexerService implements IndexerService {
@@ -21,8 +20,7 @@ export class RelistIndexerService implements IndexerService {
   constructor(
     private txHelper: TxHelperService,
     private nearTxHelper: NearTxHelperService,
-    @InjectRepository(Action)
-    private actionRepository: Repository<Action>
+    private txActionService: TxActionService
   ) {}
 
   async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {
@@ -47,11 +45,11 @@ export class RelistIndexerService implements IndexerService {
 
       if (this.nearTxHelper.isNewerEvent(tx, nft_state_list)) {
         await this.txHelper.listMeta(nftMeta, tx, msc, price);
-        await this.createAction(listActionParams);
       } else {
         this.logger.log(`Too Late`);
-        await this.createAction(listActionParams);
       }
+      await this.createAction(listActionParams);
+
       txResult.processed = true;
     } else {
       this.logger.log(`NftMeta not found ${sc.contract_key} ${token_id}`);
@@ -62,11 +60,6 @@ export class RelistIndexerService implements IndexerService {
   }
 
   async createAction(params: CreateRelistActionTO): Promise<Action> {
-    try {
-      const action = this.actionRepository.create(params);
-      const saved = await this.actionRepository.save(action);
-      this.logger.log(`New action ${params.action}: ${saved.id} `);
-      return saved;
-    } catch (err) {}
+    return await this.txActionService.saveAction(params);
   }
 }

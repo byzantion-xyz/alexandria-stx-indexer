@@ -9,6 +9,7 @@ import { CommonTx } from 'src/indexers/common/interfaces/common-tx.interface';
 import { CreateMintActionTO } from 'src/indexers/common/interfaces/create-action-common.dto';
 import { IndexerService } from 'src/indexers/common/interfaces/indexer-service.interface';
 import { TxProcessResult } from 'src/indexers/common/interfaces/tx-process-result.interface';
+import { TxActionService } from 'src/indexers/common/providers/tx-action.service';
 import { Repository } from 'typeorm';
 
 @Injectable()
@@ -17,8 +18,7 @@ export class NftMintEventIndexerService implements IndexerService {
 
   constructor(
     private txHelper: TxHelperService,
-    @InjectRepository(Action)
-    private actionRepository: Repository<Action>,
+    private txActionService: TxActionService,
   ) {}
 
   async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {
@@ -66,13 +66,7 @@ export class NftMintEventIndexerService implements IndexerService {
   }
 
   async createAction(params: CreateMintActionTO): Promise<Action> {
-    try {
-      const action = this.actionRepository.create(params);
-      const saved = await this.actionRepository.save(action);
-      this.logger.log(`New action ${params.action}: ${saved.id} `);
-
-      return saved;
-    } catch (err) { }
+    return await this.txActionService.saveAction(params);
   }
 
 }

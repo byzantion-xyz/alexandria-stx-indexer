@@ -1,6 +1,4 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { SmartContractFunction } from 'src/database/universal/entities/SmartContractFunction';
 import { TxHelperService } from 'src/indexers/common/helpers/tx-helper.service';
 import { TxStakingHelperService } from 'src/indexers/common/helpers/tx-staking-helper.service';
@@ -12,6 +10,7 @@ import { Action } from 'src/database/universal/entities/Action';
 import { SmartContract } from 'src/database/universal/entities/SmartContract';
 import { ActionName, SmartContractType } from 'src/indexers/common/helpers/indexer-enums';
 import { NearTxHelperService } from './near-tx-helper.service';
+import { TxActionService } from 'src/indexers/common/providers/tx-action.service';
 
 const NFT_TRANSFER_EVENT = 'nft_transfer';
 //const RESOLVE_WITHDRAW = ['withdraw_nft_callback', 'callback_post_withdraw_nft'];
@@ -24,8 +23,7 @@ export class UnstakeIndexerService implements IndexerService {
     private txHelper: TxHelperService,
     private nearTxHelper: NearTxHelperService,
     private txStakingHelper: TxStakingHelperService,
-    @InjectRepository(Action)
-    private actionRepository: Repository<Action>
+    private txActionService: TxActionService
   ) {}
 
   async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {
@@ -58,12 +56,11 @@ export class UnstakeIndexerService implements IndexerService {
 
       if (this.txStakingHelper.isNewStakingBlock(tx, nftMeta.nft_state)) {
         await this.txHelper.unstakeMeta(nftMeta.id, tx);
-
-        await this.createAction(unstakeActionParams);
       } else {
         this.logger.log(`Too Late`);
-        await this.createAction(unstakeActionParams);
       }
+      await this.createAction(unstakeActionParams);
+
       txResult.processed = true;
     } else {
       this.logger.log(`NftMeta not found ${contract_key} ${token_id}`);
@@ -74,11 +71,7 @@ export class UnstakeIndexerService implements IndexerService {
   }
 
   async createAction(params: CreateActionTO): Promise<Action> {
-    try {
-      const action = this.actionRepository.create(params);
-      const saved = await this.actionRepository.save(action);
-      this.logger.log(`New action ${params.action}: ${saved.id} `);
-      return saved;
-    } catch (err) {}
+    return await this.txActionService.saveAction(params);
+
   }
 }

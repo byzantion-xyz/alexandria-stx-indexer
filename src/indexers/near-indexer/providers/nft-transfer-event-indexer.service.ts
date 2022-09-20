@@ -1,5 +1,4 @@
 import { Injectable, Logger } from "@nestjs/common";
-import { InjectRepository } from "@nestjs/typeorm";
 import { Action } from "src/database/universal/entities/Action";
 import { SmartContract } from "src/database/universal/entities/SmartContract";
 import { CommonTx } from "src/indexers/common/interfaces/common-tx.interface";
@@ -8,11 +7,10 @@ import { IndexerService } from "src/indexers/common/interfaces/indexer-service.i
 import { TxProcessResult } from "src/indexers/common/interfaces/tx-process-result.interface";
 import { TxHelperService } from "src/indexers/common/helpers/tx-helper.service";
 
-import { Repository } from "typeorm";
 import { ActionName, SmartContractType } from "src/indexers/common/helpers/indexer-enums";
 import { SmartContractFunction } from "src/database/universal/entities/SmartContractFunction";
 import { TxStakingHelperService } from "src/indexers/common/helpers/tx-staking-helper.service";
-import { NearTxHelperService } from "./near-tx-helper.service";
+import { TxActionService } from "src/indexers/common/providers/tx-action.service";
 
 @Injectable()
 export class NftTransferEventIndexerService implements IndexerService {
@@ -20,10 +18,8 @@ export class NftTransferEventIndexerService implements IndexerService {
 
   constructor(
     private txHelper: TxHelperService,
-    private nearTxHelper: NearTxHelperService,
-    private txStakingHelper: TxStakingHelperService,
-    @InjectRepository(Action)
-    private actionRepository: Repository<Action>
+    private txActionService: TxActionService,
+    private txStakingHelper: TxStakingHelperService
   ) {}
 
   async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {
@@ -83,16 +79,6 @@ export class NftTransferEventIndexerService implements IndexerService {
   }
 
   async createAction(params: CreateTransferActionTO): Promise<Action> {
-    try {
-      const action = this.actionRepository.create(params);
-      const saved = await this.actionRepository.save(action);
-      this.logger.log(`New action ${params.action}: ${saved.id} `);
-
-      return saved;
-    } catch (err) { 
-      if (err && (!err.constraint || err.constraint !== 'action_tx_id_tx_index_idx')) {
-        this.logger.warn(err);
-      }
-    }
+    return await this.txActionService.saveAction(params);
   }
 }

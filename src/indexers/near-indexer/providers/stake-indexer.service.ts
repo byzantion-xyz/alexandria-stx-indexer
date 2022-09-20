@@ -1,7 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Action } from 'src/database/universal/entities/Action';
-import { NftState } from 'src/database/universal/entities/NftState';
 import { SmartContract } from 'src/database/universal/entities/SmartContract';
 import { SmartContractFunction } from 'src/database/universal/entities/SmartContractFunction';
 import { ActionName, SmartContractType } from 'src/indexers/common/helpers/indexer-enums';
@@ -11,6 +10,7 @@ import { CommonTx } from 'src/indexers/common/interfaces/common-tx.interface';
 import { CreateActionTO, CreateStakeActionTO } from 'src/indexers/common/interfaces/create-action-common.dto';
 import { IndexerService } from 'src/indexers/common/interfaces/indexer-service.interface';
 import { TxProcessResult } from 'src/indexers/common/interfaces/tx-process-result.interface';
+import { TxActionService } from 'src/indexers/common/providers/tx-action.service';
 import { Repository } from 'typeorm';
 import { NearTxHelperService } from './near-tx-helper.service';
 
@@ -24,10 +24,7 @@ export class StakeIndexerService implements IndexerService {
     private txHelper: TxHelperService,
     private nearTxHelper: NearTxHelperService,
     private txStakingHelper: TxStakingHelperService,
-    @InjectRepository(Action)
-    private actionRepository: Repository<Action>,
-    @InjectRepository(NftState)
-    private nftStateRepository: Repository<NftState>,
+    private txActionService: TxActionService,
     @InjectRepository(SmartContract)
     private smartContractRepository: Repository<SmartContract>
   ) {}
@@ -66,11 +63,11 @@ export class StakeIndexerService implements IndexerService {
         await this.txHelper.unlistMetaInAllMarkets(nftMeta, tx);
 
         await this.txHelper.stakeMeta(nftMeta.id, tx, sc, stake_sc);
-        await this.createAction(stakeActionParams);       
       } else {
         this.logger.log(`Too Late`);
-        await this.createAction(stakeActionParams);
       }
+      await this.createAction(stakeActionParams);
+
       txResult.processed = true;
     } else {
       this.logger.log(`NftMeta not found ${contract_key} ${token_id}`);
@@ -81,11 +78,6 @@ export class StakeIndexerService implements IndexerService {
   }
   
   async createAction(params: CreateActionTO): Promise<Action> {
-    try {
-      const action = this.actionRepository.create(params);
-      const saved = await this.actionRepository.save(action);
-      this.logger.log(`New action ${params.action}: ${saved.id} `);
-      return saved;
-    } catch (err) {}
+    return await this.txActionService.saveAction(params);
   }
 }

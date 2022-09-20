@@ -16,6 +16,7 @@ import { MegapontAttribute } from 'src/database/universal/entities/MegapontAttri
 import { NftStateList } from 'src/database/universal/entities/NftStateList';
 import { TxStakingHelperService } from './helpers/tx-staking-helper.service';
 import { TxBidHelperService } from './helpers/tx-bid-helper.service';
+import { TxActionService } from './providers/tx-action.service';
 
 @Module({
   imports: [
@@ -40,12 +41,14 @@ import { TxBidHelperService } from './helpers/tx-bid-helper.service';
     TxHelperService,
     TxStakingHelperService,
     TxBidHelperService,
+    TxActionService,
   ],
   exports: [
     TypeOrmModule,
     TxHelperService,
     TxStakingHelperService,
-    TxBidHelperService
+    TxBidHelperService,
+    TxActionService
   ]
 })
 export class CommonIndexerModule {}

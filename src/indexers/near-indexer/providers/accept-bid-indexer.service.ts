@@ -3,13 +3,13 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Action } from 'src/database/universal/entities/Action';
 import { SmartContract } from 'src/database/universal/entities/SmartContract';
 import { SmartContractFunction } from 'src/database/universal/entities/SmartContractFunction';
-import { ActionName, BidType, SmartContractType } from 'src/indexers/common/helpers/indexer-enums';
-import { TxBidHelperService } from 'src/indexers/common/helpers/tx-bid-helper.service';
+import { ActionName } from 'src/indexers/common/helpers/indexer-enums';
 import { TxHelperService } from 'src/indexers/common/helpers/tx-helper.service';
 import { CommonTx } from 'src/indexers/common/interfaces/common-tx.interface';
-import { CreateAcceptBidActionTO, CreateActionTO } from 'src/indexers/common/interfaces/create-action-common.dto';
+import { CreateAcceptBidActionTO } from 'src/indexers/common/interfaces/create-action-common.dto';
 import { IndexerService } from 'src/indexers/common/interfaces/indexer-service.interface';
 import { TxProcessResult } from 'src/indexers/common/interfaces/tx-process-result.interface';
+import { TxActionService } from 'src/indexers/common/providers/tx-action.service';
 import { Repository } from 'typeorm';
 import { NearTxHelperService } from './near-tx-helper.service';
 
@@ -23,9 +23,7 @@ export class AcceptBidIndexerService implements IndexerService {
   constructor(
     private txHelper: TxHelperService,
     private nearTxHelper: NearTxHelperService,
-    private txBidHelper: TxBidHelperService,
-    @InjectRepository(Action)
-    private actionRepository: Repository<Action>,
+    private txActionService: TxActionService,
     @InjectRepository(SmartContract)
     private smartContractRepository: Repository<SmartContract>
   ) {}
@@ -38,7 +36,6 @@ export class AcceptBidIndexerService implements IndexerService {
     const receipt = this.nearTxHelper.findReceiptWithEvent(tx.receipts, RESOLVE_OFFER);
     if (!payout || !receipt) {
       this.logger.debug(`No ${NFT_BUY_EVENT} found for tx hash: ${tx.hash}`);
-      txResult.processed = true;
       return txResult;
     }
 
@@ -77,15 +74,8 @@ export class AcceptBidIndexerService implements IndexerService {
     return txResult;
   }
 
-  async createAction(params: CreateActionTO): Promise<Action> {
-    try {
-      const action = this.actionRepository.create(params);
-      const saved = await this.actionRepository.save(action);
-
-      this.logger.log(`New action ${params.action}: ${saved.id} `);
-
-      return saved;
-    } catch (err) {}
+  async createAction(params: CreateAcceptBidActionTO): Promise<Action> {
+    return await this.txActionService.saveAction(params);
   }
 
 }

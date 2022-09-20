@@ -15,6 +15,7 @@ import { Repository } from "typeorm";
 import { ActionName, SmartContractType } from "../../common/helpers/indexer-enums";
 import { NftState } from "src/database/universal/entities/NftState";
 import { NearTxHelperService } from "src/indexers/near-indexer/providers/near-tx-helper.service";
+import { TxActionService } from "src/indexers/common/providers/tx-action.service";
 
 const NFT_LIST_EVENT = 'nft_on_approve';
 
@@ -25,9 +26,7 @@ export class ListIndexerService implements IndexerService {
   constructor(
     private txHelper: TxHelperService,
     private nearTxHelper: NearTxHelperService,
-    private missingCollectionService: MissingCollectionService,
-    @InjectRepository(Action)
-    private actionRepository: Repository<Action>,
+    private txActionService: TxActionService,
     @InjectRepository(SmartContract)
     private smartContractRepository: Repository<SmartContract>
   ) {}
@@ -38,7 +37,6 @@ export class ListIndexerService implements IndexerService {
     const receipt = this.nearTxHelper.findReceiptWithEvent(tx.receipts, NFT_LIST_EVENT);
     if (!receipt) {
       this.logger.warn(`No ${NFT_LIST_EVENT} found for tx hash: ${tx.hash}`);
-      txResult.processed = true;
       return txResult;
     }
 
@@ -70,16 +68,14 @@ export class ListIndexerService implements IndexerService {
 
       if (this.nearTxHelper.isNewerEvent(tx, nft_state_list)) {
         await this.txHelper.listMeta(nftMeta, tx, msc, price);
-        await this.createAction(listActionParams);
       } else {
         this.logger.log(`Too Late`);
-        await this.createAction(listActionParams);
       }
+      await this.createAction(listActionParams);
+
       txResult.processed = true;
     } else {
       this.logger.log(`NftMeta not found ${sc.contract_key} ${token_id}`);
-
-      //this.missingCollectionService.scrapeMissing({ contract_key, token_id });
       txResult.missing = true;
     }
 
@@ -87,11 +83,6 @@ export class ListIndexerService implements IndexerService {
   }
 
   async createAction(params: CreateListActionTO): Promise<Action> {
-    try {
-      const action = this.actionRepository.create(params);
-      const saved = await this.actionRepository.save(action);
-      this.logger.log(`New action ${params.action}: ${saved.id} `);
-      return saved;
-    } catch (err) {}
+    return await this.txActionService.saveAction(params);
   }
 }

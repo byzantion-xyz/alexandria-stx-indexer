@@ -194,6 +194,9 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
             case 'sale': {
               return 'list';
             }
+            case 'accept_offer_paras_series': {
+              return 'accept_bid';
+            }
           }
         }
 

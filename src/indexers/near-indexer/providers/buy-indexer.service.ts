@@ -43,6 +43,10 @@ export class BuyIndexerService implements IndexerService {
     const contract_key = this.txHelper.extractArgumentData(purchase.args, scf, "contract_key");
     const price = this.txHelper.extractArgumentData(tx.args, scf, "price");
     const seller = this.txHelper.extractArgumentData(purchase.args, scf, 'seller');
+    if (isNaN(price)) {
+      this.logger.warn(`Unable to find sale price for tx hash ${tx.hash}`);
+      return txResult;
+    }
 
     // Check if has custodial smart contract
     if (sc.type.includes(SmartContractType.non_fungible_tokens) && sc.custodial_smart_contract) {

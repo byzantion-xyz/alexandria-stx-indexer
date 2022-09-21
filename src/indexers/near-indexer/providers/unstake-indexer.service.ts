@@ -30,7 +30,7 @@ export class UnstakeIndexerService implements IndexerService {
     this.logger.debug(`process() ${tx.hash}`);
     let txResult: TxProcessResult = { processed: false, missing: false };
     
-    const transfer = this.nearTxHelper.findReceiptWithEvent(tx.receipts, NFT_TRANSFER_EVENT);
+    const transfer = this.nearTxHelper.findReceiptWithFunctionCall(tx.receipts, NFT_TRANSFER_EVENT);
     if (!transfer) {
       this.logger.debug(`No ${NFT_TRANSFER_EVENT} event found for tx hash ${tx.hash}`);
       return txResult;

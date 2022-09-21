@@ -7,11 +7,12 @@ import { SmartContract } from "src/database/universal/entities/SmartContract";
 import { SmartContractFunction } from "src/database/universal/entities/SmartContractFunction";
 import { ActionName, SmartContractType } from "src/indexers/common/helpers/indexer-enums";
 import { TxHelperService } from "src/indexers/common/helpers/tx-helper.service";
-import { TxStakingHelperService } from "src/indexers/common/helpers/tx-staking-helper.service";
+import { TxStakingHelper } from "src/indexers/common/helpers/tx-staking-helper";
 import { CommonTx } from "src/indexers/common/interfaces/common-tx.interface";
-import { CreateActionTO, CreateStakeActionTO } from "src/indexers/common/interfaces/create-action-common.dto";
+import { CreateStakeActionTO } from "src/indexers/common/interfaces/create-action-common.dto";
 import { IndexerService } from "src/indexers/common/interfaces/indexer-service.interface";
 import { TxProcessResult } from "src/indexers/common/interfaces/tx-process-result.interface";
+import { TxActionService } from "src/indexers/common/providers/tx-action.service";
 import { Repository } from "typeorm";
 import { StacksTxHelperService } from "./stacks-tx-helper.service";
 
@@ -22,11 +23,8 @@ export class StakeIndexerService implements IndexerService {
   constructor(
     private txHelper: TxHelperService,
     private stacksTxHelper: StacksTxHelperService,
-    private txStakingHelper: TxStakingHelperService,
-    @InjectRepository(Action)
-    private actionRepository: Repository<Action>,
-    @InjectRepository(NftState)
-    private nftStateRepository: Repository<NftState>,
+    private txStakingHelper: TxStakingHelper,
+    private txActionService: TxActionService,
     @InjectRepository(SmartContract)
     private smartContractRepository: Repository<SmartContract>
   ) {}
@@ -83,12 +81,7 @@ export class StakeIndexerService implements IndexerService {
     return txResult;
   }
 
-  async createAction(params: CreateActionTO): Promise<Action> {
-    try {
-      const action = this.actionRepository.create(params);
-      const saved = await this.actionRepository.save(action);
-      this.logger.log(`New action ${params.action}: ${saved.id} `);
-      return saved;
-    } catch (err) {}
+  async createAction(params: CreateStakeActionTO): Promise<Action> {
+    return await this.txActionService.saveAction(params);
   }
 }

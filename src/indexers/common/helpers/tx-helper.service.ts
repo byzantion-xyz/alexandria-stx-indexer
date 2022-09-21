@@ -70,7 +70,11 @@ export class TxHelperService {
       return scf.data[field];
     } 
     
-    return this.findArgumentData(args, scf, field);
+    if (Array.isArray(args)) {
+      return this.findArgumentData(args[0], scf, field);
+    } else {
+      return this.findArgumentData(args, scf, field);
+    }
   }
 
   // TODO: Optimize relations fetched per event type
@@ -101,8 +105,13 @@ export class TxHelperService {
   }
 
   isListedInAnyMarketplace(nftState: NftState): boolean {
-    const list =  nftState?.nft_states_list?.find(s => s.listed === true);
-    return list ? true : false;
+    return nftState?.nft_states_list?.some(s => s.listed === true);
+  }
+
+  isListedPreviously(nftState: NftState, tx: CommonTx): boolean {
+    return nftState?.nft_states_list?.some((s) => {
+      return s.listed === true && s.list_block_height < tx.block_height;
+    });
   }
 
   async findCommissionByKey(sc: SmartContract, contract_key: string, key?: string): Promise<Commission> {
@@ -237,9 +246,28 @@ export class TxHelperService {
   }
 
   async burnMeta(nftMetaId: string) {
-    await this.nftStateRepository.upsert({ meta_id: nftMetaId, burned: true }, ["meta_id"]);
+    await this.nftStateRepository.upsert({
+      meta_id: nftMetaId, 
+      burned: true,
+      owner: null,
+      owner_block_height: null,
+      owner_tx_id: null    
+    }, ["meta_id"]);
   }
 
+  async mintMeta(nftMeta: NftMeta, tx: CommonTx, owner: string) {
+    await this.nftStateRepository.upsert({
+      meta_id: nftMeta.id,
+      minted: true,
+      mint_tx: tx.hash,
+      ...((!nftMeta.nft_state || !nftMeta.nft_state.owner) && {
+        owner: owner,
+        owner_block_height: tx.block_height,
+        owner_tx_id: tx.hash
+      })
+    }, ["meta_id"]);
+  }
+  
   setCommonActionParams(
     action: ActionName, 
     tx: CommonTx, 
@@ -286,6 +314,23 @@ export class TxHelperService {
       }),
     };
 
+  }
+
+  isNewOwnerEvent(tx: CommonTx, nft_state: NftState): boolean {
+    return (
+      !nft_state ||
+      !nft_state.owner_block_height ||
+      tx.block_height > nft_state.owner_block_height
+    );
+  }
+
+  async setNewMetaOwner(nftMeta: NftMeta, tx: CommonTx, owner: string) {
+    await this.nftStateRepository.upsert({
+      meta_id: nftMeta.id,
+      owner: owner,
+      owner_block_height: tx.block_height,
+      owner_tx_id: tx.hash
+    }, ["meta_id"]);
   }
 
 }

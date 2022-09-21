@@ -1,20 +1,17 @@
 import { Logger, Injectable } from "@nestjs/common";
 import { TxProcessResult } from "src/indexers/common/interfaces/tx-process-result.interface";
 import { NftStateArguments, TxHelperService } from "src/indexers/common/helpers/tx-helper.service";
-import { MissingCollectionService } from "src/scrapers/near-scraper/providers/missing-collection.service";
 import { CreateListActionTO } from "src/indexers/common/interfaces/create-action-common.dto";
 
 import { CommonTx } from "src/indexers/common/interfaces/common-tx.interface";
 import { IndexerService } from "src/indexers/common/interfaces/indexer-service.interface";
 
-import { InjectRepository } from "@nestjs/typeorm";
 import { Action } from "src/database/universal/entities/Action";
 import { SmartContract } from "src/database/universal/entities/SmartContract";
 import { SmartContractFunction } from "src/database/universal/entities/SmartContractFunction";
-import { Repository } from "typeorm";
-import { ActionName, SmartContractType } from "src/indexers/common/helpers/indexer-enums";
-import { NftState } from "src/database/universal/entities/NftState";
+import { ActionName } from "src/indexers/common/helpers/indexer-enums";
 import { StacksTxHelperService } from "./stacks-tx-helper.service";
+import { TxActionService } from "src/indexers/common/providers/tx-action.service";
 
 @Injectable()
 export class ListIndexerService implements IndexerService {
@@ -23,13 +20,7 @@ export class ListIndexerService implements IndexerService {
   constructor(
     private txHelper: TxHelperService,
     private stacksTxHelper: StacksTxHelperService,
-    private missingCollectionService: MissingCollectionService,
-    @InjectRepository(Action)
-    private actionRepository: Repository<Action>,
-    @InjectRepository(NftState)
-    private nftStateRepository: Repository<NftState>,
-    @InjectRepository(SmartContract)
-    private smartContractRepository: Repository<SmartContract>
+    private txActionService: TxActionService
   ) {}
 
   async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {
@@ -62,17 +53,14 @@ export class ListIndexerService implements IndexerService {
           ... (collection_map_id && { collection_map_id })
         };
         await this.txHelper.listMeta(nftMeta, tx, sc, price, commission?.id, args);
-
-        await this.createAction(listActionParams);
       } else {
         this.logger.log(`Too Late`);
-        await this.createAction(listActionParams);
       }
+      await this.createAction(listActionParams);
+
       txResult.processed = true;
     } else {
       this.logger.log(`NftMeta not found ${contract_key} ${token_id}`);
-
-      //this.missingCollectionService.scrapeMissing({ contract_key, token_id });
       txResult.missing = true;
     }
 
@@ -80,11 +68,6 @@ export class ListIndexerService implements IndexerService {
   }
 
   async createAction(params: CreateListActionTO): Promise<Action> {
-    try {
-      const action = this.actionRepository.create(params);
-      const saved = await this.actionRepository.save(action);
-      this.logger.log(`New action ${params.action}: ${saved.id} `);
-      return saved;
-    } catch (err) {}
+    return await this.txActionService.saveAction(params);
   }
 }

@@ -19,7 +19,7 @@ export interface TxCursorBatch {
 export interface TxStreamAdapter {
   connectPool(): Promise<PoolClient>;
   fetchTxs(options: IndexerOptions): Promise<TxCursorBatch>;
-  setTxResult(txHash: string, txResult: TxProcessResult): void;
+  setTxResult(tx: CommonTx, txResult: TxProcessResult): void;
   closePool(): Promise<any>;
 
   subscribeToEvents?(): Client;

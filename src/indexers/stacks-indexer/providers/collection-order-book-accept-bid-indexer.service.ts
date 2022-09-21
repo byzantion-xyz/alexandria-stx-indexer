@@ -11,6 +11,7 @@ import { CommonTx } from 'src/indexers/common/interfaces/common-tx.interface';
 import { CreateAcceptCollectionBidActionTO, CreateActionTO } from 'src/indexers/common/interfaces/create-action-common.dto';
 import { IndexerService } from 'src/indexers/common/interfaces/indexer-service.interface';
 import { TxProcessResult } from 'src/indexers/common/interfaces/tx-process-result.interface';
+import { TxActionService } from 'src/indexers/common/providers/tx-action.service';
 import { Repository } from 'typeorm';
 import { StacksTxHelperService } from './stacks-tx-helper.service';
 
@@ -22,8 +23,7 @@ export class CollectionOrderBookAcceptBidIndexerService implements IndexerServic
     private stacksTxHelper: StacksTxHelperService,
     private txHelper: TxHelperService,
     private txBidHelper: TxBidHelperService,
-    @InjectRepository(Action)
-    private actionRepository: Repository<Action>,
+    private txActionService: TxActionService,
     @InjectRepository(BidState)
     private bidStateRepository: Repository<BidState>
   ) {}
@@ -81,15 +81,7 @@ export class CollectionOrderBookAcceptBidIndexerService implements IndexerServic
     return txResult;
   }
 
-
- async createAction(params: CreateActionTO): Promise<Action> {
-    try {
-      const action = this.actionRepository.create(params);
-      const saved = await this.actionRepository.save(action);
-
-      this.logger.log(`New action ${params.action}: ${saved.id} `);
-
-      return saved;
-    } catch (err) {}
+  async createAction(params: CreateAcceptCollectionBidActionTO): Promise<Action> {
+    return await this.txActionService.saveAction(params);
   }
 }

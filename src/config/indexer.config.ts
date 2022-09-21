@@ -21,30 +21,62 @@ export default registerAs("indexer", () => ({
       },
     ],
     Near: [
-    {
-      function_name: "nft_transfer",
-      name: "transfer",
-      args: {
-        "token_id": "token_id",
-        "buyer": "receiver_id"
+      {
+        function_name: "nft_transfer_event",
+        name: "nft_transfer_event",
+        args: {
+          "seller": "old_owner_id",
+          "buyer": "new_owner_id",
+          "token_ids": "token_ids",
+          "authorized_id": "authorized_id"
+        }
+      },
+      {
+        function_name: 'nft_mint_event',
+        name: 'nft_mint_event',
+        args: {
+          "owner": "owner_id",
+          "token_ids": "token_ids"
+        }
+      },
+      {
+        function_name: "nft_burn_event",
+        name: 'nft_burn_event',
+        args: {
+          "token_ids": "token_ids",
+          "owner": "owner_id"
+        }
+      }, 
+      {
+        function_name: 'nft_approve',
+        name: 'list',
+        args: {
+          price: "msg.price",
+          token_id: "token_id",
+          list_action: "msg.market_type",
+          contract_key: "account_id",
+          token_price: "msg.sale_conditions.near",
+          buyer: "msg.buyer_id"
+        },
+      },
+      {
+        function_name: 'nft_revoke',
+        name: 'unlist',
+        args: { 
+          token_id: "token_id", 
+          contract_key: "account_id" 
+        },
+      },
+      {
+        function_name: 'nft_transfer_call',
+        name: 'stake',
+        args: { 
+          token_id: "token_id", 
+          contract_key: "receiver_id", 
+          action: "msg" 
+        }
       }
-    },
-    {
-      function_name: "nft_transfer_payout",
-      name: "transfer",
-      args: {
-        "token_id": "token_id",
-        "buyer": "receiver_id",
-        "price": "balance"
-      }
-    }, 
-    {
-      function_name: "nft_burn",
-      name: 'burn',
-      args: {
-        "token_id": "token_id"
-      }
-    }],
+    ]
   },
   blockRanges: {
     Stacks: {

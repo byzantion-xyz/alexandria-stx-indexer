@@ -34,14 +34,15 @@ export class AcceptBidIndexerService implements IndexerService {
 
     const payout = this.nearTxHelper.findEventData(tx.receipts, NFT_BUY_EVENT);
     const receipt = this.nearTxHelper.findReceiptWithFunctionCall(tx.receipts, RESOLVE_OFFER);
+    const offer = this.nearTxHelper.findEventData(tx.receipts, RESOLVE_OFFER);
     if (!payout || !receipt) {
       this.logger.debug(`No ${NFT_BUY_EVENT} found for tx hash: ${tx.hash}`);
       return txResult;
     }
 
     const token_id = this.txHelper.extractArgumentData(payout.args, scf, 'token_id'); 
-    const price = this.txHelper.extractArgumentData(tx.args, scf, "price");
-    const buyer = this.txHelper.extractArgumentData(tx.args, scf, 'buyer');
+    const price = this.txHelper.extractArgumentData(offer.args, scf, "price");
+    const buyer = this.txHelper.extractArgumentData(offer.args, scf, 'buyer');
     const contract_key = sc.contract_key;
 
     const msc = await this.smartContractRepository.findOneBy({ contract_key: receipt.receiver_id });

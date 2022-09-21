@@ -126,7 +126,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
                  from indexer_tx_event
                  where hash = '${ event }'
                    and processed = false
-                   and missing = false`;
+                   and missing is null`;
 
     return this.transformTxs(await this.txEventRepository.query(sql));
   }

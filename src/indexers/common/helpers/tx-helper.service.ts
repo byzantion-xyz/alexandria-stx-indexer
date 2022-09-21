@@ -105,15 +105,13 @@ export class TxHelperService {
   }
 
   isListedInAnyMarketplace(nftState: NftState): boolean {
-    const list =  nftState?.nft_states_list?.find(s => s.listed === true);
-    return list ? true : false;
+    return nftState?.nft_states_list?.some(s => s.listed === true);
   }
 
   isListedPreviously(nftState: NftState, tx: CommonTx): boolean {
-    const listings = nftState?.nft_states_list?.filter(s => 
-      s.listed === true && s.list_block_height < tx.block_height
-    );
-    return listings && listings.length ? true : false;
+    return nftState?.nft_states_list?.some((s) => {
+      return s.listed === true && s.list_block_height < tx.block_height;
+    });
   }
 
   async findCommissionByKey(sc: SmartContract, contract_key: string, key?: string): Promise<Commission> {

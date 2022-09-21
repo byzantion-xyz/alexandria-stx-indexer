@@ -74,7 +74,7 @@ export class NearTxHelperService {
   }
 
   isReceiptForEvent(r: Receipt, event_name: string): boolean {
-    return r && r.function_calls.find(fc => fc.method_name === event_name) ? true : false;
+    return r.function_calls.some(fc => fc.method_name === event_name);
   }
 
   getEvents(rcpt: Receipt, acc: [NftOrFtEvent, Receipt][] = []) : [NftOrFtEvent, Receipt][] {

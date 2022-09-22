@@ -240,8 +240,8 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
       block_height: tx.block_height,
       nonce: tx.nonce,
       index: BigInt(i),
-      signer: tx.signer_id,
-      receiver: tx.receiver_id,
+      signer: rctp.signer_id,
+      receiver: rctp.receiver_id,
       receipts: [rctp]
     }
   }

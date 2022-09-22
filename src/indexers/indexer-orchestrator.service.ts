@@ -13,6 +13,7 @@ import { IndexerOptions } from "./common/interfaces/indexer-options";
 import { SmartContractFunction } from "src/database/universal/entities/SmartContractFunction";
 import { CommonUtilService } from "src/common/helpers/common-util/common-util.service";
 import { MissingCollectionService } from "src/scrapers/near-scraper/providers/missing-collection.service";
+import { SmartContractService } from "./common/helpers/smart-contract.service";
 
 const BATCH_SIZE = 1000;
 
@@ -25,13 +26,12 @@ export class IndexerOrchestratorService {
   constructor(
     @Inject('MicroIndexers') private microIndexers: Array<IndexerService>,
     private configService: ConfigService,
-    @InjectRepository(SmartContract)
-    private smartContractRepository: Repository<SmartContract>,
     @InjectRepository(Chain)
     private chainRepository: Repository<Chain>,
     @Inject('TxStreamAdapter') private txStreamAdapter: TxStreamAdapter,
     private commonUtil: CommonUtilService,
     private missingCollectionService: MissingCollectionService,
+    private smartContractService: SmartContractService
   ) {}
 
   async runIndexer(options: IndexerOptions) {
@@ -42,6 +42,9 @@ export class IndexerOrchestratorService {
         this.logger.warn('A contract_key is required while running missing transactions');
         return;
       }
+
+      const scs = await this.smartContractService.findChainSmartContracts(this.chainSymbol);
+
       await this.txStreamAdapter.connectPool();
       const { cursor } = await this.txStreamAdapter.fetchTxs(options);
 
@@ -51,7 +54,7 @@ export class IndexerOrchestratorService {
         txs = await cursor.read(BATCH_SIZE);
         this.logger.log(`Fetching next batch of transactions`);
         const common_txs: CommonTx[] = this.txStreamAdapter.transformTxs(txs);
-        await this.processTransactions(common_txs);
+        await this.processTransactions(common_txs, scs);
       } while (txs.length > 0);
 
       cursor.close();
@@ -84,10 +87,11 @@ export class IndexerOrchestratorService {
     }
   }
 
-  async processTransactions(transactions: CommonTx[]): Promise<ProcessedTxsResult> {
+  async processTransactions(transactions: CommonTx[], scs?: SmartContract[]): Promise<ProcessedTxsResult> {
     let processed = 0;
     for await (const tx of transactions) {
-      const txResult: TxProcessResult = await this.processTransaction(tx);
+      let sc: SmartContract = scs.find(sc => sc.contract_key = tx.receiver);
+      const txResult: TxProcessResult = await this.processTransaction(tx, sc);
       if (txResult.processed) processed++;
       await this.txStreamAdapter.setTxResult(tx, txResult);
     }
@@ -95,22 +99,14 @@ export class IndexerOrchestratorService {
     return { total: processed };
   }
 
-  async processTransaction(transaction: CommonTx): Promise<TxProcessResult> {
+  async processTransaction(transaction: CommonTx, smart_contract?: SmartContract): Promise<TxProcessResult> {
     let result: TxProcessResult = { processed: false, missing: false };
 
     try {
       const method_name = transaction.function_name;
-      const smart_contract = await this.smartContractRepository.findOne({
-        where: {
-          contract_key: transaction.receiver,
-          chain: { symbol: this.chainSymbol }
-        },
-        relations: {
-          smart_contract_functions: true,
-          custodial_smart_contract: true
-        },
-        cache: 60000
-      });
+      if (!smart_contract) {
+        smart_contract = await this.smartContractService.findByContractKey(transaction.receiver, this.chainSymbol);
+      }
 
       if (smart_contract) {
         let smart_contract_function =

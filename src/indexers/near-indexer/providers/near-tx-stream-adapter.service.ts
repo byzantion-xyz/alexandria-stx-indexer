@@ -115,6 +115,8 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
    
     this.logger.log(`saveTxResults() txs: ${this.txBatchResults.length}`);
     await this.txEventRepository.query(sql);
+
+    this.txBatchResults = [];
   }
 
   async closePool(): Promise<any> {

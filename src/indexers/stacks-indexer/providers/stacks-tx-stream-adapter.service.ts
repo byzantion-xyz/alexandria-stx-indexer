@@ -88,6 +88,8 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
 
     this.logger.log(`saveTxResults() txs: ${this.txBatchResults.length}`);
     await this.transactionRepository.query(sql);
+
+    this.txBatchResults = [];
   }
 
   transformTxs(txs: StacksTransaction[]): CommonTx[] {

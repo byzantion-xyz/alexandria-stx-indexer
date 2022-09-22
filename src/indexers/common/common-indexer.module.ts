@@ -17,6 +17,7 @@ import { NftStateList } from 'src/database/universal/entities/NftStateList';
 import { TxStakingHelper } from './helpers/tx-staking-helper';
 import { TxBidHelperService } from './helpers/tx-bid-helper.service';
 import { TxActionService } from './providers/tx-action.service';
+import { SmartContractService } from './helpers/smart-contract.service';
 
 @Module({
   imports: [
@@ -42,13 +43,15 @@ import { TxActionService } from './providers/tx-action.service';
     TxStakingHelper,
     TxBidHelperService,
     TxActionService,
+    SmartContractService,
   ],
   exports: [
     TypeOrmModule,
     TxHelperService,
     TxStakingHelper,
     TxBidHelperService,
-    TxActionService
+    TxActionService,
+    SmartContractService
   ]
 })
 export class CommonIndexerModule {}

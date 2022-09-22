@@ -157,7 +157,8 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
       }
 
       if (!events.length || !events.every(([e, _]) => e.event === 'nft_mint' || e.event === 'nft_burn')) {
-        [rcpt].concat(rcpt.receipts).forEach(r => {
+        let receipts = [rcpt].concat(this.nearTxHelper.flatMapReceipts(rcpt.receipts));
+        receipts.forEach(r => {
           r.function_calls.forEach((fc) => {
             const indexer = this.defineFunctionCallIndexer(fc, r, events);
   

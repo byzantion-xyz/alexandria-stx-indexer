@@ -153,18 +153,21 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
       }
 
       if (!events.length || !events.every(([e, _]) => e.event === 'nft_mint' || e.event === 'nft_burn')) {
-        rcpt.function_calls.forEach((fc) => {
-          const indexer = this.defineFunctionCallIndexer(fc, rcpt, events);
-
-          if (indexer) {
-            commonTxs.push({
-              function_name: fc.method_name,
-              indexer_name: (indexer !== 'def') ? indexer : null,
-              args: fc.args,
-              ...this.transformTxBase(commonTxs.length, rcpt, tx)
-            });
-          }
+        [rcpt].concat(rcpt.receipts).forEach(r => {
+          r.function_calls.forEach((fc) => {
+            const indexer = this.defineFunctionCallIndexer(fc, r, events);
+  
+            if (indexer) {
+              commonTxs.push({
+                function_name: fc.method_name,
+                indexer_name: (indexer !== 'def') ? indexer : null,
+                args: fc.args,
+                ...this.transformTxBase(commonTxs.length, r, tx)
+              });
+            }
+          });
         });
+        
       }
 
       events.forEach(([e, r]) => {

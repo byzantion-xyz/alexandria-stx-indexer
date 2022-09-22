@@ -8,6 +8,18 @@ export interface CommonTxResult {
   total: number
 };
 
+export interface NearTxBatchResult {
+  hash: string,
+  processed: boolean,
+  missing: string[]
+}
+
+export interface StacksTxBatchResult {
+  hash: string,
+  processed: boolean,
+  missing: boolean
+}
+
 export interface ProcessedTxsResult {
   total: number;
 }
@@ -20,6 +32,7 @@ export interface TxStreamAdapter {
   connectPool(): Promise<PoolClient>;
   fetchTxs(options: IndexerOptions): Promise<TxCursorBatch>;
   setTxResult(tx: CommonTx, txResult: TxProcessResult): void;
+  saveTxResults(): void;
   closePool(): Promise<any>;
 
   subscribeToEvents?(): Client;

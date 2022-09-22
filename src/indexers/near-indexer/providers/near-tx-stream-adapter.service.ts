@@ -49,22 +49,26 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
   }
 
   async fetchTxs(options: IndexerOptions): Promise<TxCursorBatch> {
-    const contracts = await this.smartContractRepository.find({
-      where: {
-        chain : { symbol: this.chainSymbol },
-        ...( options.contract_key && { contract_key: options.contract_key })
-      }
-    });
-
-    if (!contracts || !contracts.length) {
-      throw new Error(`Couldn't find matching smart contracts: ${options}`)
+    let contract_key: string;
+    if (options.contract_key) {
+      let sc = await this.smartContractRepository.findOne({
+        where: {
+          chain : { symbol: this.chainSymbol },
+          contract_key: options.contract_key 
+        }
+      });
+      contract_key = sc ? sc.contract_key : undefined;
+    }
+    
+    if (options.contract_key && !contract_key) {
+      throw new Error(`Couldn't find matching smart contract: ${options.contract_key}`)
     }
 
     const sql = `select *
                  from indexer_tx_event
-                 where receiver_id in (${contracts.map((c) => `'${c.contract_key}'`).join(',')})
-                    and block_height >= ${options.start_block_height ?? 0}
+                 where block_height >= ${options.start_block_height ?? 0}
                     and block_height <= ${options.end_block_height ?? Number.MAX_SAFE_INTEGER}
+                    ${ contract_key ? `and receiver_id='${contract_key}'` : '' }
                     and processed = false
                     and missing ${!options.includeMissings ? `is` : `is not`} null                                   
                  order by block_height asc`;
@@ -153,18 +157,22 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
       }
 
       if (!events.length || !events.every(([e, _]) => e.event === 'nft_mint' || e.event === 'nft_burn')) {
-        rcpt.function_calls.forEach((fc) => {
-          const indexer = this.defineFunctionCallIndexer(fc, rcpt, events);
-
-          if (indexer) {
-            commonTxs.push({
-              function_name: fc.method_name,
-              indexer_name: (indexer !== 'def') ? indexer : null,
-              args: fc.args,
-              ...this.transformTxBase(commonTxs.length, rcpt, tx)
-            });
-          }
+        let receipts = [rcpt].concat(this.nearTxHelper.flatMapReceipts(rcpt.receipts));
+        receipts.forEach(r => {
+          r.function_calls.forEach((fc) => {
+            const indexer = this.defineFunctionCallIndexer(fc, r, events);
+  
+            if (indexer) {
+              commonTxs.push({
+                function_name: fc.method_name,
+                indexer_name: (indexer !== 'def') ? indexer : null,
+                args: fc.args,
+                ...this.transformTxBase(commonTxs.length, r, tx)
+              });
+            }
+          });
         });
+        
       }
 
       events.forEach(([e, r]) => {
@@ -240,8 +248,8 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
       block_height: tx.block_height,
       nonce: tx.nonce,
       index: BigInt(i),
-      signer: tx.signer_id,
-      receiver: tx.receiver_id,
+      signer: rctp.signer_id,
+      receiver: rctp.receiver_id,
       receipts: [rctp]
     }
   }

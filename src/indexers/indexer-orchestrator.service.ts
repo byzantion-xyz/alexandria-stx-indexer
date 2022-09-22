@@ -35,7 +35,7 @@ export class IndexerOrchestratorService {
   ) {}
 
   async runIndexer(options: IndexerOptions) {
-    this.logger.debug(`runIndexer() Initialize with options: `, options);
+    this.logger.log(`runIndexer() Initialize with options: `, options);
     try {
       await this.setUpChainAndStreamer();
       if (options.includeMissings && !options.contract_key) {
@@ -60,7 +60,7 @@ export class IndexerOrchestratorService {
       cursor.close();
       await this.txStreamAdapter.closePool();
 
-      this.logger.debug(`runIndexer() Completed with options: `, options);
+      this.logger.log(`runIndexer() Completed with options: `, options);
     } catch (err) {
       this.logger.error(err);
     }
@@ -120,19 +120,18 @@ export class IndexerOrchestratorService {
 
         if (smart_contract_function) {
           const txHandler = this.getMicroIndexer(transaction.indexer_name || smart_contract_function.name);
+          this.logger.log(`process() ${transaction.hash} with: ${txHandler.constructor.name} `);
           result = await txHandler.process(
             transaction,
             smart_contract,
             smart_contract_function
           );
         } else {
-          this.logger.log(
-            `function_name: ${method_name} not found in ${transaction.receiver}`
-          );
+          this.logger.debug(`function_name: ${method_name} not found in ${transaction.receiver}`);
           result.missing = true;
         }
       } else {
-        this.logger.log(`smart_contract: ${transaction.receiver} not found`);
+        this.logger.debug(`smart_contract: ${transaction.receiver} not found`);
         if (this.chainSymbol === 'Near' && process.env.NODE_ENV === 'production') {
           //this.missingCollectionService.scrapeMissing({ contract_key: transaction.receiver });
         }

@@ -20,7 +20,6 @@ export class UpgradeMegaIndexerService implements IndexerService {
 
   async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {
     try {
-      this.logger.debug(`process() ${tx.hash}`);
       let txResult: TxProcessResult = { processed: false, missing: false };
 
       const robot_asset_name = this.stacksTxHelper.extractArgumentData(tx.args, scf, 'robot_asset_name');

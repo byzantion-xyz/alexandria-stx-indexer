@@ -29,7 +29,6 @@ export class CollectionBidIndexerService implements IndexerService {
   ) {}
 
   async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {
-    this.logger.debug(`process() ${tx.hash}`);
     let txResult: TxProcessResult = { processed: false, missing: false };
 
     if (!this.stacksTxHelper.isByzOldMarketplace(sc)) {

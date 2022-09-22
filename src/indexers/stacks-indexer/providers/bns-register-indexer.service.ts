@@ -29,7 +29,6 @@ export class BnsRegisterIndexerService implements IndexerService {
   ) {}
 
   async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {
-    this.logger.debug(`process() ${tx.hash}`);
     let txResult: TxProcessResult = { processed: false, missing: false };
 
     const namespace: string = this.stacksTxHelper.extractArgumentData(tx.args, scf, 'namespace');

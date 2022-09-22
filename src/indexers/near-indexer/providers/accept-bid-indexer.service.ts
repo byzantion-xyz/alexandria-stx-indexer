@@ -29,14 +29,13 @@ export class AcceptBidIndexerService implements IndexerService {
   ) {}
 
   async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {
-    this.logger.debug(`process() ${tx.hash}`);
     let txResult: TxProcessResult = { processed: false, missing: false };
 
     const payout = this.nearTxHelper.findEventData(tx.receipts, NFT_BUY_EVENT);
     const receipt = this.nearTxHelper.findReceiptWithFunctionCall(tx.receipts, RESOLVE_OFFER);
     const offer = this.nearTxHelper.findEventData(tx.receipts, RESOLVE_OFFER);
     if (!payout || !receipt) {
-      this.logger.debug(`No ${NFT_BUY_EVENT} found for tx hash: ${tx.hash}`);
+      this.logger.log(`No ${NFT_BUY_EVENT} found for tx hash: ${tx.hash}`);
       return txResult;
     }
 

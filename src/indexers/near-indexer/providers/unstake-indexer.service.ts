@@ -27,7 +27,6 @@ export class UnstakeIndexerService implements IndexerService {
   ) {}
 
   async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {
-    this.logger.debug(`process() ${tx.hash}`);
     let txResult: TxProcessResult = { processed: false, missing: false };
     
     const transfer = this.nearTxHelper.findReceiptWithFunctionCall(tx.receipts, NFT_TRANSFER_EVENT);

@@ -31,7 +31,6 @@ export class MultiIdBidIndexerService implements IndexerService {
   ) {}
 
   async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {
-    this.logger.debug(`process() ${tx.hash}`);
     let txResult: TxProcessResult = { processed: false, missing: false };
 
     const token_id_list = this.stacksTxHelper.extractArgumentData(tx.args, scf, 'token_id_list');    

@@ -22,7 +22,6 @@ export class UpgradeIndexerService implements IndexerService {
 
   async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {
     try {
-      this.logger.debug(`process() ${tx.hash}`);
       let txResult: TxProcessResult = { processed: false, missing: false };
 
       const ref_contract_key = this.stacksTxHelper.extractArgumentData(tx.args, scf, 'ref_contract_key');

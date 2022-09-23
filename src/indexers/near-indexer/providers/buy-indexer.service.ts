@@ -40,7 +40,11 @@ export class BuyIndexerService implements IndexerService {
 
     const token_id = this.txHelper.extractArgumentData(purchase.args, scf, "token_id");
     const contract_key = this.txHelper.extractArgumentData(purchase.args, scf, "contract_key");
-    const price = this.txHelper.extractArgumentData(tx.args, scf, "price");
+    let price = this.txHelper.extractArgumentData(tx.args, scf, "price");
+    if (!price) {
+      price = this.txHelper.extractArgumentData(purchase.args, scf, "price");
+    }
+
     const seller = this.txHelper.extractArgumentData(purchase.args, scf, 'seller');
     if (isNaN(price)) {
       this.logger.warn(`Unable to find sale price for tx hash ${tx.hash}`);

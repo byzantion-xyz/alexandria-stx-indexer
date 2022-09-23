@@ -40,7 +40,10 @@ export class AcceptBidIndexerService implements IndexerService {
     }
 
     const token_id = this.txHelper.extractArgumentData(payout.args, scf, 'token_id'); 
-    const price = this.txHelper.extractArgumentData(tx.args, scf, "price");
+    let price = this.txHelper.extractArgumentData(tx.args, scf, "price");
+    if (!price) {
+      price = this.txHelper.extractArgumentData(offer.args, scf, "price");
+    }
     const buyer = this.txHelper.extractArgumentData(tx.args, scf, 'buyer');
     const contract_key = sc.contract_key;
 

@@ -72,7 +72,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
                     and block_height <= ${options.end_block_height ?? Number.MAX_SAFE_INTEGER}
                     ${contract_key ? `and receiver_id='${contract_key}'` : ''}
                     and processed = ${options.includeMissings}
-                    and missing ${options.includeMissings ? `>` : `=`} 0
+                    and missing = ${options.includeMissings}
                  order by block_height asc`;
 
     const cursor = this.poolClient.query(new Cursor(sql));
@@ -159,7 +159,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
                  from indexer_tx_event
                  where hash = '${ event }'
                    and processed = false
-                   and missing = 0`;
+                   and missing = false`;
 
     return this.transformTxs(await this.txEventRepository.query(sql));
   }

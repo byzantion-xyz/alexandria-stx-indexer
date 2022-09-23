@@ -40,9 +40,14 @@ export class AcceptBidIndexerService implements IndexerService {
     }
 
     const token_id = this.txHelper.extractArgumentData(payout.args, scf, 'token_id'); 
-    const price = this.txHelper.extractArgumentData(offer.args, scf, "price");
-    const buyer = this.txHelper.extractArgumentData(offer.args, scf, 'buyer');
+    const price = this.txHelper.extractArgumentData(tx.args, scf, "price");
+    const buyer = this.txHelper.extractArgumentData(tx.args, scf, 'buyer');
     const contract_key = sc.contract_key;
+
+    if (isNaN(price)) {
+      this.logger.warn(`Unable to find sale price for tx hash ${tx.hash}`);
+      return txResult;
+    }
 
     const msc = await this.smartContractRepository.findOneBy({ contract_key: receipt.receiver_id });
     if (!msc) {

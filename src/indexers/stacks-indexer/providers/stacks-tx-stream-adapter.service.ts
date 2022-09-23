@@ -78,18 +78,23 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
   }
 
   async saveTxResults(): Promise<void> {
-    const values = this.txBatchResults.map(rowValue => `('${rowValue.hash}', ${rowValue.processed}, ${rowValue.missing})`);
+    try {
+      const values = this.txBatchResults.map(rowValue => `('${rowValue.hash}', ${rowValue.processed}, ${rowValue.missing})`);
 
-    const sql = `update transaction as t set
-        processed = c.processed,
-        missing = c.missing
-        from (values ${values.join(',')}) as c(hash, processed, missing) 
-        where t.hash = c.hash;`;
+      const sql = `update transaction as t set
+          processed = c.processed,
+          missing = c.missing
+          from (values ${values.join(',')}) as c(hash, processed, missing) 
+          where t.hash = c.hash;`;
 
-    this.logger.log(`saveTxResults() txs: ${this.txBatchResults.length}`);
-    await this.transactionRepository.query(sql);
+      this.logger.log(`saveTxResults() txs: ${this.txBatchResults.length}`);
+      this.transactionRepository.query(sql);
 
-    this.txBatchResults = [];
+      this.txBatchResults = [];
+    } catch (err) {
+      this.logger.warn('saveTxResults() failed');
+      this.logger.error(err);
+    } 
   }
 
   transformTxs(txs: StacksTransaction[]): CommonTx[] {

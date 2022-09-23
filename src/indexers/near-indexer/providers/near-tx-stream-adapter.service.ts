@@ -84,6 +84,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
 
     if (!txResult) {
       this.logger.warn(`Couldn't set TxProcessResult: ${tx.hash}`);
+      return;
     }
 
     if (result.missing) {

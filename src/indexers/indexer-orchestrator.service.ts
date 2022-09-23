@@ -98,7 +98,7 @@ export class IndexerOrchestratorService {
     }
 
     if (transactions && transactions.length) {
-      await this.txStreamAdapter.saveTxResults();
+      this.txStreamAdapter.saveTxResults();
     }
 
     return { total: processed };

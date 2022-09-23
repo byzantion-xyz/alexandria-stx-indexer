@@ -107,7 +107,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
       const values = this.txBatchResults.map((rowValue) => { 
         return `('${rowValue.hash}', ${rowValue.processed}, '{${rowValue.missing.join(',')}}'::text[])`
       });
-  
+      
       const sql = `update indexer_tx_event as t set
         processed = c.processed,
         missing = c.missing
@@ -115,10 +115,10 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
         where t.hash = c.hash;`;
   
       this.logger.log(`saveTxResults() txs: ${this.txBatchResults.length}`);
-
-      this.txEventRepository.query(sql);
-
       this.txBatchResults = [];
+
+      await this.txEventRepository.query(sql);
+
     } catch (err) {
       this.logger.warn('saveTxResults() failed');
       this.logger.error(err);

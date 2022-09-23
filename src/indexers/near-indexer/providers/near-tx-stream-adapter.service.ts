@@ -103,20 +103,26 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
   }
 
   async saveTxResults(): Promise<void> {
-    const values = this.txBatchResults.map((rowValue) => { 
-      return `('${rowValue.hash}', ${rowValue.processed}, '{${rowValue.missing.join(',')}}'::text[])`
-    });
+    try {
+      const values = this.txBatchResults.map((rowValue) => { 
+        return `('${rowValue.hash}', ${rowValue.processed}, '{${rowValue.missing.join(',')}}'::text[])`
+      });
+  
+      const sql = `update indexer_tx_event as t set
+        processed = c.processed,
+        missing = c.missing
+        from (values ${values.join(',')}) as c(hash, processed, missing) 
+        where t.hash = c.hash;`;
+  
+      this.logger.log(`saveTxResults() txs: ${this.txBatchResults.length}`);
 
-    const sql = `update indexer_tx_event as t set
-      processed = c.processed,
-      missing = c.missing
-      from (values ${values.join(',')}) as c(hash, processed, missing) 
-      where t.hash = c.hash;`;
+      this.txEventRepository.query(sql);
 
-    this.logger.log(`saveTxResults() txs: ${this.txBatchResults.length}`);
-    await this.txEventRepository.query(sql);
-
-    this.txBatchResults = [];
+      this.txBatchResults = [];
+    } catch (err) {
+      this.logger.warn('saveTxResults() failed');
+      this.logger.error(err);
+    }
   }
 
   async closePool(): Promise<any> {

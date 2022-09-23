@@ -1,7 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { CommonTx } from "src/indexers/common/interfaces/common-tx.interface";
 import { TxProcessResult } from "src/indexers/common/interfaces/tx-process-result.interface";
-import { NearTxBatchResult, TxCursorBatch, TxStreamAdapter } from "src/indexers/common/interfaces/tx-stream-adapter.interface";
+import { NearTxResult, TxCursorBatch, TxStreamAdapter } from "src/indexers/common/interfaces/tx-stream-adapter.interface";
 import { TxHelperService } from "../../common/helpers/tx-helper.service";
 import { Client, Pool, PoolClient } from 'pg';
 import * as Cursor from 'pg-cursor';
@@ -26,8 +26,9 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
   private pool: Pool;
   chainSymbol = 'Near';
   private readonly logger = new Logger(NearTxStreamAdapterService.name);
-  private txBatchResults: NearTxBatchResult[] = [];
+
   private readonly txResults = new ExpiryMap(this.configService.get('indexer.txResultExpiration') || 60000);
+  private txBatchResults: NearTxResult[] = [];
 
   constructor(
     private txHelper: TxHelperService,
@@ -55,12 +56,12 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
       let sc = await this.smartContractRepository.findOne({
         where: {
           chain : { symbol: this.chainSymbol },
-          contract_key: options.contract_key 
+          contract_key: options.contract_key
         }
       });
       contract_key = sc ? sc.contract_key : undefined;
     }
-    
+
     if (options.contract_key && !contract_key) {
       throw new Error(`Couldn't find matching smart contract: ${options.contract_key}`)
     }
@@ -69,9 +70,9 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
                  from indexer_tx_event
                  where block_height >= ${options.start_block_height ?? 0}
                     and block_height <= ${options.end_block_height ?? Number.MAX_SAFE_INTEGER}
-                    ${ contract_key ? `and receiver_id='${contract_key}'` : '' }
-                    and processed = false
-                    and missing ${!options.includeMissings ? `is` : `is not`} null                                   
+                    ${contract_key ? `and receiver_id='${contract_key}'` : ''}
+                    and processed = ${options.includeMissings}
+                    and missing = ${options.includeMissings}
                  order by block_height asc`;
 
     const cursor = this.poolClient.query(new Cursor(sql));
@@ -80,46 +81,51 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
   }
 
   setTxResult(tx: CommonTx, result: TxProcessResult): void {
-    const txResult: [number, string[]] = this.txResults.get(tx.hash);
+    const txResult: [number, NearTxResult] = this.txResults.get(tx.hash);
 
     if (!txResult) {
       this.logger.warn(`Couldn't set TxProcessResult: ${tx.hash}`);
       return;
     }
 
+    if (tx.indexer_name?.endsWith('_event')) {
+      txResult[1].missingNftEvent = txResult[1].missingNftEvent || result.missing;
+    } else {
+      txResult[1].matchingFunctionCall = txResult[1].matchingFunctionCall || !result.missing;
+    }
+
     if (result.missing) {
-      txResult[1].push(`${tx.function_name}:${tx.receipts[0].id}`);
+      txResult[1].skipped.push(`${tx.function_name}:${tx.receipts[0].id}`);
     }
 
     if (txResult[0] <= 1) {
       this.txResults.delete(tx.hash);
-      this.txBatchResults.push({
-        hash: tx.hash,
-        processed: true, 
-        missing: txResult[1]
-      });
+
+      this.txBatchResults.push(txResult[1]);
     } else {
       this.txResults.set(tx.hash, [txResult[0] - 1, txResult[1]]);
     }
   }
 
   async saveTxResults(): Promise<void> {
+    const values = this.txBatchResults.map((res) => {
+      const skipped = res.skipped.length ? `'{${res.skipped.join(',')}}'::text[]` : null;
+      return `('${res.hash}', true, ${res.missingNftEvent || !res.matchingFunctionCall}, ${skipped})`;
+    });
+
+    this.txBatchResults = [];
+
+    const sql = `update indexer_tx_event as t set
+        processed = v.processed,
+        missing = v.missing,
+        skipped = v.skipped,
+        from (values ${values.join(',')}) as v(hash, processed, missing, skipped) 
+        where t.hash = v.hash`;
+
+    this.logger.log(`saveTxResults() txs: ${values.length}`);
+
     try {
-      const values = this.txBatchResults.map((rowValue) => { 
-        return `('${rowValue.hash}', ${rowValue.processed}, '{${rowValue.missing.join(',')}}'::text[])`
-      });
-      
-      const sql = `update indexer_tx_event as t set
-        processed = c.processed,
-        missing = c.missing
-        from (values ${values.join(',')}) as c(hash, processed, missing) 
-        where t.hash = c.hash;`;
-  
-      this.logger.log(`saveTxResults() txs: ${this.txBatchResults.length}`);
-      this.txBatchResults = [];
-
       await this.txEventRepository.query(sql);
-
     } catch (err) {
       this.logger.warn('saveTxResults() failed');
       this.logger.error(err);
@@ -153,7 +159,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
                  from indexer_tx_event
                  where hash = '${ event }'
                    and processed = false
-                   and missing is null`;
+                   and missing = false`;
 
     return this.transformTxs(await this.txEventRepository.query(sql));
   }
@@ -181,10 +187,11 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
 
       if (!events.length || !events.every(([e, _]) => e.event === 'nft_mint' || e.event === 'nft_burn')) {
         let receipts = [rcpt].concat(this.nearTxHelper.flatMapReceipts(rcpt.receipts));
+
         receipts.forEach(r => {
           r.function_calls.forEach((fc) => {
             const indexer = this.defineFunctionCallIndexer(fc, r, events);
-  
+
             if (indexer) {
               commonTxs.push({
                 function_name: fc.method_name,
@@ -195,7 +202,6 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
             }
           });
         });
-        
       }
 
       events.forEach(([e, r]) => {
@@ -208,7 +214,12 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
       });
     });
 
-    this.txResults.set(tx.hash, [commonTxs.length, []]);
+    this.txResults.set(tx.hash, [commonTxs.length, {
+      hash : tx.hash,
+      missingNftEvent: false,
+      matchingFunctionCall: false,
+      skipped: []
+    } as NearTxResult]);
 
     return commonTxs;
   }

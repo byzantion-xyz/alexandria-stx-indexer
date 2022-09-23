@@ -89,11 +89,16 @@ export class IndexerOrchestratorService {
 
   async processTransactions(transactions: CommonTx[], scs?: SmartContract[]): Promise<ProcessedTxsResult> {
     let processed = 0;
+    
     for await (const tx of transactions) {
       let sc: SmartContract = scs.find(sc => sc.contract_key = tx.receiver);
       const txResult: TxProcessResult = await this.processTransaction(tx, sc);
       if (txResult.processed) processed++;
-      await this.txStreamAdapter.setTxResult(tx, txResult);
+      this.txStreamAdapter.setTxResult(tx, txResult);
+    }
+
+    if (transactions && transactions.length) {
+      this.txStreamAdapter.saveTxResults();
     }
 
     return { total: processed };
@@ -185,6 +190,7 @@ export class IndexerOrchestratorService {
     return (
       typeof arg.fetchTxs === 'function' &&
       typeof arg.setTxResult === 'function' &&
+      typeof arg.saveTxResults === 'function' &&
       typeof arg.connectPool === 'function' &&
       typeof arg.closePool === 'function'
     );

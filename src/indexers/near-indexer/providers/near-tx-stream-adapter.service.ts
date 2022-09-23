@@ -1,7 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { CommonTx } from "src/indexers/common/interfaces/common-tx.interface";
 import { TxProcessResult } from "src/indexers/common/interfaces/tx-process-result.interface";
-import { TxCursorBatch, TxStreamAdapter } from "src/indexers/common/interfaces/tx-stream-adapter.interface";
+import { NearTxBatchResult, TxCursorBatch, TxStreamAdapter } from "src/indexers/common/interfaces/tx-stream-adapter.interface";
 import { TxHelperService } from "../../common/helpers/tx-helper.service";
 import { Client, Pool, PoolClient } from 'pg';
 import * as Cursor from 'pg-cursor';
@@ -19,13 +19,14 @@ import ExpiryMap = require('expiry-map');
 export const NEAR_FT_STANDARD = 'nep141';
 export const NEAR_FARMING_STANDARD = 'ref-farming';
 
+
 @Injectable()
 export class NearTxStreamAdapterService implements TxStreamAdapter {
   private poolClient: PoolClient;
   private pool: Pool;
   chainSymbol = 'Near';
   private readonly logger = new Logger(NearTxStreamAdapterService.name);
-
+  private txBatchResults: NearTxBatchResult[] = [];
   private readonly txResults = new ExpiryMap(30000);
 
   constructor(
@@ -78,7 +79,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
     return { cursor };
   }
 
-  async setTxResult(tx: CommonTx, result: TxProcessResult): Promise<void> {
+  setTxResult(tx: CommonTx, result: TxProcessResult): void {
     const txResult: [number, string[]] = this.txResults.get(tx.hash);
 
     if (!txResult) {
@@ -91,15 +92,36 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
 
     if (txResult[0] <= 1) {
       this.txResults.delete(tx.hash);
-
-      await this.txEventRepository.update({ hash: tx.hash },
-          {
-            processed: true,
-            missing: txResult[1],
-          }
-      );
+      this.txBatchResults.push({
+        hash: tx.hash,
+        processed: true, 
+        missing: txResult[1]
+      });
     } else {
       this.txResults.set(tx.hash, [txResult[0] - 1, txResult[1]]);
+    }
+  }
+
+  async saveTxResults(): Promise<void> {
+    try {
+      const values = this.txBatchResults.map((rowValue) => { 
+        return `('${rowValue.hash}', ${rowValue.processed}, '{${rowValue.missing.join(',')}}'::text[])`
+      });
+      
+      const sql = `update indexer_tx_event as t set
+        processed = c.processed,
+        missing = c.missing
+        from (values ${values.join(',')}) as c(hash, processed, missing) 
+        where t.hash = c.hash;`;
+  
+      this.logger.log(`saveTxResults() txs: ${this.txBatchResults.length}`);
+      this.txBatchResults = [];
+
+      await this.txEventRepository.query(sql);
+
+    } catch (err) {
+      this.logger.warn('saveTxResults() failed');
+      this.logger.error(err);
     }
   }
 

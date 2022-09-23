@@ -118,7 +118,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
     const sql = `update indexer_tx_event_23092022 as t set
         processed = v.processed,
         missing = v.missing,
-        skipped = v.skipped,
+        skipped = v.skipped
         from (values ${values.join(',')}) as v(hash, processed, missing, skipped) 
         where t.hash = v.hash`;
 

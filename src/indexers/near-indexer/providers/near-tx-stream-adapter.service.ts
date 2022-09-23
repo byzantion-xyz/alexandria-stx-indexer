@@ -27,7 +27,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
   chainSymbol = 'Near';
   private readonly logger = new Logger(NearTxStreamAdapterService.name);
   private txBatchResults: NearTxBatchResult[] = [];
-  private readonly txResults = new ExpiryMap(30000);
+  private readonly txResults = new ExpiryMap(this.configService.get('indexer.txResultExpiration') || 60000);
 
   constructor(
     private txHelper: TxHelperService,

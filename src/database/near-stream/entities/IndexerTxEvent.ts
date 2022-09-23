@@ -1,6 +1,6 @@
 import { Column, Entity, PrimaryColumn } from 'typeorm';
 
-@Entity('indexer_tx_event', { schema: 'public' })
+@Entity('indexer_tx_event_23092022', { schema: 'public' })
 export class IndexerTxEvent {
 
     @PrimaryColumn()

@@ -67,7 +67,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
     }
 
     const sql = `select *
-                 from indexer_tx_event
+                 from indexer_tx_event_23092022
                  where block_height >= ${options.start_block_height ?? 0}
                     and block_height <= ${options.end_block_height ?? Number.MAX_SAFE_INTEGER}
                     ${contract_key ? `and receiver_id='${contract_key}'` : ''}
@@ -115,7 +115,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
 
     this.txBatchResults = [];
 
-    const sql = `update indexer_tx_event as t set
+    const sql = `update indexer_tx_event_23092022 as t set
         processed = v.processed,
         missing = v.missing,
         skipped = v.skipped,
@@ -143,11 +143,11 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
 
     client.connect();
 
-    client.query(`listen new_indexer_tx_event`, (err, res) => {
+    client.query(`listen new_indexer_tx_event_23092022`, (err, res) => {
       if (err != null) {
-        this.logger.error('Failed to subscribe to `new_indexer_tx_event` notifications', err);
+        this.logger.error('Failed to subscribe to `new_indexer_tx_event_23092022` notifications', err);
       } else {
-        this.logger.log('Successfully subscribed to `new_indexer_tx_event` notifications');
+        this.logger.log('Successfully subscribed to `new_indexer_tx_event_23092022` notifications');
       }
     });
 
@@ -156,7 +156,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
 
   async fetchEventData(event): Promise<CommonTx[]> {
     const sql = `select *
-                 from indexer_tx_event
+                 from indexer_tx_event_23092022
                  where hash = '${ event }'
                    and processed = false
                    and missing = false`;

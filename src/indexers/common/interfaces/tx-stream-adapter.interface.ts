@@ -6,12 +6,14 @@ import { IndexerOptions } from "./indexer-options";
 export interface CommonTxResult {
   txs: CommonTx[],
   total: number
-};
+}
 
-export interface NearTxBatchResult {
+export interface NearTxResult {
   hash: string,
   processed: boolean,
-  missing: string[]
+  missingNftEvent: boolean,
+  matchingFunctionCall: boolean,
+  skipped: string[]
 }
 
 export interface StacksTxBatchResult {

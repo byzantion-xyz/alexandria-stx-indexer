@@ -29,10 +29,4 @@ export class IndexerTxEvent {
 
     @Column('bigint')
     readonly block_timestamp!: bigint;
-
-    @Column()
-    processed: boolean;
-
-    @Column('text', { array: true })
-    missing: string[];
 }

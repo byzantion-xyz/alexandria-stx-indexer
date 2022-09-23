@@ -83,7 +83,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
     const txResult: [number, string[]] = this.txResults.get(tx.hash);
 
     if (!txResult) {
-      throw new Error(`Couldn't set TxProcessResult: ${tx.hash}`)
+      this.logger.warn(`Couldn't set TxProcessResult: ${tx.hash}`);
     }
 
     if (result.missing) {

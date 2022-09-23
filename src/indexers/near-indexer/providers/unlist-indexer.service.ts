@@ -68,14 +68,14 @@ export class UnlistIndexerService implements IndexerService {
       if (this.nearTxHelper.isNewerEvent(tx, nft_state_list)) {
         await this.txHelper.unlistMeta(nftMeta, tx, msc);
       } else {
-        this.logger.log(`Too Late`);
+        this.logger.debug(`Too Late`);
       }
 
       await this.createAction(unlistActionParams);
 
       txResult.processed = true;
     } else {
-      this.logger.log(`NftMeta not found ${contract_key} ${token_id}`);
+      this.logger.debug(`NftMeta not found ${contract_key} ${token_id}`);
       txResult.missing = true;
     }
 

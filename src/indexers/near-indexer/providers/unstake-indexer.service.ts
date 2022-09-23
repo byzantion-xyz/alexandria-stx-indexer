@@ -56,13 +56,13 @@ export class UnstakeIndexerService implements IndexerService {
       if (this.txStakingHelper.isNewStakingBlock(tx, nftMeta.nft_state)) {
         await this.txHelper.unstakeMeta(nftMeta.id, tx);
       } else {
-        this.logger.log(`Too Late`);
+        this.logger.debug(`Too Late`);
       }
       await this.createAction(unstakeActionParams);
 
       txResult.processed = true;
     } else {
-      this.logger.log(`NftMeta not found ${contract_key} ${token_id}`);
+      this.logger.debug(`NftMeta not found ${contract_key} ${token_id}`);
       txResult.missing = true;
     }
 

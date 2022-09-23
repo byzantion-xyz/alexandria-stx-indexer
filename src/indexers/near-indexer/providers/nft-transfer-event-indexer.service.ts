@@ -70,7 +70,7 @@ export class NftTransferEventIndexerService implements IndexerService {
       await this.createAction(transferActionParams);
       txResult.processed = true;
     } else {
-      this.logger.log(`NftMeta not found ${contract_key} ${token_id}`);
+      this.logger.debug(`NftMeta not found ${contract_key} ${token_id}`);
       txResult.missing = true;
     }
 

@@ -68,13 +68,13 @@ export class ListIndexerService implements IndexerService {
       if (this.nearTxHelper.isNewerEvent(tx, nft_state_list)) {
         await this.txHelper.listMeta(nftMeta, tx, msc, price);
       } else {
-        this.logger.log(`Too Late`);
+        this.logger.debug(`Too Late`);
       }
       await this.createAction(listActionParams);
 
       txResult.processed = true;
     } else {
-      this.logger.log(`NftMeta not found ${sc.contract_key} ${token_id}`);
+      this.logger.debug(`NftMeta not found ${sc.contract_key} ${token_id}`);
       txResult.missing = true;
     }
 

@@ -53,14 +53,14 @@ export class UnlistBidIndexerService implements IndexerService {
         await this.createAction(bidActionParams);
         txResult.processed = true;
       } else if (bidState) {
-        this.logger.log(`Too Late`);
+        this.logger.debug(`Too Late`);
         txResult.processed = true;
       } else {
         this.logger.log(`bid_state not found`);
         txResult.missing = true; 
       }
     } else {
-      this.logger.log(`NftMeta not found ${contract_key} ${token_id}`);
+      this.logger.debug(`NftMeta not found ${contract_key} ${token_id}`);
       txResult.missing = true;
     }
 

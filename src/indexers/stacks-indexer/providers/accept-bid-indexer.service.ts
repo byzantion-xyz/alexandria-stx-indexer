@@ -54,10 +54,10 @@ export class AcceptBidIndexerService implements IndexerService {
         await this.createAction(acceptBidActionParams);
         txResult.processed = true;
       } else if (bidState) {
-        this.logger.log(`Too Late`); 
+        this.logger.debug(`Too Late`); 
         txResult.processed = true;  
       } else {
-        this.logger.log(`bid_state not found`);
+        this.logger.debug(`bid_state not found`);
         txResult.missing = true;        
       }
 

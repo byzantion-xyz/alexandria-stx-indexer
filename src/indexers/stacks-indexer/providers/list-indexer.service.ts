@@ -53,13 +53,13 @@ export class ListIndexerService implements IndexerService {
         };
         await this.txHelper.listMeta(nftMeta, tx, sc, price, commission?.id, args);
       } else {
-        this.logger.log(`Too Late`);
+        this.logger.debug(`Too Late`);
       }
       await this.createAction(listActionParams);
 
       txResult.processed = true;
     } else {
-      this.logger.log(`NftMeta not found ${contract_key} ${token_id}`);
+      this.logger.debug(`NftMeta not found ${contract_key} ${token_id}`);
       txResult.missing = true;
     }
 

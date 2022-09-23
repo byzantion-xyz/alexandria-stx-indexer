@@ -54,7 +54,7 @@ export class CollectionAcceptBidIndexerService implements IndexerService {
         };
         await this.createAction(actionParams);
       } else if(bidState) {
-        this.logger.log('Too late');
+        this.logger.debug('Too late');
         txResult.processed = true;
       } else {
         this.logger.log(`bid_state not found for collection: ${nftMeta.collection.slug}`);
@@ -62,7 +62,7 @@ export class CollectionAcceptBidIndexerService implements IndexerService {
       }
       
     } else {
-      this.logger.log(`NftMeta not found ${contract_key} ${token_id} `);
+      this.logger.debug(`NftMeta not found ${contract_key} ${token_id} `);
       txResult.missing = true;
     }
 

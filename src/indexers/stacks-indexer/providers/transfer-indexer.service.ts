@@ -53,7 +53,7 @@ export class TransferIndexerService implements IndexerService {
         txResult.missing = true;
       }
     } else {
-      this.logger.log(`NftMeta not found ${contract_key} ${token_id}`);
+      this.logger.debug(`NftMeta not found ${contract_key} ${token_id}`);
       txResult.missing = true;
     }
 

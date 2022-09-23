@@ -42,7 +42,7 @@ export class UpgradeMegaIndexerService implements IndexerService {
 
         txResult.processed = true;
       } else {
-        this.logger.log(`NftMeta not found ${robot_asset_name} ${token_id}`);
+        this.logger.debug(`NftMeta not found ${robot_asset_name} ${token_id}`);
         txResult.missing = true;
       }
 

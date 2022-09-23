@@ -48,13 +48,13 @@ export class BuyIndexerService implements IndexerService {
         await this.txHelper.unlistMetaInAllMarkets(nftMeta, tx, sc, buyActionParams.seller);
         await this.createAction(buyActionParams);
       } else  {
-        this.logger.log(`Too Late`);
+        this.logger.debug(`Too Late`);
         // Create missing action
         await this.createAction(buyActionParams);
       }
       txResult.processed = true;
     } else {
-      this.logger.log(`NftMeta not found ${contract_key} ${token_id}`);
+      this.logger.debug(`NftMeta not found ${contract_key} ${token_id}`);
       txResult.missing = true;
     }
 

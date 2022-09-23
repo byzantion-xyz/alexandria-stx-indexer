@@ -64,7 +64,7 @@ export class IdAcceptBidIndexerService implements IndexerService {
     
           await this.createAction(acceptBidActionParams);
         } else {
-          this.logger.log(`NftMeta not found ${contract_key} ${token_id}`);
+          this.logger.debug(`NftMeta not found ${contract_key} ${token_id}`);
         }
         
       } else if (bidState) {

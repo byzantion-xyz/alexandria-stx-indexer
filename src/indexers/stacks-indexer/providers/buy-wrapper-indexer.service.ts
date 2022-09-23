@@ -55,7 +55,7 @@ export class BuyWrapperIndexerService implements IndexerService {
         await this.txHelper.unlistMetaInAllMarkets(nftMeta, tx, msc, buyActionParams.seller);
         await this.createAction(buyActionParams);
       } else  {
-        this.logger.log(`Too Late`);
+        this.logger.debug(`Too Late`);
         // Create missing action
         await this.createAction(buyActionParams);
       }
@@ -64,7 +64,7 @@ export class BuyWrapperIndexerService implements IndexerService {
       this.logger.warn(`contract_key_wrapper not found for ${sc.contract_key}`);  
       txResult.missing = true;
     } else {
-      this.logger.log(`NftMeta not found ${contract_key} ${token_id}`);
+      this.logger.debug(`NftMeta not found ${contract_key} ${token_id}`);
       txResult.missing = true;
     }
 

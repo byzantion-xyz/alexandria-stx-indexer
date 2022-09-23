@@ -58,7 +58,7 @@ export class CollectionUnlistBidIndexerService implements IndexerService {
         await this.createAction(actionParams);
         txResult.processed = true;
       } else if (bidState) {
-        this.logger.log(`Too Late Unlist Bid ${tx.hash}`);
+        this.logger.debug(`Too Late Unlist Bid ${tx.hash}`);
         txResult.processed = true;
       } else {
         this.logger.log(`bid_state not found for collection: ${collection.slug}`);

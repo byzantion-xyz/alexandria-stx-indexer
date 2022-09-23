@@ -66,7 +66,7 @@ export class CollectionBidIndexerService implements IndexerService {
       if (this.txBidHelper.isNewBid(tx, bidState)) {
         await this.txBidHelper.createOrReplaceBid(collectionBidArgs, bidState);
       } else {
-        this.logger.log('Too late bid');
+        this.logger.debug('Too late bid');
       }
 
       await this.createAction(actionParams);

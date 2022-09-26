@@ -177,12 +177,12 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
 
       if (events.length
           && events.every(([e, _]) => e.standard === NEAR_FT_STANDARD ||  e.standard === NEAR_FARMING_STANDARD)) {
-        return;
+        return commonTxs;
       }
 
       // https://nearblocks.io/txns/FiMZPjsEM6hWsN6eQKXC76NLtcjYsKtjtuV1QxhmSJy1#execution
       if (this.nearTxHelper.getLogs(rcpt).some((l) => l.includes('Insufficient storage paid'))) {
-        return;
+        return commonTxs;
       }
 
       if (!events.length || !events.every(([e, _]) => e.event === 'nft_mint' || e.event === 'nft_burn')) {
@@ -214,12 +214,14 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
       });
     });
 
-    this.txResults.set(tx.hash, [commonTxs.length, {
-      hash : tx.hash,
-      missingNftEvent: false,
-      matchingFunctionCall: false,
-      skipped: []
-    } as NearTxResult]);
+    if (commonTxs.length) {
+      this.txResults.set(tx.hash, [commonTxs.length, {
+        hash : tx.hash,
+        missingNftEvent: false,
+        matchingFunctionCall: false,
+        skipped: []
+      } as NearTxResult]);
+    }
 
     return commonTxs;
   }

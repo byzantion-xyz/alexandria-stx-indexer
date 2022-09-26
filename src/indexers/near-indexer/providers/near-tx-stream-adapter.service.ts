@@ -109,7 +109,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
 
   async saveTxResults(): Promise<void> {
     const values = this.txBatchResults.map((res) => {
-      const skipped = res.skipped.length ? `'{${res.skipped.join(',')}}'::text[]` : null;
+      const skipped = `'{${res.skipped.join(',')}}'::text[]`;
       return `('${res.hash}', true, ${res.missingNftEvent || !res.matchingFunctionCall}, ${skipped})`;
     });
 

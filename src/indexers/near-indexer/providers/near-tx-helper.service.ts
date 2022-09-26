@@ -11,6 +11,7 @@ const flatten = (item) => [item, _.flatMapDeep(item.receipts, flatten)];
 
 @Injectable()
 export class NearTxHelperService {
+  private readonly logger = new Logger(NearTxHelperService.name);
 
   isNewerEvent(tx: CommonTx, state_list: NftStateList) {
     return (
@@ -83,8 +84,13 @@ export class NearTxHelperService {
   getEvents(rcpt: Receipt, acc: [NftOrFtEvent, Receipt][] = []) : [NftOrFtEvent, Receipt][] {
       rcpt.logs.forEach((l) => {
         if (l.startsWith(NEAR_EVENT_PREFIX)) {
-            const event: NftOrFtEvent = JSON.parse(l.replace(NEAR_EVENT_PREFIX, ''))
-            acc.push([event, rcpt]);
+            try {
+              const event: NftOrFtEvent = JSON.parse(l.replace(NEAR_EVENT_PREFIX, ''))
+              acc.push([event, rcpt]);
+             } catch (err) {
+              this.logger.warn(`getEvents() failed to parse JSON for receipt: ${rcpt.id}`);
+              this.logger.warn(err);
+            }
         }
       });
 

@@ -91,7 +91,10 @@ export class IndexerOrchestratorService {
     let processed = 0;
     
     for await (const tx of transactions) {
-      let sc: SmartContract = scs.find(sc => sc.contract_key === tx.receiver);
+      let sc: SmartContract;
+      if (scs) {
+        sc = scs.find(sc => sc.contract_key === tx.receiver);
+      }
       const txResult: TxProcessResult = await this.processTransaction(tx, sc);
       if (txResult.processed) processed++;
       this.txStreamAdapter.setTxResult(tx, txResult);

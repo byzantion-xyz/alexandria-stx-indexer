@@ -91,11 +91,7 @@ export class IndexerOrchestratorService {
     let processed = 0;
     
     for await (const tx of transactions) {
-      let sc: SmartContract;
-      if (scs) {
-        sc = scs.find(sc => sc.contract_key === tx.receiver);
-      }
-      const txResult: TxProcessResult = await this.processTransaction(tx, sc);
+      const txResult: TxProcessResult = await this.processTransaction(tx, scs);
       if (txResult.processed) processed++;
       this.txStreamAdapter.setTxResult(tx, txResult);
     }
@@ -107,14 +103,15 @@ export class IndexerOrchestratorService {
     return { total: processed };
   }
 
-  async processTransaction(transaction: CommonTx, smart_contract?: SmartContract): Promise<TxProcessResult> {
+  async processTransaction(transaction: CommonTx, scs?: SmartContract[]): Promise<TxProcessResult> {
     let result: TxProcessResult = { processed: false, missing: false };
 
     try {
       const method_name = transaction.function_name;
-      if (!smart_contract) {
-        smart_contract = await this.smartContractService.findByContractKey(transaction.receiver, this.chainSymbol);
-      }
+
+      const smart_contract = scs && scs.length 
+        ? scs.find(sc => sc.contract_key === transaction.receiver) 
+        : await this.smartContractService.findByContractKey(transaction.receiver, this.chainSymbol)
 
       if (smart_contract) {
         let smart_contract_function =

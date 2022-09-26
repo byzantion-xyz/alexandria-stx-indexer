@@ -122,7 +122,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
         from (values ${values.join(',')}) as v(hash, processed, missing, skipped) 
         where t.hash = v.hash`;
 
-    this.logger.log(`saveTxResults() txs: ${values.length}`);
+    this.logger.debug(`saveTxResults() txs: ${values.length}`);
 
     try {
       await this.txEventRepository.query(sql);

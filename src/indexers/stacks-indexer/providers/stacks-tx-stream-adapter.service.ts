@@ -87,7 +87,7 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
           from (values ${values.join(',')}) as c(hash, processed, missing) 
           where t.hash = c.hash;`;
 
-      this.logger.log(`saveTxResults() txs: ${this.txBatchResults.length}`);
+      this.logger.debug(`saveTxResults() txs: ${this.txBatchResults.length}`);
       this.txBatchResults = [];
 
       await this.transactionRepository.query(sql);

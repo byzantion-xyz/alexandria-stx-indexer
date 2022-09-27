@@ -31,6 +31,9 @@ export class StakeIndexerService implements IndexerService {
 
   async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {
     let txResult: TxProcessResult = { processed: false, missing: false };
+
+    if (this.nearTxHelper.isAnyReceiptFailure(tx.receipts)) return txResult;
+
     const receipt = this.nearTxHelper.findReceiptWithFunctionCall(tx.receipts, NFT_TRANSFER_EVENT);
     if (!receipt) {
       this.logger.log(`No ${NFT_TRANSFER_EVENT} event found for tx hash: ${tx.hash}`);

@@ -33,6 +33,8 @@ export class UnlistIndexerService implements IndexerService {
     let txResult: TxProcessResult = { processed: false, missing: false };
     let msc = Object.assign({}, sc);
 
+    if (this.nearTxHelper.isAnyReceiptFailure(tx.receipts)) return txResult;
+
     const token_id = this.txHelper.extractArgumentData(tx.args, scf, "token_id");
     let contract_key = this.txHelper.extractArgumentData(tx.args, scf, "contract_key");
 

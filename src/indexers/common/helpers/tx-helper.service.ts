@@ -316,11 +316,12 @@ export class TxHelperService {
 
   }
 
-  isNewOwnerEvent(tx: CommonTx, nft_state: NftState): boolean {
+  isNewOwnerEvent(tx: CommonTx, nft_state: NftState, owner?: string): boolean {
     return (
       !nft_state ||
       !nft_state.owner_block_height ||
-      tx.block_height > nft_state.owner_block_height
+      tx.block_height > nft_state.owner_block_height || 
+      (tx.block_height === nft_state.owner_block_height && owner && owner !== nft_state.owner)
     );
   }
 

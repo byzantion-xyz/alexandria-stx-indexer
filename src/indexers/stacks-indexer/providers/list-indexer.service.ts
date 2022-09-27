@@ -28,6 +28,10 @@ export class ListIndexerService implements IndexerService {
 
     const token_id = this.stacksTxHelper.extractArgumentData(tx.args, scf, "token_id");
     const price = this.stacksTxHelper.extractArgumentData(tx.args, scf, "list_price");
+    if (isNaN(price)) {
+      this.logger.warn(`Unable to find list price for tx hash ${tx.hash}`);
+      return txResult;
+    }
     const collection_map_id = this.stacksTxHelper.extractArgumentData(tx.args, scf, "collection_map_id");
     let commission_key = this.stacksTxHelper.extractArgumentData(tx.args, scf, 'commission_trait');
     let contract_key = this.stacksTxHelper.extractArgumentData(tx.args, scf, "contract_key");

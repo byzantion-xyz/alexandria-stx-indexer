@@ -10,8 +10,6 @@ import { CreateMintActionTO } from 'src/indexers/common/interfaces/create-action
 import { IndexerService } from 'src/indexers/common/interfaces/indexer-service.interface';
 import { TxProcessResult } from 'src/indexers/common/interfaces/tx-process-result.interface';
 import { TxActionService } from 'src/indexers/common/providers/tx-action.service';
-import { Repository } from 'typeorm';
-import { NearTxHelperService } from './near-tx-helper.service';
 
 @Injectable()
 export class NftMintEventIndexerService implements IndexerService {
@@ -19,15 +17,12 @@ export class NftMintEventIndexerService implements IndexerService {
 
   constructor(
     private txHelper: TxHelperService,
-    private nearTxHelper: NearTxHelperService,
     private txActionService: TxActionService,
   ) {}
 
   async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {
     let txResult: TxProcessResult = { processed: false, missing: false };
     let msc: SmartContract;
-
-    if (this.nearTxHelper.isAnyReceiptFailure(tx.receipts)) return txResult;
 
     const receipt = tx.receipts[0];  
 

@@ -11,7 +11,6 @@ import { ActionName, SmartContractType } from "src/indexers/common/helpers/index
 import { SmartContractFunction } from "src/database/universal/entities/SmartContractFunction";
 import { TxStakingHelper } from "src/indexers/common/helpers/tx-staking-helper";
 import { TxActionService } from "src/indexers/common/providers/tx-action.service";
-import { NearTxHelperService } from "./near-tx-helper.service";
 
 @Injectable()
 export class NftTransferEventIndexerService implements IndexerService {
@@ -19,14 +18,12 @@ export class NftTransferEventIndexerService implements IndexerService {
 
   constructor(
     private txHelper: TxHelperService,
-    private nearTxHelper: NearTxHelperService,
     private txActionService: TxActionService,
     private txStakingHelper: TxStakingHelper
   ) {}
 
   async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {
     let txResult: TxProcessResult = { processed: false, missing: false };
-    if (this.nearTxHelper.isAnyReceiptFailure(tx.receipts)) return txResult;
 
     const receipt = tx.receipts[0];
 

@@ -31,8 +31,6 @@ export class AcceptBidIndexerService implements IndexerService {
   async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {
     let txResult: TxProcessResult = { processed: false, missing: false };
 
-    if (this.nearTxHelper.isAnyReceiptFailure(tx.receipts)) return txResult;
-
     const payout = this.nearTxHelper.findEventData(tx.receipts, NFT_BUY_EVENT);
     const receipt = this.nearTxHelper.findReceiptWithFunctionCall(tx.receipts, RESOLVE_OFFER);
     const offer = this.nearTxHelper.findEventData(tx.receipts, RESOLVE_OFFER);

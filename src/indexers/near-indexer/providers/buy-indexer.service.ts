@@ -31,8 +31,6 @@ export class BuyIndexerService implements IndexerService {
     let txResult: TxProcessResult = { processed: false, missing: false };
     let msc = Object.assign({}, sc);
 
-    if (this.nearTxHelper.isAnyReceiptFailure(tx.receipts)) return txResult;
-
     const payout = this.nearTxHelper.findEventData(tx.receipts, NFT_BUY_EVENT);
     const purchase = this.nearTxHelper.findEventData(tx.receipts, RESOLVE_PURCHASE_EVENT);
     if (!payout || !purchase) {

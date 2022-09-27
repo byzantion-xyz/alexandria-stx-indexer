@@ -9,7 +9,6 @@ import { CreateBurnActionTO } from "src/indexers/common/interfaces/create-action
 import { IndexerService } from "src/indexers/common/interfaces/indexer-service.interface";
 import { TxProcessResult } from "src/indexers/common/interfaces/tx-process-result.interface";
 import { TxActionService } from "src/indexers/common/providers/tx-action.service";
-import { NearTxHelperService } from "./near-tx-helper.service";
 
 @Injectable()
 export class NftBurnEventIndexerService implements IndexerService {
@@ -17,15 +16,12 @@ export class NftBurnEventIndexerService implements IndexerService {
 
   constructor(
     private txHelper: TxHelperService,
-    private nearTxHelper: NearTxHelperService,
     private txActionService: TxActionService
   ) {}
 
   async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {
     let txResult: TxProcessResult = { processed: false, missing: false };
     let msc: SmartContract;
-
-    if (this.nearTxHelper.isAnyReceiptFailure(tx.receipts)) return txResult;
 
     const token_ids = this.txHelper.extractArgumentData(tx.args, scf, 'token_ids');
     const seller = this.txHelper.extractArgumentData(tx.args, scf, 'owner');

@@ -89,8 +89,9 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
 
       this.logger.debug(`saveTxResults() txs: ${this.txBatchResults.length}`);
       this.txBatchResults = [];
-
-      await this.transactionRepository.query(sql);
+      if (values.length) {
+        await this.transactionRepository.query(sql);
+      }
     } catch (err) {
       this.logger.warn('saveTxResults() failed');
       this.logger.error(err);

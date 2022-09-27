@@ -73,8 +73,10 @@ export class NearTxHelperService {
   }
 
   findReceiptWithFunctionCall(r: Receipt[], method_name: string): Receipt {
-    return _.flatMapDeep(r, flatten)
-      .find(r => r && r.function_calls.find(fc => fc.method_name === method_name));
+    return this.flatMapReceipts(r)
+      .find((r: Receipt) => {
+        return r && r.status === 'succeeded' && r.function_calls.find(fc => fc.method_name === method_name);
+      });
   }
 
   isReceiptForEvent(r: Receipt, event_name: string): boolean {

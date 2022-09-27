@@ -33,6 +33,7 @@ export class ListIndexerService implements IndexerService {
 
   async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {
     let txResult: TxProcessResult = { processed: false, missing: false };
+
     const receipt = this.nearTxHelper.findReceiptWithFunctionCall(tx.receipts, NFT_LIST_EVENT);
     if (!receipt) {
       this.logger.warn(`No ${NFT_LIST_EVENT} found for tx hash: ${tx.hash}`);

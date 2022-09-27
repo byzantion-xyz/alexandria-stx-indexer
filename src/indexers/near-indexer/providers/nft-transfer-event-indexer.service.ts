@@ -24,7 +24,7 @@ export class NftTransferEventIndexerService implements IndexerService {
 
   async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {
     let txResult: TxProcessResult = { processed: false, missing: false };
-    
+
     const receipt = tx.receipts[0];
 
     const token_ids: [string] = this.txHelper.extractArgumentData(tx.args, scf, 'token_ids');

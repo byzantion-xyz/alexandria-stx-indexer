@@ -10,7 +10,6 @@ import { CreateMintActionTO } from 'src/indexers/common/interfaces/create-action
 import { IndexerService } from 'src/indexers/common/interfaces/indexer-service.interface';
 import { TxProcessResult } from 'src/indexers/common/interfaces/tx-process-result.interface';
 import { TxActionService } from 'src/indexers/common/providers/tx-action.service';
-import { Repository } from 'typeorm';
 
 @Injectable()
 export class NftMintEventIndexerService implements IndexerService {

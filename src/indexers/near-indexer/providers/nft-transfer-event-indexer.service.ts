@@ -61,7 +61,7 @@ export class NftTransferEventIndexerService implements IndexerService {
         await this.txHelper.unstakeMeta(nftMeta.id, tx);
       }
 
-      if (this.txHelper.isNewOwnerEvent(tx, nftMeta.nft_state)) {
+      if (this.txHelper.isNewOwnerEvent(tx, nftMeta.nft_state, buyer)) {
         await this.txHelper.setNewMetaOwner(nftMeta, tx, buyer);
       }
 

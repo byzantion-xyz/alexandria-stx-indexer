@@ -79,6 +79,11 @@ export class NearTxHelperService {
       });
   }
 
+  isAnyReceiptFailure(r: Receipt[]) {
+    return _.flatMapDeep(r, flatten)
+      .some((r: Receipt) => r.status === 'failed');
+  }
+
   isReceiptForEvent(r: Receipt, event_name: string): boolean {
     return r.function_calls.some(fc => fc.method_name === event_name);
   }

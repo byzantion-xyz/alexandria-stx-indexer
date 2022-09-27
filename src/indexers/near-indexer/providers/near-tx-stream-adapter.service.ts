@@ -172,6 +172,10 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
     const commonTxs: CommonTx[] = [];
 
     this.nearTxHelper.getReceiptTree(tx).forEach((rcpt) => {
+      if (this.nearTxHelper.isAnyReceiptFailure([rcpt])) {
+        return;
+      }
+
       const events = (tx.contains_event)
           ? this.nearTxHelper.getEvents(rcpt) : [];
 

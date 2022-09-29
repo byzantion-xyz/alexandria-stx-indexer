@@ -119,11 +119,8 @@ export class IndexerOrchestratorService {
           smart_contract.smart_contract_functions.find(
             (f) => f.function_name === method_name
           );
-
-        if (!smart_contract_function && 
-          !smart_contract.type.includes(SmartContractType.marketplace) && 
-          this.genericScf &&
-          this.genericScf.length) {
+          
+        if (!smart_contract_function && this.genericScf && this.genericScf.length) {
           smart_contract_function = this.genericScf.find((f) => f.function_name === method_name);
         }
 

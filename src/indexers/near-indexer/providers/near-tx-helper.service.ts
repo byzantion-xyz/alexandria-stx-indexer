@@ -76,13 +76,13 @@ export class NearTxHelperService {
     return this.flatMapReceipts(r)
       .find((r: Receipt) => {
         return r && r.status === 'succeeded' && 
-        r.function_calls.find((fc) => {
-          return fc.method_name === method_name &&
-            (
-              !matcher || 
-              (matcher && _.every(matcher, (val, key) => _.isEqual(val, fc.args[key])))
-            )
-        });
+          r.function_calls.find((fc) => {
+            return fc.method_name === method_name &&
+              (
+                !matcher || 
+                (matcher && _.every(matcher, (val, key) => _.isEqual(val, fc.args[key])))
+              )
+          });
       });
   }
 

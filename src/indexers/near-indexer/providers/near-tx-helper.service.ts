@@ -80,7 +80,7 @@ export class NearTxHelperService {
             return fc.method_name === method_name &&
               (
                 !matcher || 
-                (matcher && _.every(matcher, (val, key) => _.isEqual(val, fc.args[key])))
+                _.every(matcher, (val, key) => _.isEqual(val, fc.args[key]))
               )
           });
       });

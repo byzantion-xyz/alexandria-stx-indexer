@@ -72,10 +72,17 @@ export class NearTxHelperService {
     return _.flatMapDeep(r, flatten);
   }
 
-  findReceiptWithFunctionCall(r: Receipt[], method_name: string): Receipt {
+  findReceiptWithFunctionCall(r: Receipt[], method_name: string, matcher?: {}): Receipt {
     return this.flatMapReceipts(r)
       .find((r: Receipt) => {
-        return r && r.status === 'succeeded' && r.function_calls.find(fc => fc.method_name === method_name);
+        return r && r.status === 'succeeded' && 
+        r.function_calls.find((fc) => {
+          return fc.method_name === method_name &&
+            (
+              !matcher || 
+              (matcher && _.every(matcher, (val, key) => _.isEqual(val, fc.args[key])))
+            )
+        });
       });
   }
 

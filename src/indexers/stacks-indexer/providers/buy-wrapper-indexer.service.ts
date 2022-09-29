@@ -14,6 +14,7 @@ import { SmartContractFunction } from "src/database/universal/entities/SmartCont
 import { Repository } from "typeorm";
 import { ActionName } from "src/indexers/common/helpers/indexer-enums";
 import { StacksTxHelperService } from "./stacks-tx-helper.service";
+import { TxActionService } from "src/indexers/common/providers/tx-action.service";
 
 @Injectable()
 export class BuyWrapperIndexerService implements IndexerService {
@@ -22,14 +23,12 @@ export class BuyWrapperIndexerService implements IndexerService {
   constructor(
     private txHelper: TxHelperService,
     private stacksTxHelper: StacksTxHelperService,
-    @InjectRepository(ActionEntity)
-    private actionRepository: Repository<ActionEntity>,
     @InjectRepository(SmartContract)
     private smartContractRepository: Repository<SmartContract>,
+    private txActionService: TxActionService
   ) {}
 
   async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {
-    this.logger.debug(`process() ${tx.hash}`);
     let txResult: TxProcessResult = { processed: false, missing: false };
     const token_id = this.stacksTxHelper.extractArgumentData(tx.args, scf, "token_id");
     const contract_key = this.stacksTxHelper.extractArgumentData(tx.args, scf, "contract_key");
@@ -56,7 +55,7 @@ export class BuyWrapperIndexerService implements IndexerService {
         await this.txHelper.unlistMetaInAllMarkets(nftMeta, tx, msc, buyActionParams.seller);
         await this.createAction(buyActionParams);
       } else  {
-        this.logger.log(`Too Late`);
+        this.logger.debug(`Too Late`);
         // Create missing action
         await this.createAction(buyActionParams);
       }
@@ -65,7 +64,7 @@ export class BuyWrapperIndexerService implements IndexerService {
       this.logger.warn(`contract_key_wrapper not found for ${sc.contract_key}`);  
       txResult.missing = true;
     } else {
-      this.logger.log(`NftMeta not found ${contract_key} ${token_id}`);
+      this.logger.debug(`NftMeta not found ${contract_key} ${token_id}`);
       txResult.missing = true;
     }
 
@@ -73,12 +72,6 @@ export class BuyWrapperIndexerService implements IndexerService {
   }
 
   async createAction(params: CreateBuyActionTO): Promise<ActionEntity> {
-    try {
-      const action = this.actionRepository.create(params);
-      const saved = await this.actionRepository.save(action);
-      this.logger.log(`New action ${params.action}: ${saved.id} `);
-
-      return saved;
-    } catch (err) {}
+    return await this.txActionService.saveAction(params);
   }
 }

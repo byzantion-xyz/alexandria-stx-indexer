@@ -1,8 +1,7 @@
-import { Logger, Injectable, NotAcceptableException } from "@nestjs/common";
+import { Logger, Injectable } from "@nestjs/common";
 import { TxProcessResult } from "src/indexers/common/interfaces/tx-process-result.interface";
 import { TxHelperService } from "../../common/helpers/tx-helper.service";
 import {
-  CreateActionCommonArgs,
   CreateUnlistActionTO,
 } from "../../common/interfaces/create-action-common.dto";
 
@@ -16,6 +15,7 @@ import { Repository } from "typeorm";
 import { ActionName, SmartContractType } from "../../common/helpers/indexer-enums";
 import { Action } from "src/database/universal/entities/Action";
 import { NearTxHelperService } from "src/indexers/near-indexer/providers/near-tx-helper.service";
+import { TxActionService } from "src/indexers/common/providers/tx-action.service";
 
 @Injectable()
 export class UnlistIndexerService implements IndexerService {
@@ -24,14 +24,12 @@ export class UnlistIndexerService implements IndexerService {
   constructor(
     private txHelper: TxHelperService,
     private nearTxHelper: NearTxHelperService,
-    @InjectRepository(Action)
-    private actionRepository: Repository<Action>,
+    private txActionService: TxActionService,
     @InjectRepository(SmartContract)
     private smartContractRepository: Repository<SmartContract>
   ) {}
 
   async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {
-    this.logger.debug(`process() ${tx.hash}`);
     let txResult: TxProcessResult = { processed: false, missing: false };
     let msc = Object.assign({}, sc);
 
@@ -70,14 +68,14 @@ export class UnlistIndexerService implements IndexerService {
       if (this.nearTxHelper.isNewerEvent(tx, nft_state_list)) {
         await this.txHelper.unlistMeta(nftMeta, tx, msc);
       } else {
-        this.logger.log(`Too Late`);
+        this.logger.debug(`Too Late`);
       }
 
       await this.createAction(unlistActionParams);
 
       txResult.processed = true;
     } else {
-      this.logger.log(`NftMeta not found ${contract_key} ${token_id}`);
+      this.logger.debug(`NftMeta not found ${contract_key} ${token_id}`);
       txResult.missing = true;
     }
 
@@ -85,13 +83,6 @@ export class UnlistIndexerService implements IndexerService {
   }
 
   async createAction(params: CreateUnlistActionTO): Promise<Action> {
-    try {
-      const action = this.actionRepository.create(params);
-      const saved = await this.actionRepository.save(action);
-
-      this.logger.log(`New action ${params.action}: ${saved.id} `);
-
-      return saved;
-    } catch (err) {}
+    return await this.txActionService.saveAction(params);
   }
 }

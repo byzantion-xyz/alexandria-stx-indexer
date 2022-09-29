@@ -6,7 +6,21 @@ import { IndexerOptions } from "./indexer-options";
 export interface CommonTxResult {
   txs: CommonTx[],
   total: number
-};
+}
+
+export interface NearTxResult {
+  hash: string,
+  processed: boolean,
+  missingNftEvent: boolean,
+  matchingFunctionCall: boolean,
+  skipped: string[]
+}
+
+export interface StacksTxBatchResult {
+  hash: string,
+  processed: boolean,
+  missing: boolean
+}
 
 export interface ProcessedTxsResult {
   total: number;
@@ -19,7 +33,8 @@ export interface TxCursorBatch {
 export interface TxStreamAdapter {
   connectPool(): Promise<PoolClient>;
   fetchTxs(options: IndexerOptions): Promise<TxCursorBatch>;
-  setTxResult(txHash: string, txResult: TxProcessResult): void;
+  setTxResult(tx: CommonTx, txResult: TxProcessResult): void;
+  saveTxResults(): void;
   closePool(): Promise<any>;
 
   subscribeToEvents?(): Client;

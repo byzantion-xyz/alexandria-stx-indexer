@@ -8,9 +8,10 @@ import { ActionName, CollectionBidStatus } from 'src/indexers/common/helpers/ind
 import { TxBidHelperService } from 'src/indexers/common/helpers/tx-bid-helper.service';
 import { TxHelperService } from 'src/indexers/common/helpers/tx-helper.service';
 import { CommonTx } from 'src/indexers/common/interfaces/common-tx.interface';
-import { CreateAcceptBidActionTO, CreateActionTO } from 'src/indexers/common/interfaces/create-action-common.dto';
+import { CreateAcceptBidActionTO } from 'src/indexers/common/interfaces/create-action-common.dto';
 import { IndexerService } from 'src/indexers/common/interfaces/indexer-service.interface';
 import { TxProcessResult } from 'src/indexers/common/interfaces/tx-process-result.interface';
+import { TxActionService } from 'src/indexers/common/providers/tx-action.service';
 import { Repository } from 'typeorm';
 import { StacksTxHelperService } from './stacks-tx-helper.service';
 
@@ -22,14 +23,12 @@ export class IdAcceptBidIndexerService implements IndexerService {
     private stacksTxHelper: StacksTxHelperService,
     private txHelper: TxHelperService,
     private txBidHelper: TxBidHelperService,
-    @InjectRepository(Action)
-    private actionRepository: Repository<Action>,
+    private txActionService: TxActionService,
     @InjectRepository(BidState)
     private bidStateRepository: Repository<BidState>
   ) {}
 
   async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {
-    this.logger.debug(`process() ${tx.hash}`);
     let txResult: TxProcessResult = { processed: false, missing: false };
 
     const events = this.stacksTxHelper.extractSmartContractLogEvents(tx.events);
@@ -65,7 +64,7 @@ export class IdAcceptBidIndexerService implements IndexerService {
     
           await this.createAction(acceptBidActionParams);
         } else {
-          this.logger.log(`NftMeta not found ${contract_key} ${token_id}`);
+          this.logger.debug(`NftMeta not found ${contract_key} ${token_id}`);
         }
         
       } else if (bidState) {
@@ -82,17 +81,8 @@ export class IdAcceptBidIndexerService implements IndexerService {
     return txResult;
   }
 
-
- async createAction(params: CreateActionTO): Promise<Action> {
-    try {
-      const action = this.actionRepository.create(params);
-      const saved = await this.actionRepository.save(action);
-
-      this.logger.log(`New action ${params.action}: ${saved.id} `);
-
-      return saved;
-    } catch (err) {}
+  async createAction(params: CreateAcceptBidActionTO): Promise<Action> {
+    return await this.txActionService.saveAction(params);
   }
-
 
 }

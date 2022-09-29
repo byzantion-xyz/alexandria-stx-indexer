@@ -14,28 +14,6 @@ import {
 import { Repository } from "typeorm";
 
 const NEAR_PROTOCOL_DB_ID = "174c3df6-0221-4ca7-b966-79ac8d981bdb";
-const scf = [{
-  args: {
-    price: "msg.price",
-    token_id: "token_id",
-    list_action: "msg.market_type",
-    contract_key: "account_id",
-    token_price: "msg.sale_conditions.near",
-    buyer: "msg.buyer_id"
-  },
-  name: "list",
-  function_name: "nft_approve",
-},
-{
-  args: { token_id: "token_id", contract_key: "account_id" },
-  name: "unlist",
-  function_name: "nft_revoke",
-},
-{
-  args: { token_id: "token_id", contract_key: "receiver_id", action: "msg" },
-  name: "stake",
-  function_name: "nft_transfer_call",
-}];
 
 @Injectable()
 export class DbHelperService {
@@ -70,7 +48,6 @@ export class DbHelperService {
     let smartContract = await this.smartContractRepo.findOneBy({ contract_key });
     if (!smartContract) {
       smartContract = this.smartContractRepo.create();
-      smartContractData.smart_contract_functions = scf;
     }
 
     this.smartContractRepo.merge(smartContract, smartContractData);

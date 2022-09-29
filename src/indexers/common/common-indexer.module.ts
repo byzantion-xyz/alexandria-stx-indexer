@@ -14,8 +14,10 @@ import { BidState } from 'src/database/universal/entities/BidState';
 import { NftMetaAttribute } from 'src/database/universal/entities/NftMetaAttribute';
 import { MegapontAttribute } from 'src/database/universal/entities/MegapontAttribute';
 import { NftStateList } from 'src/database/universal/entities/NftStateList';
-import { TxStakingHelperService } from './helpers/tx-staking-helper.service';
+import { TxStakingHelper } from './helpers/tx-staking-helper';
 import { TxBidHelperService } from './helpers/tx-bid-helper.service';
+import { TxActionService } from './providers/tx-action.service';
+import { SmartContractService } from './helpers/smart-contract.service';
 
 @Module({
   imports: [
@@ -38,14 +40,18 @@ import { TxBidHelperService } from './helpers/tx-bid-helper.service';
   controllers: [],
   providers: [
     TxHelperService,
-    TxStakingHelperService,
+    TxStakingHelper,
     TxBidHelperService,
+    TxActionService,
+    SmartContractService,
   ],
   exports: [
     TypeOrmModule,
     TxHelperService,
-    TxStakingHelperService,
-    TxBidHelperService
+    TxStakingHelper,
+    TxBidHelperService,
+    TxActionService,
+    SmartContractService
   ]
 })
 export class CommonIndexerModule {}

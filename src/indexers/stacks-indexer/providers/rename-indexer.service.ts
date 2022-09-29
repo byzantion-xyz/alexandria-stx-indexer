@@ -26,7 +26,6 @@ export class RenameIndexerService implements IndexerService {
   ) {}
 
   async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {
-    this.logger.debug(`process() ${tx.hash}`);
     let txResult: TxProcessResult = { processed: false, missing: false };
 
     const contract_key = this.stacksTxHelper.extractArgumentData(tx.args, scf, 'contract_key');
@@ -40,7 +39,7 @@ export class RenameIndexerService implements IndexerService {
 
       txResult.processed = true;
     } else {
-      this.logger.log(`NftMeta not found ${contract_key} ${token_id}`);
+      this.logger.debug(`NftMeta not found ${contract_key} ${token_id}`);
       txResult.missing = true;
     }
 

@@ -8,9 +8,10 @@ import { ActionName, BidType } from 'src/indexers/common/helpers/indexer-enums';
 import { CreateCollectionBidStateArgs, TxBidHelperService } from 'src/indexers/common/helpers/tx-bid-helper.service';
 import { TxHelperService } from 'src/indexers/common/helpers/tx-helper.service';
 import { CommonTx } from 'src/indexers/common/interfaces/common-tx.interface';
-import { CreateActionTO, CreateCollectionBidActionTO } from 'src/indexers/common/interfaces/create-action-common.dto';
+import { CreateCollectionBidActionTO } from 'src/indexers/common/interfaces/create-action-common.dto';
 import { IndexerService } from 'src/indexers/common/interfaces/indexer-service.interface';
 import { TxProcessResult } from 'src/indexers/common/interfaces/tx-process-result.interface';
+import { TxActionService } from 'src/indexers/common/providers/tx-action.service';
 import { Repository } from 'typeorm';
 import { StacksTxHelperService } from './stacks-tx-helper.service';
 
@@ -22,8 +23,7 @@ export class CollectionOrderBookBidIndexerService implements IndexerService {
     private stacksTxHelper: StacksTxHelperService,
     private txHelper: TxHelperService,
     private txBidHelper: TxBidHelperService,
-    @InjectRepository(Action)
-    private actionRepository: Repository<Action>,
+    private txActionService: TxActionService,
     @InjectRepository(Collection)
     private collectionRepository: Repository<Collection>,
     @InjectRepository(SmartContract)
@@ -31,7 +31,6 @@ export class CollectionOrderBookBidIndexerService implements IndexerService {
   ) {}
 
   async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {
-    this.logger.debug(`process() ${tx.hash}`);
     let txResult: TxProcessResult = { processed: false, missing: false };
 
     const events = this.stacksTxHelper.extractSmartContractLogEvents(tx.events);
@@ -78,14 +77,7 @@ export class CollectionOrderBookBidIndexerService implements IndexerService {
     return txResult;
   }
 
-  async createAction(params: CreateActionTO): Promise<Action> {
-    try {
-      const action = this.actionRepository.create(params);
-      const saved = await this.actionRepository.save(action);
-
-      this.logger.log(`New action ${params.action}: ${saved.id} `);
-
-      return saved;
-    } catch (err) {}
+  async createAction(params: CreateCollectionBidActionTO): Promise<Action> {
+    return await this.txActionService.saveAction(params);
   }
 }

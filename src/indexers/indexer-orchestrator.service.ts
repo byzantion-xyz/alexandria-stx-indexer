@@ -13,6 +13,7 @@ import { IndexerOptions } from "./common/interfaces/indexer-options";
 import { SmartContractFunction } from "src/database/universal/entities/SmartContractFunction";
 import { CommonUtilService } from "src/common/helpers/common-util/common-util.service";
 import { MissingCollectionService } from "src/scrapers/near-scraper/providers/missing-collection.service";
+import { SmartContractService } from "./common/helpers/smart-contract.service";
 
 const BATCH_SIZE = 1000;
 
@@ -25,23 +26,25 @@ export class IndexerOrchestratorService {
   constructor(
     @Inject('MicroIndexers') private microIndexers: Array<IndexerService>,
     private configService: ConfigService,
-    @InjectRepository(SmartContract)
-    private smartContractRepository: Repository<SmartContract>,
     @InjectRepository(Chain)
     private chainRepository: Repository<Chain>,
     @Inject('TxStreamAdapter') private txStreamAdapter: TxStreamAdapter,
     private commonUtil: CommonUtilService,
     private missingCollectionService: MissingCollectionService,
+    private smartContractService: SmartContractService
   ) {}
 
   async runIndexer(options: IndexerOptions) {
-    this.logger.debug(`runIndexer() Initialize with options: `, options);
+    this.logger.log(`runIndexer() Initialize with options: `, options);
     try {
       await this.setUpChainAndStreamer();
       if (options.includeMissings && !options.contract_key) {
         this.logger.warn('A contract_key is required while running missing transactions');
         return;
       }
+
+      const scs = await this.smartContractService.findChainSmartContracts(this.chainSymbol);
+
       await this.txStreamAdapter.connectPool();
       const { cursor } = await this.txStreamAdapter.fetchTxs(options);
 
@@ -51,13 +54,13 @@ export class IndexerOrchestratorService {
         txs = await cursor.read(BATCH_SIZE);
         this.logger.log(`Fetching next batch of transactions`);
         const common_txs: CommonTx[] = this.txStreamAdapter.transformTxs(txs);
-        await this.processTransactions(common_txs);
+        await this.processTransactions(common_txs, scs);
       } while (txs.length > 0);
-      
+
       cursor.close();
       await this.txStreamAdapter.closePool();
 
-      this.logger.debug(`runIndexer() Completed with options: `, options);
+      this.logger.log(`runIndexer() Completed with options: `, options);
     } catch (err) {
       this.logger.error(err);
     }
@@ -73,7 +76,7 @@ export class IndexerOrchestratorService {
 
         client.on("notification", async (event) => {
           const txs: CommonTx[] = await this.txStreamAdapter.fetchEventData(event.payload);
-          
+
           await this.processTransactions(txs);
         });
       } else {
@@ -84,33 +87,31 @@ export class IndexerOrchestratorService {
     }
   }
 
-  async processTransactions(transactions: CommonTx[]): Promise<ProcessedTxsResult> {
+  async processTransactions(transactions: CommonTx[], scs?: SmartContract[]): Promise<ProcessedTxsResult> {
     let processed = 0;
+    
     for await (const tx of transactions) {
-      const txResult: TxProcessResult = await this.processTransaction(tx);
+      const txResult: TxProcessResult = await this.processTransaction(tx, scs);
       if (txResult.processed) processed++;
-      await this.txStreamAdapter.setTxResult(tx.hash, txResult);
+      this.txStreamAdapter.setTxResult(tx, txResult);
+    }
+
+    if (transactions && transactions.length) {
+      this.txStreamAdapter.saveTxResults();
     }
 
     return { total: processed };
   }
 
-  async processTransaction(transaction: CommonTx): Promise<TxProcessResult> {
+  async processTransaction(transaction: CommonTx, scs?: SmartContract[]): Promise<TxProcessResult> {
     let result: TxProcessResult = { processed: false, missing: false };
 
     try {
       const method_name = transaction.function_name;
-      const smart_contract = await this.smartContractRepository.findOne({
-        where: { 
-          contract_key: transaction.receiver, 
-          chain: { symbol: this.chainSymbol } 
-        },
-        relations: {  
-          smart_contract_functions: true,
-          custodial_smart_contract: true
-        },
-        cache: 60000
-      });
+
+      const smart_contract = scs && scs.length 
+        ? scs.find(sc => sc.contract_key === transaction.receiver) 
+        : await this.smartContractService.findByContractKey(transaction.receiver, this.chainSymbol)
 
       if (smart_contract) {
         let smart_contract_function =
@@ -124,21 +125,20 @@ export class IndexerOrchestratorService {
 
         if (smart_contract_function) {
           const txHandler = this.getMicroIndexer(transaction.indexer_name || smart_contract_function.name);
+          this.logger.log(`process() ${transaction.hash} with: ${txHandler.constructor.name} `);
           result = await txHandler.process(
             transaction,
             smart_contract,
             smart_contract_function
           );
         } else {
-          this.logger.log(
-            `function_name: ${method_name} not found in ${transaction.receiver}`
-          );
+          this.logger.debug(`function_name: ${method_name} not found in ${transaction.receiver}`);
           result.missing = true;
         }
       } else {
-        this.logger.log(`smart_contract: ${transaction.receiver} not found`);
+        this.logger.debug(`smart_contract: ${transaction.receiver} not found`);
         if (this.chainSymbol === 'Near' && process.env.NODE_ENV === 'production') {
-          this.missingCollectionService.scrapeMissing({ contract_key: transaction.receiver });
+          //this.missingCollectionService.scrapeMissing({ contract_key: transaction.receiver });
         }
         result.missing = true;
       }
@@ -167,7 +167,7 @@ export class IndexerOrchestratorService {
       throw new Error(`CHAIN_SYMBOL must be provided as environment variable`);
     }
     const chain = await this.chainRepository.findOneByOrFail({ symbol: this.chainSymbol });
-  
+
     if (
       !this.txStreamAdapter ||
       !this.isTxStreamAdapter(this.txStreamAdapter)
@@ -189,7 +189,8 @@ export class IndexerOrchestratorService {
   isTxStreamAdapter(arg): arg is TxStreamAdapter {
     return (
       typeof arg.fetchTxs === 'function' &&
-      typeof arg.setTxResult === 'function' && 
+      typeof arg.setTxResult === 'function' &&
+      typeof arg.saveTxResults === 'function' &&
       typeof arg.connectPool === 'function' &&
       typeof arg.closePool === 'function'
     );

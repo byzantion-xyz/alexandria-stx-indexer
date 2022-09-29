@@ -13,6 +13,7 @@ import { IndexerService } from 'src/indexers/common/interfaces/indexer-service.i
 import { TxProcessResult } from 'src/indexers/common/interfaces/tx-process-result.interface';
 import { Repository } from 'typeorm';
 import { StacksTxHelperService } from './stacks-tx-helper.service';
+import { TxActionService } from "src/indexers/common/providers/tx-action.service";
 
 @Injectable()
 export class IdBidIndexerService implements IndexerService {
@@ -22,8 +23,7 @@ export class IdBidIndexerService implements IndexerService {
     private stacksTxHelper: StacksTxHelperService,
     private txHelper: TxHelperService,
     private txBidHelper: TxBidHelperService,
-    @InjectRepository(Action)
-    private actionRepository: Repository<Action>,
+    private txActionService: TxActionService,
     @InjectRepository(Collection)
     private collectionRepository: Repository<Collection>,
     @InjectRepository(SmartContract)
@@ -31,7 +31,6 @@ export class IdBidIndexerService implements IndexerService {
   ) {}
 
   async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {
-    this.logger.debug(`process() ${tx.hash}`);
     let txResult: TxProcessResult = { processed: false, missing: false };
 
     const price = this.stacksTxHelper.extractArgumentData(tx.args, scf, 'price');
@@ -80,15 +79,8 @@ export class IdBidIndexerService implements IndexerService {
     return txResult;
   }
 
-  async createAction(params: CreateActionTO): Promise<Action> {
-    try {
-      const action = this.actionRepository.create(params);
-      const saved = await this.actionRepository.save(action);
-
-      this.logger.log(`New action ${params.action}: ${saved.id} `);
-
-      return saved;
-    } catch (err) {}
+  async createAction(params: CreateIdBidActionTO): Promise<Action> {
+    return await this.txActionService.saveAction(params);
   }
   
 }

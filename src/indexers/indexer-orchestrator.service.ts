@@ -14,6 +14,7 @@ import { SmartContractFunction } from "src/database/universal/entities/SmartCont
 import { CommonUtilService } from "src/common/helpers/common-util/common-util.service";
 import { MissingCollectionService } from "src/scrapers/near-scraper/providers/missing-collection.service";
 import { SmartContractService } from "./common/helpers/smart-contract.service";
+import { SmartContractType } from "./common/helpers/indexer-enums";
 
 const BATCH_SIZE = 1000;
 
@@ -118,7 +119,7 @@ export class IndexerOrchestratorService {
           smart_contract.smart_contract_functions.find(
             (f) => f.function_name === method_name
           );
-
+          
         if (!smart_contract_function && this.genericScf && this.genericScf.length) {
           smart_contract_function = this.genericScf.find((f) => f.function_name === method_name);
         }

@@ -14,7 +14,6 @@ import { SmartContractFunction } from "src/database/universal/entities/SmartCont
 import { CommonUtilService } from "src/common/helpers/common-util/common-util.service";
 import { MissingCollectionService } from "src/scrapers/near-scraper/providers/missing-collection.service";
 import { SmartContractService } from "./common/helpers/smart-contract.service";
-import { SmartContractType } from "./common/helpers/indexer-enums";
 
 const BATCH_SIZE = 1000;
 

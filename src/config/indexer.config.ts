@@ -61,14 +61,6 @@ export default registerAs("indexer", () => ({
         },
       },
       {
-        function_name: 'nft_revoke',
-        name: 'unlist',
-        args: { 
-          token_id: "token_id", 
-          contract_key: "account_id" 
-        },
-      },
-      {
         function_name: 'nft_transfer_call',
         name: 'stake',
         args: { 

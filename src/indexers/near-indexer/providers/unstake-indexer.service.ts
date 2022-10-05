@@ -38,13 +38,13 @@ export class UnstakeIndexerService implements IndexerService {
     const token_id = this.txHelper.extractArgumentData(tx.args, scf, "token_id");
     const contract_key = this.txHelper.extractArgumentData(tx.args, scf, "contract_key");
 
+    const nftMeta = await this.txHelper.createOrFetchMetaByContractKey(contract_key, token_id, sc.chain_id);
+
     if (!sc.type.includes(SmartContractType.staking)) {
       this.logger.log(`Stake contract: ${sc.contract_key} does not have staking type`);
       txResult.missing = true;
       return txResult;
     }
-
-    const nftMeta = await this.txHelper.createOrFetchMetaByContractKey(contract_key, token_id, sc.chain_id);
 
     const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName[scf.name], tx, nftMeta, sc);
     const unstakeActionParams: CreateUnstakeActionTO = {

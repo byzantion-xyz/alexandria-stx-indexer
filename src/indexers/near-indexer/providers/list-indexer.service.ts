@@ -49,14 +49,14 @@ export class ListIndexerService implements IndexerService {
       return txResult;
     }
 
+    const nftMeta = await this.txHelper.createOrFetchMetaByContractKey(contract_key, token_id, sc.chain_id);
+
     const msc = await this.smartContractRepository.findOneBy({ contract_key: receipt.receiver_id });
     if (!msc) {
       this.logger.warn(`Marketplace smart_contract: ${receipt.receiver_id} not found`);
       txResult.missing = true;
       return txResult;
     }
-
-    const nftMeta = await this.txHelper.createOrFetchMetaByContractKey(contract_key, token_id, sc.chain_id);
 
     const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName[scf.name], tx, nftMeta, msc);
     const nft_state_list = this.txHelper.findStateList(nftMeta.nft_state, msc.id);

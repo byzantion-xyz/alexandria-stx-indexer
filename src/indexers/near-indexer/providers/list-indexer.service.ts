@@ -34,6 +34,7 @@ export class ListIndexerService implements IndexerService {
   async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {
     let txResult: TxProcessResult = { processed: false, missing: false };
     const token_id = this.txHelper.extractArgumentData(tx.args, scf, "token_id");
+    const { contract_key } = sc;
 
     const receipt = this.nearTxHelper.findReceiptWithFunctionCall(tx.receipts, NFT_LIST_EVENT, { token_id });
     if (!receipt) {
@@ -55,29 +56,24 @@ export class ListIndexerService implements IndexerService {
       return txResult;
     }
 
-    const nftMeta = await this.txHelper.findMetaByContractKey(sc.contract_key, token_id);
+    const nftMeta = await this.txHelper.createOrFetchMetaByContractKey(contract_key, token_id, sc.chain_id);
 
-    if (nftMeta) {
-      const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName[scf.name], tx, nftMeta, msc);
-      const nft_state_list = this.txHelper.findStateList(nftMeta.nft_state, msc.id);
-      const listActionParams: CreateListActionTO = {
-        ...actionCommonArgs,
-        list_price: price,
-        seller: tx.signer
-      };
+    const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName[scf.name], tx, nftMeta, msc);
+    const nft_state_list = this.txHelper.findStateList(nftMeta.nft_state, msc.id);
+    const listActionParams: CreateListActionTO = {
+      ...actionCommonArgs,
+      list_price: price,
+      seller: tx.signer,
+    };
 
-      if (this.nearTxHelper.isNewerEvent(tx, nft_state_list)) {
-        await this.txHelper.listMeta(nftMeta, tx, msc, price);
-      } else {
-        this.logger.debug(`Too Late`);
-      }
-      await this.createAction(listActionParams);
-
-      txResult.processed = true;
+    if (this.nearTxHelper.isNewerEvent(tx, nft_state_list)) {
+      await this.txHelper.listMeta(nftMeta, tx, msc, price);
     } else {
-      this.logger.debug(`NftMeta not found ${sc.contract_key} ${token_id}`);
-      txResult.missing = true;
+      this.logger.debug(`Too Late`);
     }
+    await this.createAction(listActionParams);
+
+    txResult.processed = true;
 
     return txResult;
   }

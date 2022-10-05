@@ -31,29 +31,24 @@ export class RelistIndexerService implements IndexerService {
     const price = this.txHelper.extractArgumentData(tx.args, scf, "price");
     const contract_key = this.txHelper.extractArgumentData(tx.args, scf, "contract_key");
 
-    const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
+    const nftMeta = await this.txHelper.createOrFetchMetaByContractKey(contract_key, token_id, sc.chain_id);
 
-    if (nftMeta) {
-      const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName[scf.name], tx, nftMeta, msc);
-      const nft_state_list = this.txHelper.findStateList(nftMeta.nft_state, msc.id);
-      const listActionParams: CreateRelistActionTO = {
-        ...actionCommonArgs,
-        list_price: price,
-        seller: tx.signer
-      };
+    const actionArgs = this.txHelper.setCommonActionParams(ActionName[scf.name], tx, nftMeta, msc);
+    const nft_state_list = this.txHelper.findStateList(nftMeta.nft_state, msc.id);
+    const listActionParams: CreateRelistActionTO = {
+      ...actionArgs,
+      list_price: price,
+      seller: tx.signer
+    };
 
-      if (this.nearTxHelper.isNewerEvent(tx, nft_state_list)) {
-        await this.txHelper.listMeta(nftMeta, tx, msc, price);
-      } else {
-        this.logger.debug(`Too Late`);
-      }
-      await this.createAction(listActionParams);
-
-      txResult.processed = true;
+    if (this.nearTxHelper.isNewerEvent(tx, nft_state_list)) {
+      await this.txHelper.listMeta(nftMeta, tx, msc, price);
     } else {
-      this.logger.debug(`NftMeta not found ${sc.contract_key} ${token_id}`);
-      txResult.missing = true;
+      this.logger.debug(`Too Late`);
     }
+    await this.createAction(listActionParams);
+
+    txResult.processed = true;
 
     return txResult;
   }

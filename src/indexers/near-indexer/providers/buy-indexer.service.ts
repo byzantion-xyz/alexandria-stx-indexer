@@ -56,31 +56,27 @@ export class BuyIndexerService implements IndexerService {
       msc = sc.custodial_smart_contract;
     }
 
-    const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
+    const nftMeta = await this.txHelper.createOrFetchMetaByContractKey(contract_key, token_id, sc.chain_id);
 
-    if (nftMeta) {
-      const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName[scf.name], tx, nftMeta, msc);
-      const nft_state_list = this.txHelper.findStateList(nftMeta.nft_state, msc.id);
+    const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName[scf.name], tx, nftMeta, msc);
+    const nft_state_list = this.txHelper.findStateList(nftMeta.nft_state, msc.id);
 
-      const buyActionParams: CreateBuyActionTO = { 
-        ...actionCommonArgs,
-        list_price: price,
-        seller: seller,
-        buyer: tx.signer
-      };
+    const buyActionParams: CreateBuyActionTO = { 
+      ...actionCommonArgs,
+      list_price: price,
+      seller: seller,
+      buyer: tx.signer
+    };
 
-      if (this.nearTxHelper.isNewerEvent(tx, nft_state_list)) {
-        await this.txHelper.unlistMetaInAllMarkets(nftMeta, tx, msc);
-      } else {
-        this.logger.debug(`Too Late`);
-      }
-      await this.createAction(buyActionParams);
-
-      txResult.processed = true;
+    if (this.nearTxHelper.isNewerEvent(tx, nft_state_list)) {
+      await this.txHelper.unlistMetaInAllMarkets(nftMeta, tx, msc);
     } else {
-      this.logger.debug(`NftMeta not found ${contract_key} ${token_id}`);
-      txResult.missing = true;
+      this.logger.debug(`Too Late`);
     }
+
+    await this.createAction(buyActionParams);
+
+    txResult.processed = true;
 
     return txResult;
   }

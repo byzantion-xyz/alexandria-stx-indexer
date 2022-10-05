@@ -8,6 +8,7 @@ export class SmartContractService {
   private basicSelect = { 
     id: true,
     contract_key: true,
+    chain_id: true,
     contract_key_wrapper: true,
     type: true,
     name: true

@@ -13,7 +13,8 @@ import { Repository } from "typeorm";
 import { ActionName, SmartContractType } from "./indexer-enums";
 import { Commission } from "src/database/universal/entities/Commission";
 import { NftStateList } from "src/database/universal/entities/NftStateList";
-import { makeContractCall } from "@stacks/transactions";
+import { ConfigService } from "@nestjs/config";
+import { Chain } from "src/database/universal/entities/Chain";
 
 export interface NftStateArguments {
   collection_map_id?: string
@@ -30,6 +31,8 @@ export class TxHelperService {
     private nftStateRepository: Repository<NftState>,
     @InjectRepository(SmartContract)
     private smartContractRepository: Repository<SmartContract>,
+    @InjectRepository(NftMeta)
+    private nftMetaRepository: Repository<NftMeta>,
     @InjectRepository(Commission)
     private commissionRepository: Repository<Commission>,
     @InjectRepository(NftStateList)
@@ -77,26 +80,73 @@ export class TxHelperService {
     }
   }
 
-  // TODO: Optimize relations fetched per event type
-  async findMetaByContractKey(contract_key: string, token_id: string) {
-    const nft_smart_contract = await this.smartContractRepository.findOne({
-      where: {
-        contract_key,
-        nft_metas: { token_id },
-      },
+  async findMetaByContractKey(contract_key: string, token_id: string): Promise<NftMeta> {
+    const nftMetas = await this.nftMetaRepository.find({
+      where: { smart_contract: { contract_key }, token_id },
       relations: {
-        nft_metas: {
-          nft_state: { 
-            staked_contract: true,  
-            nft_states_list: { commission: true, list_contract: true }
-          },
-          smart_contract: true,
-          collection: true
-      }}
+        nft_state: { 
+          staked_contract: true,  
+          nft_states_list: { commission: true, list_contract: true }
+        },
+        smart_contract: true,
+        collection: true
+      }
     });
 
-    if (nft_smart_contract && nft_smart_contract.nft_metas && nft_smart_contract.nft_metas.length === 1) {
-      return nft_smart_contract.nft_metas[0];
+    if (nftMetas && nftMetas.length === 1) {
+      return nftMetas[0];
+    } else if (nftMetas && nftMetas.length > 1) {
+      throw new Error(`Unable to find unique meta for: ${contract_key} ${token_id}`);
+    }
+  }
+
+  async createOrFetchMetaByContractKey(contract_key: string, token_id: string, chain_id: string): Promise<NftMeta> {
+    let nftMeta = await this.findMetaByContractKey(contract_key, token_id);
+
+    if (!nftMeta) {
+      let smartContract = await this.smartContractRepository.findOne({ where: { contract_key }});
+      if (!smartContract) {
+        smartContract = await this.createSmartContractSkeleton(contract_key, chain_id);
+      }
+
+      nftMeta = await this.createMetaSkeleton(smartContract, token_id);
+      nftMeta.smart_contract = smartContract;
+    }
+
+    return nftMeta;
+  }
+
+  async createSmartContractSkeleton(contract_key: string, chain_id: string): Promise<SmartContract> {
+    this.logger.debug(`createSmartContractSkeleton() contract_key: ${contract_key}`);
+
+    try {
+      const smartContract = this.smartContractRepository.create({
+        contract_key,
+        type: [SmartContractType.non_fungible_tokens],
+        chain_id
+      });
+  
+      return await this.smartContractRepository.save(smartContract);
+    } catch (err) {
+      this.logger.warn(`createSmartContractSkeleton() failed for contract_key: ${contract_key} `);
+      this.logger.error(err);
+      throw err;
+    }
+  }
+
+  async createMetaSkeleton(sc: SmartContract, token_id: string): Promise<NftMeta> {
+    try {
+      const newMeta = this.nftMetaRepository.create({
+        smart_contract_id: sc.id,
+        chain_id: sc.chain_id,
+        token_id
+      });
+      
+      return await this.nftMetaRepository.save(newMeta);
+    } catch (err) {
+      this.logger.warn(`createNftMetaSkeletonBySmartContract() failed for token_id: ${token_id}`);
+      this.logger.warn(err);
+      throw err;
     }
   }
 
@@ -278,7 +328,7 @@ export class TxHelperService {
     let params: CreateActionCommonArgs = {
       ...common,
       nft_meta_id: nftMeta.id,
-      collection_id: nftMeta.collection_id,
+      ... (nftMeta.collection_id && { collection_id: nftMeta.collection_id }),
       smart_contract_id: nftMeta.smart_contract.id
     }    
     return params;
@@ -313,7 +363,6 @@ export class TxHelperService {
         marketplace_smart_contract_id: msc.id,
       }),
     };
-
   }
 
   isNewOwnerEvent(tx: CommonTx, nft_state: NftState, owner?: string): boolean {

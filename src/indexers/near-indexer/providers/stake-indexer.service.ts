@@ -50,29 +50,25 @@ export class StakeIndexerService implements IndexerService {
       return txResult;
     }
 
-    const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
+    const nftMeta = await this.txHelper.createOrFetchMetaByContractKey(contract_key, token_id, sc.chain_id);
 
-    if (nftMeta) {
-      const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName[scf.name], tx, nftMeta, stake_sc);
-      const stakeActionParams: CreateStakeActionTO = {
-        ...actionCommonArgs,
-        seller: tx.signer,
-      };
+    const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName[scf.name], tx, nftMeta, stake_sc);
+    const stakeActionParams: CreateStakeActionTO = {
+      ...actionCommonArgs,
+      seller: tx.signer,
+    };
 
-      if (this.txStakingHelper.isNewStakingBlock(tx, nftMeta.nft_state)) {
+    if (this.txStakingHelper.isNewStakingBlock(tx, nftMeta.nft_state)) {
+      if (this.txHelper.isListedPreviously(nftMeta.nft_state, tx)) {
         await this.txHelper.unlistMetaInAllMarkets(nftMeta, tx);
-
-        await this.txHelper.stakeMeta(nftMeta.id, tx, sc, stake_sc);
-      } else {
-        this.logger.debug(`Too Late`);
       }
-      await this.createAction(stakeActionParams);
-
-      txResult.processed = true;
+      await this.txHelper.stakeMeta(nftMeta.id, tx, sc, stake_sc);
     } else {
-      this.logger.debug(`NftMeta not found ${contract_key} ${token_id}`);
-      txResult.missing = true;
+      this.logger.debug(`Too Late`);
     }
+    await this.createAction(stakeActionParams);
+
+    txResult.processed = true;
 
     return txResult;
   }

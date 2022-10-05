@@ -36,31 +36,26 @@ export class UnlistIndexerService implements IndexerService {
     const token_id = this.txHelper.extractArgumentData(tx.args, scf, "token_id");
     let contract_key = this.txHelper.extractArgumentData(tx.args, scf, "contract_key");
 
-    const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
+    const nftMeta = await this.txHelper.createOrFetchMetaByContractKey(contract_key, token_id, sc.chain_id);
     
-    if (nftMeta) {
-      const nft_state_list = this.txHelper.findStateList(nftMeta.nft_state, msc.id);
-      const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName[scf.name], tx, nftMeta, msc);
+    const nft_state_list = this.txHelper.findStateList(nftMeta.nft_state, msc.id);
+    const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName[scf.name], tx, nftMeta, msc);
 
-      const unlistActionParams: CreateUnlistActionTO = {
-        ...actionCommonArgs,
-        list_price: nft_state_list?.list_price,
-        seller: nft_state_list?.list_seller || tx.signer
-      };
+    const unlistActionParams: CreateUnlistActionTO = {
+      ...actionCommonArgs,
+      list_price: nft_state_list?.list_price,
+      seller: nft_state_list?.list_seller || tx.signer
+    };
 
-      if (this.nearTxHelper.isNewerEvent(tx, nft_state_list)) {
-        await this.txHelper.unlistMeta(nftMeta, tx, msc);
-      } else {
-        this.logger.debug(`Too Late`);
-      }
-
-      await this.createAction(unlistActionParams);
-
-      txResult.processed = true;
+    if (this.nearTxHelper.isNewerEvent(tx, nft_state_list)) {
+      await this.txHelper.unlistMeta(nftMeta, tx, msc);
     } else {
-      this.logger.debug(`NftMeta not found ${contract_key} ${token_id}`);
-      txResult.missing = true;
+      this.logger.debug(`Too Late`);
     }
+    
+    await this.createAction(unlistActionParams);
+
+    txResult.processed = true;
 
     return txResult;
   }

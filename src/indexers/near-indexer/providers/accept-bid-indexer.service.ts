@@ -52,14 +52,14 @@ export class AcceptBidIndexerService implements IndexerService {
       return txResult;
     }
 
+    const nftMeta = await this.txHelper.createOrFetchMetaByContractKey(contract_key, token_id, sc.chain_id);
+
     const msc = await this.smartContractRepository.findOneBy({ contract_key: receipt.receiver_id });
     if (!msc) {
       this.logger.log(`Marketplace smart_contract: ${receipt.receiver_id} not found`);
       txResult.missing = true;
       return txResult;
     }
-
-    const nftMeta = await this.txHelper.createOrFetchMetaByContractKey(contract_key, token_id, sc.chain_id);
 
     const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName.accept_bid, tx, nftMeta, msc);
     const acceptBidActionParams: CreateAcceptBidActionTO = {

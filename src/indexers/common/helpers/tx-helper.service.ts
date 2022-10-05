@@ -108,8 +108,9 @@ export class TxHelperService {
       if (!smartContract) {
         smartContract = await this.createSmartContractSkeleton(contract_key, chain_id);
       }
-
+      
       nftMeta = await this.createMetaSkeleton(smartContract, token_id);
+      this.logger.debug(`createOrFetchMetaByContractKey() created nft_meta for ${contract_key} ${token_id}`);
       nftMeta.smart_contract = smartContract;
     }
 
@@ -126,7 +127,9 @@ export class TxHelperService {
         chain_id
       });
   
-      return await this.smartContractRepository.save(smartContract);
+      const saved = await this.smartContractRepository.save(smartContract);
+      this.logger.debug(`createSmartContractSkeleton() added smart_contract skeleton for ${contract_key}`);
+      return saved;
     } catch (err) {
       this.logger.warn(`createSmartContractSkeleton() failed for contract_key: ${contract_key} `);
       this.logger.error(err);

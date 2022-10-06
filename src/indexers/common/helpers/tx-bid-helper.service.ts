@@ -37,13 +37,6 @@ export interface CreateBidStateArgs extends CreateBidCommonArgs {
   bid_buyer: string;
 };
 
-//bid_buyer: string;
-//bid_seller: string;
-//math_tx_id: string;
-//cancel_tx_id?: string;
-//pending_txs: string[];
-//pending_tx: string[];
-
 @Injectable()
 export class TxBidHelperService {
   private readonly logger = new Logger(TxBidHelperService.name);

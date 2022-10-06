@@ -19,6 +19,7 @@ const NFT_TRANSFER_EVENT = 'nft_on_transfer';
 @Injectable()
 export class StakeIndexerService implements IndexerService {
   private readonly logger = new Logger(StakeIndexerService.name);
+  readonly stakingScs: SmartContract[];
 
   constructor(
     private txHelper: TxHelperService,
@@ -44,7 +45,9 @@ export class StakeIndexerService implements IndexerService {
    
     const nftMeta = await this.txHelper.createOrFetchMetaByContractKey(contract_key, token_id, sc.chain_id);
 
-    const stake_sc = await this.smartContractRepository.findOne({ where: { contract_key: stake_account }});
+    const stake_sc = Array.isArray(this.stakingScs) 
+      ? this.stakingScs.find(sc => sc.contract_key === stake_account)
+      : await this.smartContractRepository.findOne({ where: { contract_key: stake_account }});
     
     if (!stake_sc || !stake_sc.type.includes(SmartContractType.staking)) {
       this.logger.warn(`Stake contract: ${stake_account} not found`);

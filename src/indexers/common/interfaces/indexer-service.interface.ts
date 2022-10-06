@@ -6,6 +6,9 @@ import { SmartContract } from "src/database/universal/entities/SmartContract";
 import { SmartContractFunction } from "src/database/universal/entities/SmartContractFunction";
 
 export interface IndexerService {
+  marketScs?: SmartContract[];
+  stakingScs?: SmartContract[];
+
   process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult>;
   createAction(params: CreateActionTO): Promise<Action>;
 }

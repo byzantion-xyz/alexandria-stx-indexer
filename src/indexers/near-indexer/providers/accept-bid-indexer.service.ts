@@ -19,6 +19,7 @@ const RESOLVE_OFFER = 'resolve_offer';
 @Injectable()
 export class AcceptBidIndexerService implements IndexerService {
   private readonly logger = new Logger(AcceptBidIndexerService.name);
+  readonly marketScs?: SmartContract[];
 
   constructor(
     private txHelper: TxHelperService,
@@ -54,7 +55,10 @@ export class AcceptBidIndexerService implements IndexerService {
 
     const nftMeta = await this.txHelper.createOrFetchMetaByContractKey(contract_key, token_id, sc.chain_id);
 
-    const msc = await this.smartContractRepository.findOneBy({ contract_key: receipt.receiver_id });
+    const msc = Array.isArray(this.marketScs) 
+      ? this.marketScs.find(sc => sc.contract_key === receipt.receiver_id )
+      : await this.smartContractRepository.findOneBy({ contract_key: receipt.receiver_id });
+
     if (!msc) {
       this.logger.log(`Marketplace smart_contract: ${receipt.receiver_id} not found`);
       txResult.missing = true;

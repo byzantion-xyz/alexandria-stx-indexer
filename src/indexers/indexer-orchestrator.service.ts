@@ -14,6 +14,7 @@ import { SmartContractFunction } from "src/database/universal/entities/SmartCont
 import { CommonUtilService } from "src/common/helpers/common-util/common-util.service";
 import { SmartContractService } from "./common/helpers/smart-contract.service";
 import { TxHelperService } from "./common/helpers/tx-helper.service";
+import { SmartContractType } from "./common/helpers/indexer-enums";
 
 const BATCH_SIZE = 100;
 
@@ -23,6 +24,7 @@ export class IndexerOrchestratorService {
   private genericScf: SmartContractFunction[] = [];
   private readonly logger = new Logger(IndexerOrchestratorService.name);
   private chainId: string;
+  private scs: SmartContract[];
 
   constructor(
     @Inject('MicroIndexers') private microIndexers: Array<IndexerService>,
@@ -44,7 +46,7 @@ export class IndexerOrchestratorService {
         return;
       }
 
-      const scs = await this.smartContractService.findChainSmartContracts(this.chainId);
+      this.scs = await this.smartContractService.findChainSmartContracts(this.chainId);
 
       await this.txStreamAdapter.connectPool();
       const { cursor } = await this.txStreamAdapter.fetchTxs(options);
@@ -55,7 +57,7 @@ export class IndexerOrchestratorService {
         txs = await cursor.read(BATCH_SIZE);
         this.logger.log(`Fetching next batch of transactions`);
         const common_txs: CommonTx[] = this.txStreamAdapter.transformTxs(txs);
-        await this.processTransactions(common_txs, scs);
+        await this.processTransactions(common_txs);
       } while (txs.length > 0);
 
       cursor.close();
@@ -88,11 +90,11 @@ export class IndexerOrchestratorService {
     }
   }
 
-  async processTransactions(transactions: CommonTx[], scs?: SmartContract[]): Promise<ProcessedTxsResult> {
+  async processTransactions(transactions: CommonTx[]): Promise<ProcessedTxsResult> {
     let processed = 0;
     
     for await (const tx of transactions) {
-      const txResult: TxProcessResult = await this.processTransaction(tx, scs);
+      const txResult: TxProcessResult = await this.processTransaction(tx);
       if (txResult.processed) processed++;
       this.txStreamAdapter.setTxResult(tx, txResult);
     }
@@ -104,25 +106,24 @@ export class IndexerOrchestratorService {
     return { total: processed };
   }
 
-  async processTransaction(transaction: CommonTx, scs?: SmartContract[]): Promise<TxProcessResult> {
+  async processTransaction(transaction: CommonTx): Promise<TxProcessResult> {
     let result: TxProcessResult = { processed: false, missing: false };
 
     try {
       const method_name = transaction.function_name;
-      const indexer_name = transaction.indexer_name || method_name;
 
-      let sc = Array.isArray(scs)
-        ? scs.find(sc => sc.contract_key === transaction.receiver) 
+      let sc = Array.isArray(this.scs)
+        ? this.scs.find(sc => sc.contract_key === transaction.receiver) 
         : await this.smartContractService.findByContractKey(transaction.receiver, this.chainId);
 
       let scf = Array.isArray(this.genericScf) &&
         this.genericScf.find((f) => f.function_name === method_name);
- 
+
       if (!sc && scf && this.chainSymbol === 'Near') {
         sc = await this.txHelper.createSmartContractSkeleton(transaction.receiver, this.chainId);
         sc.smart_contract_functions = [];
-        if (Array.isArray(scs)) {
-          scs.push(sc);
+        if (Array.isArray(this.scs)) {
+          this.scs.push(sc);
         }
       }
 
@@ -132,7 +133,11 @@ export class IndexerOrchestratorService {
         }
 
         if (scf) {
+          const indexer_name = transaction.indexer_name || scf.name;
           const txHandler = this.getMicroIndexer(indexer_name);
+          txHandler.stakingScs = Array.isArray(this.scs) && this.scs.filter(sc => sc.type.includes(SmartContractType.staking)); 
+          txHandler.marketScs = Array.isArray(this.scs) && this.scs.filter(sc => sc.type.includes(SmartContractType.marketplace));
+
           if (txHandler) {
             this.logger.log(`process() ${transaction.hash} with: ${txHandler.constructor.name} `);
             result = await txHandler.process(transaction, sc, scf);

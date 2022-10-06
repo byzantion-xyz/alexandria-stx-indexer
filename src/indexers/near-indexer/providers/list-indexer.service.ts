@@ -22,6 +22,7 @@ const NFT_LIST_EVENT = 'nft_on_approve';
 @Injectable()
 export class ListIndexerService implements IndexerService {
   private readonly logger = new Logger(ListIndexerService.name);
+  readonly marketScs?: SmartContract[];
 
   constructor(
     private txHelper: TxHelperService,
@@ -51,7 +52,10 @@ export class ListIndexerService implements IndexerService {
 
     const nftMeta = await this.txHelper.createOrFetchMetaByContractKey(contract_key, token_id, sc.chain_id);
 
-    const msc = await this.smartContractRepository.findOneBy({ contract_key: receipt.receiver_id });
+    const msc = Array.isArray(this.marketScs) 
+    ? this.marketScs.find(sc => sc.contract_key === receipt.receiver_id )
+    : await this.smartContractRepository.findOneBy({ contract_key: receipt.receiver_id });
+
     if (!msc) {
       this.logger.warn(`Marketplace smart_contract: ${receipt.receiver_id} not found`);
       txResult.missing = true;

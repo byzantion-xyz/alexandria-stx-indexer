@@ -133,6 +133,11 @@ export class TxHelperService {
     } catch (err) {
       this.logger.warn(`createSmartContractSkeleton() failed for contract_key: ${contract_key} `);
       this.logger.error(err);
+
+      if (err && (!err.constraint || err.constraint !== 'smart_contract_contract_key_key')) {
+        this.logger.debug(`createSmartContractSkeleton() ${contract_key} already created. Fetching...`);
+        return await this.smartContractRepository.findOne({ where: { contract_key }});
+      }
       throw err;
     }
   }

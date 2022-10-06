@@ -6,7 +6,7 @@ import { ActionName, BidType } from 'src/indexers/common/helpers/indexer-enums';
 import { TxBidHelperService } from 'src/indexers/common/helpers/tx-bid-helper.service';
 import { TxHelperService } from 'src/indexers/common/helpers/tx-helper.service';
 import { CommonTx } from 'src/indexers/common/interfaces/common-tx.interface';
-import { CreateActionTO, CreateCollectionBidActionTO } from 'src/indexers/common/interfaces/create-action-common.dto';
+import { CreateAcceptCollectionBidActionTO, CreateActionTO, CreateCollectionBidActionTO } from 'src/indexers/common/interfaces/create-action-common.dto';
 import { IndexerService } from 'src/indexers/common/interfaces/indexer-service.interface';
 import { TxProcessResult } from 'src/indexers/common/interfaces/tx-process-result.interface';
 import { TxActionService } from 'src/indexers/common/providers/tx-action.service';
@@ -47,11 +47,13 @@ export class CollectionAcceptBidIndexerService implements IndexerService {
         const actionCommonArgs = this.txHelper.setCommonActionParams(
           ActionName.accept_collection_bid, tx, nftMeta, sc
         );
-        const actionParams: CreateCollectionBidActionTO = {
+        const actionParams: CreateAcceptCollectionBidActionTO = {
           ...actionCommonArgs,
           bid_price: bidState.bid_price,
-          buyer: tx.signer
+          seller: tx.signer,
+          buyer: bidState.bid_buyer
         };
+
         await this.createAction(actionParams);
       } else if(bidState) {
         this.logger.debug('Too late');
@@ -69,7 +71,7 @@ export class CollectionAcceptBidIndexerService implements IndexerService {
     return txResult;
   }
 
-  async createAction(params: CreateCollectionBidActionTO): Promise<Action> {
+  async createAction(params: CreateAcceptCollectionBidActionTO): Promise<Action> {
     return await this.txActionService.saveAction(params);
   }
 }

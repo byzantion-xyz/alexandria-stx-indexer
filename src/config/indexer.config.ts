@@ -75,13 +75,13 @@ export default registerAs("indexer", () => ({
     Stacks: {
       start_block_height: 1,
       start_block_height_tip: 1,
-      end_block_height: 77228,
+      end_block_height: 80000,
       block_range: 1000,
     },
     Near: {
       start_block_height: 42000000,
       start_block_height_tip: 42000000,
-      end_block_height: 75046612,
+      end_block_height: 76000000,
       block_range: 100000,
     },
   },

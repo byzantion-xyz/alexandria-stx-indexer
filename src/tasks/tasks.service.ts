@@ -42,9 +42,9 @@ export class TasksService {
       }
     }
 
-
-    @Timeout(0)
+    @Timeout(1000)
     checkOwnership() {
+      this.logger.log('checkOwnership()');
       this.nearOwnershipService.process();
     }
 }

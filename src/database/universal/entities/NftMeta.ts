@@ -34,7 +34,7 @@ export class NftMeta {
   @Column("text", { nullable: true })
   name: string;
 
-  @Column("text", { nullable: true })
+  @Column("text")
   image: string;
 
   @Column("text")

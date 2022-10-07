@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { Cron, CronExpression, Timeout } from '@nestjs/schedule';
 import { IndexerOptions } from 'src/indexers/common/interfaces/indexer-options';
 import { IndexerOrchestratorService } from 'src/indexers/indexer-orchestrator.service';
+import { NearOwnershipService } from 'src/ownership/providers/near-ownership.service';
 
 @Injectable()
 export class TasksService {
@@ -10,7 +11,8 @@ export class TasksService {
 
     constructor(
       private indexerOrchestrator: IndexerOrchestratorService,
-      private configService: ConfigService
+      private configService: ConfigService,
+      private nearOwnershipService: NearOwnershipService
     ) {}
 
     @Timeout(10000)
@@ -38,5 +40,11 @@ export class TasksService {
       if (streamerSubscription) {
         this.indexerOrchestrator.subscribeToEvents();
       }
+    }
+
+
+    @Timeout(0)
+    checkOwnership() {
+      this.nearOwnershipService.process();
     }
 }

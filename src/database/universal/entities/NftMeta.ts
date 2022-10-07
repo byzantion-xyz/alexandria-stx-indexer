@@ -31,7 +31,7 @@ export class NftMeta {
   @Column("text")
   uuid: string;
 
-  @Column("text")
+  @Column("text", { nullable: true })
   name: string;
 
   @Column("text")

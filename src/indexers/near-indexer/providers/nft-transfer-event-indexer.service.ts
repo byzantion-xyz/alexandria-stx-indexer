@@ -33,46 +33,42 @@ export class NftTransferEventIndexerService implements IndexerService {
       return txResult;
     }
     const token_id = token_ids[0];
-    
+
     const seller = this.txHelper.extractArgumentData(tx.args, scf, 'seller');
     const buyer = this.txHelper.extractArgumentData(tx.args, scf, 'buyer');
     const contract_key = receipt.receiver_id;
 
-    const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
+    const nftMeta = await this.txHelper.createOrFetchMetaByContractKey(contract_key, token_id, sc.chain_id);
 
-    if (nftMeta) {
-      const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName.transfer, tx, nftMeta);
-      const transferActionParams: CreateTransferActionTO = { 
-        ...actionCommonArgs, 
-        buyer,
-        seller
-      };
+    const actionArgs = this.txHelper.setCommonActionParams(ActionName.transfer, tx, nftMeta);
+    const transferActionParams: CreateTransferActionTO = {
+      ...actionArgs,
+      buyer,
+      seller,
+    };
 
-      // Unlist listed meta when it was listed on previous block
-      if (this.txHelper.isListedPreviously(nftMeta.nft_state, tx)) {
-        await this.txHelper.unlistMetaInAllMarkets(nftMeta, tx);
-      }
-
-      // Unstake staked meta when is transferred from staking contract
-      if (nftMeta.nft_state && nftMeta.nft_state.staked && 
-        this.txStakingHelper.isNewStakingBlock(tx, nftMeta.nft_state) &&
-        sc.type.includes(SmartContractType.staking)
-      ) {
-        await this.txHelper.unstakeMeta(nftMeta.id, tx);
-      }
-
-      if (this.txHelper.isNewOwnerEvent(tx, nftMeta.nft_state, buyer)) {
-        await this.txHelper.setNewMetaOwner(nftMeta, tx, buyer);
-      }
-
-      // TODO: Cancel any active older bids when bids are implemented on NEAR
-
-      await this.createAction(transferActionParams);
-      txResult.processed = true;
-    } else {
-      this.logger.debug(`NftMeta not found ${contract_key} ${token_id}`);
-      txResult.missing = true;
+    if (this.txHelper.isListedPreviously(nftMeta.nft_state, tx)) {
+      await this.txHelper.unlistMetaInAllMarkets(nftMeta, tx);
     }
+
+    // Unstake staked meta when is transferred from staking contract
+    if (
+      nftMeta.nft_state &&
+      nftMeta.nft_state.staked &&
+      this.txStakingHelper.isNewStakingBlock(tx, nftMeta.nft_state) &&
+      sc.type.includes(SmartContractType.staking)
+    ) {
+      await this.txHelper.unstakeMeta(nftMeta.id, tx);
+    }
+
+    if (this.txHelper.isNewOwnerEvent(tx, nftMeta.nft_state, buyer)) {
+      await this.txHelper.setNewMetaOwner(nftMeta, tx, buyer);
+    }
+
+    // TODO: Cancel any active older bids when bids are implemented on NEAR
+
+    await this.createAction(transferActionParams);
+    txResult.processed = true;
 
     return txResult;
   }

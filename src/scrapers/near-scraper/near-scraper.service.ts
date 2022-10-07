@@ -157,7 +157,7 @@ export class NearScraperService {
 
       // Run missing transactions for scraped smart contract
       axios.post(
-        this.config.get("nearIndexerRunMissingUrl"),
+        this.config.get("app.nearIndexerRunMissingUrl"),
         { contract_key },
         {
           headers: {

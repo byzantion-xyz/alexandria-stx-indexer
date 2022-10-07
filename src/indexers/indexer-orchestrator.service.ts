@@ -16,7 +16,7 @@ import { SmartContractService } from "./common/helpers/smart-contract.service";
 import { TxHelperService } from "./common/helpers/tx-helper.service";
 import { SmartContractType } from "./common/helpers/indexer-enums";
 
-const BATCH_SIZE = 100;
+const BATCH_SIZE = 1000;
 
 @Injectable()
 export class IndexerOrchestratorService {

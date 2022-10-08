@@ -19,6 +19,7 @@ const RESOLVE_OFFER = 'resolve_offer';
 @Injectable()
 export class AcceptBidIndexerService implements IndexerService {
   private readonly logger = new Logger(AcceptBidIndexerService.name);
+  readonly marketScs?: SmartContract[];
 
   constructor(
     private txHelper: TxHelperService,
@@ -52,32 +53,32 @@ export class AcceptBidIndexerService implements IndexerService {
       return txResult;
     }
 
-    const msc = await this.smartContractRepository.findOneBy({ contract_key: receipt.receiver_id });
+    const nftMeta = await this.txHelper.createOrFetchMetaByContractKey(contract_key, token_id, sc.chain_id);
+
+    const msc = Array.isArray(this.marketScs) 
+      ? this.marketScs.find(sc => sc.contract_key === receipt.receiver_id )
+      : await this.smartContractRepository.findOneBy({ contract_key: receipt.receiver_id });
+
     if (!msc) {
       this.logger.log(`Marketplace smart_contract: ${receipt.receiver_id} not found`);
       txResult.missing = true;
       return txResult;
     }
 
-    const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
+    const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName.accept_bid, tx, nftMeta, msc);
+    const acceptBidActionParams: CreateAcceptBidActionTO = {
+      ...actionCommonArgs,
+      bid_price: price,
+      buyer: buyer,
+      seller: tx.signer
+    };
 
-    if (nftMeta) {
+    if (this.txHelper.isListedPreviously(nftMeta.nft_state, tx)) {
       await this.txHelper.unlistMetaInAllMarkets(nftMeta, tx, msc);
-
-      const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName.accept_bid, tx, nftMeta, msc);
-      const acceptBidActionParams: CreateAcceptBidActionTO = {
-        ...actionCommonArgs,
-        bid_price: price,
-        buyer: buyer,
-        seller: tx.signer
-      };
-      await this.createAction(acceptBidActionParams);
-
-      txResult.processed = true;
-    } else {
-      this.logger.debug(`NftMeta not found ${contract_key} ${token_id}`);
-      txResult.missing = true;
     }
+    await this.createAction(acceptBidActionParams);
+
+    txResult.processed = true;
 
     return txResult;
   }

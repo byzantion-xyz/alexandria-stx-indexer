@@ -1,5 +1,4 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
 import { Action } from 'src/database/universal/entities/Action';
 import { SmartContract } from 'src/database/universal/entities/SmartContract';
 import { SmartContractFunction } from 'src/database/universal/entities/SmartContractFunction';
@@ -40,25 +39,20 @@ export class NftMintEventIndexerService implements IndexerService {
       msc = sc.custodial_smart_contract;
     }
 
-    const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
+    const nftMeta = await this.txHelper.createOrFetchMetaByContractKey(contract_key, token_id, sc.chain_id);
 
-    if (nftMeta) {
-      const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName.mint, tx, nftMeta, msc);
-      const mintActionParams: CreateMintActionTO = { 
-        ...actionCommonArgs,
-        buyer 
-      };
-      
-      if (!nftMeta.nft_state || !nftMeta.nft_state.minted) {
-        await this.txHelper.mintMeta(nftMeta, tx, buyer);
-      }
+    const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName.mint, tx, nftMeta, msc);
+    const mintActionParams: CreateMintActionTO = { 
+      ...actionCommonArgs,
+      buyer 
+    };
 
-      await this.createAction(mintActionParams);
-      txResult.processed = true;
-    } else {
-      this.logger.debug(`NftMeta not found ${contract_key} ${token_id}`);
-      txResult.missing = true;
+    if (!nftMeta.nft_state || !nftMeta.nft_state.minted) {
+      await this.txHelper.mintMeta(nftMeta, tx, buyer);
     }
+
+    await this.createAction(mintActionParams);
+    txResult.processed = true;
 
     return txResult;
   }

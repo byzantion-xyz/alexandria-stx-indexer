@@ -36,34 +36,28 @@ export class NftBurnEventIndexerService implements IndexerService {
       msc = sc.custodial_smart_contract ;
     }
 
-    const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
+    const nftMeta = await this.txHelper.createOrFetchMetaByContractKey(contract_key, token_id, sc.chain_id);
 
-    if (nftMeta)  {
-      const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName.burn, tx, nftMeta, msc);
-      const burnActionParams: CreateBurnActionTO = { ...actionCommonArgs, seller };
+    const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName.burn, tx, nftMeta, msc);
+    const burnActionParams: CreateBurnActionTO = { ...actionCommonArgs, seller };
 
-      if (!nftMeta.nft_state || !nftMeta.nft_state.burned) {
-        // Unlist listed meta in all marketplaces
-        if (this.txHelper.isListedInAnyMarketplace(nftMeta.nft_state)) {
-          await this.txHelper.unlistMetaInAllMarkets(nftMeta, tx);
-        }
-        if (nftMeta.nft_state && nftMeta.nft_state.staked) {
-          await this.txHelper.unstakeMeta(nftMeta.id, tx);
-        }
-      
-        await this.txHelper.burnMeta(nftMeta.id);
-        // TODO: Cancel any active bids when bids are implemented in NEAR
-      } else {
-        this.logger.debug(`Too Late`);
+    if (!nftMeta.nft_state || !nftMeta.nft_state.burned) {
+      // Unlist listed meta in all marketplaces
+      if (this.txHelper.isListedInAnyMarketplace(nftMeta.nft_state)) {
+        await this.txHelper.unlistMetaInAllMarkets(nftMeta, tx);
       }
-
-      await this.createAction(burnActionParams);
-
-      txResult.processed = true;
+      if (nftMeta.nft_state && nftMeta.nft_state.staked) {
+        await this.txHelper.unstakeMeta(nftMeta.id, tx);
+      }
+      
+      await this.txHelper.burnMeta(nftMeta.id);
+      // TODO: Cancel any active bids when bids are implemented in NEAR
     } else {
-      this.logger.debug(`NftMeta not found ${contract_key} ${token_id}`);
-      txResult.missing = true;
+      this.logger.debug(`Too Late`);
     }
+    await this.createAction(burnActionParams);
+
+    txResult.processed = true;
 
     return txResult;
   }

@@ -3,15 +3,10 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 import axios, { AxiosRequestConfig } from 'axios';
 import { wallets } from 'src/ownership/near-super-users';
-import { resourceLimits } from 'worker_threads';
 import { InjectRepository } from '@nestjs/typeorm';
 import { NftMeta } from 'src/database/universal/entities/NftMeta';
 import { Repository } from 'typeorm';
-
-interface WalletNft {
-  token_id: string
-  contract_key: string
-}
+import { WalletNft } from '../interfaces/wallet-nft.interface';
 
 const PARAS_V2_API = 'https://api-v2-mainnet.paras.id';
 const BATCH_LIMIT = 50;
@@ -29,14 +24,7 @@ export class NearOwnershipService {
     const wallets = await this.fetchSuperUsersWallets();
 
     for (let wallet of wallets) {
-      const walletNfts = await this.fetchWalletNfts(wallet);
-     
-      const universalNfts = await this.fetchUniversalNfts(wallet);
-      
-      // Symetrical diffrencen between both arrays after reoming missing metas.
-      const differences = await this.compareResult(walletNfts, universalNfts);
-
-      if (differences && differences.length) this.reportResult(wallet, differences);
+      await this.processWallet(wallet);
     }
   }
 
@@ -107,8 +95,20 @@ export class NearOwnershipService {
   }
 
   async processWallet(wallet: string): Promise<WalletNft[]> {
-    // return differences
-    return;
+    let differences: WalletNft[] = [];
+
+    const walletNfts = await this.fetchWalletNfts(wallet);
+     
+    const universalNfts = await this.fetchUniversalNfts(wallet);
+    
+    // Symetrical diffrencen between both arrays after reoming missing metas.
+    differences = await this.compareResult(walletNfts, universalNfts);
+
+    if (differences && differences.length) {
+      this.reportResult(wallet, differences);
+    }
+
+    return differences;
   }
 
   async compareResult(walletNfts: WalletNft[], universalNfts: WalletNft[]): Promise<WalletNft[]> {

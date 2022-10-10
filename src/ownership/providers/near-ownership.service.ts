@@ -6,7 +6,7 @@ import { wallets } from 'src/ownership/near-super-users';
 import { InjectRepository } from '@nestjs/typeorm';
 import { NftMeta } from 'src/database/universal/entities/NftMeta';
 import { Repository } from 'typeorm';
-import { WalletNft } from '../interfaces/wallet-nft.interface';
+import { WalletNft, WalletNftsResult } from '../interfaces/wallet-nft.interface';
 
 const PARAS_V2_API = 'https://api-v2-mainnet.paras.id';
 const BATCH_LIMIT = 50;
@@ -20,12 +20,16 @@ export class NearOwnershipService {
     private nftMetaRepo: Repository<NftMeta>,
   ) {}
 
-  async process (): Promise<void> {
+  async process (): Promise<WalletNftsResult[]> {
     const wallets = await this.fetchSuperUsersWallets();
+    const differences: WalletNftsResult[] = [];
 
     for (let wallet of wallets) {
-      await this.processWallet(wallet);
+      let diff = await this.processWallet(wallet);
+      differences.push({ wallet, differences: diff });
     }
+
+    return differences;
   }
 
   async fetchSuperUsersWallets(): Promise<string[]> {
@@ -125,8 +129,6 @@ export class NearOwnershipService {
         }
       });
 
-      this.logger.debug({ nftMetas });
-
       return nftMetas.map(i => ({
         token_id: i.token_id,
         contract_key: i.smart_contract.contract_key,
@@ -144,6 +146,6 @@ export class NearOwnershipService {
 
   reportResult(wallet: string, differences: WalletNft[]): void {
     this.logger.log(`${differences.length} NFT differences found for owner: ${wallet}`);
-    this.logger.log({ differences });
+    this.logger.log({ owner: wallet, differences });
   }
 }

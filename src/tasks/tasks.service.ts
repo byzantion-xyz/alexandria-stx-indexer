@@ -42,9 +42,9 @@ export class TasksService {
       }
     }
 
-    @Timeout(1000)
+    @Cron(CronExpression.EVERY_6_HOURS)
     checkOwnership() {
-      this.logger.log('checkOwnership()');
+      this.logger.log('checkOwnership() task running');
       this.nearOwnershipService.process();
     }
 }

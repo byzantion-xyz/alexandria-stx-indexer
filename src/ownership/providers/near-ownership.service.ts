@@ -30,18 +30,14 @@ export class NearOwnershipService {
 
     for (let wallet of wallets) {
       const walletNfts = await this.fetchWalletNfts(wallet);
+     
       const universalNfts = await this.fetchUniversalNfts(wallet);
+      
+      // Symetrical diffrencen between both arrays after reoming missing metas.
+      const differences = await this.compareResult(walletNfts, universalNfts);
 
-      // Symetrical diffrencen between both arrays.
-      const differences = this.compareResult(walletNfts, universalNfts);
-
-      // Drop missing from differences
-      if (differences.length) {
-        this.logger.log({ differences });
-      }
-      break;
+      if (differences && differences.length) this.reportResult(wallet, differences);
     }
-
   }
 
   async fetchSuperUsersWallets(): Promise<string[]> {
@@ -74,7 +70,7 @@ export class NearOwnershipService {
 
   async fetchWalletNfts(wallet: string): Promise<WalletNft[]> {
     try {
-      this.logger.log(`fetchWalletNfts() ${wallet}`)
+      this.logger.debug(`fetchWalletNfts() ${wallet}`)
       let results: WalletNft[] = [];
       let query: AxiosRequestConfig = {
         timeout: 10000,
@@ -89,7 +85,7 @@ export class NearOwnershipService {
       let total = 0;
 
       do {
-        this.logger.log(`Query PARAS API v2 `, { query });
+        this.logger.debug(`fetchWalletNfts() Query PARAS API limit=${query.params.__limit} skip=${query.params.__skip} `);
         const { data, status } = await axios.get(`${PARAS_V2_API}/token`, query);
         total = data.data?.results?.length || 0;
         if (total < 1) break;
@@ -115,14 +111,39 @@ export class NearOwnershipService {
     return;
   }
 
-  compareResult(walletNfts: WalletNft[], universalNfts: WalletNft[]): WalletNft[] {
-    return walletNfts.filter(a => 
+  async compareResult(walletNfts: WalletNft[], universalNfts: WalletNft[]): Promise<WalletNft[]> {
+    const differences = this.getSimetricalDifference(walletNfts, universalNfts);
+
+    // Return differences only for existing metas
+    if (differences && differences.length) {
+      let nftMetas = await this.nftMetaRepo.find({ 
+        where: differences.map(diff => ({ token_id: diff.token_id, smart_contract: { contract_key: diff.contract_key }})),
+        relations: { smart_contract: true },
+        select: {
+          token_id: true,
+          smart_contract: { contract_key: true }
+        }
+      });
+
+      this.logger.debug({ nftMetas });
+
+      return nftMetas.map(i => ({
+        token_id: i.token_id,
+        contract_key: i.smart_contract.contract_key,
+      }));
+    } else {
+      return [];
+    }
+  }
+
+  getSimetricalDifference(walletNfts: WalletNft[], universalNfts: WalletNft[]): WalletNft[] {
+    return walletNfts.filter(a =>
       !universalNfts.some(b=> a.contract_key == b.contract_key && a.token_id == b.token_id)
     );
   }
 
-  reportResult(walletNfts: WalletNft[]): void {
-    // log results
-    return;
+  reportResult(wallet: string, differences: WalletNft[]): void {
+    this.logger.log(`${differences.length} NFT differences found for owner: ${wallet}`);
+    this.logger.log({ differences });
   }
 }

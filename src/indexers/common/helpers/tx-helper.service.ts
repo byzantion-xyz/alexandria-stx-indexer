@@ -104,12 +104,19 @@ export class TxHelperService {
     let nftMeta = await this.findMetaByContractKey(contract_key, token_id);
 
     if (!nftMeta) {
-      let smartContract = await this.smartContractRepository.findOne({ where: { contract_key }});
+      let smartContract = await this.smartContractRepository.findOne({
+        where: { contract_key }, 
+        relations: { collections: true }
+      });
+      let collection: Collection;
+
       if (!smartContract) {
         smartContract = await this.createSmartContractSkeleton(contract_key, chain_id);
+      } else if (!smartContract.custodial_smart_contract_id && smartContract.collections.length === 1) {
+        collection = smartContract.collections[0];
       }
-      
-      nftMeta = await this.createMetaSkeleton(smartContract, token_id);
+
+      nftMeta = await this.createMetaSkeleton(smartContract, token_id, collection);
       this.logger.debug(`createOrFetchMetaByContractKey() created nft_meta for ${contract_key} ${token_id}`);
       nftMeta.smart_contract = smartContract;
     }
@@ -143,11 +150,12 @@ export class TxHelperService {
     }
   }
 
-  async createMetaSkeleton(sc: SmartContract, token_id: string): Promise<NftMeta> {
+  async createMetaSkeleton(sc: SmartContract, token_id: string, collection?: Collection): Promise<NftMeta> {
     try {
       const newMeta = this.nftMetaRepository.create({
         smart_contract_id: sc.id,
         chain_id: sc.chain_id,
+        ... (collection && { collection_id: collection.id }),
         token_id
       });
       

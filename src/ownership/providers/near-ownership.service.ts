@@ -42,9 +42,11 @@ export class NearOwnershipService {
 
   async fetchUniversalNfts(wallet: string): Promise<WalletNft[]> {
     const nftMetas = await this.nftMetaRepo.find({
-      where: {
-        nft_state: { owner: wallet }
-      },
+      where: [{
+        nft_state: { owner: wallet, staked: false }
+      }, {
+        nft_state: { staked_owner: wallet, staked: true }
+      }],
       relations: {
         smart_contract: true
       },

@@ -142,7 +142,6 @@ export class NearOwnershipService {
         results.push(...nfts);
       }
 
-      this.logger.debug({ results });
       return results;
     } catch (err) {
       this.logger.warn(`fetchWalletNfts() failed for ${wallet}`);

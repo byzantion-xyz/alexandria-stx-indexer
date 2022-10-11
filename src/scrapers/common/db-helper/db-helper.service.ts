@@ -42,7 +42,7 @@ export class DbHelperService {
     const smartContractData: any = {
       contract_key: contract_key,
       type: [SmartContractType.non_fungible_tokens],
-      chain_id: NEAR_PROTOCOL_DB_ID
+      chain_id: NEAR_PROTOCOL_DB_ID,
     };
 
     let smartContract = await this.smartContractRepo.findOneBy({ contract_key });
@@ -188,12 +188,12 @@ export class DbHelperService {
   // ##########################################################
   // ################################# NftMeta Functions
 
-  async findOneNftMeta(collectionId: string, tokenId: string) {
+  async findOneNftMeta(smartContractId: string, tokenId: string) {
     const finder = {
       where: {
-        collection_id: collectionId,
+        smart_contract_id: smartContractId,
         token_id: tokenId ?? "",
-      }
+      },
     };
     return this.nftMetaRepo.findOne(finder);
   }

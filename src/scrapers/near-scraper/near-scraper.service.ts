@@ -306,7 +306,7 @@ export class NearScraperService {
 
     let nftMetaPromises = [];
     for (let i = 0; i < tokenMetas.length; i++) {
-      const nftMeta = await this.dbHelper.findOneNftMeta(collection.id, tokenMetas[i]?.token_id);
+      const nftMeta = await this.dbHelper.findOneNftMeta(smartContractId, tokenMetas[i]?.token_id);
 
       // if nftMeta already exists and not rescraping metadata, skip loading it
       if (nftMeta && !rescrape) continue;
@@ -342,6 +342,7 @@ export class NearScraperService {
           await this.updateNftMetaAttributes(nftMeta.id, attributes);
 
           // update NftMeta
+          nftMeta.collection_id = collection?.id;
           nftMeta.name = tokenMetas[i].metadata.title;
           nftMeta.image = mediaUrl;
           nftMeta.token_id = tokenMetas[i].token_id;
@@ -672,8 +673,8 @@ export class NearScraperService {
   }
 
   getTokenIpfsMediaUrl(base_uri, media) {
+    if (media && media.includes("https")) return media;
     if (!base_uri || !media) return "";
-    if (media.includes("https")) return media;
     return `${base_uri}/${media}`;
   }
 

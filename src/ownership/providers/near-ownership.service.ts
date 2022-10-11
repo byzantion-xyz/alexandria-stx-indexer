@@ -9,6 +9,8 @@ import { ContractConnectionService } from 'src/scrapers/near-scraper/providers/c
 import { SmartContract } from 'src/database/universal/entities/SmartContract';
 
 const BATCH_LIMIT = 50;
+const ASYNC_WALLETS = 10;
+const ASYNC_SMART_CONTRACTS = 10;
 
 @Injectable()
 export class NearOwnershipService {
@@ -36,7 +38,7 @@ export class NearOwnershipService {
     for (let wallet of wallets) {
       promisesBatch.push(this.processWallet(wallet));
 
-      if (promisesBatch.length % 5 === 0) {
+      if (promisesBatch.length % ASYNC_WALLETS === 0) {
         const result = await Promise.all(promisesBatch);
         differences.push(...result);
         promisesBatch = [];
@@ -47,6 +49,8 @@ export class NearOwnershipService {
       const result = await Promise.all(promisesBatch);
       differences.push(...result);
     }
+
+    this.logger.debug({ differences });
 
     return differences;
   }
@@ -92,7 +96,7 @@ export class NearOwnershipService {
   async fetchSmartContractOwnedNfts (wallet: string, contractKey: string): Promise<WalletNft[]> {
     let results: WalletNft[] = [];
     try {
-      this.logger.debug(`fetchSmartContactOwnedNfts() ${contractKey}`);
+      //this.logger.debug(`fetchSmartContactOwnedNfts() ${contractKey}`);
 
       const contract = this.contractConnectionService.getContract(contractKey, this.nearConnection);
 
@@ -126,7 +130,7 @@ export class NearOwnershipService {
       for (let contractKey of contractKeys) {
         promisesBatch.push(this.fetchSmartContractOwnedNfts(wallet, contractKey));
 
-        if (promisesBatch.length % 10 === 0) {
+        if (promisesBatch.length % ASYNC_SMART_CONTRACTS === 0) {
           const nfts = await Promise.all(promisesBatch) ;
           results.push(...nfts.flatMap(item => (item)));
           promisesBatch = [];
@@ -149,7 +153,7 @@ export class NearOwnershipService {
   async testSmartContract(contractKey: string, wallet: string): Promise<string> {
     try {
       const contract = this.contractConnectionService.getContract(contractKey, this.nearConnection);
-      this.logger.debug(`Checking NFT smart contract ${contractKey}`);
+      //this.logger.debug(`Checking NFT smart contract ${contractKey}`);
 
       await contract.nft_tokens_for_owner(({ account_id: wallet, from_index: '0', limit: 1 }));
       return contractKey;
@@ -163,7 +167,7 @@ export class NearOwnershipService {
     for (let contractKey of this.contractKeys) {
       promisesBatch.push(this.testSmartContract(contractKey, wallet));
 
-      if (promisesBatch.length % 10 === 0) {
+      if (promisesBatch.length % ASYNC_SMART_CONTRACTS === 0) {
         let result = await Promise.all(promisesBatch);
         nftContractKeys.push(...result.filter(r => r));
         promisesBatch = [];

@@ -36,7 +36,7 @@ export class NearOwnershipService {
     for (let wallet of wallets) {
       promisesBatch.push(this.processWallet(wallet));
 
-      if (promisesBatch.length % 10 === 0) {
+      if (promisesBatch.length % 5 === 0) {
         const result = await Promise.all(promisesBatch);
         differences.push(...result);
         promisesBatch = [];
@@ -64,11 +64,7 @@ export class NearOwnershipService {
   }
 
   async fetchSuperUsersWallets(): Promise<string[]> {
-    const owners = wallets.trim()
-      .split('\n').map(i => i.trim())
-      .reverse();
-
-    return owners
+    return wallets.trim().split('\n').map(i => i.trim());
   }
 
   async fetchUniversalNfts(wallet: string): Promise<WalletNft[]> {
@@ -125,11 +121,24 @@ export class NearOwnershipService {
       let results: WalletNft[] = [];
       let contractKeys = this.contractKeys;
 
+      let promisesBatch = [];
+
       for (let contractKey of contractKeys) {
-        const nfts = await this.fetchSmartContractOwnedNfts(wallet, contractKey);
+        promisesBatch.push(this.fetchSmartContractOwnedNfts(wallet, contractKey));
+
+        if (promisesBatch.length % 10 === 0) {
+          const nfts = await Promise.all(promisesBatch) ;
+          results.push(...nfts.flatMap(item => (item)));
+          promisesBatch = [];
+        }
+      }
+
+      if (promisesBatch.length) {
+        const nfts = await Promise.all(promisesBatch) ;
         results.push(...nfts);
       }
-      this.logger.log({ results });
+
+      this.logger.debug({ results });
       return results;
     } catch (err) {
       this.logger.warn(`fetchWalletNfts() failed for ${wallet}`);

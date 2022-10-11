@@ -100,11 +100,14 @@ export class NearOwnershipService {
 
       const contract = this.contractConnectionService.getContract(contractKey, this.nearConnection);
 
-      let limit = 50;
       let skip = 0;
       let nfts: any[] = [];
       do {
-        nfts = await contract.nft_tokens_for_owner({ account_id: wallet, from_index: skip.toString(), limit });
+        nfts = await contract.nft_tokens_for_owner({ 
+          account_id: wallet, 
+          from_index: skip.toString(), 
+          limit: BATCH_LIMIT 
+        });
         results.push(...nfts.map(nft => ({ token_id: nft.token_id, contract_key: contractKey }) ));
         skip += BATCH_LIMIT;
       } while (nfts.length === BATCH_LIMIT);

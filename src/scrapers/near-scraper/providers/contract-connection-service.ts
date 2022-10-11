@@ -34,7 +34,7 @@ export class ContractConnectionService {
       account, // the account object that is connecting
       contract_key, // name of contract you're connecting to
       {
-        viewMethods: ["nft_metadata", "nft_token", "nft_total_supply", "nft_tokens"], // view methods do not change state but usually return a value
+        viewMethods: ["nft_metadata", "nft_token", "nft_total_supply", "nft_tokens", "nft_tokens_for_owner"], // view methods do not change state but usually return a value
         sender: account, // account object to initialize and sign transactions.
       }
     );

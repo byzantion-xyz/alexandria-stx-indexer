@@ -22,14 +22,13 @@ const nearConfig = {
 export class ContractConnectionService {
   constructor() { }
 
-  async connectNftContract(contract_id) {
+  async connectNear() {
     const near = await connect(nearConfig);
     const account = await near.account(nearAccountId);
-    const contract = await this.getContract(contract_id, account);
-    return contract
+    return account;
   }
 
-  async getContract(contract_key, account) {
+  getContract(contract_key, account) {
     return new nearAPI.Contract(
       account, // the account object that is connecting
       contract_key, // name of contract you're connecting to

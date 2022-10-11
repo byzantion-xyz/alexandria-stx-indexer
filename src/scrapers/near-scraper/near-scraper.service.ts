@@ -65,7 +65,9 @@ export class NearScraperService {
     await this.dbHelper.incrementScrapeAttemptByOne(collection.id);
 
     // // Get contract data from chain
-    const contract = await this.contractConnectionService.connectNftContract(contract_key);
+    const account = await this.contractConnectionService.connectNear();
+    const contract = await this.contractConnectionService.getContract(contract_key, account);
+
     const nftContractMetadata = await contract.nft_metadata();
     const collectionSize = await contract.nft_total_supply();
 

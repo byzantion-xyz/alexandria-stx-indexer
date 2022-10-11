@@ -13,6 +13,8 @@ const BATCH_LIMIT = 50;
 @Injectable()
 export class NearOwnershipService {
   private readonly logger = new Logger(NearOwnershipService.name);
+  private nearConnection;
+  private contractKeys: string[];
 
   constructor(
     @InjectRepository(NftMeta)
@@ -22,15 +24,28 @@ export class NearOwnershipService {
     private contractConnectionService: ContractConnectionService
   ) {}
 
-  async process (): Promise<WalletNftsResult[]> {
-    const wallets = await this.fetchSuperUsersWallets();
+  async process (wallet?: string): Promise<WalletNftsResult[]> {
+    const wallets = wallet ? [wallet] : await this.fetchSuperUsersWallets();
     const differences: WalletNftsResult[] = [];
+    this.nearConnection = await this.contractConnectionService.connectNear();
 
-    const contractKeys = await this.fetchNftContractKeys();
+    this.contractKeys = await this.fetchNftContractKeys();
+    this.contractKeys = await this.cleanNonNftContracts(wallets[0]);
+    let promisesBatch = [];
 
     for (let wallet of wallets) {
-      let diff = await this.processWallet(wallet, contractKeys);
-      differences.push(diff);
+      promisesBatch.push(this.processWallet(wallet));
+
+      if (promisesBatch.length % 10 === 0) {
+        const result = await Promise.all(promisesBatch);
+        differences.push(...result);
+        promisesBatch = [];
+      }
+    }
+
+    if (promisesBatch.length) {
+      const result = await Promise.all(promisesBatch);
+      differences.push(...result);
     }
 
     return differences;
@@ -83,7 +98,8 @@ export class NearOwnershipService {
     try {
       this.logger.debug(`fetchSmartContactOwnedNfts() ${contractKey}`);
 
-      const contract = await this.contractConnectionService.connectNftContract(contractKey);
+      const contract = this.contractConnectionService.getContract(contractKey, this.nearConnection);
+
       let limit = 50;
       let skip = 0;
       let nfts: any[] = [];
@@ -92,6 +108,7 @@ export class NearOwnershipService {
         results.push(...nfts.map(nft => ({ token_id: nft.token_id, contract_key: contractKey }) ));
         skip += BATCH_LIMIT;
       } while (nfts.length === BATCH_LIMIT);
+
     } catch (err) {
       this.logger.warn(err);
     } finally {
@@ -99,12 +116,13 @@ export class NearOwnershipService {
     }
   }
 
-  async fetchWalletNfts(wallet: string, contractKeys: string[]): Promise<WalletNft[]> {
+  async fetchWalletNfts(wallet: string): Promise<WalletNft[]> {
     try {
       this.logger.debug(`fetchWalletNfts() ${wallet}`)
       let results: WalletNft[] = [];
+      let contractKeys = this.contractKeys;
 
-      for (const contractKey of contractKeys) {
+      for (let contractKey of contractKeys) {
         const nfts = await this.fetchSmartContractOwnedNfts(wallet, contractKey);
         results.push(...nfts);
       }
@@ -116,13 +134,43 @@ export class NearOwnershipService {
     }
   }
 
-  async processWallet(wallet: string, contractKeys?: string[]): Promise<WalletNftsResult> {
-    let differences: WalletNft[] = [];
-    if (!contractKeys || !contractKeys.length) {
-      contractKeys = await this.fetchNftContractKeys();
+  async testSmartContract(contractKey: string, wallet: string): Promise<string> {
+    try {
+      const contract = this.contractConnectionService.getContract(contractKey, this.nearConnection);
+      this.logger.debug(`Checking NFT smart contract ${contractKey}`);
+
+      await contract.nft_tokens_for_owner(({ account_id: wallet, from_index: '0', limit: 1 }));
+      return contractKey;
+    } catch (err) {}
+  }
+
+  async cleanNonNftContracts (wallet: string): Promise<string[]> {
+    let nftContractKeys = [];
+    let promisesBatch = [];
+
+    for (let contractKey of this.contractKeys) {
+      promisesBatch.push(this.testSmartContract(contractKey, wallet));
+
+      if (promisesBatch.length % 10 === 0) {
+        let result = await Promise.all(promisesBatch);
+        nftContractKeys.push(...result.filter(r => r));
+        promisesBatch = [];
+      }
     }
 
-    const walletNfts = await this.fetchWalletNfts(wallet, contractKeys);
+    if (promisesBatch.length) {
+      let result = await Promise.all(promisesBatch);
+      nftContractKeys.push(...result.filter(r => r));
+    }
+
+    return nftContractKeys;
+  }
+
+  async processWallet(wallet: string): Promise<WalletNftsResult> {
+    this.logger.debug(`processWallet() ${wallet}`);
+    let differences: WalletNft[] = [];
+
+    const walletNfts = await this.fetchWalletNfts(wallet);
     const universalNfts = await this.fetchUniversalNfts(wallet);
 
     // Symetrical diffrencen between both arrays after reoming missing metas.

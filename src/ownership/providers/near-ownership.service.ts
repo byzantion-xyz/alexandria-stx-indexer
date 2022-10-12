@@ -46,14 +46,14 @@ export class NearOwnershipService {
 
       if (promisesBatch.length % ASYNC_WALLETS === 0) {
         const result = await Promise.all(promisesBatch);
-        differences.push(...result.filter(r => r.differences?.length));
+        differences.push(...result.filter(r => r.length));
         promisesBatch = [];
       }
     }
 
     if (promisesBatch.length) {
       const result = await Promise.all(promisesBatch);
-      differences.push(...result.filter(r => r.differences?.length));
+      differences.push(...result.filter(r => r.length));
     }
 
     return differences;
@@ -77,11 +77,9 @@ export class NearOwnershipService {
 
   async fetchUniversalNfts(wallet: string): Promise<WalletNft[]> {
     const nftMetas = await this.nftMetaRepo.find({
-      where: [{
+      where: {
         nft_state: { owner: wallet }
-      }, {
-        nft_state: { staked_owner: wallet, staked: true }
-      }],
+      },
       relations: {
         smart_contract: true,
         nft_state: true

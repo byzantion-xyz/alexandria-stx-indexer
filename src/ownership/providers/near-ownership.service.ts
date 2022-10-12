@@ -7,6 +7,7 @@ import { Repository } from 'typeorm';
 import { WalletNft, WalletNftsResult } from '../interfaces/wallet-nft.interface';
 import { ContractConnectionService } from 'src/scrapers/near-scraper/providers/contract-connection-service';
 import { SmartContract } from 'src/database/universal/entities/SmartContract';
+import { NftState } from 'src/database/universal/entities/NftState';
 
 const BATCH_LIMIT = 50;
 const ASYNC_WALLETS = 10;
@@ -21,6 +22,8 @@ export class NearOwnershipService {
   constructor(
     @InjectRepository(NftMeta)
     private nftMetaRepo: Repository<NftMeta>,
+    @InjectRepository(NftState)
+    private nftStateRepo: Repository<NftState>,
     @InjectRepository(SmartContract)
     private smartContractRepo: Repository<SmartContract>,
     private contractConnectionService: ContractConnectionService
@@ -52,8 +55,6 @@ export class NearOwnershipService {
       const result = await Promise.all(promisesBatch);
       differences.push(...result);
     }
-
-    this.logger.debug({ differences });
 
     return differences;
   }
@@ -96,8 +97,20 @@ export class NearOwnershipService {
     }));
   }
 
+  async fetchSmartContractNftOwner(contractKey: string, token_id: string): Promise<string> {
+    try {
+      const contract = this.contractConnectionService.getContract(contractKey, this.nearConnection);
+      const token = await contract.nft_token({ token_id: token_id }); 
+      
+      return token.owner_id;
+    } catch (err) {
+      throw err;
+    }
+  }
+
   async fetchSmartContractOwnedNfts (wallet: string, contractKey: string): Promise<WalletNft[]> {
     let results: WalletNft[] = [];
+
     try {
       //this.logger.debug(`fetchSmartContactOwnedNfts() ${contractKey}`);
 
@@ -186,6 +199,18 @@ export class NearOwnershipService {
     return nftContractKeys;
   }
 
+  async fixNftMetaOwner(token_id: string, contract_key: string, owner: string) {
+    // find meta and upsert state owner
+    const nftMeta = await this.nftMetaRepo.findOne({ where: {
+      smart_contract: { contract_key },
+      token_id: token_id
+    }});
+
+    // Upsert owner for nftMeta
+    this.logger.log(`Setting correct owner: ${owner} for ${contract_key} ${token_id} ${nftMeta.id} `);
+    await this.nftStateRepo.upsert({ meta_id: nftMeta.id, owner: owner }, ["meta_id"]);
+  }
+
   async processWallet(wallet: string): Promise<WalletNftsResult> {
     this.logger.debug(`processWallet() ${wallet}`);
     let differences: WalletNft[] = [];
@@ -195,9 +220,14 @@ export class NearOwnershipService {
 
     // Symetrical diffrencen between both arrays after reoming missing metas.
     differences = await this.compareResult(walletNfts, universalNfts);
-
+    
     if (differences && differences.length) {
       this.reportResult(wallet, differences);
+    }
+
+    for (let diff of differences) {
+      let owner = await this.fetchSmartContractNftOwner(diff.contract_key, diff.token_id);
+      await this.fixNftMetaOwner(diff.token_id, diff.contract_key, owner);
     }
 
     return { 

@@ -11,7 +11,7 @@ export class OwnershipController {
   ) { }
 
   @Get('differences/near-wallet')
-  async getNearOwnership(@Query() params: { owner }): Promise<WalletNftsResult[]> {
+  async getNearOwnership(@Query() params: { owner }): Promise<WalletNft[]> {
     if (!params || !params.owner) {
       throw new HttpException(`Owner is required`, HttpStatus.BAD_REQUEST);
     }
@@ -21,7 +21,7 @@ export class OwnershipController {
   }
 
   @Get('differences/near-super-users')
-  async getNearSuperUsersOwnership(): Promise<WalletNftsResult[]> {
+  async getNearSuperUsersOwnership(): Promise<WalletNft[]> {
 
     const differences = await this.nearOwnershipService.process();
     return differences;

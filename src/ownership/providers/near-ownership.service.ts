@@ -4,7 +4,7 @@ import { wallets } from 'src/ownership/near-super-users';
 import { InjectRepository } from '@nestjs/typeorm';
 import { NftMeta } from 'src/database/universal/entities/NftMeta';
 import { Repository } from 'typeorm';
-import { WalletNft, WalletNftsResult } from '../interfaces/wallet-nft.interface';
+import { WalletNft } from '../interfaces/wallet-nft.interface';
 import { ContractConnectionService } from 'src/scrapers/near-scraper/providers/contract-connection-service';
 import { SmartContract } from 'src/database/universal/entities/SmartContract';
 import { NftState } from 'src/database/universal/entities/NftState';
@@ -29,9 +29,9 @@ export class NearOwnershipService {
     private contractConnectionService: ContractConnectionService
   ) {}
 
-  async process (wallet?: string): Promise<WalletNftsResult[]> {
+  async process (wallet?: string): Promise<WalletNft[]> {
     const wallets = wallet ? [wallet] : await this.fetchSuperUsersWallets();
-    const differences: WalletNftsResult[] = [];
+    const differences: WalletNft[] = [];
     this.nearConnection = await this.contractConnectionService.connectNear();
 
     this.contractKeys = await this.fetchNftContractKeys();
@@ -46,14 +46,14 @@ export class NearOwnershipService {
 
       if (promisesBatch.length % ASYNC_WALLETS === 0) {
         const result = await Promise.all(promisesBatch);
-        differences.push(...result);
+        differences.push(...result.filter(r => r.differences?.length));
         promisesBatch = [];
       }
     }
 
     if (promisesBatch.length) {
       const result = await Promise.all(promisesBatch);
-      differences.push(...result);
+      differences.push(...result.filter(r => r.differences?.length));
     }
 
     return differences;
@@ -83,10 +83,12 @@ export class NearOwnershipService {
         nft_state: { staked_owner: wallet, staked: true }
       }],
       relations: {
-        smart_contract: true
+        smart_contract: true,
+        nft_state: true
       },
       select: {
         token_id: true,
+        nft_state: { owner: true, owner_tx_id: true, owner_block_height: true },
         smart_contract: { contract_key: true }
       }
     });
@@ -94,6 +96,7 @@ export class NearOwnershipService {
     return nftMetas.map(i => ({
       token_id: i.token_id,
       contract_key: i.smart_contract.contract_key,
+      universal_owner: i.nft_state?.owner
     }));
   }
 
@@ -124,7 +127,7 @@ export class NearOwnershipService {
           from_index: skip.toString(), 
           limit: BATCH_LIMIT 
         });
-        results.push(...nfts.map(nft => ({ token_id: nft.token_id, contract_key: contractKey }) ));
+        results.push(...nfts.map(nft => ({ token_id: nft.token_id, contract_key: contractKey, smart_contract_owner: wallet }) ));
         skip += BATCH_LIMIT;
       } while (nfts.length === BATCH_LIMIT);
 
@@ -211,7 +214,7 @@ export class NearOwnershipService {
     await this.nftStateRepo.upsert({ meta_id: nftMeta.id, owner: owner }, ["meta_id"]);
   }
 
-  async processWallet(wallet: string): Promise<WalletNftsResult> {
+  async processWallet(wallet: string): Promise<WalletNft[]> {
     this.logger.debug(`processWallet() ${wallet}`);
     let differences: WalletNft[] = [];
 
@@ -220,22 +223,28 @@ export class NearOwnershipService {
 
     // Symetrical diffrencen between both arrays after reoming missing metas.
     differences = await this.compareResult(walletNfts, universalNfts);
-    
     if (differences && differences.length) {
       this.reportResult(wallet, differences);
     }
 
+    let result: WalletNft[] = [];
     for (let diff of differences) {
-      let owner = await this.fetchSmartContractNftOwner(diff.contract_key, diff.token_id);
+      let owner = diff.smart_contract_owner;
+      if (!owner) {
+        owner = await this.fetchSmartContractNftOwner(diff.contract_key, diff.token_id);
+      }
       if (owner) {
         await this.fixNftMetaOwner(diff.token_id, diff.contract_key, owner);
       }
+      result.push({
+        token_id: diff.token_id,
+        contract_key: diff.contract_key,
+        universal_owner: diff.universal_owner,
+        smart_contract_owner: owner
+      });
     }
 
-    return { 
-      differences, 
-      wallet 
-    };
+    return result;
   }
 
   async compareResult(walletNfts: WalletNft[], universalNfts: WalletNft[]): Promise<WalletNft[]> {
@@ -245,9 +254,10 @@ export class NearOwnershipService {
     if (differences && differences.length) {
       let nftMetas = await this.nftMetaRepo.find({ 
         where: differences.map(diff => ({ token_id: diff.token_id, smart_contract: { contract_key: diff.contract_key }})),
-        relations: { smart_contract: true },
+        relations: { smart_contract: true, nft_state: true },
         select: {
           token_id: true,
+          nft_state: { owner: true },
           smart_contract: { contract_key: true }
         }
       });
@@ -255,6 +265,7 @@ export class NearOwnershipService {
       return nftMetas.map(i => ({
         token_id: i.token_id,
         contract_key: i.smart_contract.contract_key,
+        universal_owner: i.nft_state?.owner
       }));
     } else {
       return [];

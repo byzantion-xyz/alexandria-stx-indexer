@@ -205,9 +205,9 @@ export class NearOwnershipService {
       smart_contract: { contract_key },
       token_id: token_id
     }});
+    let actualOwner = nftMeta.nft_state?.owner;
 
-    // Upsert owner for nftMeta
-    this.logger.log(`Setting correct owner: ${owner} for ${contract_key} ${token_id} ${nftMeta.id} `);
+    this.logger.log(`Fix owner ${actualOwner || ''} --> ${owner} for ${contract_key} ${token_id}`);
     await this.nftStateRepo.upsert({ meta_id: nftMeta.id, owner: owner }, ["meta_id"]);
   }
 

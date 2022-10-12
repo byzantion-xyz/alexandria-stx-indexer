@@ -226,11 +226,9 @@ export class NearOwnershipService {
     }
 
     for (let diff of differences) {
-      if (diff.contract_key !== 'x.paras.near') {
-        let owner = await this.fetchSmartContractNftOwner(diff.contract_key, diff.token_id);
-        if (owner) {
-          await this.fixNftMetaOwner(diff.token_id, diff.contract_key, owner);
-        }
+      let owner = await this.fetchSmartContractNftOwner(diff.contract_key, diff.token_id);
+      if (owner) {
+        await this.fixNftMetaOwner(diff.token_id, diff.contract_key, owner);
       }
     }
 

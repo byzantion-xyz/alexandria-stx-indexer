@@ -43,8 +43,9 @@ export class TasksService {
     }
 
     @Cron(CronExpression.EVERY_6_HOURS)
-    checkOwnership() {
+    async checkOwnership() {
       this.logger.log('checkOwnership() task running');
-      this.nearOwnershipService.process();
+      await this.nearOwnershipService.process();
+      this.logger.log('checkOwnership() task completed');
     }
 }

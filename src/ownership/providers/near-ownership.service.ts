@@ -32,7 +32,10 @@ export class NearOwnershipService {
     this.nearConnection = await this.contractConnectionService.connectNear();
 
     this.contractKeys = await this.fetchNftContractKeys();
-    this.contractKeys = await this.cleanNonNftContracts(wallets[0]);
+    if (wallets.length > ASYNC_WALLETS) {
+      this.contractKeys = await this.cleanNonNftContracts(wallets[0]);
+    }
+
     let promisesBatch = [];
 
     for (let wallet of wallets) {
@@ -113,7 +116,9 @@ export class NearOwnershipService {
       } while (nfts.length === BATCH_LIMIT);
 
     } catch (err) {
-      this.logger.warn(err);
+      if (err && err.error.indexOf('no tokens') < 0) {
+        this.logger.warn(err);
+      }
     } finally {
       return results 
     }

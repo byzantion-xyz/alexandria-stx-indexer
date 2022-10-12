@@ -101,10 +101,10 @@ export class NearOwnershipService {
     try {
       const contract = this.contractConnectionService.getContract(contractKey, this.nearConnection);
       const token = await contract.nft_token({ token_id: token_id }); 
-      
+
       return token.owner_id;
     } catch (err) {
-      throw err;
+      this.logger.warn(err);
     }
   }
 
@@ -227,7 +227,9 @@ export class NearOwnershipService {
 
     for (let diff of differences) {
       let owner = await this.fetchSmartContractNftOwner(diff.contract_key, diff.token_id);
-      await this.fixNftMetaOwner(diff.token_id, diff.contract_key, owner);
+      if (owner) {
+        await this.fixNftMetaOwner(diff.token_id, diff.contract_key, owner);
+      }
     }
 
     return { 

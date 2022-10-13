@@ -73,7 +73,8 @@ export enum ActionName {
   unlist_collection_bid = "unlist-collection-bid",
   unstake = "unstake",
   solo_bid = "solo-bid",
-  burn = "burn"
+  burn = "burn",
+  reset_owner = "reset-owner"
 }
 
 

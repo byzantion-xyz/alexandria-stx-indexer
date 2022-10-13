@@ -13,6 +13,7 @@ import indexerConfig from "./config/indexer.config";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { ApiProtectMiddleware } from "./common/middleware/apiprotect.middleware";
 import { ApiKey } from "./database/universal/entities/ApiKey";
+import { OwnershipModule } from './ownership/ownership.module';
 
 @Module({
   imports: [
@@ -56,6 +57,7 @@ import { ApiKey } from "./database/universal/entities/ApiKey";
       }),
       inject: [ConfigService],
     }),
+    OwnershipModule,
   ],
   controllers: [AppController],
   providers: [AppService],

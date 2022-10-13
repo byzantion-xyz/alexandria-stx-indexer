@@ -8,6 +8,8 @@ import { WalletNft } from '../interfaces/wallet-nft.interface';
 import { ContractConnectionService } from 'src/scrapers/near-scraper/providers/contract-connection-service';
 import { SmartContract } from 'src/database/universal/entities/SmartContract';
 import { NftState } from 'src/database/universal/entities/NftState';
+import { Action } from 'src/database/universal/entities/Action';
+import { ActionName } from 'src/indexers/common/helpers/indexer-enums';
 
 const BATCH_LIMIT = 50;
 const ASYNC_WALLETS = 10;
@@ -22,6 +24,8 @@ export class NearOwnershipService {
   constructor(
     @InjectRepository(NftMeta)
     private nftMetaRepo: Repository<NftMeta>,
+    @InjectRepository(Action)
+    private actionRepo: Repository<Action>,
     @InjectRepository(NftState)
     private nftStateRepo: Repository<NftState>,
     @InjectRepository(SmartContract)
@@ -208,8 +212,27 @@ export class NearOwnershipService {
     }});
     let actualOwner = nftMeta.nft_state?.owner;
 
-    this.logger.log(`Fix owner ${actualOwner || ''} --> ${owner} for ${contract_key} ${token_id}`);
-    await this.nftStateRepo.upsert({ meta_id: nftMeta.id, owner: owner }, ["meta_id"]);
+    let actionId: string;
+    try {
+      this.logger.log(`Fix owner ${actualOwner || ''} --> ${owner} for ${contract_key} ${token_id}`);
+      
+      const newAction = this.actionRepo.create({
+        action: ActionName.transfer,
+        ... (actualOwner && { seller: actualOwner }),
+        buyer: owner
+      });
+
+      const saved = await this.actionRepo.save(newAction);
+      actionId = saved.id;
+
+      await this.nftStateRepo.upsert({ meta_id: nftMeta.id, owner: owner }, ["meta_id"]);
+    } catch (err) {
+      if (actionId) {
+        // Delete action when upsert fails to maintain data consistency
+        await this.actionRepo.delete({ id: actionId });
+      }
+      throw err;
+    }
   }
 
   async processWallet(wallet: string): Promise<WalletNft[]> {

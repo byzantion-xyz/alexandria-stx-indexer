@@ -161,7 +161,7 @@ export class TxHelperService {
       
       return await this.nftMetaRepository.save(newMeta);
     } catch (err) {
-      this.logger.warn(`createNftMetaSkeletonBySmartContract() failed for token_id: ${token_id}`);
+      this.logger.warn(`createMetaSkeleton() failed for ${sc.contract_key} ${token_id}`);
       this.logger.warn(err);
       throw err;
     }

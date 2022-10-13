@@ -20,6 +20,7 @@ export class NearOwnershipService {
   private readonly logger = new Logger(NearOwnershipService.name);
   private nearConnection;
   private contractKeys: string[];
+  private recentTransfer: Action;
 
   constructor(
     @InjectRepository(NftMeta)
@@ -42,6 +43,13 @@ export class NearOwnershipService {
     if (wallets.length > ASYNC_WALLETS) {
       this.contractKeys = await this.cleanNonNftContracts(wallets[0]);
     }
+
+    this.recentTransfer = await this.actionRepo.findOneOrFail({ 
+      where: { action: ActionName.transfer },
+      order: { block_height: "DESC", id: "DESC" }
+    });
+
+    this.logger.log(this.recentTransfer);
 
     let promisesBatch = [];
 
@@ -206,26 +214,30 @@ export class NearOwnershipService {
 
   async fixNftMetaOwner(token_id: string, contract_key: string, owner: string) {
     // find meta and upsert state owner
-    const nftMeta = await this.nftMetaRepo.findOne({ where: {
-      smart_contract: { contract_key },
-      token_id: token_id
-    }});
+    const nftMeta = await this.nftMetaRepo.findOne({ 
+      where: { smart_contract: { contract_key }, token_id: token_id }
+    });
     let actualOwner = nftMeta.nft_state?.owner;
 
     let actionId: string;
     try {
-      this.logger.log(`Fix owner ${actualOwner || ''} --> ${owner} for ${contract_key} ${token_id}`);
-      
       const newAction = this.actionRepo.create({
-        action: ActionName.transfer,
-        ... (actualOwner && { seller: actualOwner }),
-        buyer: owner
+        block_height: this.recentTransfer.block_height,
+        block_time: this.recentTransfer.block_time,
+        tx_id: '0', // Non nullable
+        action: ActionName.reset_owner,
+        ...(actualOwner && { seller: actualOwner }),
+        buyer: owner,
+        nft_meta_id: nftMeta.id,
+        collection_id: nftMeta.collection_id,
+        smart_contract_id: nftMeta.smart_contract_id
       });
 
       const saved = await this.actionRepo.save(newAction);
       actionId = saved.id;
 
       await this.nftStateRepo.upsert({ meta_id: nftMeta.id, owner: owner }, ["meta_id"]);
+      this.logger.log(`Fixed owner ${actualOwner || ''} --> ${owner} for ${contract_key} ${token_id}`);
     } catch (err) {
       if (actionId) {
         // Delete action when upsert fails to maintain data consistency

@@ -156,15 +156,16 @@ export class NearScraperService {
       this.logger.log(`[scraping ${slug}] SCRAPING COMPLETE`);
 
       // Run missing transactions for scraped smart contract
-      axios.post(
-        this.config.get("app.nearIndexerRunMissingUrl"),
-        { contract_key },
-        {
-          headers: {
-            "x-api-key": process.env.BYZ_API_KEY,
-          },
-        }
-      );
+      // Commenting this out until we have completed the full NEAR skeleton reindexing
+      // axios.post(
+      //   this.config.get("app.nearIndexerRunMissingUrl"),
+      //   { contract_key },
+      //   {
+      //     headers: {
+      //       "x-api-key": process.env.BYZ_API_KEY,
+      //     },
+      //   }
+      // );
 
       // Trigger a rebuild of the front end if collection is not a recurring scrape
       if (!is_recurring_scrape) {

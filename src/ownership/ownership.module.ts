@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { Action } from 'src/database/universal/entities/Action';
 import { NftMeta } from 'src/database/universal/entities/NftMeta';
 import { NftState } from 'src/database/universal/entities/NftState';
 import { SmartContract } from 'src/database/universal/entities/SmartContract';
@@ -9,7 +10,7 @@ import { NearOwnershipService } from './providers/near-ownership.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([NftMeta, SmartContract, NftState]),
+    TypeOrmModule.forFeature([NftMeta, SmartContract, NftState, Action]),
     ScrapersModule
   ],
   providers: [NearOwnershipService],

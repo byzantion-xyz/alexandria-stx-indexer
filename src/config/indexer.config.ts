@@ -2,7 +2,7 @@ import { registerAs } from "@nestjs/config";
 
 export default registerAs("indexer", () => ({
   chainSymbol: process.env.CHAIN_SYMBOL || "Near",
-  txResultExpiration: 60000,
+  txResultExpiration: 120000,
   enableStreamerSubscription: process.env.ENABLE_STREAMER_SUBSCRIPTION === 'true' || false,
   runPendingTransactions: process.env.RUN_PENDING_TRANSACTIONS === 'true' || false,
   byzOldMarketplaceContractKeys: [

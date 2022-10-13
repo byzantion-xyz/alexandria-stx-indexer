@@ -22,19 +22,18 @@ const nearConfig = {
 export class ContractConnectionService {
   constructor() { }
 
-  async connectNftContract(contract_id) {
+  async connectNear() {
     const near = await connect(nearConfig);
     const account = await near.account(nearAccountId);
-    const contract = await this.getContract(contract_id, account);
-    return contract
+    return account;
   }
 
-  async getContract(contract_key, account) {
+  getContract(contract_key, account) {
     return new nearAPI.Contract(
       account, // the account object that is connecting
       contract_key, // name of contract you're connecting to
       {
-        viewMethods: ["nft_metadata", "nft_token", "nft_total_supply", "nft_tokens"], // view methods do not change state but usually return a value
+        viewMethods: ["nft_metadata", "nft_token", "nft_total_supply", "nft_tokens", "nft_tokens_for_owner"], // view methods do not change state but usually return a value
         sender: account, // account object to initialize and sign transactions.
       }
     );

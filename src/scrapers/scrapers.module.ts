@@ -38,6 +38,6 @@ import { SmartContractFunction } from "src/database/universal/entities/SmartCont
     ContractConnectionService,
     DbHelperService,
   ],
-  exports: [MissingCollectionService],
+  exports: [MissingCollectionService, ContractConnectionService],
 })
 export class ScrapersModule {}

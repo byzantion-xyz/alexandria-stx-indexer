@@ -37,7 +37,7 @@ export class BidIndexerService implements IndexerService {
     );
     const bidParams: CreateBidStateArgs = { ... bidCommonArgs, bid_buyer: buyer };
 
-    const bidState = await this.txBidHelper.findActiveBid(nftMeta.collection.id, BidType.solo, nftMeta.id, buyer);
+    const bidState = await this.txBidHelper.findActiveSoloBid(nftMeta, buyer);
     if (this.txBidHelper.isNewBid(tx, bidState)) {
       await this.txBidHelper.createOrReplaceBid(bidParams, bidState, nftMeta.id);
     } else {

@@ -37,7 +37,7 @@ export class CollectionAcceptBidIndexerService implements IndexerService {
     const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
 
     if (nftMeta) {
-      let bidState = await this.txBidHelper.findActiveBid(nftMeta.collection.id, BidType.collection);
+      let bidState = await this.txBidHelper.findActiveCollectionBid(nftMeta.collection.id);
       
       if (bidState && this.txBidHelper.isNewBid(tx, bidState)) {
         await this.txBidHelper.acceptBid(bidState, tx, nftMeta);

@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Action } from 'src/database/universal/entities/Action';
+import { BidState } from 'src/database/universal/entities/BidState';
 import { SmartContract } from 'src/database/universal/entities/SmartContract';
 import { SmartContractFunction } from 'src/database/universal/entities/SmartContractFunction';
 import { ActionName, BidType } from 'src/indexers/common/helpers/indexer-enums';
@@ -37,7 +38,7 @@ export class UnlistBidIndexerService implements IndexerService {
     const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
 
     if (nftMeta) {
-      let bidState = await this.txBidHelper.findActiveBid(nftMeta.collection.id, BidType.solo, nftMeta.id);
+      let bidState = await this.txBidHelper.findActiveSoloBid(nftMeta);
 
       if (bidState && this.txBidHelper.isNewBid(tx, bidState)) {
         await this.txBidHelper.cancelBid(bidState, tx);

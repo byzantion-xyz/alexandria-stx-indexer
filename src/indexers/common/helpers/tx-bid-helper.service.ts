@@ -82,16 +82,28 @@ export class TxBidHelperService {
     );
   }
 
-  async findActiveBid(collectionId: string, bid_type: BidType, nftMetaId?: string, buyer?: string) {
+  async findActiveSoloBid(nftMeta: NftMeta, buyer?: string): Promise<BidState> {
     return await this.bidStateRepo.findOne({
       where: {
-        collection_id: collectionId,
-        bid_type: bid_type,
+        collection_id: nftMeta.collection_id,
+        bid_type: BidType.solo,
         status: CollectionBidStatus.active,
         nonce: IsNull(),
         bid_contract_nonce: IsNull(),
-        ...(nftMetaId &&  { nft_metas: { meta_id: nftMetaId }}),
+        nft_metas: { meta_id: nftMeta.id },
         ...(buyer && { bid_buyer: buyer })
+      }
+    });
+  }
+
+  async findActiveCollectionBid(collectionId: string): Promise<BidState> {
+    return await this.bidStateRepo.findOne({
+      where: {
+        collection_id: collectionId,
+        bid_type: BidType.collection,
+        status: CollectionBidStatus.active,
+        nonce: IsNull(),
+        bid_contract_nonce: IsNull()
       }
     });
   }

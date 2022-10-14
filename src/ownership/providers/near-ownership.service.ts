@@ -213,7 +213,8 @@ export class NearOwnershipService {
   async fixNftMetaOwner(token_id: string, contract_key: string, owner: string) {
     // find meta and upsert state owner
     const nftMeta = await this.nftMetaRepo.findOne({ 
-      where: { smart_contract: { contract_key }, token_id: token_id }
+      where: { smart_contract: { contract_key }, token_id: token_id },
+      relations: { nft_state: true }
     });
     let actualOwner = nftMeta.nft_state?.owner;
 

@@ -64,10 +64,13 @@ export class TxBidHelperService {
       }
       const saved = await this.bidStateRepo.save(bidState);
 
-      this.logger.log(`New bid_state bid_type:${params.bid_type}  id: ${saved.id} `);
+      this.logger.log(`New bid_state bid_type:${params.bid_type} id: ${saved.id}`);
 
       return saved;
-    } catch (err) {} 
+    } catch (err) { 
+      this.logger.warn(err); 
+      throw err;
+    }
   }
 
   isNewBid(tx: CommonTx, bidState: BidState): boolean {

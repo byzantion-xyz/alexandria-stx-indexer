@@ -28,14 +28,12 @@ export interface CreateBidCommonArgs {
   collection_id: string;
 }
 
-export interface CreateCollectionBidStateArgs extends CreateBidCommonArgs {
-  bid_buyer: string;
-}
-
-export interface CreateAttributeBidStateArgs extends CreateCollectionBidStateArgs {};
 export interface CreateBidStateArgs extends CreateBidCommonArgs {
   bid_buyer: string;
 };
+
+export interface CreateCollectionBidStateArgs extends CreateBidStateArgs {}
+export interface CreateAttributeBidStateArgs extends CreateBidStateArgs {};
 
 @Injectable()
 export class TxBidHelperService {
@@ -50,7 +48,7 @@ export class TxBidHelperService {
     private collectionAttributeRepo: Repository<CollectionAttribute>,
   ) {}
 
-  async createOrReplaceBid(params: CreateCollectionBidStateArgs, bidState?: BidState, nftMetaId?: string): Promise<BidState> {
+  async createOrReplaceBid(params: CreateBidStateArgs, bidState?: BidState, nftMetaId?: string): Promise<BidState> {
     try {
       if (bidState) {
         bidState = this.bidStateRepo.merge(bidState, params);

@@ -121,6 +121,10 @@ export class TxHelperService {
       nftMeta.smart_contract = smartContract;
     }
 
+    if (!nftMeta) {
+      throw new Error(`Unable to fetch nft_meta for ${contract_key} ${token_id}`);
+    }
+
     return nftMeta;
   }
 

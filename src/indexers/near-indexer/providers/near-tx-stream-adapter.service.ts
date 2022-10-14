@@ -170,6 +170,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
 
   transformTx(tx: TxEvent): CommonTx[] {
     const commonTxs: CommonTx[] = [];
+    let containsFunctionCallCommonTx = false;
 
     this.nearTxHelper.getReceiptTree(tx).forEach((rcpt) => {
       const events = (tx.contains_event)
@@ -199,6 +200,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
                 args: fc.args,
                 ...this.transformTxBase(commonTxs.length, r, tx)
               });
+              containsFunctionCallCommonTx = true;
             }
           });
         });
@@ -218,7 +220,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
       this.txResults.set(tx.hash, [commonTxs.length, {
         hash : tx.hash,
         missingNftEvent: false,
-        matchingFunctionCall: false,
+        matchingFunctionCall: !containsFunctionCallCommonTx,
         skipped: []
       } as NearTxResult]);
     }

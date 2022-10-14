@@ -44,7 +44,7 @@ export class CollectionBidIndexerService implements IndexerService {
     }});
 
     if (collection) {
-      const bidCommonArgs: CreateBidCommonArgs = this.txBidHelper.setCommonV6BidArgs(
+      const bidCommonArgs: CreateBidCommonArgs = this.txBidHelper.setCommonBidArgs(
         tx, sc, collection, BidType.collection, price
       );
       const collectionBidArgs: CreateCollectionBidStateArgs = {

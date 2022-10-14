@@ -31,8 +31,8 @@ export class SoloIdAcceptBidIndexerService implements IndexerService {
     
     if (event) {
       const token_id: bigint = event.data.data['item-id'];
-      const bid_contract_nonce = this.txBidHelper.build_nonce(sc.contract_key, event.data.order);
-      const bidState = await this.txBidHelper.findSoloBidStateByNonce(bid_contract_nonce);
+      const bid_contract_nonce = this.stacksTxHelper.build_nonce(sc.contract_key, event.data.order);
+      const bidState = await this.stacksTxHelper.findSoloBidStateByNonce(bid_contract_nonce);
 
       if (bidState && bidState.status === CollectionBidStatus.active) {
         const { contract_key } = bidState.nft_metas[0].meta.smart_contract;

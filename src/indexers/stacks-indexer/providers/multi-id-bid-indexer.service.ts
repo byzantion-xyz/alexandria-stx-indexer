@@ -44,7 +44,7 @@ export class MultiIdBidIndexerService implements IndexerService {
         const trait = JSON.parse(event.data.trait);
 
         if (contract_key && collection && bid_sc) {
-          const bidCommonArgs = this.txBidHelper.setCommonBidArgs(
+          const bidCommonArgs = this.stacksTxHelper.setCommonBidArgs(
             tx, bid_sc, event, collection, BidType.attribute
           );
           const collectionBidArgs: CreateCollectionBidStateArgs = {

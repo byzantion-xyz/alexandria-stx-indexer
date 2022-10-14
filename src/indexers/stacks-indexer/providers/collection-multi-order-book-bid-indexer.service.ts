@@ -45,7 +45,7 @@ export class CollectionMultiOrderBookBidIndexerService implements IndexerService
         }});
 
         if (contract_key && collection && bid_sc) {
-          const bidCommonArgs = this.txBidHelper.setCommonBidArgs(
+          const bidCommonArgs = this.stacksTxHelper.setCommonBidArgs(
             tx, sc, event, collection, BidType.collection
           );
           const collectionBidArgs: CreateCollectionBidStateArgs = {

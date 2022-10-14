@@ -79,7 +79,7 @@ export class TxBidHelperService {
     );
   }
 
-  async findActiveBid(collectionId: string, bid_type: BidType, nftMetaId?: string) {
+  async findActiveBid(collectionId: string, bid_type: BidType, nftMetaId?: string, buyer?: string) {
     return await this.bidStateRepo.findOne({
       where: {
         collection_id: collectionId,
@@ -87,7 +87,8 @@ export class TxBidHelperService {
         status: CollectionBidStatus.active,
         nonce: IsNull(),
         bid_contract_nonce: IsNull(),
-        ... (nftMetaId &&  { nft_metas: { meta_id: nftMetaId }})
+        ...(nftMetaId &&  { nft_metas: { meta_id: nftMetaId }}),
+        ...(buyer && { bid_buyer: buyer })
       }
     });
   }
@@ -143,47 +144,7 @@ export class TxBidHelperService {
     return await this.createTokenIdsBid(params, [token_id]);
   }
 
-  async findBidStateByNonce(nonce: string): Promise<BidState> {
-    return await this.bidStateRepo.findOne({
-      where: { bid_contract_nonce: nonce },
-      relations: { 
-        collection: { smart_contract: true },
-        nft_metas: { meta: true }
-      }
-    });
-  }
-
-  async findSoloBidStateByNonce(nonce: string): Promise<BidState> {
-    return await this.bidStateRepo.findOne({
-      where: { bid_contract_nonce: nonce, bid_type: BidType.solo },
-      relations: { 
-        nft_metas: { meta: { collection: true, smart_contract: true } }
-      }
-    });
-  }
-
   setCommonBidArgs(
-    tx: CommonTx, 
-    sc: SmartContract, 
-    e: TransactionEventSmartContractLogWithData,
-    collection: Collection,
-    type: BidType
-  ): CreateBidCommonArgs {
-    return {
-      smart_contract_id: sc.id,
-      collection_id: collection.id,
-      nonce: Number(e.data.order),
-      bid_contract_nonce: this.build_nonce(e.contract_log.contract_id, e.data.order),
-      bid_price: e.data.data.offer,
-      tx_id: tx.hash,
-      tx_index: tx.index,
-      block_height: tx.block_height,
-      bid_type: type,
-      status: CollectionBidStatus.active
-    };
-  }
-
-  setCommonV6BidArgs(
     tx: CommonTx,
     sc: SmartContract,
     collection: Collection,
@@ -245,10 +206,6 @@ export class TxBidHelperService {
     } catch (err) {
       this.logger.warn('Error saving cancellation with nonce: ', bidState.nonce || 'Unknown', err);
     }
-  }
-
-  build_nonce(contract_key: string, order: bigint): string {
-    return `${contract_key}::${order.toString()}`;
   }
 
 }

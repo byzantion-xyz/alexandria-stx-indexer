@@ -44,7 +44,7 @@ export class CollectionOrderBookBidIndexerService implements IndexerService {
       const bid_sc = await this.smartContractRepository.findOne({ where: { contract_key: event.contract_log.contract_id }});
 
       if (contract_key && collection && bid_sc) {
-        const bidCommonArgs = this.txBidHelper.setCommonBidArgs(
+        const bidCommonArgs = this.stacksTxHelper.setCommonBidArgs(
           tx, bid_sc, event, collection, BidType.collection
         );
         const collectionBidArgs: CreateCollectionBidStateArgs = {

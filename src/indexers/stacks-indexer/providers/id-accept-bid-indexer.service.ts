@@ -37,7 +37,7 @@ export class IdAcceptBidIndexerService implements IndexerService {
     if (event) {
       const token_id: bigint = event.data.data['item-id'];
       const order = event.data.order;
-      const bid_contract_nonce =  this.txBidHelper.build_nonce(sc.contract_key, order);
+      const bid_contract_nonce =  this.stacksTxHelper.build_nonce(sc.contract_key, order);
       const bidState = await this.bidStateRepository.findOne({ 
         where: { bid_contract_nonce },
         relations: { collection: { smart_contract: true } }

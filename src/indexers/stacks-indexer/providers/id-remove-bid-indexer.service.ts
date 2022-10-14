@@ -30,8 +30,8 @@ export class IdRemoveBidIndexerService implements IndexerService {
     const event = events.find(e => e && e.data?.data && e.data.order);
 
     if (event) {
-      const nonce = this.txBidHelper.build_nonce(sc.contract_key, event.data.order);
-      const bidState = await this.txBidHelper.findBidStateByNonce(nonce);
+      const nonce = this.stacksTxHelper.build_nonce(sc.contract_key, event.data.order);
+      const bidState = await this.stacksTxHelper.findBidStateByNonce(nonce);
 
       if (bidState && bidState.status === CollectionBidStatus.active) {
         await this.txBidHelper.cancelBid(bidState, tx);

@@ -36,7 +36,7 @@ export class CollectionOrderBookAcceptBidIndexerService implements IndexerServic
     
     if (event) {
       const token_id: bigint = event.data.data['item-id'];      
-      const bid_contract_nonce = this.txBidHelper.build_nonce(sc.contract_key, event.data.order);
+      const bid_contract_nonce = this.stacksTxHelper.build_nonce(sc.contract_key, event.data.order);
       
       const bidState = await this.bidStateRepository.findOne({ 
         where: { bid_contract_nonce }, 

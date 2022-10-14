@@ -6,11 +6,15 @@ import { BufferCV } from "@stacks/transactions";
 import { principalCV } from "@stacks/transactions/dist/clarity/types/principalCV";
 import { cvToTrueValue, hexToCV, cvToJSON } from "micro-stacks/clarity";
 import { CommonUtilService } from "src/common/helpers/common-util/common-util.service";
+import { BidState } from "src/database/universal/entities/BidState";
+import { Collection } from "src/database/universal/entities/Collection";
 import { NftMeta } from "src/database/universal/entities/NftMeta";
 import { NftState } from "src/database/universal/entities/NftState";
 import { NftStateList } from "src/database/universal/entities/NftStateList";
 import { SmartContract } from "src/database/universal/entities/SmartContract";
 import { SmartContractFunction } from "src/database/universal/entities/SmartContractFunction";
+import { BidType, CollectionBidStatus } from "src/indexers/common/helpers/indexer-enums";
+import { CreateBidCommonArgs } from "src/indexers/common/helpers/tx-bid-helper.service";
 import { TxHelperService } from "src/indexers/common/helpers/tx-helper.service";
 import { CommonTx } from "src/indexers/common/interfaces/common-tx.interface";
 import { Repository } from "typeorm";
@@ -41,7 +45,9 @@ export class StacksTxHelperService {
     private txHelper: TxHelperService,
     @InjectRepository(NftMeta)
     private nftMetaRepository: Repository<NftMeta>,
-    private configService: ConfigService
+    private configService: ConfigService,
+    @InjectRepository(BidState)
+    private bidStateRepo: Repository<BidState>,
   ) {
     this.byzOldMarketplaces = this.configService.get("indexer.byzOldMarketplaceContractKeys");
   }
@@ -159,5 +165,49 @@ export class StacksTxHelperService {
   extractNftContractFromEvents(events: Array<any>) {
     const asset_id = this.commonUtil.findByKey(events, "asset_id");
     return asset_id?.split("::")[0];
+  }
+
+  setCommonBidArgs(
+    tx: CommonTx, 
+    sc: SmartContract, 
+    e: TransactionEventSmartContractLogWithData,
+    collection: Collection,
+    type: BidType
+  ): CreateBidCommonArgs {
+    return {
+      smart_contract_id: sc.id,
+      collection_id: collection.id,
+      nonce: Number(e.data.order),
+      bid_contract_nonce: this.build_nonce(e.contract_log.contract_id, e.data.order),
+      bid_price: e.data.data.offer,
+      tx_id: tx.hash,
+      tx_index: tx.index,
+      block_height: tx.block_height,
+      bid_type: type,
+      status: CollectionBidStatus.active
+    };
+  }
+
+  build_nonce(contract_key: string, order: bigint): string {
+    return `${contract_key}::${order.toString()}`;
+  }
+
+  async findBidStateByNonce(nonce: string): Promise<BidState> {
+    return await this.bidStateRepo.findOne({
+      where: { bid_contract_nonce: nonce },
+      relations: { 
+        collection: { smart_contract: true },
+        nft_metas: { meta: true }
+      }
+    });
+  }
+
+  async findSoloBidStateByNonce(nonce: string): Promise<BidState> {
+    return await this.bidStateRepo.findOne({
+      where: { bid_contract_nonce: nonce, bid_type: BidType.solo },
+      relations: { 
+        nft_metas: { meta: { collection: true, smart_contract: true } }
+      }
+    });
   }
 }

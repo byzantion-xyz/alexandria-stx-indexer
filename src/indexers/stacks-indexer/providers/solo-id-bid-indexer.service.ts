@@ -44,7 +44,7 @@ export class SoloIdBidIndexerService implements IndexerService {
       }});
 
       if (contract_key && nftMeta && bid_sc) {
-        const bidCommonArgs = this.txBidHelper.setCommonBidArgs(
+        const bidCommonArgs = this.stacksTxHelper.setCommonBidArgs(
           tx, bid_sc, event, nftMeta.collection, BidType.solo
         );
         const collectionBidArgs: CreateBidStateArgs = {

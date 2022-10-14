@@ -49,8 +49,6 @@ export class NearOwnershipService {
       order: { block_height: "DESC", id: "DESC" }
     });
 
-    this.logger.log(this.recentTransfer);
-
     let promisesBatch = [];
 
     for (let wallet of wallets) {

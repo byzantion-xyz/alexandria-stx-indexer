@@ -15,6 +15,7 @@ import { RelistIndexerService } from './providers/relist-indexer.service';
 import { NftMintEventIndexerService } from './providers/nft-mint-event-indexer.service';
 import { NftTransferEventIndexerService } from './providers/nft-transfer-event-indexer.service';
 import { NftBurnEventIndexerService } from './providers/nft-burn-event-indexer.service';
+import { BidIndexerService } from './providers/bid-indexer.service';
 
 const microIndexers = [
   BuyIndexerService,
@@ -26,7 +27,8 @@ const microIndexers = [
   RelistIndexerService,
   NftMintEventIndexerService,
   NftTransferEventIndexerService,
-  NftBurnEventIndexerService
+  NftBurnEventIndexerService,
+  BidIndexerService
 ];
 
 @Module({
@@ -43,7 +45,7 @@ const microIndexers = [
       provide: 'MicroIndexers',
       useFactory: (...microIndexers) => microIndexers,
       inject: [...microIndexers]
-    },
+    }
   ],
   exports: [
     NearTxHelperService,

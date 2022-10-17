@@ -16,6 +16,7 @@ import { NftMintEventIndexerService } from './providers/nft-mint-event-indexer.s
 import { NftTransferEventIndexerService } from './providers/nft-transfer-event-indexer.service';
 import { NftBurnEventIndexerService } from './providers/nft-burn-event-indexer.service';
 import { BidIndexerService } from './providers/bid-indexer.service';
+import { UnlistBidIndexerService } from './providers/unlist-bid-indexer.service';
 
 const microIndexers = [
   BuyIndexerService,
@@ -28,7 +29,8 @@ const microIndexers = [
   NftMintEventIndexerService,
   NftTransferEventIndexerService,
   NftBurnEventIndexerService,
-  BidIndexerService
+  BidIndexerService,
+  UnlistBidIndexerService
 ];
 
 @Module({

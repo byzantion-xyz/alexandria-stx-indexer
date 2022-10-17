@@ -80,10 +80,11 @@ export class TxBidHelperService {
     );
   }
 
-  async findActiveSoloBid(nftMeta: NftMeta, buyer?: string): Promise<BidState> {
+  async findActiveSoloBid(nftMeta: NftMeta, sc: SmartContract, buyer?: string): Promise<BidState> {
     return await this.bidStateRepo.findOne({
       where: {
-        collection_id: nftMeta.collection_id,
+        ...(nftMeta.collection && { collection_id: nftMeta.collection_id }),
+        smart_contract_id: sc.id,
         bid_type: BidType.solo,
         status: CollectionBidStatus.active,
         nonce: IsNull(),
@@ -94,14 +95,16 @@ export class TxBidHelperService {
     });
   }
 
-  async findActiveCollectionBid(collectionId: string): Promise<BidState> {
+  async findActiveCollectionBid(collectionId: string, sc: SmartContract, buyer?: string): Promise<BidState> {
     return await this.bidStateRepo.findOne({
       where: {
         collection_id: collectionId,
+        smart_contract_id: sc.id,
         bid_type: BidType.collection,
         status: CollectionBidStatus.active,
         nonce: IsNull(),
-        bid_contract_nonce: IsNull()
+        bid_contract_nonce: IsNull(),
+        ... (buyer && { bid_buyer: buyer })
       }
     });
   }
@@ -166,7 +169,7 @@ export class TxBidHelperService {
   ): CreateBidCommonArgs {
     return {
       smart_contract_id: sc.id,
-      collection_id: collection.id,
+      ...(collection && {collection_id: collection.id }),
       nonce: null,
       bid_contract_nonce: null,
       bid_price: BigInt(price),

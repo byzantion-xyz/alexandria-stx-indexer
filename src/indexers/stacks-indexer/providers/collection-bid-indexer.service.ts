@@ -61,7 +61,7 @@ export class CollectionBidIndexerService implements IndexerService {
         bid_price: price
       };
       
-      let bidState = await this.txBidHelper.findActiveCollectionBid(collection.id);
+      let bidState = await this.txBidHelper.findActiveCollectionBid(collection.id, sc);
 
       if (this.txBidHelper.isNewBid(tx, bidState)) {
         await this.txBidHelper.createOrReplaceBid(collectionBidArgs, bidState);

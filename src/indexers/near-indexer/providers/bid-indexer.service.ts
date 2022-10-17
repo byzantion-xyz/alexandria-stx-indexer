@@ -26,7 +26,7 @@ export class BidIndexerService implements IndexerService {
     let txResult: TxProcessResult = { processed: false, missing: false };
 
     const contract_key = this.txHelper.extractArgumentData(tx.args, scf, 'contract_key');
-    const token_id = this.txHelper.extractArgumentData(tx.args, scf, 'token_id'); 
+    const token_id = this.txHelper.findAndExtractArgumentData(tx.args, scf, ['token_id', 'token_series_id']);
     const price = this.txHelper.extractArgumentData(tx.args, scf, 'price');
     const buyer = tx.signer;
 

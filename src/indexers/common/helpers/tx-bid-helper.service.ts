@@ -217,8 +217,12 @@ export class TxBidHelperService {
         status: CollectionBidStatus.cancelled,
         cancel_tx_id: tx.hash
       });
-      
-      this.logger.log(`Cancelled bid nonce: ${bidState.nonce || 'Unknown'} `);
+
+      if (bidState.nonce) {
+        this.logger.debug(`Cancelled bid nonce: ${bidState.nonce || 'Unknown'} `);
+      } else {
+        this.logger.debug(`Cancelled bid id: ${bidState.id} `);
+       }
     } catch (err) {
       this.logger.warn('Error saving cancellation with nonce: ', bidState.nonce || 'Unknown', err);
     }

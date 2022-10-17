@@ -42,18 +42,10 @@ export class UnlistBidIndexerService implements IndexerService {
 
     if (bidState && this.txBidHelper.isNewBid(tx, bidState)) {
       await this.txBidHelper.cancelBid(bidState, tx);
-
-      await this.createAction(actionParams);
-
-      txResult.processed = true;
-    } else if (bidState) {
-      this.logger.debug('Too Late');
-      await this.createAction(actionParams);
-      txResult.processed = true;
-    } else {
-      this.logger.warn(`bid_state not found ${contract_key} ${token_id} ${buyer} ${msc.contract_key} `);
-      txResult.missing = true;
     }
+
+    await this.createAction(actionParams);
+    txResult.processed = true;
 
     return txResult;
   }

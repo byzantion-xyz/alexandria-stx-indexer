@@ -268,6 +268,28 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
           return 'bid';
         }
       }
+      case 'add_offer': {
+        // https://nearblocks.io/txns/C8F5zhHjN2NvKf3RJGhhKzuoqT5urduLHz3B9tSqS6n5#
+         if (fc.args['token_series_id']) {
+          return 'collection_bid';
+        }
+
+        if (fc.args['token_id']) {
+          return 'bid';
+        }
+      }
+      case 'delete_offer': {
+        // https://nearblocks.io/txns/CapxSDLQ1xrSKvGUHeZRBLdXfq2rot5dS8PTR1hm7JMH#
+        if (fc.args['token_series_id']) {
+          return 'collection_unlist_bid';
+        }
+
+        // https://explorer.near.org/transactions/J2pZWuL16zTQ1uLDuCwKigcdKdqEQafyxJ66hsRMYdH6
+        if (fc.args['token_id']) {
+          return 'unlist_bid';
+        }
+      }
+     
       default: {
         return 'def';
       }

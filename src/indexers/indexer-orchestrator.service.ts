@@ -135,10 +135,10 @@ export class IndexerOrchestratorService {
         if (scf) {
           const indexer_name = transaction.indexer_name || scf.name;
           const txHandler = this.getMicroIndexer(indexer_name);
-          txHandler.stakingScs = Array.isArray(this.scs) && this.scs.filter(sc => sc.type.includes(SmartContractType.staking)); 
-          txHandler.marketScs = Array.isArray(this.scs) && this.scs.filter(sc => sc.type.includes(SmartContractType.marketplace));
-
+         
           if (txHandler) {
+            txHandler.stakingScs = Array.isArray(this.scs) && this.scs.filter(sc => sc.type.includes(SmartContractType.staking)); 
+            txHandler.marketScs = Array.isArray(this.scs) && this.scs.filter(sc => sc.type.includes(SmartContractType.marketplace));
             this.logger.log(`process() ${transaction.hash} with: ${txHandler.constructor.name} `);
             result = await txHandler.process(transaction, sc, scf);
           } else {

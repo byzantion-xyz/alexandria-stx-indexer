@@ -40,12 +40,16 @@ export class UnlistBidIndexerService implements IndexerService {
       buyer: buyer
     };
 
-    if (bidState && this.txBidHelper.isNewBid(tx, bidState)) {
-      await this.txBidHelper.cancelBid(bidState, tx);
-    }
+    if (bidState) {
+      if (this.txBidHelper.isNewBid(tx, bidState)) {
+        await this.txBidHelper.cancelBid(bidState, tx);
+      }
 
-    await this.createAction(actionParams);
-    txResult.processed = true;
+      await this.createAction(actionParams);
+      txResult.processed = true;
+    } else {
+      txResult.missing = true;
+    }
 
     return txResult;
   }

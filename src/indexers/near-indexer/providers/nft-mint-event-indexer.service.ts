@@ -9,6 +9,7 @@ import { CreateMintActionTO } from 'src/indexers/common/interfaces/create-action
 import { IndexerService } from 'src/indexers/common/interfaces/indexer-service.interface';
 import { TxProcessResult } from 'src/indexers/common/interfaces/tx-process-result.interface';
 import { TxActionService } from 'src/indexers/common/providers/tx-action.service';
+import { NearTxHelperService } from './near-tx-helper.service';
 
 @Injectable()
 export class NftMintEventIndexerService implements IndexerService {
@@ -16,6 +17,7 @@ export class NftMintEventIndexerService implements IndexerService {
 
   constructor(
     private txHelper: TxHelperService,
+    private nearTxHelper: NearTxHelperService,
     private txActionService: TxActionService,
   ) {}
 
@@ -25,13 +27,13 @@ export class NftMintEventIndexerService implements IndexerService {
 
     const receipt = tx.receipts[0];  
 
-    const token_ids: [string] = this.txHelper.extractArgumentData(tx.args, scf, "token_ids");
+    const token_ids: [string] = this.nearTxHelper.extractArgumentData(tx.args, scf, "token_ids");
     if (!token_ids || !token_ids.length) {
       this.logger.warn(`Unable to find token_ids tx hash: ${tx.hash}`);
       return txResult;
     }
     const token_id = token_ids[0];
-    const buyer = this.txHelper.extractArgumentData(tx.args, scf, "owner");
+    const buyer = this.nearTxHelper.extractArgumentData(tx.args, scf, "owner");
     const contract_key = receipt.receiver_id;
 
     // Check if has custodial smart contract

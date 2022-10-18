@@ -11,6 +11,7 @@ import { ActionName, SmartContractType } from "src/indexers/common/helpers/index
 import { SmartContractFunction } from "src/database/universal/entities/SmartContractFunction";
 import { TxStakingHelper } from "src/indexers/common/helpers/tx-staking-helper";
 import { TxActionService } from "src/indexers/common/providers/tx-action.service";
+import { NearTxHelperService } from "./near-tx-helper.service";
 
 @Injectable()
 export class NftTransferEventIndexerService implements IndexerService {
@@ -18,6 +19,7 @@ export class NftTransferEventIndexerService implements IndexerService {
 
   constructor(
     private txHelper: TxHelperService,
+    private nearTxHelper: NearTxHelperService,
     private txActionService: TxActionService,
     private txStakingHelper: TxStakingHelper
   ) {}
@@ -27,15 +29,15 @@ export class NftTransferEventIndexerService implements IndexerService {
 
     const receipt = tx.receipts[0];
 
-    const token_ids: [string] = this.txHelper.extractArgumentData(tx.args, scf, 'token_ids');
+    const token_ids: [string] = this.nearTxHelper.extractArgumentData(tx.args, scf, 'token_ids');
     if (!token_ids || !token_ids.length) {
       this.logger.warn(`Unable to find token_ids tx hash: ${tx.hash}`);
       return txResult;
     }
     const token_id = token_ids[0];
 
-    const seller = this.txHelper.extractArgumentData(tx.args, scf, 'seller');
-    const buyer = this.txHelper.extractArgumentData(tx.args, scf, 'buyer');
+    const seller = this.nearTxHelper.extractArgumentData(tx.args, scf, 'seller');
+    const buyer = this.nearTxHelper.extractArgumentData(tx.args, scf, 'buyer');
     const contract_key = receipt.receiver_id;
 
     const nftMeta = await this.txHelper.createOrFetchMetaByContractKey(contract_key, token_id, sc.chain_id);

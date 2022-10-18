@@ -27,9 +27,9 @@ export class RelistIndexerService implements IndexerService {
     let txResult: TxProcessResult = { processed: false, missing: false };
     const msc = Object.assign({}, sc);
 
-    const token_id = this.txHelper.extractArgumentData(tx.args, scf, "token_id");
-    const price = this.txHelper.extractArgumentData(tx.args, scf, "price");
-    const contract_key = this.txHelper.extractArgumentData(tx.args, scf, "contract_key");
+    const token_id = this.nearTxHelper.extractArgumentData(tx.args, scf, "token_id");
+    const price = this.nearTxHelper.extractArgumentData(tx.args, scf, "price");
+    const contract_key = this.nearTxHelper.extractArgumentData(tx.args, scf, "contract_key");
 
     const nftMeta = await this.txHelper.createOrFetchMetaByContractKey(contract_key, token_id, sc.chain_id);
 

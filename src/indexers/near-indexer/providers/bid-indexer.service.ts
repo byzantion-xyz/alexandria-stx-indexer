@@ -10,6 +10,7 @@ import { CreateBidActionTO } from 'src/indexers/common/interfaces/create-action-
 import { IndexerService } from 'src/indexers/common/interfaces/indexer-service.interface';
 import { TxProcessResult } from 'src/indexers/common/interfaces/tx-process-result.interface';
 import { TxActionService } from 'src/indexers/common/providers/tx-action.service';
+import { NearTxHelperService } from './near-tx-helper.service';
 
 @Injectable()
 export class BidIndexerService implements IndexerService {
@@ -18,15 +19,16 @@ export class BidIndexerService implements IndexerService {
   constructor (
     private txActionService: TxActionService,
     private txHelper: TxHelperService,
+    private nearTxHelper: NearTxHelperService,
     private txBidHelper: TxBidHelperService
   ) {}
   
   async process(tx: CommonTx, msc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {
     let txResult: TxProcessResult = { processed: false, missing: false };
 
-    const contract_key = this.txHelper.extractArgumentData(tx.args, scf, 'contract_key');
-    const token_id = this.txHelper.findAndExtractArgumentData(tx.args, scf, ['token_id', 'token_series_id']);
-    const price = this.txHelper.extractArgumentData(tx.args, scf, 'price');
+    const contract_key = this.nearTxHelper.extractArgumentData(tx.args, scf, 'contract_key');
+    const token_id = this.nearTxHelper.findAndExtractArgumentData(tx.args, scf, ['token_id', 'token_series_id']);
+    const price = this.nearTxHelper.extractArgumentData(tx.args, scf, 'price');
     const buyer = tx.signer;
 
     const nftMeta = await this.txHelper.createOrFetchMetaByContractKey(contract_key, token_id, msc.chain_id);

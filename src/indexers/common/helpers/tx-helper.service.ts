@@ -2,25 +2,19 @@ import { Injectable, Logger } from "@nestjs/common";
 import * as moment from "moment";
 import { CreateActionCommonArgs } from "../interfaces/create-action-common.dto";
 import { CommonTx } from "src/indexers/common/interfaces/common-tx.interface";
-
 import { InjectRepository } from "@nestjs/typeorm";
 import { NftState } from "src/database/universal/entities/NftState";
 import { NftMeta } from "src/database/universal/entities/NftMeta";
 import { SmartContract } from "src/database/universal/entities/SmartContract";
-import { SmartContractFunction } from "src/database/universal/entities/SmartContractFunction";
 import { Collection } from "src/database/universal/entities/Collection";
 import { Repository } from "typeorm";
 import { ActionName, SmartContractType } from "./indexer-enums";
 import { Commission } from "src/database/universal/entities/Commission";
 import { NftStateList } from "src/database/universal/entities/NftStateList";
-import { ConfigService } from "@nestjs/config";
-import { Chain } from "src/database/universal/entities/Chain";
 
 export interface NftStateArguments {
   collection_map_id?: string
 }
-
-// TODO: Refactor nft_state changes into unified service
 
 @Injectable()
 export class TxHelperService {
@@ -41,43 +35,6 @@ export class TxHelperService {
 
   nanoToMiliSeconds(nanoseconds: bigint) {
     return Number(BigInt(nanoseconds) / BigInt(1e6));
-  }
-
-  findAndExtractArgumentData(args: JSON, scf: SmartContractFunction, fields: string[]) {
-    for (let field of fields) {
-      let value = this.extractArgumentData(args, scf, field);
-      if (value) return value;
-    }
-  }
-
-  private findArgumentData(args: JSON, scf: SmartContractFunction, field: string) {
-    const index = scf.args[field];
-    if (typeof index === 'undefined') {
-      return undefined;
-    } if (index.toString().includes(".")) {
-      const indexArr = index.toString().split(".");
-      // TODO: Use recursive function
-      if (indexArr.length === 2) {
-        return args[indexArr[0]][indexArr[1]];
-      } else if (indexArr.length === 3) {
-        return args[indexArr[0]][indexArr[1]][indexArr[2]];        
-      }
-    } else {
-      return args[scf.args[field]];
-    }
-  }
-
-  extractArgumentData(args: JSON, scf: SmartContractFunction, field: string) {
-    // Any data stored directly in smart_contract_function must override arguments
-    if (scf.data && scf.data[field]) {
-      return scf.data[field];
-    } 
-    
-    if (Array.isArray(args)) {
-      return this.findArgumentData(args[0], scf, field);
-    } else {
-      return this.findArgumentData(args, scf, field);
-    }
   }
 
   async findMetaByContractKey(contract_key: string, token_id: string): Promise<NftMeta> {

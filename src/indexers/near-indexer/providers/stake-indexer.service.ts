@@ -39,7 +39,7 @@ export class StakeIndexerService implements IndexerService {
       return txResult;
     }
 
-    const token_id = this.txHelper.extractArgumentData(tx.args, scf, "token_id");
+    const token_id = this.nearTxHelper.extractArgumentData(tx.args, scf, "token_id");
     const contract_key = sc.contract_key;
     const stake_account = receipt.receiver_id;
    

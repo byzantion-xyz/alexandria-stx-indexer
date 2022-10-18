@@ -1,7 +1,6 @@
 import { Logger, Injectable } from "@nestjs/common";
 import { TxProcessResult } from "src/indexers/common/interfaces/tx-process-result.interface";
 import { TxHelperService } from "../../common/helpers/tx-helper.service";
-import { MissingCollectionService } from "src/scrapers/near-scraper/providers/missing-collection.service";
 import { CreateListActionTO } from "../../common/interfaces/create-action-common.dto";
 
 import { CommonTx } from "src/indexers/common/interfaces/common-tx.interface";
@@ -12,8 +11,7 @@ import { Action } from "src/database/universal/entities/Action";
 import { SmartContract } from "src/database/universal/entities/SmartContract";
 import { SmartContractFunction } from "src/database/universal/entities/SmartContractFunction";
 import { Repository } from "typeorm";
-import { ActionName, SmartContractType } from "../../common/helpers/indexer-enums";
-import { NftState } from "src/database/universal/entities/NftState";
+import { ActionName } from "../../common/helpers/indexer-enums";
 import { NearTxHelperService } from "src/indexers/near-indexer/providers/near-tx-helper.service";
 import { TxActionService } from "src/indexers/common/providers/tx-action.service";
 
@@ -34,7 +32,7 @@ export class ListIndexerService implements IndexerService {
 
   async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {
     let txResult: TxProcessResult = { processed: false, missing: false };
-    const token_id = this.txHelper.extractArgumentData(tx.args, scf, "token_id");
+    const token_id = this.nearTxHelper.extractArgumentData(tx.args, scf, "token_id");
     const { contract_key } = sc;
 
     const receipt = this.nearTxHelper.findReceiptWithFunctionCall(tx.receipts, NFT_LIST_EVENT, { token_id });
@@ -44,7 +42,7 @@ export class ListIndexerService implements IndexerService {
     }
 
     const approve = this.nearTxHelper.findEventData(tx.receipts, NFT_LIST_EVENT);
-    const price = this.txHelper.findAndExtractArgumentData(approve.args, scf, ["price", "token_price"]);
+    const price = this.nearTxHelper.findAndExtractArgumentData(approve.args, scf, ["price", "token_price"]);
     if (isNaN(price)) {
       this.logger.warn(`Unable to find list price for tx hash ${tx.hash}`);
       return txResult;

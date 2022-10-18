@@ -9,6 +9,7 @@ import { CreateBurnActionTO } from "src/indexers/common/interfaces/create-action
 import { IndexerService } from "src/indexers/common/interfaces/indexer-service.interface";
 import { TxProcessResult } from "src/indexers/common/interfaces/tx-process-result.interface";
 import { TxActionService } from "src/indexers/common/providers/tx-action.service";
+import { NearTxHelperService } from "./near-tx-helper.service";
 
 @Injectable()
 export class NftBurnEventIndexerService implements IndexerService {
@@ -16,6 +17,7 @@ export class NftBurnEventIndexerService implements IndexerService {
 
   constructor(
     private txHelper: TxHelperService,
+    private nearTxHelper: NearTxHelperService,
     private txActionService: TxActionService
   ) {}
 
@@ -23,8 +25,8 @@ export class NftBurnEventIndexerService implements IndexerService {
     let txResult: TxProcessResult = { processed: false, missing: false };
     let msc: SmartContract;
 
-    const token_ids = this.txHelper.extractArgumentData(tx.args, scf, 'token_ids');
-    const seller = this.txHelper.extractArgumentData(tx.args, scf, 'owner');
+    const token_ids = this.nearTxHelper.extractArgumentData(tx.args, scf, 'token_ids');
+    const seller = this.nearTxHelper.extractArgumentData(tx.args, scf, 'owner');
     if (!token_ids || !token_ids.length) {
       this.logger.warn(`Unable to find token_ids tx hash: ${tx.hash}`);
       return txResult;

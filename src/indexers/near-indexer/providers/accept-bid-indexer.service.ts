@@ -42,12 +42,12 @@ export class AcceptBidIndexerService implements IndexerService {
       return txResult;
     }
 
-    const token_id = this.txHelper.extractArgumentData(payout.args, scf, 'token_id'); 
-    let price = this.txHelper.extractArgumentData(tx.args, scf, "price");
-    if (!price) {
-      price = this.txHelper.extractArgumentData(offer.args, scf, "price");
+    const token_id = this.nearTxHelper.extractArgumentData(payout.args, scf, 'token_id'); 
+    let price = this.nearTxHelper.extractArgumentData(tx.args, scf, "price");
+    if (!price ) {
+      price = this.nearTxHelper.extractArgumentData(offer.args, scf, "price");
     }
-    const buyer = this.txHelper.extractArgumentData(tx.args, scf, 'buyer');
+    const buyer = this.nearTxHelper.extractArgumentData(tx.args, scf, 'buyer');
     const contract_key = sc.contract_key;
 
     if (isNaN(price)) {

@@ -1,9 +1,14 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { NftStateList } from 'src/database/universal/entities/NftStateList';
-import { CommonTx } from 'src/indexers/common/interfaces/common-tx.interface';
-import {IndexerTxEvent} from "../../../database/near-stream/entities/IndexerTxEvent";
-import {FunctionCall, NftOrFtEvent, Receipt} from "../interfaces/near-indexer-tx-event.dto";
-import * as _ from 'lodash';
+import { Injectable, Logger } from "@nestjs/common";
+import { NftStateList } from "src/database/universal/entities/NftStateList";
+import { CommonTx } from "src/indexers/common/interfaces/common-tx.interface";
+import { IndexerTxEvent } from "../../../database/near-stream/entities/IndexerTxEvent";
+import {
+  FunctionCall,
+  NftOrFtEvent,
+  Receipt,
+} from "../interfaces/near-indexer-tx-event.dto";
+import * as _ from "lodash";
+import { SmartContractFunction } from "src/database/universal/entities/SmartContractFunction";
 
 export const NEAR_EVENT_PREFIX = "EVENT_JSON:";
 
@@ -21,12 +26,12 @@ export class NearTxHelperService {
     );
   }
 
-  getReceiptTree(tx: IndexerTxEvent) : Receipt[] {
+  getReceiptTree(tx: IndexerTxEvent): Receipt[] {
     const receipts = tx.receipts.map((r) => {
       const rcpt = Object.assign({} as Receipt, r);
 
       rcpt.function_calls
-          .forEach((fc) => fc.args = this.decodeBase64Args(fc.args));
+        .forEach((fc) => fc.args = this.decodeBase64Args(fc.args));
 
       return rcpt;
     });
@@ -45,21 +50,21 @@ export class NearTxHelperService {
     return groups['null'];
   }
 
-  decodeBase64Args(args: string) : any {
-    const decoded =   Buffer.from(args, 'base64').toString();
+  decodeBase64Args(args: string): any {
+    const decoded = Buffer.from(args, 'base64').toString();
 
     try {
-        const json = JSON.parse(decoded);
+      const json = JSON.parse(decoded);
 
-        if (json.msg) {
-            try {
-                json.msg = JSON.parse(json.msg);
-            } catch (e) {}
-        }
+      if (json.msg) {
+        try {
+          json.msg = JSON.parse(json.msg);
+        } catch (e) { }
+      }
 
-        return json
+      return json
     } catch (e) {
-        return decoded;
+      return decoded;
     }
   }
 
@@ -75,11 +80,11 @@ export class NearTxHelperService {
   findReceiptWithFunctionCall(r: Receipt[], method_name: string, matcher?: {}): Receipt {
     return this.flatMapReceipts(r)
       .find((r: Receipt) => {
-        return r && r.status === 'succeeded' && 
+        return r && r.status === 'succeeded' &&
           r.function_calls.find((fc) => {
             return fc.method_name === method_name &&
               (
-                !matcher || 
+                !matcher ||
                 _.every(matcher, (val, key) => _.isEqual(val, fc.args[key]))
               )
           });
@@ -90,34 +95,72 @@ export class NearTxHelperService {
     return r.function_calls.some(fc => fc.method_name === event_name);
   }
 
-  getEvents(rcpt: Receipt, acc: [NftOrFtEvent, Receipt][] = []) : [NftOrFtEvent, Receipt][] {
-      rcpt.logs.forEach((l) => {
-        if (l.startsWith(NEAR_EVENT_PREFIX)) {
-            try {
-              const event: NftOrFtEvent = JSON.parse(l.replace(NEAR_EVENT_PREFIX, ''))
-              acc.push([event, rcpt]);
-             } catch (err) {
-              this.logger.warn(`getEvents() failed to parse JSON for receipt: ${rcpt.id}`);
-              this.logger.warn(err);
-            }
+  getEvents(rcpt: Receipt, acc: [NftOrFtEvent, Receipt][] = []): [NftOrFtEvent, Receipt][] {
+    rcpt.logs.forEach((l) => {
+      if (l.startsWith(NEAR_EVENT_PREFIX)) {
+        try {
+          const event: NftOrFtEvent = JSON.parse(l.replace(NEAR_EVENT_PREFIX, ''))
+          acc.push([event, rcpt]);
+        } catch (err) {
+          this.logger.warn(`getEvents() failed to parse JSON for receipt: ${rcpt.id}`);
+          this.logger.warn(err);
         }
-      });
+      }
+    });
 
-      rcpt.receipts?.forEach((r) => {
-        this.getEvents(r, acc);
-      });
+    rcpt.receipts?.forEach((r) => {
+      this.getEvents(r, acc);
+    });
 
-      return acc;
+    return acc;
   }
 
-    getLogs(rcpt: Receipt, acc: string[] = []) : string[] {
-        rcpt.logs.forEach((l) => acc.push(l));
+  getLogs(rcpt: Receipt, acc: string[] = []): string[] {
+    rcpt.logs.forEach((l) => acc.push(l));
 
-        rcpt.receipts?.forEach((r) => {
-            this.getLogs(r, acc);
-        });
+    rcpt.receipts?.forEach((r) => {
+      this.getLogs(r, acc);
+    });
 
-        return acc;
+    return acc;
+  }
+
+  findAndExtractArgumentData(args: JSON, scf: SmartContractFunction, fields: string[]) {
+    for (let field of fields) {
+      let value = this.extractArgumentData(args, scf, field);
+      if (value) return value;
     }
+  }
+
+  private findArgumentData(args: JSON, scf: SmartContractFunction, field: string) {
+    const index = scf.args[field];
+    if (typeof index === "undefined") {
+      return undefined;
+    }
+    if (index.toString().includes(".")) {
+      const indexArr = index.toString().split(".");
+      // TODO: Use recursive function
+      if (indexArr.length === 2) {
+        return args[indexArr[0]][indexArr[1]];
+      } else if (indexArr.length === 3) {
+        return args[indexArr[0]][indexArr[1]][indexArr[2]];
+      }
+    } else {
+      return args[scf.args[field]];
+    }
+  }
+
+  extractArgumentData(args: JSON, scf: SmartContractFunction, field: string) {
+    // Any data stored directly in smart_contract_function must override arguments
+    if (scf.data && scf.data[field]) {
+      return scf.data[field];
+    }
+
+    if (Array.isArray(args)) {
+      return this.findArgumentData(args[0], scf, field);
+    } else {
+      return this.findArgumentData(args, scf, field);
+    }
+  }
 
 }

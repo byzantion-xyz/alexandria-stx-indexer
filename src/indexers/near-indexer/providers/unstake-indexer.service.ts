@@ -35,8 +35,8 @@ export class UnstakeIndexerService implements IndexerService {
       return txResult;
     }
 
-    const token_id = this.txHelper.extractArgumentData(tx.args, scf, "token_id");
-    const contract_key = this.txHelper.extractArgumentData(tx.args, scf, "contract_key");
+    const token_id = this.nearTxHelper.extractArgumentData(tx.args, scf, "token_id");
+    const contract_key = this.nearTxHelper.extractArgumentData(tx.args, scf, "contract_key");
 
     const nftMeta = await this.txHelper.createOrFetchMetaByContractKey(contract_key, token_id, sc.chain_id);
 

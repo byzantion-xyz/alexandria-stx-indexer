@@ -62,11 +62,10 @@ export class TxBidHelperService {
       }
       const saved = await this.bidStateRepo.save(bidState);
 
-      this.logger.log(`New bid_state bid_type:${params.bid_type} id: ${saved.id}`);
-
       return saved;
     } catch (err) { 
-      this.logger.warn(err); 
+      this.logger.warn(`createOrReplaceBid() Failed saving bid_state with id: ${bidState.id}`);
+      this.logger.warn(err);
       throw err;
     }
   }
@@ -142,7 +141,7 @@ export class TxBidHelperService {
       }
       const saved = await this.bidStateRepo.save(bidState);
 
-      this.logger.log(`New bid_state bid_type: ${bidState.bid_type} id: ${saved.id} `);
+      this.logger.debug(`New bid_state bid_type: ${bidState.bid_type} id: ${saved.id} `);
 
       return saved;
     } catch (err) {}
@@ -189,9 +188,18 @@ export class TxBidHelperService {
         match_tx_id: tx.hash
       });
 
-      this.logger.log(`Accept solo bid nonce: ${bidState.nonce || 'unknown' }`);
+      this.logger.debug(
+        `Accept solo bid id: ${bidState.id} ` +
+        ` ${ bidState.nonce ? 'nonce: ' + bidState.nonce: ''}`
+      );
+
     } catch (err) {
-      this.logger.warn('Error saving solo bid acceptance ', bidState.nonce, err);
+      this.logger.warn(
+        `Error saving bid acceptance id: ${bidState.id} ` +
+        ` ${ bidState.nonce ? 'nonce: ' + bidState.nonce: ''}`
+      );
+
+      throw err;
     }
   }
 
@@ -205,9 +213,16 @@ export class TxBidHelperService {
       bidState.nft_metas = [bidStateNftMeta];
 
       await this.bidStateRepo.save(bidState);
-      this.logger.log(`Accept bid nonce: ${bidState.nonce || 'unknown' }`);
+      this.logger.debug(
+        `Accept solo bid id: ${bidState.id} ` +
+        ` ${ bidState.nonce ? 'nonce: ' + bidState.nonce: ''}`
+      );
     } catch (err) { 
-      this.logger.warn(`Error saving bid acceptance nonce: ${bidState.nonce} `, err); 
+      this.logger.warn(
+        `Error saving bid acceptance id: ${bidState.id} ` +
+        ` ${ bidState.nonce ? 'nonce: ' + bidState.nonce: ''}`
+      );
+      throw err;
     }
   }
 
@@ -218,13 +233,16 @@ export class TxBidHelperService {
         cancel_tx_id: tx.hash
       });
 
-      if (bidState.nonce) {
-        this.logger.debug(`Cancelled bid nonce: ${bidState.nonce || 'Unknown'} `);
-      } else {
-        this.logger.debug(`Cancelled bid id: ${bidState.id} `);
-       }
+      this.logger.debug(
+        `Cancelled bid id: ${bidState.id} ` +
+        ` ${ bidState.nonce ? 'nonce: ' + bidState.nonce: ''}`
+      );
+
     } catch (err) {
-      this.logger.warn('Error saving cancellation with nonce: ', bidState.nonce || 'Unknown', err);
+      this.logger.warn(
+        `Error saving bid cancellation id: ${bidState.id} ` +
+        ` ${ bidState.nonce ? 'nonce: ' + bidState.nonce: ''}`
+      );
     }
   }
 

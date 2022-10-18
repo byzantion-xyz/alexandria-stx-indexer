@@ -48,6 +48,7 @@ export class UnlistBidIndexerService implements IndexerService {
       await this.createAction(actionParams);
       txResult.processed = true;
     } else {
+      this.logger.warn(`Unable to find active bid for ${contract_key} ${token_id} in ${msc.contract_key}`);
       txResult.missing = true;
     }
 

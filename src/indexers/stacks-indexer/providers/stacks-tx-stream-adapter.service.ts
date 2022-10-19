@@ -3,17 +3,14 @@ import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Client, Pool, PoolClient } from 'pg';
 import * as Cursor from 'pg-cursor';
-import * as moment from "moment";
 
 import { Transaction as TransactionEntity } from 'src/database/stacks-stream/entities/Transaction';
-import { IndexerEventType } from 'src/indexers/common/helpers/indexer-enums';
 import { CommonTx } from 'src/indexers/common/interfaces/common-tx.interface';
 import { TxProcessResult } from 'src/indexers/common/interfaces/tx-process-result.interface';
-import { CommonTxResult, StacksTxBatchResult, TxCursorBatch, TxStreamAdapter } from 'src/indexers/common/interfaces/tx-stream-adapter.interface';
-import { In, Not, Repository, MoreThan } from 'typeorm';
+import { StacksTxBatchResult, TxCursorBatch, TxStreamAdapter } from 'src/indexers/common/interfaces/tx-stream-adapter.interface';
+import { In, Not, Repository } from 'typeorm';
 import { StacksTransaction } from '../dto/stacks-transaction.dto';
 import { StacksTxHelperService } from './stacks-tx-helper.service';
-import { TransactionEvent } from '@stacks/stacks-blockchain-api-types';
 import { SmartContract } from 'src/database/universal/entities/SmartContract';
 import { IndexerOptions } from 'src/indexers/common/interfaces/indexer-options';
 
@@ -49,11 +46,10 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
   }
 
   async fetchTxs(options: IndexerOptions): Promise<TxCursorBatch> {
-    const accounts = await this.findSmartContracts(options.contract_key);
-    let accounts_in = this.buildReceiverIdInQuery(accounts);
+    const contracts = await this.findSmartContracts(options.contract_key);
 
     const sql = `SELECT * from transaction t
-      WHERE t.contract_id IN (${accounts_in})
+      WHERE t.contract_id IN (${contracts.map((c) => `'${c.contract_key}'`).join(',')})
       ${ options.start_block_height ? 'AND t.block_height >=' + options.start_block_height : '' }
       ${ options.end_block_height ? 'AND t.block_height <='+ options.end_block_height  : '' }
       AND tx->>'tx_type' = 'contract_call'
@@ -170,17 +166,6 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
     return result;
   }
 
-  private buildReceiverIdInQuery(scs: SmartContract[]): string {
-    let accounts_in = '';
-    const accounts = scs.map((sc) => sc.contract_key);
-    for (let i in accounts) {
-      accounts_in += `'${accounts[i]}',`;
-    }
-    accounts_in = accounts_in.slice(0, -1);
-
-    return accounts_in;
-  }
-
   private async findSmartContracts(contract_key?: string): Promise<SmartContract[]> {
     // Bns marketplaces excluded until micro indexers are fully implemented.
     let accounts = await this.smartContractRepository.find({
@@ -195,7 +180,8 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
             'SP2KAF9RF86PVX3NEE27DFV1CQX0T4WGR41X3S45C.bns-marketplace-v3'
           ])) }
         )
-      }
+      },
+      select: { contract_key: true }
     });
     if (!accounts || !accounts.length) throw new Error('Invalid contract_key');
 

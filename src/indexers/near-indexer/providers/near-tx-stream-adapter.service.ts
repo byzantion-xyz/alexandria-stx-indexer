@@ -265,7 +265,8 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
         if (events.some(([e, _]) => e.event === 'nft_transfer')) {
           return 'buy';
         } else {
-          return 'def';
+          // https://nearblocks.io/txns/FHK3AAsq1FAgFuUW7tJZdfQMSzLHVetDZssY6PUu1M2G#execution 
+          return 'fewandfar-bid';
         }
       }
       case 'add_offer': {

@@ -315,4 +315,17 @@ export class NearOwnershipService {
     this.logger.log({ owner: wallet, differences });
   }
 
+  async getActiveWallets(chainSymbol: string, total = 1000): Promise<string[]> {
+    const rows: Action[] = await this.actionRepo.query(`
+      SELECT seller from action 
+      WHERE action in ('list', 'unlist', 'accept-bid')
+      AND block_time > current_date - (interval '3 months')
+      AND smart_contract_id in 
+        (select id from smart_contract sc where sc.chain_id = (select id from chain where symbol = '${chainSymbol}'))
+      GROUP BY seller HAVING count(*) > 5 order by count(*) desc limit ${total}`);
+
+    const wallets = rows.map(r => r.seller);
+    return wallets;
+  }
+
 }

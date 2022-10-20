@@ -332,7 +332,7 @@ export class TxHelperService {
 
   setBasicActionParams(action: ActionName, tx: CommonTx, msc?: SmartContract) {
     const tx_index = tx.sub_block_sequence
-      ? BigInt(tx.sub_block_sequence.toString() + this.commonUtil.padWithZeros(tx.index, 4)) : tx.index;
+      ? BigInt(tx.sub_block_sequence.toString() + this.commonUtil.padWithZeros(tx.index, 5)) : tx.index;
 
     return {
       block_height: tx.block_height,

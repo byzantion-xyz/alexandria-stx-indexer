@@ -119,7 +119,7 @@ export class IndexerOrchestratorService {
       let scf = Array.isArray(this.genericScf) &&
         this.genericScf.find((f) => f.function_name === method_name);
 
-      if (!sc && scf && this.chainSymbol === 'Near') {
+      if (!sc && ((this.chainSymbol === 'Near' && scf) || this.chainSymbol === 'Stacks')) {
         sc = await this.txHelper.createSmartContractSkeleton(transaction.receiver, this.chainId);
         sc.smart_contract_functions = [];
         if (Array.isArray(this.scs)) {

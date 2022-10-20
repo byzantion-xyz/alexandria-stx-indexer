@@ -11,6 +11,7 @@ import { Repository } from "typeorm";
 import { ActionName, SmartContractType } from "./indexer-enums";
 import { Commission } from "src/database/universal/entities/Commission";
 import { NftStateList } from "src/database/universal/entities/NftStateList";
+import { CommonUtilService } from "src/common/helpers/common-util/common-util.service";
 
 export interface NftStateArguments {
   collection_map_id?: string
@@ -30,7 +31,8 @@ export class TxHelperService {
     @InjectRepository(Commission)
     private commissionRepository: Repository<Commission>,
     @InjectRepository(NftStateList)
-    private nftStateListRepository: Repository<NftStateList>
+    private nftStateListRepository: Repository<NftStateList>,
+    private commonUtil: CommonUtilService 
   ) {}
 
   nanoToMiliSeconds(nanoseconds: bigint) {
@@ -329,10 +331,13 @@ export class TxHelperService {
   }
 
   setBasicActionParams(action: ActionName, tx: CommonTx, msc?: SmartContract) {
+    const tx_index = tx.sub_block_sequence
+      ? BigInt(tx.sub_block_sequence.toString() + this.commonUtil.padWithZeros(tx.index, 4)) : tx.index;
+
     return {
       block_height: tx.block_height,
       action: action,
-      tx_index: tx.index,
+      tx_index: tx_index,
       nonce: tx.nonce,
       block_time: moment(new Date(tx.block_timestamp)).toDate(),
       tx_id: tx.hash,

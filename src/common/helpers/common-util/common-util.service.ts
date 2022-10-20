@@ -31,4 +31,8 @@ export class CommonUtilService {
       if (found) return found;
     }
   }
+
+  padWithZeros(num: BigInt, length: number) {
+    return String(num).padStart(length, '0');
+  }
 }

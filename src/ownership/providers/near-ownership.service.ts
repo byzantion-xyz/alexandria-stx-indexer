@@ -34,8 +34,11 @@ export class NearOwnershipService {
     private contractConnectionService: ContractConnectionService
   ) {}
 
-  async process (wallet?: string): Promise<WalletNft[]> {
-    const wallets = wallet ? [wallet] : await this.fetchSuperUsersWallets();
+  async process (wallets?: string[]): Promise<WalletNft[]> {
+    if (!wallets || !wallets.length) {
+      wallets = await this.fetchSuperUsersWallets();
+    }
+
     const differences: WalletNft[] = [];
     this.nearConnection = await this.contractConnectionService.connectNear();
 

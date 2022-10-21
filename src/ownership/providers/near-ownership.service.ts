@@ -321,8 +321,9 @@ export class NearOwnershipService {
   async getActiveWallets(chainSymbol: string, total = 5000): Promise<string[]> {
     const rows: Action[] = await this.actionRepo.query(`
       SELECT seller from action 
-      WHERE action in ('list', 'unlist', 'accept-bid', 'bid')
+      WHERE action in ('list', 'unlist', 'accept-bid')
       AND block_time > current_date - (interval '3 months')
+      and seller is not null
       AND smart_contract_id in 
         (select id from smart_contract sc where sc.chain_id = (select id from chain where symbol = '${chainSymbol}'))
       GROUP BY seller HAVING count(*) > 0 order by count(*) desc limit ${total}`);

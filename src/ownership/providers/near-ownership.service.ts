@@ -325,7 +325,7 @@ export class NearOwnershipService {
     const superUserWallets = await this.fetchSuperUsersWallets();
     const rows: [any] = await this.actionRepo.query(`
     select wallet from
-    (select buyer wallet, actions from
+    (select buyer wallet from
       (SELECT buyer, count(*) actions from action 
       WHERE action in ( 'bid', 'buy')
       AND block_time > current_date - (interval '3 months')
@@ -334,7 +334,7 @@ export class NearOwnershipService {
         (select id from smart_contract sc where sc.chain_id = (select id from chain where symbol = '${chainSymbol}'))
       GROUP BY buyer HAVING count(*) > 0 ORDER by count(*) desc) subquery1
     UNION
-    select seller wallet, actions from
+    select seller wallet from
       (SELECT seller, count(*) actions from action 
       WHERE action in ('list', 'unlist', 'accept-bid')
       AND block_time > current_date - (interval '3 months')
@@ -342,7 +342,7 @@ export class NearOwnershipService {
       AND smart_contract_id in 
         (select id from smart_contract sc where sc.chain_id = (select id from chain where symbol = '${chainSymbol}'))
       GROUP BY seller HAVING count(*) > 0 ORDER by count(*) desc) subquery2
-     ORDER by actions desc) subquery3
+    ) subquery3
     WHERE wallet not in (${superUserWallets.map((c) => `'${c}'`).join(',')});`);
 
     const wallets = rows.map(r => r.wallet);

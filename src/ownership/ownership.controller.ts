@@ -29,7 +29,6 @@ export class OwnershipController {
   @Get('differences/near-active-wallets')
   async getNearActiveWalletsOwnership(): Promise<WalletNft[]> {
     const wallets: string[] = await this.nearOwnershipService.getActiveWallets('Near');
-    this.logger.log(wallets);
 
     const differences = await this.nearOwnershipService.process(wallets);
     return differences;

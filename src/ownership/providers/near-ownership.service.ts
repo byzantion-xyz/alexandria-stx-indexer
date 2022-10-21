@@ -12,7 +12,7 @@ import { Action } from 'src/database/universal/entities/Action';
 import { ActionName } from 'src/indexers/common/helpers/indexer-enums';
 
 const BATCH_LIMIT = 50;
-const ASYNC_WALLETS = 10;
+const ASYNC_WALLETS = 20;
 const ASYNC_SMART_CONTRACTS = 10;
 
 @Injectable()
@@ -322,16 +322,28 @@ export class NearOwnershipService {
   }
 
   async getActiveWallets(chainSymbol: string, total = 5000): Promise<string[]> {
-    const rows: Action[] = await this.actionRepo.query(`
-      SELECT seller from action 
+    const rows: [any] = await this.actionRepo.query(`
+    select wallet from
+    (select buyer wallet, actions from
+      (SELECT buyer, count(*) actions from action 
+      WHERE action in ( 'bid', 'buy')
+      AND block_time > current_date - (interval '3 months')
+      and buyer is not null
+      AND smart_contract_id in 
+        (select id from smart_contract sc where sc.chain_id = (select id from chain where symbol = '${chainSymbol}'))
+      GROUP BY buyer HAVING count(*) > 0 ORDER by count(*) desc) subquery1
+    UNION
+    select seller wallet, actions from
+      (SELECT seller, count(*) actions from action 
       WHERE action in ('list', 'unlist', 'accept-bid')
       AND block_time > current_date - (interval '3 months')
       and seller is not null
       AND smart_contract_id in 
         (select id from smart_contract sc where sc.chain_id = (select id from chain where symbol = '${chainSymbol}'))
-      GROUP BY seller HAVING count(*) > 0 order by count(*) desc limit ${total}`);
+      GROUP BY seller HAVING count(*) > 0 ORDER by count(*) desc) subquery2
+     ORDER by actions desc) subquery3`);
 
-    const wallets = rows.map(r => r.seller);
+    const wallets = rows.map(r => r.wallet);
     return wallets;
   }
 

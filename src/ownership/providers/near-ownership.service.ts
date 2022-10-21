@@ -222,30 +222,33 @@ export class NearOwnershipService {
     let actualOwner = nftMeta.nft_state?.owner;
 
     let actionId: string;
-    try {
-      const newAction = this.actionRepo.create({
-        block_height: this.recentTransfer.block_height,
-        block_time: this.recentTransfer.block_time,
-        tx_id: '0', // Non nullable
-        action: ActionName.reset_owner,
-        ...(actualOwner && { seller: actualOwner }),
-        buyer: owner,
-        nft_meta_id: nftMeta.id,
-        collection_id: nftMeta.collection_id,
-        smart_contract_id: nftMeta.smart_contract_id
-      });
 
-      const saved = await this.actionRepo.save(newAction);
-      actionId = saved.id;
+    if (actualOwner !== owner) {
+      try {
+        const newAction = this.actionRepo.create({
+          block_height: this.recentTransfer.block_height,
+          block_time: this.recentTransfer.block_time,
+          tx_id: '0', // Non nullable
+          action: ActionName.reset_owner,
+          ...(actualOwner && { seller: actualOwner }),
+          buyer: owner,
+          nft_meta_id: nftMeta.id,
+          collection_id: nftMeta.collection_id,
+          smart_contract_id: nftMeta.smart_contract_id
+        });
 
-      await this.nftStateRepo.upsert({ meta_id: nftMeta.id, owner: owner }, ["meta_id"]);
-      this.logger.log(`Fixed owner ${actualOwner || ''} --> ${owner} for ${contract_key} ${token_id}`);
-    } catch (err) {
-      if (actionId) {
-        // Delete action when upsert fails to maintain data consistency
-        await this.actionRepo.delete({ id: actionId });
+        const saved = await this.actionRepo.save(newAction);
+        actionId = saved.id;
+
+        await this.nftStateRepo.upsert({ meta_id: nftMeta.id, owner: owner }, ["meta_id"]);
+        this.logger.log(`Fixed owner ${actualOwner || ''} --> ${owner} for ${contract_key} ${token_id}`);
+      } catch (err) {
+        if (actionId) {
+          // Delete action when upsert fails to maintain data consistency
+          await this.actionRepo.delete({ id: actionId });
+        }
+        throw err;
       }
-      throw err;
     }
   }
 

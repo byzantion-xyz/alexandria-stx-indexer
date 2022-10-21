@@ -33,9 +33,10 @@ export class BuyWrapperIndexerService implements IndexerService {
     const token_id = this.stacksTxHelper.extractArgumentData(tx.args, scf, "token_id");
     const contract_key = this.stacksTxHelper.extractArgumentData(tx.args, scf, "contract_key");
     const market_contract_key = this.stacksTxHelper.extractArgumentData(tx.args, scf, 'market');
-    const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
+    
+    const nftMeta = await this.txHelper.createOrFetchMetaByContractKey(contract_key, token_id, sc.chain_id);
 
-    if (nftMeta && (nftMeta.smart_contract.contract_key_wrapper || market_contract_key)) {
+    if (nftMeta.smart_contract.contract_key_wrapper || market_contract_key) {
       let msc = nftMeta.smart_contract.contract_key_wrapper ? nftMeta.smart_contract : 
         await this.smartContractRepository.findOne({ where: { contract_key: market_contract_key }});
 
@@ -60,11 +61,8 @@ export class BuyWrapperIndexerService implements IndexerService {
         await this.createAction(buyActionParams);
       }
       txResult.processed = true;
-    } else if (nftMeta) {
-      this.logger.warn(`contract_key_wrapper not found for ${sc.contract_key}`);  
-      txResult.missing = true;
     } else {
-      this.logger.debug(`NftMeta not found ${contract_key} ${token_id}`);
+      this.logger.warn(`contract_key_wrapper not found for ${sc.contract_key}`);  
       txResult.missing = true;
     }
 

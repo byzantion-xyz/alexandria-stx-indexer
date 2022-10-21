@@ -34,8 +34,11 @@ export class NearOwnershipService {
     private contractConnectionService: ContractConnectionService
   ) {}
 
-  async process (wallet?: string): Promise<WalletNft[]> {
-    const wallets = wallet ? [wallet] : await this.fetchSuperUsersWallets();
+  async process (wallets?: string[]): Promise<WalletNft[]> {
+    if (!wallets || !wallets.length) {
+      wallets = await this.fetchSuperUsersWallets();
+    }
+
     const differences: WalletNft[] = [];
     this.nearConnection = await this.contractConnectionService.connectNear();
 
@@ -313,6 +316,19 @@ export class NearOwnershipService {
   reportResult(wallet: string, differences: WalletNft[]): void {
     this.logger.log(`${differences.length} NFT differences found for owner: ${wallet}`);
     this.logger.log({ owner: wallet, differences });
+  }
+
+  async getActiveWallets(chainSymbol: string, total = 1000): Promise<string[]> {
+    const rows: Action[] = await this.actionRepo.query(`
+      SELECT seller from action 
+      WHERE action in ('list', 'unlist', 'accept-bid')
+      AND block_time > current_date - (interval '3 months')
+      AND smart_contract_id in 
+        (select id from smart_contract sc where sc.chain_id = (select id from chain where symbol = '${chainSymbol}'))
+      GROUP BY seller HAVING count(*) > 5 order by count(*) desc limit ${total}`);
+
+    const wallets = rows.map(r => r.seller);
+    return wallets;
   }
 
 }

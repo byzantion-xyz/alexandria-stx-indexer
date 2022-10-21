@@ -322,6 +322,7 @@ export class NearOwnershipService {
   }
 
   async getActiveWallets(chainSymbol: string, total = 5000): Promise<string[]> {
+    const superUserWallets = await this.fetchSuperUsersWallets();
     const rows: [any] = await this.actionRepo.query(`
     select wallet from
     (select buyer wallet, actions from
@@ -341,7 +342,8 @@ export class NearOwnershipService {
       AND smart_contract_id in 
         (select id from smart_contract sc where sc.chain_id = (select id from chain where symbol = '${chainSymbol}'))
       GROUP BY seller HAVING count(*) > 0 ORDER by count(*) desc) subquery2
-     ORDER by actions desc) subquery3`);
+     ORDER by actions desc) subquery3
+    WHERE wallet not in (${superUserWallets.map((c) => `'${c}'`).join(',')});`);
 
     const wallets = rows.map(r => r.wallet);
     return wallets;

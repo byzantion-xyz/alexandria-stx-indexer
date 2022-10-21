@@ -49,6 +49,8 @@ export class UnstakeIndexerService implements IndexerService {
 
     if (this.txStakingHelper.isNewStakingBlock(tx, nftMeta.nft_state)) {
       await this.txHelper.unstakeMeta(nftMeta.id, tx);
+    } else {
+      this.logger.debug(`Too Late`);
     }
 
     await this.createAction(unstakeActionParams);

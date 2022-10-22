@@ -106,8 +106,7 @@ export class NearOwnershipService {
 
     return nftMetas.map(i => ({
       token_id: i.token_id,
-      contract_key: i.smart_contract.contract_key,
-      universal_owner: i.nft_state?.owner
+      contract_key: i.smart_contract.contract_key
     }));
   }
 
@@ -138,7 +137,7 @@ export class NearOwnershipService {
           from_index: skip.toString(), 
           limit: BATCH_LIMIT 
         });
-        results.push(...nfts.map(nft => ({ token_id: nft.token_id, contract_key: contractKey, smart_contract_owner: wallet }) ));
+        results.push(...nfts.map(nft => ({ token_id: nft.token_id, contract_key: contractKey }) ));
         skip += BATCH_LIMIT;
       } while (nfts.length === BATCH_LIMIT);
 
@@ -302,8 +301,7 @@ export class NearOwnershipService {
 
       return nftMetas.map(i => ({
         token_id: i.token_id,
-        contract_key: i.smart_contract.contract_key,
-        universal_owner: i.nft_state?.owner
+        contract_key: i.smart_contract.contract_key
       }));
     } else {
       return [];
@@ -311,9 +309,15 @@ export class NearOwnershipService {
   }
 
   getSimetricalDifference(walletNfts: WalletNft[], universalNfts: WalletNft[]): WalletNft[] {
-    return walletNfts.filter(a =>
+    const a =  walletNfts.filter(a =>
       !universalNfts.some(b=> a.contract_key == b.contract_key && a.token_id == b.token_id)
     );
+
+    const b =  universalNfts.filter(b =>
+      !walletNfts.some(a=> a.contract_key == b.contract_key && a.token_id == b.token_id)
+    );
+
+    return [...a, ...b];
   }
 
   reportResult(wallet: string, differences: WalletNft[]): void {

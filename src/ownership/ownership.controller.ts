@@ -15,7 +15,7 @@ export class OwnershipController {
     if (!params || !params.owner) {
       throw new HttpException(`Owner is required`, HttpStatus.BAD_REQUEST);
     }
-    const differences = await this.nearOwnershipService.process(params.owner);
+    const differences = await this.nearOwnershipService.process([params.owner]);
 
     return differences;
   }

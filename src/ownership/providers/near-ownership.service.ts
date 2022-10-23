@@ -115,7 +115,7 @@ export class NearOwnershipService {
       const contract = this.contractConnectionService.getContract(contractKey, this.nearConnection);
       const token = await contract.nft_token({ token_id: token_id }); 
 
-      return token.owner_id;
+      return token?.owner_id;
     } catch (err) {
       this.logger.warn(err);
     }

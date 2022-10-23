@@ -163,14 +163,14 @@ export class NearOwnershipService {
 
         if (promisesBatch.length % ASYNC_SMART_CONTRACTS === 0) {
           const nfts = await Promise.all(promisesBatch) ;
-          results.push(...nfts.flatMap(item => (item)));
+          results.push(...nfts.flatMap(item => item));
           promisesBatch = [];
         }
       }
 
       if (promisesBatch.length) {
         const nfts = await Promise.all(promisesBatch) ;
-        results.push(...nfts);
+        results.push(...nfts.flatMap(item => item));
       }
 
       return results;

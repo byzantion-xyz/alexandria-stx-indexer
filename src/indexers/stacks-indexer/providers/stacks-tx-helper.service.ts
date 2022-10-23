@@ -94,11 +94,11 @@ export class StacksTxHelperService {
       !state_list.list_block_height ||
       tx.block_height > state_list.list_block_height ||
       (tx.block_height === state_list.list_block_height &&
-        tx.sub_block_sequence &&
+        typeof tx.sub_block_sequence !== 'undefined' && 
         tx.sub_block_sequence > state_list.list_sub_block_seq) ||
       (tx.block_height === state_list.list_block_height &&
         tx.sub_block_sequence === state_list.list_sub_block_seq &&
-        tx.index &&
+        typeof tx.index !== 'undefined' &&
         tx.index > state_list.list_tx_index)
     );
   }

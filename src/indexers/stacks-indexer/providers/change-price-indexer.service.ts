@@ -4,6 +4,7 @@ import { Action } from 'src/database/universal/entities/Action';
 import { SmartContract } from 'src/database/universal/entities/SmartContract';
 import { SmartContractFunction } from 'src/database/universal/entities/SmartContractFunction';
 import { ActionName } from 'src/indexers/common/helpers/indexer-enums';
+import { SmartContractService } from 'src/indexers/common/helpers/smart-contract.service';
 import { NftStateArguments, TxHelperService } from 'src/indexers/common/helpers/tx-helper.service';
 import { CommonTx } from 'src/indexers/common/interfaces/common-tx.interface';
 import { CreateRelistActionTO } from 'src/indexers/common/interfaces/create-action-common.dto';
@@ -16,13 +17,13 @@ import { StacksTxHelperService } from './stacks-tx-helper.service';
 @Injectable()
 export class ChangePriceIndexerService implements IndexerService {
   private readonly logger = new Logger(ChangePriceIndexerService.name);
+  readonly marketScs?: SmartContract[];
 
   constructor(
     private txHelper: TxHelperService,
     private stacksTxHelper: StacksTxHelperService,
     private txActionService: TxActionService,
-    @InjectRepository(SmartContract)
-    private smartContractRepository: Repository<SmartContract>
+    private scService: SmartContractService
   ) { }
 
   async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {
@@ -34,11 +35,16 @@ export class ChangePriceIndexerService implements IndexerService {
     const price = this.stacksTxHelper.extractArgumentData(tx.args, scf, "price");
     const contract_key = this.stacksTxHelper.extractArgumentData(tx.args, scf, "contract_key");
     const collection_map_id = this.stacksTxHelper.extractArgumentData(tx.args, scf, "collection_map_id");
+    if (isNaN(price)) {
+      this.logger.warn(`Unable to find list price for tx hash ${tx.hash}`);
+      return txResult;
+    }
 
     const nftMeta = await this.txHelper.createOrFetchMetaByContractKey(contract_key, token_id, sc.chain_id);
 
-    const unlist_sc = await this.smartContractRepository.findOne({ where: { contract_key: first_market } });
-    const list_sc = await this.smartContractRepository.findOne({ where: { contract_key: second_market } });
+    const unlist_sc = await this.scService.readOrFetchByKey(first_market, sc.chain_id, this.marketScs);
+    const list_sc = await this.scService.readOrFetchByKey(second_market, sc.chain_id, this.marketScs);
+
     const nft_state_list = this.txHelper.findStateList(nftMeta.nft_state, list_sc.id);
     const nft_state_unlist = this.txHelper.findStateList(nftMeta.nft_state, unlist_sc.id);
 

@@ -5,7 +5,7 @@ import { Repository } from 'typeorm';
 
 @Injectable()
 export class SmartContractService {
-  private basicSelect = { 
+  private basicSelect = {
     id: true,
     contract_key: true,
     chain_id: true,
@@ -14,14 +14,14 @@ export class SmartContractService {
     name: true
   };
 
-  constructor (
+  constructor(
     @InjectRepository(SmartContract)
     private smartContractRepository: Repository<SmartContract>,
-  ) {}
+  ) { }
 
-  async findChainSmartContracts (chain_id: string): Promise<SmartContract[]> {
+  async findChainSmartContracts(chainId: string): Promise<SmartContract[]> {
     const scs = await this.smartContractRepository.find({
-      where: { chain_id },
+      where: { chain_id: chainId },
       relations: { smart_contract_functions: true, custodial_smart_contract: true },
       select: {
         ...this.basicSelect,
@@ -33,9 +33,9 @@ export class SmartContractService {
     return scs;
   }
 
-  async findByContractKey(contract_key: string, chain_id: string): Promise<SmartContract> {
+  async findByContractKey(contractKey: string, chainId: string): Promise<SmartContract> {
     const sc = await this.smartContractRepository.findOne({
-      where: { contract_key, chain_id },
+      where: { contract_key: contractKey, chain_id: chainId },
       relations: {
         smart_contract_functions: true,
         custodial_smart_contract: true
@@ -49,5 +49,13 @@ export class SmartContractService {
     });
 
     return sc;
+  }
+
+  async readOrFetchByKey(contractKey: string, chainId: string, marketScs?: SmartContract[]): Promise<SmartContract> {
+    return Array.isArray(marketScs) && marketScs.length
+      ? marketScs.find(sc => sc.contract_key === contractKey)
+      : await this.smartContractRepository.findOne({ 
+        where: { chain_id: chainId, contract_key: contractKey }
+      });
   }
 }

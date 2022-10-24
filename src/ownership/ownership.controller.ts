@@ -34,4 +34,14 @@ export class OwnershipController {
     return differences;
   }
 
+  @Get('wallet/nfts')
+  async getNftTokensOnSmartContract(@Query() params: { owner, contract_key }): Promise<WalletNft[]> {
+    if (!params || !params.contract_key || !params.owner) {
+      throw new HttpException(`contract_key is required`, HttpStatus.BAD_REQUEST);
+    }
+
+    const differences = await this.nearOwnershipService.fetchSmartContractOwnedNfts(params.owner, params.contract_key);
+    return differences;
+  }
+
 }

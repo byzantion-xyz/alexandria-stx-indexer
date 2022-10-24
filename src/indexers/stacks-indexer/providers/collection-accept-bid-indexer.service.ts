@@ -34,7 +34,7 @@ export class CollectionAcceptBidIndexerService implements IndexerService {
     const contract_key = this.stacksTxHelper.extractAndParseContractKey(tx.args, scf);
     const token_id = this.stacksTxHelper.extractArgumentData(tx.args, scf, 'token_id');
 
-    const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
+    const nftMeta = await this.txHelper.createOrFetchMetaByContractKey(contract_key, token_id, sc.chain_id);
 
     let bidState = await this.txBidHelper.findActiveCollectionBid(nftMeta.collection.id, sc);
 

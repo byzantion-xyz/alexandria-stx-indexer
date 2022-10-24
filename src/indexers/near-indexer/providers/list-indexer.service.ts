@@ -14,6 +14,7 @@ import { Repository } from "typeorm";
 import { ActionName } from "../../common/helpers/indexer-enums";
 import { NearTxHelperService } from "src/indexers/near-indexer/providers/near-tx-helper.service";
 import { TxActionService } from "src/indexers/common/providers/tx-action.service";
+import { SmartContractService } from "src/indexers/common/helpers/smart-contract.service";
 
 const NFT_LIST_EVENT = 'nft_on_approve';
 
@@ -26,8 +27,7 @@ export class ListIndexerService implements IndexerService {
     private txHelper: TxHelperService,
     private nearTxHelper: NearTxHelperService,
     private txActionService: TxActionService,
-    @InjectRepository(SmartContract)
-    private smartContractRepository: Repository<SmartContract>
+    private scService: SmartContractService
   ) {}
 
   async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {
@@ -50,10 +50,8 @@ export class ListIndexerService implements IndexerService {
 
     const nftMeta = await this.txHelper.createOrFetchMetaByContractKey(contract_key, token_id, sc.chain_id);
 
-    const msc = Array.isArray(this.marketScs) 
-    ? this.marketScs.find(sc => sc.contract_key === receipt.receiver_id )
-    : await this.smartContractRepository.findOneBy({ contract_key: receipt.receiver_id });
-
+    const msc = await this.scService.readOrFetchByKey(receipt.receiver_id, sc.chain_id, this.marketScs); 
+   
     if (!msc) {
       this.logger.warn(`Marketplace smart_contract: ${receipt.receiver_id} not found`);
       txResult.missing = true;

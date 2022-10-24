@@ -4,6 +4,7 @@ import { Action } from "src/database/universal/entities/Action";
 import { SmartContract } from "src/database/universal/entities/SmartContract";
 import { SmartContractFunction } from "src/database/universal/entities/SmartContractFunction";
 import { ActionName, SmartContractType } from "src/indexers/common/helpers/indexer-enums";
+import { SmartContractService } from "src/indexers/common/helpers/smart-contract.service";
 import { TxHelperService } from "src/indexers/common/helpers/tx-helper.service";
 import { TxStakingHelper } from "src/indexers/common/helpers/tx-staking-helper";
 import { CommonTx } from "src/indexers/common/interfaces/common-tx.interface";
@@ -24,8 +25,7 @@ export class StakeIndexerService implements IndexerService {
     private stacksTxHelper: StacksTxHelperService,
     private txStakingHelper: TxStakingHelper,
     private txActionService: TxActionService,
-    @InjectRepository(SmartContract)
-    private smartContractRepository: Repository<SmartContract>
+    private scService: SmartContractService
   ) { }
 
   async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {
@@ -40,9 +40,7 @@ export class StakeIndexerService implements IndexerService {
 
     const nftMeta = await this.txHelper.createOrFetchMetaByContractKey(contract_key, token_id, sc.chain_id);
 
-    const stake_sc = Array.isArray(this.stakingScs)
-    ? this.stakingScs.find(sc => sc.contract_key === stake_contract)
-    : await this.smartContractRepository.findOne({ where: { contract_key: stake_contract } });
+    const stake_sc = await this.scService.readOrFetchByKey(stake_contract, sc.chain_id, this.stakingScs); 
 
     if (!stake_sc || !stake_sc.type.includes(SmartContractType.staking)) {
       this.logger.log(`Stake contract: ${stake_contract} not found`);

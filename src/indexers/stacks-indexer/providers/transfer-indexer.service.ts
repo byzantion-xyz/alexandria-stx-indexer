@@ -20,7 +20,7 @@ export class TransferIndexerService implements IndexerService {
     private txHelper: TxHelperService,
     private stacksTxHelper: StacksTxHelperService,
     private txActionService: TxActionService
-  ) {}
+  ) { }
 
   async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {
     let txResult: TxProcessResult = { processed: false, missing: false };
@@ -30,30 +30,23 @@ export class TransferIndexerService implements IndexerService {
     const seller = this.stacksTxHelper.extractArgumentData(tx.args, scf, 'seller');
     const buyer = this.stacksTxHelper.extractArgumentData(tx.args, scf, 'buyer');
 
-    const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
+    const nftMeta = await this.txHelper.createOrFetchMetaByContractKey(contract_key, token_id, sc.chain_id);
 
-    if (nftMeta) {
-      if (!isNaN(token_id) &&
-        this.stacksTxHelper.isValidWalletAddress(seller) &&
-        this.stacksTxHelper.isValidWalletAddress(buyer)
-      ) {
-        const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName.transfer, tx, nftMeta);
-        const listActionParams: CreateTransferActionTO = {
-          ...actionCommonArgs,
-          buyer,
-          seller,
-        };
+    if (!isNaN(token_id) &&
+      this.stacksTxHelper.isValidWalletAddress(seller) &&
+      this.stacksTxHelper.isValidWalletAddress(buyer)
+    ) {
+      const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName.transfer, tx, nftMeta);
+      const listActionParams: CreateTransferActionTO = {
+        ...actionCommonArgs,
+        buyer,
+        seller,
+      };
 
-        await this.createAction(listActionParams);
-        txResult.processed = true;
-      } else {
-        this.logger.log(
-          `-------non standard transfer-------- ${sc.contract_key}`
-        );
-        txResult.missing = true;
-      }
+      await this.createAction(listActionParams);
+      txResult.processed = true;
     } else {
-      this.logger.debug(`NftMeta not found ${contract_key} ${token_id}`);
+      this.logger.log(`-------non standard transfer-------- ${sc.contract_key}`);
       txResult.missing = true;
     }
 

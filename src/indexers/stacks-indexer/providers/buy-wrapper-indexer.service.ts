@@ -19,6 +19,7 @@ import { TxActionService } from "src/indexers/common/providers/tx-action.service
 @Injectable()
 export class BuyWrapperIndexerService implements IndexerService {
   private readonly logger = new Logger(BuyWrapperIndexerService.name);
+  readonly marketScs?: SmartContract[];
 
   constructor(
     private txHelper: TxHelperService,
@@ -37,8 +38,10 @@ export class BuyWrapperIndexerService implements IndexerService {
     const nftMeta = await this.txHelper.createOrFetchMetaByContractKey(contract_key, token_id, sc.chain_id);
 
     if (nftMeta.smart_contract.contract_key_wrapper || market_contract_key) {
-      let msc = nftMeta.smart_contract.contract_key_wrapper ? nftMeta.smart_contract : 
-        await this.smartContractRepository.findOne({ where: { contract_key: market_contract_key }});
+      let msc = nftMeta.smart_contract.contract_key_wrapper ? nftMeta.smart_contract 
+        : (Array.isArray(this.marketScs) 
+          ? this.marketScs.find(m => m.contract_key === market_contract_key) 
+          : await this.smartContractRepository.findOne({ where: { contract_key: market_contract_key }}));
 
       const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName.buy, tx, nftMeta, sc);
       const nft_state_list = this.txHelper.findStateList(nftMeta.nft_state, msc.id);

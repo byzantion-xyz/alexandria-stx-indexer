@@ -13,6 +13,7 @@ import { StacksTransaction } from '../dto/stacks-transaction.dto';
 import { StacksTxHelperService } from './stacks-tx-helper.service';
 import { SmartContract } from 'src/database/universal/entities/SmartContract';
 import { IndexerOptions } from 'src/indexers/common/interfaces/indexer-options';
+import { CommonUtilService } from 'src/common/helpers/common-util/common-util.service';
 
 const EXCLUDED_ACTIONS = ['add-collection', 'add-contract'];
 
@@ -27,6 +28,7 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
   constructor (
     private configService: ConfigService,
     private stacksTxHelper: StacksTxHelperService,
+    private commonUtil: CommonUtilService,
     @InjectRepository(TransactionEntity, "CHAIN-STREAM")
     private transactionRepository: Repository<TransactionEntity>,
     @InjectRepository(SmartContract)
@@ -95,18 +97,12 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
   }
 
   transformTxs(txs: StacksTransaction[]): CommonTx[] {
-    let result: CommonTx[] = [];
-
-    for (let tx of txs) {
-      const transformed_tx = this.transformTx(tx);
-      if (transformed_tx) result.push(transformed_tx);
-    }
-
-    return result;
+    return txs.flatMap(tx => this.transformTx(tx))
   }
 
-  transformTx(tx: StacksTransaction): CommonTx {
-    try {
+  transformTx(tx: StacksTransaction): CommonTx[] {
+    try {  
+      let commonTxs: CommonTx[] = [];
       const function_name = tx.tx.contract_call.function_name;
       if (EXCLUDED_ACTIONS.includes(function_name)) {
         return; // Do not process transaction
@@ -118,20 +114,27 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
         parsed_args = this.stacksTxHelper.parseHexArguments(args);
       }
 
-      return {
+      const tx_index = BigInt(
+        tx.tx.microblock_sequence.toString() + 
+        this.commonUtil.padWithZeros(tx.tx.tx_index, 5) + 
+        this.commonUtil.padWithZeros(commonTxs.length, 3)
+      );
+
+      commonTxs.push({
         hash: tx.hash,
         block_hash: tx.tx.block_hash,
         block_timestamp: tx.tx.burn_block_time * 1000,
         block_height: tx.block_height,
         nonce: BigInt(tx.tx.nonce),
-        index: BigInt(tx.tx.tx_index),
-        sub_block_sequence: BigInt(tx.tx.microblock_sequence),
+        index: tx_index,
         signer: tx.tx.sender_address,
         receiver: tx.tx.contract_call.contract_id,
         function_name: function_name,
         args: parsed_args,
         events: tx.tx.events
-      };
+      });
+      
+      return commonTxs;
     } catch (err) {
       this.logger.warn(`transormTx() has failed for tx hash: ${tx.hash}`);
     }

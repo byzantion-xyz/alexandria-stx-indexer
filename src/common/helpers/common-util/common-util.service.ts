@@ -32,7 +32,7 @@ export class CommonUtilService {
     }
   }
 
-  padWithZeros(num: BigInt, length: number) {
+  padWithZeros(num: number, length: number) {
     return String(num).padStart(length, '0');
   }
 }

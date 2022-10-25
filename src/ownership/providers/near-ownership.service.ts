@@ -125,6 +125,9 @@ export class NearOwnershipService {
     let results: WalletNft[] = [];
 
     try {
+      if (!this.nearConnection) {
+        this.nearConnection = await this.contractConnectionService.connectNear();
+      }
       //this.logger.debug(`fetchSmartContactOwnedNfts() ${contractKey}`);
 
       const contract = this.contractConnectionService.getContract(contractKey, this.nearConnection);

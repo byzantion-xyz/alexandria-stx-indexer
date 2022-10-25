@@ -1,5 +1,12 @@
 import { registerAs } from "@nestjs/config";
 
+const NFT_EVENT_ARGS = {
+  contract_key: 'asset_id',
+  seller: 'sender',
+  buyer: 'recipient',
+  token_id: 'value'
+};
+
 export default registerAs("indexer", () => ({
   chainSymbol: process.env.CHAIN_SYMBOL || "Near",
   txResultExpiration: 120000,
@@ -14,12 +21,18 @@ export default registerAs("indexer", () => ({
       {
         function_name: "transfer",
         name: "transfer",
-        args: {
-          token_id: 0,
-          seller: 1,
-          buyer: 2,
-        },
+        args: NFT_EVENT_ARGS
       },
+      {
+        function_name: "mint",
+        name: "mint",
+        args: NFT_EVENT_ARGS
+      },
+      {
+        function_name: "burn",
+        name: "burn",
+        args: NFT_EVENT_ARGS
+      }
     ],
     Near: [
       {

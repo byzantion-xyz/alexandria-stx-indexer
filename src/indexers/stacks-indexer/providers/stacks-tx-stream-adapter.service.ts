@@ -111,7 +111,7 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
             function_name: 'nft_' + e.asset.asset_event_type + '_event',
             args: {
               ...e.asset,
-              token_id: this.stacksTxHelper.parseHexData(e.asset.value.hex)
+              value: this.stacksTxHelper.parseHexData(e.asset.value.hex)
             },
             ... this.transformTxBase(commonTxs.length, tx)
           });

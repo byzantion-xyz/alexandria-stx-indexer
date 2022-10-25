@@ -1,10 +1,7 @@
 import { registerAs } from "@nestjs/config";
 
 const NFT_EVENT_ARGS = {
-  contract_key: 'asset_id',
-  seller: 'sender',
-  buyer: 'recipient',
-  token_id: 'value'
+  event_index: 'event_index'
 };
 
 export default registerAs("indexer", () => ({
@@ -19,18 +16,18 @@ export default registerAs("indexer", () => ({
   genericFunctions: {
     Stacks: [
       {
-        function_name: "transfer",
-        name: "transfer",
+        function_name: "nft_transfer_event",
+        name: "nft_transfer_event",
         args: NFT_EVENT_ARGS
       },
       {
-        function_name: "mint",
-        name: "mint",
+        function_name: "nft_mint_event",
+        name: "nft_mint_event",
         args: NFT_EVENT_ARGS
       },
       {
-        function_name: "burn",
-        name: "burn",
+        function_name: "nft_burn_event",
+        name: "nft_burn_event",
         args: NFT_EVENT_ARGS
       }
     ],
@@ -89,7 +86,7 @@ export default registerAs("indexer", () => ({
       start_block_height: 1,
       start_block_height_tip: 1,
       end_block_height: 85000,
-      block_range: 1000,
+      block_range: 10,
     },
     Near: {
       start_block_height: 42000000,

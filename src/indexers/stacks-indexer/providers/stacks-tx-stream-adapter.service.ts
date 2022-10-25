@@ -15,6 +15,13 @@ import { SmartContract } from 'src/database/universal/entities/SmartContract';
 import { IndexerOptions } from 'src/indexers/common/interfaces/indexer-options';
 import { CommonUtilService } from 'src/common/helpers/common-util/common-util.service';
 
+const EXCLUDED_SMART_CONTRACTS = [
+  'SP000000000000000000002Q6VF78.bns',
+  'SP2KAF9RF86PVX3NEE27DFV1CQX0T4WGR41X3S45C.bns-marketplace',
+  'SP2KAF9RF86PVX3NEE27DFV1CQX0T4WGR41X3S45C.bns-marketplace-v1',
+  'SP2KAF9RF86PVX3NEE27DFV1CQX0T4WGR41X3S45C.bns-marketplace-v3'
+];
+
 @Injectable()
 export class StacksTxStreamAdapterService implements TxStreamAdapter {
   private poolClient: PoolClient;
@@ -46,17 +53,17 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
   }
 
   async fetchTxs(options: IndexerOptions): Promise<TxCursorBatch> {
-    const contracts = await this.findSmartContracts(options.contract_key);
+    const end_block_height = this.configService.get('indexer.blockRanges.Stacks.end_block_height') || 0;    
 
-    const sql = `SELECT * from transaction t
-      WHERE t.contract_id IN (${contracts.map((c) => `'${c.contract_key}'`).join(',')})
-      ${ options.start_block_height ? 'AND t.block_height >=' + options.start_block_height : '' }
-      ${ options.end_block_height ? 'AND t.block_height <='+ options.end_block_height  : '' }
+    const sql = `SELECT * FROM transaction t
+      WHERE block_height >= ${options.start_block_height ?? 0}
+      AND block_height <= ${options.end_block_height ?? end_block_height}
+      AND contract_id NOT IN (${EXCLUDED_SMART_CONTRACTS.map((key) => `'${key}'`).join(',')})
       AND tx->>'tx_type' = 'contract_call'
       AND tx->>'tx_status' = 'success'
       AND processed = false
       AND missing = ${ options.includeMissings ? true : false }
-      ORDER BY t.block_height ASC, tx->>'microblock_sequence' asc, tx->>'tx_index' ASC 
+      ORDER BY t.block_height ASC, tx->>'microblock_sequence' ASC, tx->>'tx_index' ASC
     `;
 
     const cursor = this.poolClient.query(new Cursor(sql));
@@ -101,7 +108,17 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
   transformTx(tx: StacksTransaction): CommonTx[] {
     try {  
       let commonTxs: CommonTx[] = [];
-      commonTxs.push(this.transformTxBase(commonTxs.length, tx));
+      const args = tx.tx.contract_call.function_args;
+      let parsed_args;
+      if (args) {
+        parsed_args = this.stacksTxHelper.parseHexArguments(args);
+      }
+
+      commonTxs.push({
+        function_name: tx.tx.contract_call.function_name,
+        args: parsed_args,
+        ...this.transformTxBase(commonTxs.length, tx)
+      });
       
       const nftEvents = tx.tx.event_count ? this.stacksTxHelper.getNftEvents(tx) : [];
 
@@ -110,14 +127,13 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
           commonTxs.push({
             function_name: 'nft_' + e.asset.asset_event_type + '_event',
             args: {
-              ...e.asset,
-              value: this.stacksTxHelper.parseHexData(e.asset.value.hex)
+              event_index: e.event_index
             },
-            ... this.transformTxBase(commonTxs.length, tx)
+            ... this.transformTxBase(commonTxs.length, tx),
           });
         });
       }
-      
+
       return commonTxs;
     } catch (err) {
       this.logger.warn(`transormTx() has failed for tx hash: ${tx.hash}`);
@@ -125,14 +141,6 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
   }
 
   transformTxBase(i: number, tx: StacksTransaction) {
-    const function_name = tx.tx.contract_call.function_name;
-
-    const args = tx.tx.contract_call.function_args;
-    let parsed_args;
-    if (args) {
-      parsed_args = this.stacksTxHelper.parseHexArguments(args);
-    }
-
     const tx_index = BigInt(
       tx.tx.microblock_sequence.toString() + 
       this.commonUtil.padWithZeros(tx.tx.tx_index, 5) + 
@@ -148,8 +156,6 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
       index: tx_index,
       signer: tx.tx.sender_address,
       receiver: tx.tx.contract_call.contract_id,
-      function_name: function_name,
-      args: parsed_args,
       events: tx.tx.events
     };
   }
@@ -181,27 +187,5 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
     const result: CommonTx[] = this.transformTxs(txs);
 
     return result;
-  }
-
-  private async findSmartContracts(contract_key?: string): Promise<SmartContract[]> {
-    // Bns marketplaces excluded until micro indexers are fully implemented.
-    let accounts = await this.smartContractRepository.find({
-      where: {
-        chain : { symbol: this.chainSymbol },
-        ...( contract_key
-          ? { contract_key }
-          : { contract_key: Not(In([
-            'SP000000000000000000002Q6VF78.bns',
-            'SP2KAF9RF86PVX3NEE27DFV1CQX0T4WGR41X3S45C.bns-marketplace',
-            'SP2KAF9RF86PVX3NEE27DFV1CQX0T4WGR41X3S45C.bns-marketplace-v1',
-            'SP2KAF9RF86PVX3NEE27DFV1CQX0T4WGR41X3S45C.bns-marketplace-v3'
-          ])) }
-        )
-      },
-      select: { contract_key: true }
-    });
-    if (!accounts || !accounts.length) throw new Error('Invalid contract_key');
-
-    return accounts;
   }
 }

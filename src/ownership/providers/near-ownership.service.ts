@@ -286,8 +286,8 @@ export class NearOwnershipService {
     for (let diff of differences) {
       let token = await this.fetchSmartContractNft(diff.contract_key, diff.token_id);
 
-      let owner = token === null ? null : token?.token_id;
-      if (token === null || token?.token_id) {
+      let owner = token === null ? null : token?.owner_id;
+      if (token === null || token?.owner_id) {
         await this.fixNftMetaOwner(diff.token_id, diff.contract_key, owner);
       }
 

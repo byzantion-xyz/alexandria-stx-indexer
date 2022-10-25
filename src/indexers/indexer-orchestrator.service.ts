@@ -127,15 +127,15 @@ export class IndexerOrchestratorService {
         }
       }
 
-      if (sc) {
-        if (!scf) {
+      if (sc || (!sc && this.chainSymbol === 'Stacks')) {
+        if (!scf && sc) {
           scf = sc.smart_contract_functions.find((f) => f.function_name === method_name);
         }
 
         if (scf) {
           const indexer_name = transaction.indexer_name || scf.name;
           const txHandler = this.getMicroIndexer(indexer_name);
-         
+          
           if (txHandler) {
             txHandler.stakingScs = Array.isArray(this.scs) && this.scs.filter(sc => sc.type.includes(SmartContractType.staking)); 
             txHandler.marketScs = Array.isArray(this.scs) && this.scs.filter(sc => sc.type.includes(SmartContractType.marketplace));

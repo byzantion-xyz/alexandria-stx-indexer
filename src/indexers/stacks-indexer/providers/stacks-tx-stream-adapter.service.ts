@@ -15,8 +15,6 @@ import { SmartContract } from 'src/database/universal/entities/SmartContract';
 import { IndexerOptions } from 'src/indexers/common/interfaces/indexer-options';
 import { CommonUtilService } from 'src/common/helpers/common-util/common-util.service';
 
-const EXCLUDED_ACTIONS = ['add-collection', 'add-contract'];
-
 @Injectable()
 export class StacksTxStreamAdapterService implements TxStreamAdapter {
   private poolClient: PoolClient;
@@ -103,41 +101,57 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
   transformTx(tx: StacksTransaction): CommonTx[] {
     try {  
       let commonTxs: CommonTx[] = [];
-      const function_name = tx.tx.contract_call.function_name;
-      if (EXCLUDED_ACTIONS.includes(function_name)) {
-        return; // Do not process transaction
+      commonTxs.push(this.transformTxBase(commonTxs.length, tx));
+      
+      const nftEvents = tx.tx.event_count ? this.stacksTxHelper.getNftEvents(tx) : [];
+
+      if (nftEvents.length) {
+        nftEvents.forEach(e => {
+          commonTxs.push({
+            function_name: 'nft_' + e.asset.asset_event_type + '_event',
+            args: {
+              ...e.asset,
+              token_id: this.stacksTxHelper.parseHexData(e.asset.value.hex)
+            },
+            ... this.transformTxBase(commonTxs.length, tx)
+          });
+        });
       }
-
-      const args = tx.tx.contract_call.function_args;
-      let parsed_args;
-      if (args) {
-        parsed_args = this.stacksTxHelper.parseHexArguments(args);
-      }
-
-      const tx_index = BigInt(
-        tx.tx.microblock_sequence.toString() + 
-        this.commonUtil.padWithZeros(tx.tx.tx_index, 5) + 
-        this.commonUtil.padWithZeros(commonTxs.length, 3)
-      );
-
-      commonTxs.push({
-        hash: tx.hash,
-        block_hash: tx.tx.block_hash,
-        block_timestamp: tx.tx.burn_block_time * 1000,
-        block_height: tx.block_height,
-        nonce: BigInt(tx.tx.nonce),
-        index: tx_index,
-        signer: tx.tx.sender_address,
-        receiver: tx.tx.contract_call.contract_id,
-        function_name: function_name,
-        args: parsed_args,
-        events: tx.tx.events
-      });
       
       return commonTxs;
     } catch (err) {
       this.logger.warn(`transormTx() has failed for tx hash: ${tx.hash}`);
     }
+  }
+
+  transformTxBase(i: number, tx: StacksTransaction) {
+    const function_name = tx.tx.contract_call.function_name;
+
+    const args = tx.tx.contract_call.function_args;
+    let parsed_args;
+    if (args) {
+      parsed_args = this.stacksTxHelper.parseHexArguments(args);
+    }
+
+    const tx_index = BigInt(
+      tx.tx.microblock_sequence.toString() + 
+      this.commonUtil.padWithZeros(tx.tx.tx_index, 5) + 
+      this.commonUtil.padWithZeros(i, 3)
+    );
+
+    return {
+      hash: tx.hash,
+      block_hash: tx.tx.block_hash,
+      block_timestamp: tx.tx.burn_block_time * 1000,
+      block_height: tx.block_height,
+      nonce: BigInt(tx.tx.nonce),
+      index: tx_index,
+      signer: tx.tx.sender_address,
+      receiver: tx.tx.contract_call.contract_id,
+      function_name: function_name,
+      args: parsed_args,
+      events: tx.tx.events
+    };
   }
 
   subscribeToEvents(): Client {

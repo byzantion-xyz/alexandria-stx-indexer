@@ -1,7 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { InjectRepository } from "@nestjs/typeorm";
-import { TransactionEvent, TransactionEventSmartContractLog } from "@stacks/stacks-blockchain-api-types";
+import { TransactionEvent, TransactionEventNonFungibleAsset, TransactionEventSmartContractLog } from "@stacks/stacks-blockchain-api-types";
 import { BufferCV } from "@stacks/transactions";
 import { principalCV } from "@stacks/transactions/dist/clarity/types/principalCV";
 import { cvToTrueValue, hexToCV, cvToJSON } from "micro-stacks/clarity";
@@ -18,12 +18,15 @@ import { CreateBidCommonArgs } from "src/indexers/common/helpers/tx-bid-helper.s
 import { TxHelperService } from "src/indexers/common/helpers/tx-helper.service";
 import { CommonTx } from "src/indexers/common/interfaces/common-tx.interface";
 import { Repository } from "typeorm";
+import { StacksTransaction } from "../dto/stacks-transaction.dto";
 interface FunctionArgs {
   hex: string;
   repr: string;
   name: string;
   type: string;
 }
+
+const NFT_EVENT_TYPE = 'non_fungible_token_asset';
 
 export type TransactionEventSmartContractLogWithData = TransactionEventSmartContractLog & {
   data: {
@@ -52,18 +55,22 @@ export class StacksTxHelperService {
     this.byzOldMarketplaces = this.configService.get("indexer.byzOldMarketplaceContractKeys");
   }
 
+  parseHexData(hex: string) {
+    let data = hexToCV(hex);
+    if (Object.keys(data).includes("buffer")) {
+      return (data as BufferCV).buffer.toString();
+    } else {
+      let json = cvToJSON(data);
+      return json.type === "uint" ? Number(json.value) : json.value;
+    }
+  }
+
   parseHexArguments(args: FunctionArgs[]) {
     try {
       let result = [];
       for (let arg of args) {
         if (arg.hex) {
-          let data = hexToCV(arg.hex);
-          if (Object.keys(data).includes("buffer")) {
-            result.push((data as BufferCV).buffer.toString());
-          } else {
-            let json = cvToJSON(data);
-            result.push(json.type === "uint" ? Number(json.value) : json.value);
-          }
+          result.push(this.parseHexData(arg.hex));
         }
       }
       return result;
@@ -94,10 +101,6 @@ export class StacksTxHelperService {
       !state_list.list_block_height ||
       tx.block_height > state_list.list_block_height ||
       (tx.block_height == state_list.list_block_height &&
-        typeof tx.sub_block_sequence !== 'undefined' && 
-        tx.sub_block_sequence > state_list.list_sub_block_seq) ||
-      (tx.block_height == state_list.list_block_height &&
-        tx.sub_block_sequence == state_list.list_sub_block_seq &&
         typeof tx.index !== 'undefined' &&
         tx.index > state_list.list_tx_index)
     );
@@ -209,5 +212,10 @@ export class StacksTxHelperService {
         nft_metas: { meta: { collection: true, smart_contract: true } }
       }
     });
+  }
+
+  getNftEvents(tx: StacksTransaction): TransactionEventNonFungibleAsset[] {
+    const nftEvents = tx.tx.events.filter(e => e.event_type === NFT_EVENT_TYPE);
+    return nftEvents as TransactionEventNonFungibleAsset[];
   }
 }

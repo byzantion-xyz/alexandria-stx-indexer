@@ -38,6 +38,7 @@ import { UpgradeMegaIndexerService } from './providers/upgrade-mega-indexer.serv
 import { BuyWrapperIndexerService } from './providers/buy-wrapper-indexer.service';
 import { AdminSoloIdUnlistBidIndexerService } from './providers/admin-solo-id-unlist-bid-indexer.service';
 //import { BnsRegisterIndexerService } from './providers/bns-register-indexer.service';
+import { NftTransferEventIndexerService } from './providers/nft-transfer-event-indexer.service';
 
 const microIndexers = [
   ListIndexerService,
@@ -71,6 +72,7 @@ const microIndexers = [
   UpgradeMegaIndexerService,
   BuyWrapperIndexerService,
   AdminSoloIdUnlistBidIndexerService,
+  NftTransferEventIndexerService
   //BnsRegisterIndexerService,
   //BnsBidIndexerService,
   //BnsUnlistBidIndexerService,
@@ -94,7 +96,6 @@ const microIndexers = [
     }
   ],
   exports: [
-    //{ provide: 'TxStreamAdapter', useClass: StacksTxStreamAdapterService },
     StacksTxHelperService,
     TypeOrmModule,
     { provide: 'TxStreamAdapter', useClass: StacksTxStreamAdapterService },

@@ -153,6 +153,14 @@ export class StacksTxHelperService {
     return this.byzOldMarketplaces.includes(sc.contract_key);
   }
 
+  extractDataFromEvent(args: JSON, scf: SmartContractFunction, field: string): string {
+    if (field === 'contract_key') {
+      return args[scf[field]].split("::")[0].replace("'", "");
+    } else {
+      return args[scf[field]];
+    }
+  }
+
   extractContractKeyFromEvent(e: TransactionEventSmartContractLogWithData): string {
     return e.data.data["collection-id"].split("::")[0].replace("'", "");
   }

@@ -9,13 +9,11 @@ import { CommonUtilService } from "src/common/helpers/common-util/common-util.se
 import { BidState } from "src/database/universal/entities/BidState";
 import { Collection } from "src/database/universal/entities/Collection";
 import { NftMeta } from "src/database/universal/entities/NftMeta";
-import { NftState } from "src/database/universal/entities/NftState";
 import { NftStateList } from "src/database/universal/entities/NftStateList";
 import { SmartContract } from "src/database/universal/entities/SmartContract";
 import { SmartContractFunction } from "src/database/universal/entities/SmartContractFunction";
 import { BidType, CollectionBidStatus } from "src/indexers/common/helpers/indexer-enums";
 import { CreateBidCommonArgs } from "src/indexers/common/helpers/tx-bid-helper.service";
-import { TxHelperService } from "src/indexers/common/helpers/tx-helper.service";
 import { CommonTx } from "src/indexers/common/interfaces/common-tx.interface";
 import { Repository } from "typeorm";
 import { StacksTransaction } from "../dto/stacks-transaction.dto";
@@ -45,7 +43,6 @@ export class StacksTxHelperService {
 
   constructor(
     private commonUtil: CommonUtilService,
-    private txHelper: TxHelperService,
     @InjectRepository(NftMeta)
     private nftMetaRepository: Repository<NftMeta>,
     private configService: ConfigService,
@@ -153,12 +150,23 @@ export class StacksTxHelperService {
     return this.byzOldMarketplaces.includes(sc.contract_key);
   }
 
-  extractDataFromEvent(args: JSON, scf: SmartContractFunction, field: string): string {
-    if (field === 'contract_key') {
-      return args[scf[field]].split("::")[0].replace("'", "");
-    } else {
-      return args[scf[field]];
+  extractTokenIdFromNftEvent(event: TransactionEventNonFungibleAsset): string {
+    let value = this.parseHexData(event.asset.value.hex);
+    if (isNaN(value)) {
+      throw new Error('Unable to extract token_id from NFT event');
     }
+
+    return value;
+  }
+
+  findNftEventByIndex(events: TransactionEvent[], index: number): TransactionEventNonFungibleAsset {
+    return events.find(
+      (e) => e.event_type === NFT_EVENT_TYPE && e.event_index === index
+    ) as TransactionEventNonFungibleAsset;
+  }
+
+  parseContractKeyFromAssetId(assetId: string) {
+    return assetId.split("::")[0].replace("'", "");
   }
 
   extractContractKeyFromEvent(e: TransactionEventSmartContractLogWithData): string {

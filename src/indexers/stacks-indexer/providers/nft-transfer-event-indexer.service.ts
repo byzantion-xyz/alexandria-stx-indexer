@@ -26,11 +26,12 @@ export class NftTransferEventIndexerService implements IndexerService {
   async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {
     let txResult: TxProcessResult = { processed: false, missing: false };
 
-    const contract_key = this.stacksTxHelper.extractDataFromEvent(tx.args, scf, 'contract_key');
-    const token_id = this.stacksTxHelper.extractDataFromEvent(tx.args, scf, 'token_id'); 
-    const seller = this.stacksTxHelper.extractDataFromEvent(tx.args, scf, 'seller');
-    const buyer = this.stacksTxHelper.extractDataFromEvent(tx.args, scf, 'buyer');
-
+    const event = this.stacksTxHelper.findNftEventByIndex(tx.events, tx.args.event_index);
+    const token_id = this.stacksTxHelper.extractTokenIdFromNftEvent(event);
+    const contract_key = event.asset.asset_id;
+    const seller = event.asset.sender;
+    const buyer = event.asset.recipient;
+    
     const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
 
     if (nftMeta) {

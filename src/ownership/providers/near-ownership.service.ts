@@ -15,9 +15,10 @@ const BATCH_LIMIT = 50;
 const ASYNC_WALLETS = 20;
 const ASYNC_SMART_CONTRACTS = 10;
 
-interface NftToken {
+export interface NftToken {
   owner_id: string;
   token_id: string;
+  metadata: any;
 }
 
 @Injectable()
@@ -117,6 +118,9 @@ export class NearOwnershipService {
 
   async fetchSmartContractNft(contractKey: string, token_id: string): Promise<NftToken> {
     try {
+      if (!this.nearConnection) {
+        this.nearConnection = await this.contractConnectionService.connectNear();
+      }
       const contract = this.contractConnectionService.getContract(contractKey, this.nearConnection);
       const token: NftToken = await contract.nft_token({ token_id: token_id });
 

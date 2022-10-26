@@ -5,22 +5,23 @@ import { SmartContractFunction } from 'src/database/universal/entities/SmartCont
 import { ActionName } from 'src/indexers/common/helpers/indexer-enums';
 import { TxHelperService } from 'src/indexers/common/helpers/tx-helper.service';
 import { CommonTx } from 'src/indexers/common/interfaces/common-tx.interface';
-import { CreateTransferActionTO } from 'src/indexers/common/interfaces/create-action-common.dto';
+import { CreateBurnActionTO } from 'src/indexers/common/interfaces/create-action-common.dto';
 import { IndexerService } from 'src/indexers/common/interfaces/indexer-service.interface';
 import { TxProcessResult } from 'src/indexers/common/interfaces/tx-process-result.interface';
 import { TxActionService } from 'src/indexers/common/providers/tx-action.service';
 import { StacksTxHelperService } from './stacks-tx-helper.service';
 
+
 @Injectable()
-export class NftTransferEventIndexerService implements IndexerService {
-  private readonly logger = new Logger(NftTransferEventIndexerService.name);
+export class NftBurnEventIndexerService implements IndexerService {
+  private readonly logger = new Logger(NftBurnEventIndexerService.name);
   readonly marketScs?: SmartContract[];
   readonly stakingScs?: SmartContract[];
-  
+
   constructor(
     private txHelper: TxHelperService,
     private stacksTxHelper: StacksTxHelperService,
-    private txActionService: TxActionService,
+    private txActionService: TxActionService
   ) {}
 
   async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {
@@ -30,27 +31,27 @@ export class NftTransferEventIndexerService implements IndexerService {
     const token_id = this.stacksTxHelper.extractTokenIdFromNftEvent(event);
     const contract_key = this.stacksTxHelper.extractContractKeyFromNftEvent(event);
     const seller = event.asset.sender;
-    const buyer = event.asset.recipient;
-    
+
     const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
 
     if (nftMeta) {
-      const actionArgs = this.txHelper.setCommonActionParams(ActionName.transfer, tx, nftMeta);
-      const transferParams: CreateTransferActionTO = {
-        ...actionArgs,
-        buyer,
-        seller,
-      };
+      const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName.burn, tx, nftMeta, sc);
+      const burnActionParams: CreateBurnActionTO = { ...actionCommonArgs, seller };
 
-      if (this.txHelper.isListedPreviously(nftMeta.nft_state, tx)) {
-        await this.txHelper.unlistMetaInAllMarkets(nftMeta, tx);
+      if (!nftMeta.nft_state || !nftMeta.nft_state.burned) {
+        if (this.txHelper.isListedInAnyMarketplace(nftMeta.nft_state)) {
+          await this.txHelper.unlistMetaInAllMarkets(nftMeta, tx);
+        }
+        if (nftMeta.nft_state && nftMeta.nft_state.staked) {
+          await this.txHelper.unstakeMeta(nftMeta.id, tx);
+        }
+        
+        await this.txHelper.burnMeta(nftMeta.id);
+      } else {
+        this.logger.debug(`NftMeta is already burned`);
       }
 
-      if (this.txHelper.isNewOwnerEvent(tx, nftMeta.nft_state, buyer)) {
-        await this.txHelper.setNewMetaOwner(nftMeta, tx, buyer);
-      }
-
-      await this.createAction(transferParams);
+      await this.createAction(burnActionParams);
 
       txResult.processed = true;
     } else {
@@ -60,8 +61,7 @@ export class NftTransferEventIndexerService implements IndexerService {
 
     return txResult;
   }
-
-  async createAction(params: CreateTransferActionTO): Promise<Action> {
+  async createAction(params: CreateBurnActionTO): Promise<Action> {
     return await this.txActionService.saveAction(params);
   }
   

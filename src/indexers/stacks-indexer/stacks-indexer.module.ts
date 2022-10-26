@@ -1,11 +1,13 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+
 import { ScrapersModule } from 'src/scrapers/scrapers.module';
 import { CommonIndexerModule } from '../common/common-indexer.module';
 import { Block } from "src/database/stacks-stream/entities/Block";
 import { Transaction as StacksTransaction } from "src/database/stacks-stream/entities/Transaction";
 import { StacksTxStreamAdapterService } from './providers/stacks-tx-stream-adapter.service';
 import { StacksTxHelperService } from './providers/stacks-tx-helper.service';
+
 import { ListIndexerService } from './providers/list-indexer.service';
 import { UnlistIndexerService } from './providers/unlist-indexer.service';
 import { BuyIndexerService } from './providers/buy-indexer.service';
@@ -37,8 +39,8 @@ import { TxUpgradeHelperService } from './helpers/tx-upgrade-helper.service';
 import { UpgradeMegaIndexerService } from './providers/upgrade-mega-indexer.service';
 import { BuyWrapperIndexerService } from './providers/buy-wrapper-indexer.service';
 import { AdminSoloIdUnlistBidIndexerService } from './providers/admin-solo-id-unlist-bid-indexer.service';
-//import { BnsRegisterIndexerService } from './providers/bns-register-indexer.service';
 import { NftTransferEventIndexerService } from './providers/nft-transfer-event-indexer.service';
+import { NftBurnEventIndexerService } from './providers/nft-burn-event-indexer.service';
 
 const microIndexers = [
   ListIndexerService,
@@ -72,11 +74,8 @@ const microIndexers = [
   UpgradeMegaIndexerService,
   BuyWrapperIndexerService,
   AdminSoloIdUnlistBidIndexerService,
-  NftTransferEventIndexerService
-  //BnsRegisterIndexerService,
-  //BnsBidIndexerService,
-  //BnsUnlistBidIndexerService,
-  //BnsAcceptBidIndexerService,
+  NftTransferEventIndexerService,
+  NftBurnEventIndexerService
 ];
 
 @Module({

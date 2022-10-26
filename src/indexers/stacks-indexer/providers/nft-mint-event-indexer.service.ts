@@ -30,6 +30,7 @@ export class NftMintEventIndexerService implements IndexerService {
     const token_id = this.stacksTxHelper.extractTokenIdFromNftEvent(event);
     const contract_key = this.stacksTxHelper.extractContractKeyFromNftEvent(event);
     const buyer = event.asset.recipient;
+    const price = this.stacksTxHelper.findAndExtractMintPrice(event, tx.events);
 
     const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
 
@@ -37,7 +38,8 @@ export class NftMintEventIndexerService implements IndexerService {
       const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName.mint, tx, nftMeta, sc);
       const mintActionParams: CreateMintActionTO = { 
         ...actionCommonArgs,
-        buyer 
+        buyer,
+        list_price: price
       };
 
       if (!nftMeta.nft_state || !nftMeta.nft_state.minted) {

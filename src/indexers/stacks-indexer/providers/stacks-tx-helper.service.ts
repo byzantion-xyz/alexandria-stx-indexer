@@ -1,7 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { InjectRepository } from "@nestjs/typeorm";
-import { TransactionEvent, TransactionEventNonFungibleAsset, TransactionEventSmartContractLog } from "@stacks/stacks-blockchain-api-types";
+import { TransactionEvent, TransactionEventNonFungibleAsset, TransactionEventSmartContractLog, TransactionEventStxAsset, TransactionEventStxLock } from "@stacks/stacks-blockchain-api-types";
 import { BufferCV } from "@stacks/transactions";
 import { principalCV } from "@stacks/transactions/dist/clarity/types/principalCV";
 import { cvToTrueValue, hexToCV, cvToJSON } from "micro-stacks/clarity";
@@ -175,6 +175,28 @@ export class StacksTxHelperService {
 
   extractContractKeyFromEvent(e: TransactionEventSmartContractLogWithData): string {
     return e.data.data["collection-id"].split("::")[0].replace("'", "");
+  }
+
+  findAndExtractMintPrice(e: TransactionEventNonFungibleAsset, events: TransactionEvent[]): bigint {
+    let mintPrice = BigInt(0);
+
+    const stxEvent = events.find((evt) =>
+        evt.event_type === "stx_asset" && evt.asset.sender === e.asset.recipient
+    ) as TransactionEventStxAsset;
+
+    if (stxEvent && stxEvent.asset) {
+      mintPrice = BigInt(stxEvent.asset.amount);
+    } else {
+      const stxLock = events.find((evt) =>
+        evt.event_type === "stx_lock" && evt.stx_lock_event.locked_address === e.asset.recipient
+      ) as TransactionEventStxLock;
+
+      if (stxLock) {
+        mintPrice = BigInt(stxLock.stx_lock_event.locked_amount);
+      }
+    }
+
+    return mintPrice;
   }
 
   extractAndParseContractKey(args: [], scf: SmartContractFunction, field: string = "contract_key"): string {

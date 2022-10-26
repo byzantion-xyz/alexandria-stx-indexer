@@ -28,7 +28,7 @@ export class NftTransferEventIndexerService implements IndexerService {
 
     const event = this.stacksTxHelper.findNftEventByIndex(tx.events, tx.args.event_index);
     const token_id = this.stacksTxHelper.extractTokenIdFromNftEvent(event);
-    const contract_key = event.asset.asset_id;
+    const contract_key = this.stacksTxHelper.parseContractKeyFromAssetId(event.asset.asset_id);
     const seller = event.asset.sender;
     const buyer = event.asset.recipient;
     

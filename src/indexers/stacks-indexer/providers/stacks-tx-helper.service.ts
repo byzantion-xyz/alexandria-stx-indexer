@@ -169,6 +169,10 @@ export class StacksTxHelperService {
     return assetId.split("::")[0].replace("'", "");
   }
 
+  extractContractKeyFromNftEvent(e: TransactionEventNonFungibleAsset): string {
+    return this.parseContractKeyFromAssetId(e.asset.asset_id);
+  }
+
   extractContractKeyFromEvent(e: TransactionEventSmartContractLogWithData): string {
     return e.data.data["collection-id"].split("::")[0].replace("'", "");
   }

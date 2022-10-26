@@ -35,9 +35,7 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
     private stacksTxHelper: StacksTxHelperService,
     private commonUtil: CommonUtilService,
     @InjectRepository(TransactionEntity, "CHAIN-STREAM")
-    private transactionRepository: Repository<TransactionEntity>,
-    @InjectRepository(SmartContract)
-    private smartContractRepository: Repository<SmartContract>
+    private transactionRepository: Repository<TransactionEntity>
   ) {}
 
   async connectPool(): Promise<any> {

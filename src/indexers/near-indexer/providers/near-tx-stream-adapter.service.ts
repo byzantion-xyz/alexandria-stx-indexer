@@ -1,7 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { CommonTx } from "src/indexers/common/interfaces/common-tx.interface";
 import { TxProcessResult } from "src/indexers/common/interfaces/tx-process-result.interface";
-import { NearTxResult, TxCursorBatch, TxStreamAdapter } from "src/indexers/common/interfaces/tx-stream-adapter.interface";
+import { TxResult, TxCursorBatch, TxStreamAdapter } from "src/indexers/common/interfaces/tx-stream-adapter.interface";
 import { TxHelperService } from "../../common/helpers/tx-helper.service";
 import { Client, Pool, PoolClient } from 'pg';
 import * as Cursor from 'pg-cursor';
@@ -81,7 +81,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
   }
 
   setTxResult(tx: CommonTx, result: TxProcessResult): void {
-    const txResult: [number, NearTxResult] = this.txResults.get(tx.hash);
+    const txResult: [number, TxResult] = this.txResults.get(tx.hash);
 
     if (!txResult) {
       this.logger.warn(`Couldn't set TxProcessResult: ${tx.hash}`);
@@ -222,7 +222,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
         missingNftEvent: false,
         matchingFunctionCall: !containsFunctionCallCommonTx,
         skipped: []
-      } as NearTxResult]);
+      } as TxResult]);
     }
 
     return commonTxs;

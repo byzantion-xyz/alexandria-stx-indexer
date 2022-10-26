@@ -7,13 +7,13 @@ import * as Cursor from 'pg-cursor';
 import { Transaction as TransactionEntity } from 'src/database/stacks-stream/entities/Transaction';
 import { CommonTx } from 'src/indexers/common/interfaces/common-tx.interface';
 import { TxProcessResult } from 'src/indexers/common/interfaces/tx-process-result.interface';
-import { StacksTxBatchResult, TxCursorBatch, TxStreamAdapter } from 'src/indexers/common/interfaces/tx-stream-adapter.interface';
-import { In, Not, Repository } from 'typeorm';
+import { TxCursorBatch, TxResult, TxStreamAdapter } from 'src/indexers/common/interfaces/tx-stream-adapter.interface';
+import { Repository } from 'typeorm';
 import { StacksTransaction } from '../dto/stacks-transaction.dto';
 import { StacksTxHelperService } from './stacks-tx-helper.service';
-import { SmartContract } from 'src/database/universal/entities/SmartContract';
 import { IndexerOptions } from 'src/indexers/common/interfaces/indexer-options';
 import { CommonUtilService } from 'src/common/helpers/common-util/common-util.service';
+import ExpiryMap = require('expiry-map');
 
 const EXCLUDED_SMART_CONTRACTS = [
   'SP000000000000000000002Q6VF78.bns',
@@ -24,11 +24,14 @@ const EXCLUDED_SMART_CONTRACTS = [
 
 @Injectable()
 export class StacksTxStreamAdapterService implements TxStreamAdapter {
+  readonly chainSymbol = 'Stacks';
+
   private poolClient: PoolClient;
   private pool: Pool;
-  private txBatchResults: StacksTxBatchResult[] = [];
   private readonly logger = new Logger(StacksTxStreamAdapterService.name);
-  chainSymbol = 'Stacks';
+
+  private txBatchResults: TxResult[] = [];
+  private readonly txResults = new ExpiryMap(this.configService.get('indexer.txResultExpiration') || 60000);
 
   constructor (
     private configService: ConfigService,
@@ -68,35 +71,58 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
     return { cursor };
   }
 
-  async setTxResult(tx: CommonTx, txResult: TxProcessResult): Promise<void> {
-    if (txResult.processed || txResult.missing) {
-      this.txBatchResults.push({
-        hash: tx.hash,
-        processed: txResult.processed,
-        missing: txResult.missing
-      });
+  setTxResult(tx: CommonTx, result: TxProcessResult): void {
+    const txResult: [number, TxResult] = this.txResults.get(tx.hash);
+
+    if (!txResult) {
+      this.logger.warn(`Couldn't set TxProcessResult: ${tx.hash}`);
+      return;
+    }
+
+    const isNftEvent = tx.function_name?.endsWith('_event');
+
+    if (isNftEvent) {
+      txResult[1].missingNftEvent = txResult[1].missingNftEvent || result.missing;
+    } else {
+      txResult[1].matchingFunctionCall = txResult[1].matchingFunctionCall || !result.missing;
+    }
+
+    if (result.missing) {
+      txResult[1].skipped.push(`${tx.function_name}${isNftEvent ?? ':' + tx.args?.event_index}`);
+    }
+
+    if (txResult[0] <= 1) {
+      this.txResults.delete(tx.hash);
+
+      this.txBatchResults.push(txResult[1]);
+    } else {
+      this.txResults.set(tx.hash, [txResult[0] - 1, txResult[1]]);
     }
   }
 
   async saveTxResults(): Promise<void> {
+    const values = this.txBatchResults.map((res) => {
+      const skipped = `'{${res.skipped.join(',')}}'::text[]`;
+      return `('${res.hash}', true, ${res.missingNftEvent || !res.matchingFunctionCall}, ${skipped})`;
+    });
+
+    this.txBatchResults = [];
+
+    const sql = `update transaction as t set
+        processed = v.processed,
+        missing = v.missing,
+        skipped = v.skipped
+        from (values ${values.join(',')}) as v(hash, processed, missing, skipped) 
+        where t.hash = v.hash`;
+
+    this.logger.debug(`saveTxResults() txs: ${values.length}`);
+
     try {
-      const values = this.txBatchResults.map(rowValue => `('${rowValue.hash}', ${rowValue.processed}, ${rowValue.missing})`);
-
-      const sql = `update transaction as t set
-          processed = c.processed,
-          missing = c.missing
-          from (values ${values.join(',')}) as c(hash, processed, missing) 
-          where t.hash = c.hash;`;
-
-      this.logger.debug(`saveTxResults() txs: ${this.txBatchResults.length}`);
-      this.txBatchResults = [];
-      if (values.length) {
-        await this.transactionRepository.query(sql);
-      }
+      await this.transactionRepository.query(sql);
     } catch (err) {
       this.logger.warn('saveTxResults() failed');
       this.logger.error(err);
-    } 
+    }
   }
 
   transformTxs(txs: StacksTransaction[]): CommonTx[] {
@@ -130,6 +156,15 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
             ... this.transformTxBase(commonTxs.length, tx),
           });
         });
+      }
+
+      if (commonTxs.length) {
+        this.txResults.set(tx.hash, [commonTxs.length, {
+          hash : tx.hash,
+          missingNftEvent: false,
+          matchingFunctionCall: true,
+          skipped: []
+        } as TxResult]);
       }
 
       return commonTxs;

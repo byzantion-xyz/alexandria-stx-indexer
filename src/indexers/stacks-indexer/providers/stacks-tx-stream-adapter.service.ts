@@ -144,7 +144,7 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
     const tx_index = BigInt(
       tx.tx.microblock_sequence.toString() + 
       this.commonUtil.padWithZeros(tx.tx.tx_index, 5) + 
-      this.commonUtil.padWithZeros(i, 3)
+      this.commonUtil.padWithZeros(i, 4)
     );
 
     return {

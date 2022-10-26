@@ -88,7 +88,7 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
     }
 
     if (result.missing) {
-      txResult[1].skipped.push(`${tx.function_name}${isNftEvent ?? ':' + tx.args?.event_index}`);
+      txResult[1].skipped.push(`${tx.function_name}${isNftEvent ? ':' + tx.args.event_index : ''}`);
     }
 
     if (txResult[0] <= 1) {

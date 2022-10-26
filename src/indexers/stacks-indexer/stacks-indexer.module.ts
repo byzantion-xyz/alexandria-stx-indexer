@@ -41,6 +41,7 @@ import { BuyWrapperIndexerService } from './providers/buy-wrapper-indexer.servic
 import { AdminSoloIdUnlistBidIndexerService } from './providers/admin-solo-id-unlist-bid-indexer.service';
 import { NftTransferEventIndexerService } from './providers/nft-transfer-event-indexer.service';
 import { NftBurnEventIndexerService } from './providers/nft-burn-event-indexer.service';
+import { NftMintEventIndexerService } from './providers/nft-mint-event-indexer.service';
 
 const microIndexers = [
   ListIndexerService,
@@ -74,8 +75,10 @@ const microIndexers = [
   UpgradeMegaIndexerService,
   BuyWrapperIndexerService,
   AdminSoloIdUnlistBidIndexerService,
+  // NFT events
   NftTransferEventIndexerService,
-  NftBurnEventIndexerService
+  NftBurnEventIndexerService,
+  NftMintEventIndexerService
 ];
 
 @Module({

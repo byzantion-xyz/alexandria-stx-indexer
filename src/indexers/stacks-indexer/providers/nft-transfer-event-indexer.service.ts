@@ -32,6 +32,12 @@ export class NftTransferEventIndexerService implements IndexerService {
     const seller = event.asset.sender;
     const buyer = event.asset.recipient;
     
+    if (!(this.stacksTxHelper.isValidWalletAddress(seller) && this.stacksTxHelper.isValidWalletAddress(buyer))) {
+      this.logger.log(`-------non standard transfer-------- ${sc.contract_key}`);
+      txResult.missing = true;
+      return txResult;
+    }
+
     const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
 
     if (nftMeta) {

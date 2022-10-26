@@ -48,7 +48,7 @@ export class NftBurnEventIndexerService implements IndexerService {
         
         await this.txHelper.burnMeta(nftMeta.id);
       } else {
-        this.logger.debug(`NftMeta is already burned`);
+        this.logger.debug(`NftMeta ${contract_key} ${token_id} is already burned`);
       }
 
       await this.createAction(burnActionParams);

@@ -81,6 +81,10 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
 
     const isNftEvent = tx.function_name?.endsWith('_event');
 
+    if (!result.processed) {
+      txResult[1].processed = false;
+    }
+
     if (isNftEvent) {
       txResult[1].missingNftEvent = txResult[1].missingNftEvent || result.missing;
     } else {
@@ -103,7 +107,7 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
   async saveTxResults(): Promise<void> {
     const values = this.txBatchResults.map((res) => {
       const skipped = `'{${res.skipped.join(',')}}'::text[]`;
-      return `('${res.hash}', true, ${res.missingNftEvent || !res.matchingFunctionCall}, ${skipped})`;
+      return `('${res.hash}', ${res.processed}, ${res.missingNftEvent || !res.matchingFunctionCall}, ${skipped})`;
     });
 
     this.txBatchResults = [];
@@ -161,6 +165,7 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
       if (commonTxs.length) {
         this.txResults.set(tx.hash, [commonTxs.length, {
           hash : tx.hash,
+          processed: true,
           missingNftEvent: false,
           matchingFunctionCall: true,
           skipped: []

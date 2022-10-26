@@ -1,6 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { InjectRepository } from "@nestjs/typeorm";
+import { NonFungibleTokenMintListToJSON } from "@stacks/blockchain-api-client";
 import { TransactionEvent, TransactionEventNonFungibleAsset, TransactionEventSmartContractLog, TransactionEventStxAsset, TransactionEventStxLock } from "@stacks/stacks-blockchain-api-types";
 import { BufferCV } from "@stacks/transactions";
 import { principalCV } from "@stacks/transactions/dist/clarity/types/principalCV";
@@ -178,25 +179,29 @@ export class StacksTxHelperService {
   }
 
   findAndExtractMintPrice(e: TransactionEventNonFungibleAsset, events: TransactionEvent[]): bigint {
-    let mintPrice = BigInt(0);
+    let total = BigInt(0);
 
-    const stxEvent = events.find((evt) =>
-        evt.event_type === "stx_asset" && evt.asset.sender === e.asset.recipient
-    ) as TransactionEventStxAsset;
+    let nftMints = events.filter(evt => 
+      evt.event_type === NFT_EVENT_TYPE && evt.asset.asset_event_type === 'mint'
+    ) as TransactionEventNonFungibleAsset[];
 
-    if (stxEvent && stxEvent.asset) {
-      mintPrice = BigInt(stxEvent.asset.amount);
+    const stxTransfers = events.filter((evt) =>
+      evt.event_type === 'stx_asset' && evt.asset.sender === e.asset.recipient
+    ) as TransactionEventStxAsset[];
+
+    if (stxTransfers && stxTransfers.length) {
+      total = stxTransfers.reduce((acc, evt) => acc + BigInt(evt.asset.amount), BigInt(0));
     } else {
-      const stxLock = events.find((evt) =>
-        evt.event_type === "stx_lock" && evt.stx_lock_event.locked_address === e.asset.recipient
-      ) as TransactionEventStxLock;
+      const stxLocks = events.filter((evt) =>
+        evt.event_type === 'stx_lock' && evt.stx_lock_event.locked_address === e.asset.recipient
+      ) as TransactionEventStxLock[];
 
-      if (stxLock) {
-        mintPrice = BigInt(stxLock.stx_lock_event.locked_amount);
+      if (stxLocks && stxLocks.length) {
+        total = stxLocks.reduce((acc, evt) => acc + BigInt(evt.stx_lock_event.locked_amount), BigInt(0));
       }
     }
 
-    return mintPrice;
+    return total / BigInt(nftMints.length);
   }
 
   extractAndParseContractKey(args: [], scf: SmartContractFunction, field: string = "contract_key"): string {

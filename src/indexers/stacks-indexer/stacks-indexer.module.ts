@@ -13,7 +13,6 @@ import { UnlistIndexerService } from './providers/unlist-indexer.service';
 import { BuyIndexerService } from './providers/buy-indexer.service';
 import { StakeIndexerService } from './providers/stake-indexer.service';
 import { UnstakeIndexerService } from './providers/unstake-indexer.service';
-import { TransferIndexerService } from './providers/transfer-indexer.service';
 import { ChangePriceIndexerService } from './providers/change-price-indexer.service';
 import { BidIndexerService } from './providers/bid-indexer.service';
 import { UnlistBidIndexerService } from './providers/unlist-bid-indexer.service';
@@ -49,7 +48,6 @@ const microIndexers = [
   BuyIndexerService,
   StakeIndexerService,
   UnstakeIndexerService,
-  TransferIndexerService,
   ChangePriceIndexerService,
   BidIndexerService,
   UnlistBidIndexerService,

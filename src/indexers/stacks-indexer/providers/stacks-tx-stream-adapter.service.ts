@@ -62,8 +62,8 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
       AND contract_id NOT IN (${EXCLUDED_SMART_CONTRACTS.map((key) => `'${key}'`).join(',')})
       AND tx->>'tx_type' = 'contract_call'
       AND tx->>'tx_status' = 'success'
-      AND processed = false
-      AND missing = ${ options.includeMissings ? true : false }
+      and processed = ${options.includeMissings}
+      and missing = ${options.includeMissings}
       ORDER BY t.block_height ASC, tx->>'microblock_sequence' ASC, tx->>'tx_index' ASC
     `;
 
@@ -88,7 +88,7 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
     if (isNftEvent) {
       txResult[1].missingNftEvent = txResult[1].missingNftEvent || result.missing;
     } else {
-      txResult[1].matchingFunctionCall = txResult[1].matchingFunctionCall || !result.missing;
+      txResult[1].matchingFunctionCall = txResult[1].matchingFunctionCall && result.processed;
     }
 
     if (result.missing) {
@@ -107,6 +107,7 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
   async saveTxResults(): Promise<void> {
     const values = this.txBatchResults.map((res) => {
       const skipped = `'{${res.skipped.join(',')}}'::text[]`;
+
       return `('${res.hash}', ${res.processed}, ${res.missingNftEvent || !res.matchingFunctionCall}, ${skipped})`;
     });
 
@@ -167,7 +168,7 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
           hash : tx.hash,
           processed: true,
           missingNftEvent: false,
-          matchingFunctionCall: true,
+          matchingFunctionCall: false,
           skipped: []
         } as TxResult]);
       }

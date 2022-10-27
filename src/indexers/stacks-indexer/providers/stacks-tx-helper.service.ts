@@ -178,6 +178,18 @@ export class StacksTxHelperService {
     return e.data.data["collection-id"].split("::")[0].replace("'", "");
   }
 
+  findAndExtractSellerFromEvents(events: TransactionEvent[]): string {
+    let stxTransfers = (events.filter(evt => evt.event_type === 'stx_asset') as TransactionEventStxAsset[])
+      .sort((a, b) => Number(b.asset.amount) - Number(a.asset.amount));
+
+    return stxTransfers && stxTransfers.length ? stxTransfers[0].asset.recipient : undefined;
+  }
+
+  findAndExtractSalePriceFromEvents(events: TransactionEvent[]): bigint {
+    let stxTransfers = events.filter(evt => evt.event_type === 'stx_asset') as TransactionEventStxAsset[];
+    return stxTransfers.reduce((acc, evt) => acc + BigInt(evt.asset.amount), BigInt(0));    
+  }
+
   findAndExtractMintPrice(e: TransactionEventNonFungibleAsset, events: TransactionEvent[]): bigint {
     let total = BigInt(0);
 

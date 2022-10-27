@@ -107,8 +107,9 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
   async saveTxResults(): Promise<void> {
     const values = this.txBatchResults.map((res) => {
       const skipped = `'{${res.skipped.join(',')}}'::text[]`;
+      const missing = res.missingNftEvent || (!res.matchingFunctionCall && res.totalCommonTx === 1);
 
-      return `('${res.hash}', ${res.processed}, ${res.missingNftEvent || !res.matchingFunctionCall}, ${skipped})`;
+      return `('${res.hash}', ${res.processed}, ${missing}, ${skipped})`;
     });
 
     this.txBatchResults = [];
@@ -169,7 +170,8 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
           processed: true,
           missingNftEvent: false,
           matchingFunctionCall: false,
-          skipped: []
+          skipped: [],
+          totalCommonTxs: commonTxs.length
         } as TxResult]);
       }
 

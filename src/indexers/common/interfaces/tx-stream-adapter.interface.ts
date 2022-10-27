@@ -8,7 +8,8 @@ export interface TxResult {
   processed: boolean,
   missingNftEvent: boolean,
   matchingFunctionCall: boolean,
-  skipped: string[]
+  skipped: string[],
+  totalCommonTx?: number
 }
 
 export interface ProcessedTxsResult {

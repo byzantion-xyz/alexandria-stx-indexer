@@ -15,12 +15,14 @@ import { IndexerOptions } from 'src/indexers/common/interfaces/indexer-options';
 import { CommonUtilService } from 'src/common/helpers/common-util/common-util.service';
 import ExpiryMap = require('expiry-map');
 
+// Btc domain marketplaces
 const EXCLUDED_SMART_CONTRACTS = [
   'SP000000000000000000002Q6VF78.bns',
   'SP2KAF9RF86PVX3NEE27DFV1CQX0T4WGR41X3S45C.bns-marketplace',
   'SP2KAF9RF86PVX3NEE27DFV1CQX0T4WGR41X3S45C.bns-marketplace-v1',
   'SP2KAF9RF86PVX3NEE27DFV1CQX0T4WGR41X3S45C.bns-marketplace-v3',
-  'SP3XYJ8XFZYF7MD86QQ5EF8HBVHHZFFQ9HM6SPJNQ.market'
+  'SP3XYJ8XFZYF7MD86QQ5EF8HBVHHZFFQ9HM6SPJNQ.market',
+  'SP3XYJ8XFZYF7MD86QQ5EF8HBVHHZFFQ9HM6SPJNQ.instant-regist'
 ];
 
 @Injectable()

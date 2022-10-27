@@ -143,6 +143,7 @@ export class IndexerOrchestratorService {
             result = await txHandler.process(transaction, sc, scf);
           } else {
             this.logger.debug(`No micro indexer defined for the context: ${indexer_name}`);
+            result.missing = true;
           }
         } else {
           this.logger.debug(`function_name: ${method_name} not found in ${transaction.receiver}`);

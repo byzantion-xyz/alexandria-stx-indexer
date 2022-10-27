@@ -15,6 +15,12 @@ const BATCH_LIMIT = 50;
 const ASYNC_WALLETS = 20;
 const ASYNC_SMART_CONTRACTS = 10;
 
+export interface NftToken {
+  owner_id: string;
+  token_id: string;
+  metadata: any;
+}
+
 @Injectable()
 export class NearOwnershipService {
   private readonly logger = new Logger(NearOwnershipService.name);
@@ -110,12 +116,15 @@ export class NearOwnershipService {
     }));
   }
 
-  async fetchSmartContractNftOwner(contractKey: string, token_id: string): Promise<string> {
+  async fetchSmartContractNft(contractKey: string, token_id: string): Promise<NftToken> {
     try {
+      if (!this.nearConnection) {
+        this.nearConnection = await this.contractConnectionService.connectNear();
+      }
       const contract = this.contractConnectionService.getContract(contractKey, this.nearConnection);
-      const token = await contract.nft_token({ token_id: token_id }); 
+      const token: NftToken = await contract.nft_token({ token_id: token_id });
 
-      return token.owner_id;
+      return token;
     } catch (err) {
       this.logger.warn(err);
     }
@@ -125,6 +134,9 @@ export class NearOwnershipService {
     let results: WalletNft[] = [];
 
     try {
+      if (!this.nearConnection) {
+        this.nearConnection = await this.contractConnectionService.connectNear();
+      }
       //this.logger.debug(`fetchSmartContactOwnedNfts() ${contractKey}`);
 
       const contract = this.contractConnectionService.getContract(contractKey, this.nearConnection);
@@ -239,7 +251,13 @@ export class NearOwnershipService {
         const saved = await this.actionRepo.save(newAction);
         actionId = saved.id;
 
-        await this.nftStateRepo.upsert({ meta_id: nftMeta.id, owner: owner }, ["meta_id"]);
+        await this.nftStateRepo.upsert({ 
+          meta_id: nftMeta.id,
+          owner: owner,
+          owner_block_height: this.recentTransfer.block_height,
+          burned: owner === null ? true : false
+        }, ["meta_id"]);
+
         this.logger.log(`Fixed owner ${actualOwner || ''} --> ${owner} for ${contract_key} ${token_id}`);
       } catch (err) {
         if (actionId) {
@@ -266,13 +284,13 @@ export class NearOwnershipService {
 
     let result: WalletNft[] = [];
     for (let diff of differences) {
-      let owner = diff.smart_contract_owner;
-      if (!owner) {
-        owner = await this.fetchSmartContractNftOwner(diff.contract_key, diff.token_id);
-      }
-      if (owner) {
+      let token = await this.fetchSmartContractNft(diff.contract_key, diff.token_id);
+
+      let owner = token === null ? null : token?.owner_id;
+      if (token === null || token?.owner_id) {
         await this.fixNftMetaOwner(diff.token_id, diff.contract_key, owner);
       }
+
       result.push({
         token_id: diff.token_id,
         contract_key: diff.contract_key,

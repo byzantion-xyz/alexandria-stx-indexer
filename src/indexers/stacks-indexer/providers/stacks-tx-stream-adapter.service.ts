@@ -81,7 +81,7 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
 
     const isNftEvent = tx.function_name?.endsWith('_event');
 
-    if (!result.processed) {
+    if (!result.processed && !result.missing) {
       txResult[1].processed = false;
     }
 

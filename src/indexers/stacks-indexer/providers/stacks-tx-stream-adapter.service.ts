@@ -65,8 +65,11 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
       AND contract_id NOT IN (${EXCLUDED_SMART_CONTRACTS.map((key) => `'${key}'`).join(',')})
       AND tx->>'tx_type' = 'contract_call'
       AND tx->>'tx_status' = 'success'
-      and processed = ${options.includeMissings}
-      and missing = ${options.includeMissings}
+      AND ( 
+            tx->'events' @> '[{ "event_type": "non_fungible_token_asset" }, { "asset": {"asset_event_type": "mint"}}]' 
+            OR tx->'events' @> '[{ "event_type": "non_fungible_token_asset" }, { "asset": {"asset_event_type": "transfer" }}]'
+            OR tx->'events' @> '[{ "event_type": "non_fungible_token_asset" }, { "asset": {"asset_event_type": "burn" }}]'
+          )
       ORDER BY t.block_height ASC, tx->>'microblock_sequence' ASC, tx->>'tx_index' ASC
     `;
 

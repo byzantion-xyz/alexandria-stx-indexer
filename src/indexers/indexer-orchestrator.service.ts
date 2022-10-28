@@ -119,7 +119,7 @@ export class IndexerOrchestratorService {
       let scf = Array.isArray(this.genericScf) &&
         this.genericScf.find((f) => f.function_name === method_name);
 
-      if (!sc && scf && this.chainSymbol === 'Near') {
+      if (!sc && scf) {
         sc = await this.txHelper.createSmartContractSkeleton(transaction.receiver, this.chainId);
         sc.smart_contract_functions = [];
         if (Array.isArray(this.scs)) {
@@ -135,7 +135,7 @@ export class IndexerOrchestratorService {
         if (scf) {
           const indexer_name = transaction.indexer_name || scf.name;
           const txHandler = this.getMicroIndexer(indexer_name);
-         
+          
           if (txHandler) {
             txHandler.stakingScs = Array.isArray(this.scs) && this.scs.filter(sc => sc.type.includes(SmartContractType.staking)); 
             txHandler.marketScs = Array.isArray(this.scs) && this.scs.filter(sc => sc.type.includes(SmartContractType.marketplace));
@@ -143,6 +143,7 @@ export class IndexerOrchestratorService {
             result = await txHandler.process(transaction, sc, scf);
           } else {
             this.logger.debug(`No micro indexer defined for the context: ${indexer_name}`);
+            result.missing = true;
           }
         } else {
           this.logger.debug(`function_name: ${method_name} not found in ${transaction.receiver}`);

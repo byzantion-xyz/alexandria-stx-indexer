@@ -1,7 +1,8 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { InjectRepository } from "@nestjs/typeorm";
-import { TransactionEvent, TransactionEventSmartContractLog } from "@stacks/stacks-blockchain-api-types";
+import { NonFungibleTokenMintListToJSON } from "@stacks/blockchain-api-client";
+import { TransactionEvent, TransactionEventNonFungibleAsset, TransactionEventSmartContractLog, TransactionEventStxAsset, TransactionEventStxLock } from "@stacks/stacks-blockchain-api-types";
 import { BufferCV } from "@stacks/transactions";
 import { principalCV } from "@stacks/transactions/dist/clarity/types/principalCV";
 import { cvToTrueValue, hexToCV, cvToJSON } from "micro-stacks/clarity";
@@ -9,21 +10,22 @@ import { CommonUtilService } from "src/common/helpers/common-util/common-util.se
 import { BidState } from "src/database/universal/entities/BidState";
 import { Collection } from "src/database/universal/entities/Collection";
 import { NftMeta } from "src/database/universal/entities/NftMeta";
-import { NftState } from "src/database/universal/entities/NftState";
 import { NftStateList } from "src/database/universal/entities/NftStateList";
 import { SmartContract } from "src/database/universal/entities/SmartContract";
 import { SmartContractFunction } from "src/database/universal/entities/SmartContractFunction";
 import { BidType, CollectionBidStatus } from "src/indexers/common/helpers/indexer-enums";
 import { CreateBidCommonArgs } from "src/indexers/common/helpers/tx-bid-helper.service";
-import { TxHelperService } from "src/indexers/common/helpers/tx-helper.service";
 import { CommonTx } from "src/indexers/common/interfaces/common-tx.interface";
 import { Repository } from "typeorm";
+import { StacksTransaction } from "../dto/stacks-transaction.dto";
 interface FunctionArgs {
   hex: string;
   repr: string;
   name: string;
   type: string;
 }
+
+const NFT_EVENT_TYPE = 'non_fungible_token_asset';
 
 export type TransactionEventSmartContractLogWithData = TransactionEventSmartContractLog & {
   data: {
@@ -42,7 +44,6 @@ export class StacksTxHelperService {
 
   constructor(
     private commonUtil: CommonUtilService,
-    private txHelper: TxHelperService,
     @InjectRepository(NftMeta)
     private nftMetaRepository: Repository<NftMeta>,
     private configService: ConfigService,
@@ -52,18 +53,22 @@ export class StacksTxHelperService {
     this.byzOldMarketplaces = this.configService.get("indexer.byzOldMarketplaceContractKeys");
   }
 
+  parseHexData(hex: string) {
+    let data = hexToCV(hex);
+    if (Object.keys(data).includes("buffer")) {
+      return (data as BufferCV).buffer.toString();
+    } else {
+      let json = cvToJSON(data);
+      return json.type === "uint" ? Number(json.value) : json.value;
+    }
+  }
+
   parseHexArguments(args: FunctionArgs[]) {
     try {
       let result = [];
       for (let arg of args) {
         if (arg.hex) {
-          let data = hexToCV(arg.hex);
-          if (Object.keys(data).includes("buffer")) {
-            result.push((data as BufferCV).buffer.toString());
-          } else {
-            let json = cvToJSON(data);
-            result.push(json.type === "uint" ? Number(json.value) : json.value);
-          }
+          result.push(this.parseHexData(arg.hex));
         }
       }
       return result;
@@ -94,10 +99,6 @@ export class StacksTxHelperService {
       !state_list.list_block_height ||
       tx.block_height > state_list.list_block_height ||
       (tx.block_height == state_list.list_block_height &&
-        typeof tx.sub_block_sequence !== 'undefined' && 
-        tx.sub_block_sequence > state_list.list_sub_block_seq) ||
-      (tx.block_height == state_list.list_block_height &&
-        tx.sub_block_sequence == state_list.list_sub_block_seq &&
         typeof tx.index !== 'undefined' &&
         tx.index > state_list.list_tx_index)
     );
@@ -150,8 +151,69 @@ export class StacksTxHelperService {
     return this.byzOldMarketplaces.includes(sc.contract_key);
   }
 
+  extractTokenIdFromNftEvent(event: TransactionEventNonFungibleAsset): string {
+    let value = this.parseHexData(event.asset.value.hex);
+    if (isNaN(value)) {
+      throw new Error('Unable to extract token_id from NFT event');
+    }
+
+    return value;
+  }
+
+  findNftEventByIndex(events: TransactionEvent[], index: number): TransactionEventNonFungibleAsset {
+    return events.find(
+      (e) => e.event_type === NFT_EVENT_TYPE && e.event_index === index
+    ) as TransactionEventNonFungibleAsset;
+  }
+
+  parseContractKeyFromAssetId(assetId: string) {
+    return assetId.split("::")[0].replace("'", "");
+  }
+
+  extractContractKeyFromNftEvent(e: TransactionEventNonFungibleAsset): string {
+    return this.parseContractKeyFromAssetId(e.asset.asset_id);
+  }
+
   extractContractKeyFromEvent(e: TransactionEventSmartContractLogWithData): string {
     return e.data.data["collection-id"].split("::")[0].replace("'", "");
+  }
+
+  findAndExtractSellerFromEvents(events: TransactionEvent[]): string {
+    let stxTransfers = (events.filter(evt => evt.event_type === 'stx_asset') as TransactionEventStxAsset[])
+      .sort((a, b) => Number(b.asset.amount) - Number(a.asset.amount));
+
+    return stxTransfers && stxTransfers.length ? stxTransfers[0].asset.recipient : undefined;
+  }
+
+  findAndExtractSalePriceFromEvents(events: TransactionEvent[]): bigint {
+    let stxTransfers = events.filter(evt => evt.event_type === 'stx_asset') as TransactionEventStxAsset[];
+    return stxTransfers.reduce((acc, evt) => acc + BigInt(evt.asset.amount), BigInt(0));    
+  }
+
+  findAndExtractMintPrice(e: TransactionEventNonFungibleAsset, events: TransactionEvent[]): bigint {
+    let total = BigInt(0);
+
+    let nftMints = events.filter(evt => 
+      evt.event_type === NFT_EVENT_TYPE && evt.asset.asset_event_type === 'mint'
+    ) as TransactionEventNonFungibleAsset[];
+
+    const stxTransfers = events.filter((evt) =>
+      evt.event_type === 'stx_asset' && evt.asset.sender === e.asset.recipient
+    ) as TransactionEventStxAsset[];
+
+    if (stxTransfers && stxTransfers.length) {
+      total = stxTransfers.reduce((acc, evt) => acc + BigInt(evt.asset.amount), BigInt(0));
+    } else {
+      const stxLocks = events.filter((evt) =>
+        evt.event_type === 'stx_lock' && evt.stx_lock_event.locked_address === e.asset.recipient
+      ) as TransactionEventStxLock[];
+
+      if (stxLocks && stxLocks.length) {
+        total = stxLocks.reduce((acc, evt) => acc + BigInt(evt.stx_lock_event.locked_amount), BigInt(0));
+      }
+    }
+
+    return total / BigInt(nftMints.length);
   }
 
   extractAndParseContractKey(args: [], scf: SmartContractFunction, field: string = "contract_key"): string {
@@ -209,5 +271,10 @@ export class StacksTxHelperService {
         nft_metas: { meta: { collection: true, smart_contract: true } }
       }
     });
+  }
+
+  getNftEvents(tx: StacksTransaction): TransactionEventNonFungibleAsset[] {
+    const nftEvents = tx.tx.events.filter(e => e.event_type === NFT_EVENT_TYPE);
+    return nftEvents as TransactionEventNonFungibleAsset[];
   }
 }

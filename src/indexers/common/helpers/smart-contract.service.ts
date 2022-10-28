@@ -50,4 +50,12 @@ export class SmartContractService {
 
     return sc;
   }
+
+  async readOrFetchByKey(contractKey: string, chainId: string, marketScs?: SmartContract[]): Promise<SmartContract> {
+    return Array.isArray(marketScs) && marketScs.length
+      ? marketScs.find(sc => sc.contract_key === contractKey)
+      : await this.smartContractRepository.findOne({ 
+        where: { chain_id: chainId, contract_key: contractKey }
+      });
+  }
 }

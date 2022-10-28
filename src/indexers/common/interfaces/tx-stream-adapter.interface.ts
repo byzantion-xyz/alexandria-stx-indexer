@@ -3,23 +3,13 @@ import { CommonTx } from "./common-tx.interface";
 import { Client, Pool, PoolClient } from 'pg';
 import { IndexerOptions } from "./indexer-options";
 
-export interface CommonTxResult {
-  txs: CommonTx[],
-  total: number
-}
-
-export interface NearTxResult {
+export interface TxResult {
   hash: string,
   processed: boolean,
   missingNftEvent: boolean,
   matchingFunctionCall: boolean,
-  skipped: string[]
-}
-
-export interface StacksTxBatchResult {
-  hash: string,
-  processed: boolean,
-  missing: boolean
+  skipped: string[],
+  totalCommonTxs?: number
 }
 
 export interface ProcessedTxsResult {

@@ -218,7 +218,8 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
 
   async fetchEventData(event): Promise<CommonTx[]> {
     const sql = `SELECT * from transaction t
-      WHERE block_height=${event} 
+      WHERE block_height=${event}
+      AND contract_id NOT IN (${EXCLUDED_SMART_CONTRACTS.map((key) => `'${key}'`).join(',')}) 
       AND tx->>'tx_type' = 'contract_call' 
       AND tx->>'tx_status' = 'success' 
       AND processed = false 

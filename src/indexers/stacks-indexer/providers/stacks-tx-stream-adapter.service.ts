@@ -26,7 +26,8 @@ const EXCLUDED_SMART_CONTRACTS = [
   'SP1K1A1PMGW2ZJCNF46NWZWHG8TS1D23EGH1KNK60.pool-registry',
   'SP1K1A1PMGW2ZJCNF46NWZWHG8TS1D23EGH1KNK60.pool-registry-v1',
   'SP3A6FJ92AA0MS2F57DG786TFNG8J785B3F8RSQC9.owl-link',
-  'SP1N3865XAA3BHRSDG8ZCR58HF74541F0F91SXPQ5.register-multi'
+  'SP1N3865XAA3BHRSDG8ZCR58HF74541F0F91SXPQ5.register-multi',
+  'SPCHKJ49HXP2CJ2PDCHQ2NC40TJBSYPWVXX99SBM.bns-1666908872969-v1'
 ];
 
 @Injectable()
@@ -71,6 +72,7 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
       AND tx->>'tx_status' = 'success'
       and processed = ${options.includeMissings}
       and missing = ${options.includeMissings}
+      AND tx->'contract_call'->>'function_name' IN ('accept-bid', 'bid-item','bid-punk','withdraw-bid')
       ORDER BY t.block_height ASC, tx->>'microblock_sequence' ASC, tx->>'tx_index' ASC
     `;
 

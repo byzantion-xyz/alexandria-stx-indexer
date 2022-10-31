@@ -151,13 +151,8 @@ export class StacksTxHelperService {
     return this.byzOldMarketplaces.includes(sc.contract_key);
   }
 
-  extractTokenIdFromNftEvent(event: TransactionEventNonFungibleAsset): string {
-    let value = this.parseHexData(event.asset.value.hex);
-    if (isNaN(value)) {
-      throw new Error('Unable to extract token_id from NFT event');
-    }
-
-    return value;
+  extractTokenIdFromNftEvent(event: TransactionEventNonFungibleAsset): any {
+    return this.parseHexData(event.asset.value.hex);
   }
 
   findNftEventByIndex(events: TransactionEvent[], index: number): TransactionEventNonFungibleAsset {

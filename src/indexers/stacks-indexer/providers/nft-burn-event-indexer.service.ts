@@ -29,6 +29,10 @@ export class NftBurnEventIndexerService implements IndexerService {
 
     const event = this.stacksTxHelper.findNftEventByIndex(tx.events, tx.args.event_index);
     const token_id = this.stacksTxHelper.extractTokenIdFromNftEvent(event);
+    if (isNaN(token_id)) {
+      this.logger.warn('Unable to extract token_id from NFT event');
+      return txResult;
+    }
     const contract_key = this.stacksTxHelper.extractContractKeyFromNftEvent(event);
     const seller = event.asset.sender;
 

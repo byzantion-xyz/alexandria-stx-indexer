@@ -35,9 +35,9 @@ export class NftMintEventIndexerService implements IndexerService {
     const token_id = token_ids[0];
     const buyer = this.nearTxHelper.extractArgumentData(tx.args, scf, 'owner');
     const contract_key = receipt.receiver_id;
-    let price = this.nearTxHelper.extractArgumentData(tx.args, scf, 'price');
-    if (isNaN(price)) {
-      price = '0';
+    let price = '0';
+    if (tx.args.memo && tx.args.memo.price) {
+      price = this.nearTxHelper.extractArgumentData(tx.args, scf, 'price');
     }
    
     // Check if has custodial smart contract
@@ -51,7 +51,7 @@ export class NftMintEventIndexerService implements IndexerService {
     const mintActionParams: CreateMintActionTO = { 
       ...actionCommonArgs,
       buyer,
-      list_price: price
+      list_price: BigInt(price)
     };
 
     if (!nftMeta.nft_state || !nftMeta.nft_state.minted) {
@@ -65,7 +65,7 @@ export class NftMintEventIndexerService implements IndexerService {
   }
 
   async createAction(params: CreateMintActionTO): Promise<Action> {
-    return await this.txActionService.saveAction(params);
+    return await this.txActionService.upsertAction(params);
   }
 
 }

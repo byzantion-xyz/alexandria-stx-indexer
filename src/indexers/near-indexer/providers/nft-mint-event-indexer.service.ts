@@ -27,15 +27,19 @@ export class NftMintEventIndexerService implements IndexerService {
 
     const receipt = tx.receipts[0];  
 
-    const token_ids: [string] = this.nearTxHelper.extractArgumentData(tx.args, scf, "token_ids");
+    const token_ids: [string] = this.nearTxHelper.extractArgumentData(tx.args, scf, 'token_ids');
     if (!token_ids || !token_ids.length) {
       this.logger.warn(`Unable to find token_ids tx hash: ${tx.hash}`);
       return txResult;
     }
     const token_id = token_ids[0];
-    const buyer = this.nearTxHelper.extractArgumentData(tx.args, scf, "owner");
+    const buyer = this.nearTxHelper.extractArgumentData(tx.args, scf, 'owner');
     const contract_key = receipt.receiver_id;
-
+    let price = this.nearTxHelper.extractArgumentData(tx.args, scf, 'price');
+    if (isNaN(price)) {
+      price = '0';
+    }
+   
     // Check if has custodial smart contract
     if (sc.type.includes(SmartContractType.non_fungible_tokens) && sc.custodial_smart_contract) {
       msc = sc.custodial_smart_contract;
@@ -46,7 +50,8 @@ export class NftMintEventIndexerService implements IndexerService {
     const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName.mint, tx, nftMeta, msc);
     const mintActionParams: CreateMintActionTO = { 
       ...actionCommonArgs,
-      buyer 
+      buyer,
+      list_price: price
     };
 
     if (!nftMeta.nft_state || !nftMeta.nft_state.minted) {

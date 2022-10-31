@@ -72,7 +72,7 @@ export interface CreateSoloBidActionTO extends CreateBidActionTO {}
 
 export interface CreateMintActionTO extends CreateActionCommonArgs {
   buyer: string;
-  list_price?: bigint;
+  list_price: bigint;
 };
 export interface CreateBurnActionTO extends CreateActionCommonArgs {
   seller: string

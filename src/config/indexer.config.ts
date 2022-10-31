@@ -47,7 +47,8 @@ export default registerAs("indexer", () => ({
         name: 'nft_mint_event',
         args: {
           "owner": "owner_id",
-          "token_ids": "token_ids"
+          "token_ids": "token_ids",
+          "price": "memo.price"
         }
       },
       {

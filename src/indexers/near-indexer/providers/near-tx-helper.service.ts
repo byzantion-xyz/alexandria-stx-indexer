@@ -100,6 +100,12 @@ export class NearTxHelperService {
       if (l.startsWith(NEAR_EVENT_PREFIX)) {
         try {
           const event: NftOrFtEvent = JSON.parse(l.replace(NEAR_EVENT_PREFIX, ''))
+
+          if (event.data && event.data[0] && event.data[0].memo) {
+            try {
+              event.data[0].memo = JSON.parse(event.data[0].memo);
+            } catch (err) {}
+          }
           acc.push([event, rcpt]);
         } catch (err) {
           this.logger.warn(`getEvents() failed to parse JSON for receipt: ${rcpt.id}`);
@@ -140,9 +146,10 @@ export class NearTxHelperService {
     if (index.toString().includes(".")) {
       const indexArr = index.toString().split(".");
       // TODO: Use recursive function
-      if (indexArr.length === 2) {
+      if (indexArr.length === 2 && args[indexArr[0]]) {
         return args[indexArr[0]][indexArr[1]];
-      } else if (indexArr.length === 3) {
+      } else if (indexArr.length === 3 && args[indexArr[0]] && 
+        args[indexArr[0]][indexArr[1]]) {
         return args[indexArr[0]][indexArr[1]][indexArr[2]];
       }
     } else {

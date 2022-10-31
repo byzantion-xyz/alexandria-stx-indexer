@@ -82,7 +82,6 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
       WHERE block_height >= ${options.start_block_height ?? 0}
       AND block_height <= ${options.end_block_height ?? end_block_height}
       AND contract_id NOT IN (${EXCLUDED_SMART_CONTRACTS.map((key) => `'${key}'`).join(',')})
-      AND tx->>'tx_type' = 'contract_call'
       AND tx->>'tx_status' = 'success'
       and processed = ${options.includeMissings}
       and missing = ${options.includeMissings}
@@ -159,17 +158,17 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
   transformTx(tx: StacksTransaction): CommonTx[] {
     try {  
       let commonTxs: CommonTx[] = [];
-      const args = tx.tx.contract_call.function_args;
-      let parsed_args;
-      if (args) {
-        parsed_args = this.stacksTxHelper.parseHexArguments(args);
-      }
+      
+      if (tx.tx.tx_type === "contract_call") {
+        const args = tx.tx.contract_call.function_args;
+        const parsed_args = this.stacksTxHelper.parseHexArguments(args);
 
-      commonTxs.push({
-        function_name: tx.tx.contract_call.function_name,
-        args: parsed_args,
-        ...this.transformTxBase(commonTxs.length, tx)
-      });
+        commonTxs.push({
+          function_name: tx.tx.contract_call.function_name,
+          args: parsed_args,
+          ...this.transformTxBase(commonTxs.length, tx)
+        });
+      }
       
       const nftEvents = tx.tx.event_count ? this.stacksTxHelper.getNftEvents(tx) : [];
 
@@ -200,7 +199,7 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
 
       return commonTxs;
     } catch (err) {
-      this.logger.warn(`transormTx() has failed for tx hash: ${tx.hash}`);
+      this.logger.warn(`transformTx() has failed for tx hash: ${tx.hash}`);
     }
   }
 
@@ -219,7 +218,7 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
       nonce: BigInt(tx.tx.nonce),
       index: tx_index,
       signer: tx.tx.sender_address,
-      receiver: tx.tx.contract_call.contract_id,
+      receiver: tx.tx.tx_type === 'contract_call' ? tx.tx.contract_call.contract_id : tx.tx.smart_contract.contract_id,
       events: tx.tx.events
     };
   }

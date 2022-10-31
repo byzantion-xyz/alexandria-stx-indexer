@@ -35,11 +35,12 @@ export class NftMintEventIndexerService implements IndexerService {
     const token_id = token_ids[0];
     const buyer = this.nearTxHelper.extractArgumentData(tx.args, scf, 'owner');
     const contract_key = receipt.receiver_id;
-    let price = '0';
-    if (tx.args.memo && tx.args.memo.price) {
-      price = this.nearTxHelper.extractArgumentData(tx.args, scf, 'price');
+
+    let price = this.nearTxHelper.extractArgumentData(tx.args, scf, 'price');
+    if (isNaN(price)) {
+      price = '0';
     }
-   
+
     // Check if has custodial smart contract
     if (sc.type.includes(SmartContractType.non_fungible_tokens) && sc.custodial_smart_contract) {
       msc = sc.custodial_smart_contract;

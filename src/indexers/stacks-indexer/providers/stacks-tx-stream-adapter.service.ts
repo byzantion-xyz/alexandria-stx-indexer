@@ -15,6 +15,7 @@ import { IndexerOptions } from 'src/indexers/common/interfaces/indexer-options';
 import { CommonUtilService } from 'src/common/helpers/common-util/common-util.service';
 import ExpiryMap = require('expiry-map');
 
+const BNS_CONTRACT_KEY = 'SP000000000000000000002Q6VF78.bns::names';
 // Btc domain marketplaces
 const EXCLUDED_SMART_CONTRACTS = [
   'SP000000000000000000002Q6VF78.bns',
@@ -84,7 +85,6 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
       AND tx->>'tx_status' = 'success'
       and processed = ${options.includeMissings}
       and missing = ${options.includeMissings}
-      AND tx->'contract_call'->>'function_name' IN ('accept-bid', 'bid-item','bid-punk','withdraw-bid')
       ORDER BY t.block_height ASC, tx->>'microblock_sequence' ASC, tx->>'tx_index' ASC
     `;
 
@@ -174,13 +174,15 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
 
       if (nftEvents.length) {
         nftEvents.forEach(e => {
-          commonTxs.push({
-            function_name: 'nft_' + e.asset.asset_event_type + '_event',
-            args: {
-              event_index: e.event_index
-            },
-            ... this.transformTxBase(commonTxs.length, tx),
-          });
+          if (e.asset.asset_id !== BNS_CONTRACT_KEY) {
+            commonTxs.push({
+              function_name: 'nft_' + e.asset.asset_event_type + '_event',
+              args: {
+                event_index: e.event_index
+              },
+              ... this.transformTxBase(commonTxs.length, tx),
+            });
+          }         
         });
       }
 

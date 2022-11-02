@@ -34,8 +34,10 @@ export class BuyWrapperIndexerService implements IndexerService {
     const token_id = this.stacksTxHelper.extractArgumentData(tx.args, scf, "token_id");
     const contract_key = this.stacksTxHelper.extractArgumentData(tx.args, scf, "contract_key");
     const market_contract_key = this.stacksTxHelper.extractArgumentData(tx.args, scf, 'market');
-    
-    const nftMeta = await this.txHelper.createOrFetchMetaByContractKey(contract_key, token_id, sc.chain_id);
+    const seller = this.stacksTxHelper.findAndExtractSellerFromEvents(tx.events);
+    const price = this.stacksTxHelper.findAndExtractSalePriceFromEvents(tx.events); 
+
+    const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
 
     if (nftMeta.smart_contract.contract_key_wrapper || market_contract_key) {
       let msc = nftMeta.smart_contract.contract_key_wrapper ? nftMeta.smart_contract 
@@ -46,8 +48,8 @@ export class BuyWrapperIndexerService implements IndexerService {
 
       const buyActionParams: CreateBuyActionTO = { 
         ...actionCommonArgs,
-        list_price: nft_state_list?.listed ? nft_state_list?.list_price : null,
-        seller: nft_state_list?.listed ? nft_state_list?.list_seller : null,
+        list_price: price,
+        seller: seller,
         buyer: tx.signer,
         market_name: nft_state_list?.commission?.market_name || null,
         commission_id: nft_state_list?.commission?.id || null

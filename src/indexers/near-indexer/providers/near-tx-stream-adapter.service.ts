@@ -1,7 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { CommonTx } from "src/indexers/common/interfaces/common-tx.interface";
 import { TxProcessResult } from "src/indexers/common/interfaces/tx-process-result.interface";
-import { NearTxResult, TxCursorBatch, TxStreamAdapter } from "src/indexers/common/interfaces/tx-stream-adapter.interface";
+import { TxResult, TxCursorBatch, TxStreamAdapter } from "src/indexers/common/interfaces/tx-stream-adapter.interface";
 import { TxHelperService } from "../../common/helpers/tx-helper.service";
 import { Client, Pool, PoolClient } from 'pg';
 import * as Cursor from 'pg-cursor';
@@ -28,7 +28,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
   private readonly logger = new Logger(NearTxStreamAdapterService.name);
 
   private readonly txResults = new ExpiryMap(this.configService.get('indexer.txResultExpiration') || 60000);
-  private txBatchResults: NearTxResult[] = [];
+  private txBatchResults: TxResult[] = [];
 
   constructor(
     private txHelper: TxHelperService,
@@ -81,11 +81,15 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
   }
 
   setTxResult(tx: CommonTx, result: TxProcessResult): void {
-    const txResult: [number, NearTxResult] = this.txResults.get(tx.hash);
+    const txResult: [number, TxResult] = this.txResults.get(tx.hash);
 
     if (!txResult) {
       this.logger.warn(`Couldn't set TxProcessResult: ${tx.hash}`);
       return;
+    }
+
+    if (!result.processed) {
+      txResult[1].processed = false;
     }
 
     if (tx.indexer_name?.endsWith('_event')) {
@@ -110,7 +114,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
   async saveTxResults(): Promise<void> {
     const values = this.txBatchResults.map((res) => {
       const skipped = `'{${res.skipped.join(',')}}'::text[]`;
-      return `('${res.hash}', true, ${res.missingNftEvent || !res.matchingFunctionCall}, ${skipped})`;
+      return `('${res.hash}', ${res.processed}, ${res.missingNftEvent || !res.matchingFunctionCall}, ${skipped})`;
     });
 
     this.txBatchResults = [];
@@ -219,10 +223,11 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
     if (commonTxs.length) {
       this.txResults.set(tx.hash, [commonTxs.length, {
         hash : tx.hash,
+        processed: true,
         missingNftEvent: false,
         matchingFunctionCall: !containsFunctionCallCommonTx,
         skipped: []
-      } as NearTxResult]);
+      } as TxResult]);
     }
 
     return commonTxs;

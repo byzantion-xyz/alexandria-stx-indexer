@@ -166,7 +166,6 @@ export class TxHelperService {
       list_contract_id: msc.id,
       list_tx_index: tx.index,
       list_block_height: tx.block_height,
-      list_sub_block_seq: tx.sub_block_sequence,
       list_block_datetime: null,
       function_args: null,
       commission_id: null
@@ -182,7 +181,6 @@ export class TxHelperService {
       list_seller: null,
       list_tx_index: tx.index,
       list_block_height: tx.block_height,
-      list_sub_block_seq: tx.sub_block_sequence,
       list_block_datetime: null,
       function_args: null,
       commission_id: null
@@ -249,7 +247,6 @@ export class TxHelperService {
       list_seller: tx.signer,
       list_block_height: tx.block_height,
       list_block_datetime: moment(new Date(tx.block_timestamp)).toDate(),
-      list_sub_block_seq: tx.sub_block_sequence,
       ... (commission_id && { commission_id }),
       ... (args && { function_args: args }),
     });
@@ -335,13 +332,10 @@ export class TxHelperService {
   }
 
   setBasicActionParams(action: ActionName, tx: CommonTx, msc?: SmartContract) {
-    const tx_index = tx.sub_block_sequence
-      ? BigInt(tx.sub_block_sequence.toString() + this.commonUtil.padWithZeros(tx.index, 5)) : tx.index;
-
     return {
       block_height: tx.block_height,
       action: action,
-      tx_index: tx_index,
+      tx_index: tx.index,
       nonce: tx.nonce,
       block_time: moment(new Date(tx.block_timestamp)).toDate(),
       tx_id: tx.hash,

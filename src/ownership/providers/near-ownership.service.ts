@@ -12,8 +12,14 @@ import { Action } from 'src/database/universal/entities/Action';
 import { ActionName } from 'src/indexers/common/helpers/indexer-enums';
 
 const BATCH_LIMIT = 50;
-const ASYNC_WALLETS = 10;
+const ASYNC_WALLETS = 20;
 const ASYNC_SMART_CONTRACTS = 10;
+
+export interface NftToken {
+  owner_id: string;
+  token_id: string;
+  metadata: any;
+}
 
 @Injectable()
 export class NearOwnershipService {
@@ -34,8 +40,11 @@ export class NearOwnershipService {
     private contractConnectionService: ContractConnectionService
   ) {}
 
-  async process (wallet?: string): Promise<WalletNft[]> {
-    const wallets = wallet ? [wallet] : await this.fetchSuperUsersWallets();
+  async process (wallets?: string[]): Promise<WalletNft[]> {
+    if (!wallets || !wallets.length) {
+      wallets = await this.fetchSuperUsersWallets();
+    }
+
     const differences: WalletNft[] = [];
     this.nearConnection = await this.contractConnectionService.connectNear();
 
@@ -103,17 +112,19 @@ export class NearOwnershipService {
 
     return nftMetas.map(i => ({
       token_id: i.token_id,
-      contract_key: i.smart_contract.contract_key,
-      universal_owner: i.nft_state?.owner
+      contract_key: i.smart_contract.contract_key
     }));
   }
 
-  async fetchSmartContractNftOwner(contractKey: string, token_id: string): Promise<string> {
+  async fetchSmartContractNft(contractKey: string, token_id: string): Promise<NftToken> {
     try {
+      if (!this.nearConnection) {
+        this.nearConnection = await this.contractConnectionService.connectNear();
+      }
       const contract = this.contractConnectionService.getContract(contractKey, this.nearConnection);
-      const token = await contract.nft_token({ token_id: token_id }); 
+      const token: NftToken = await contract.nft_token({ token_id: token_id });
 
-      return token.owner_id;
+      return token;
     } catch (err) {
       this.logger.warn(err);
     }
@@ -123,6 +134,9 @@ export class NearOwnershipService {
     let results: WalletNft[] = [];
 
     try {
+      if (!this.nearConnection) {
+        this.nearConnection = await this.contractConnectionService.connectNear();
+      }
       //this.logger.debug(`fetchSmartContactOwnedNfts() ${contractKey}`);
 
       const contract = this.contractConnectionService.getContract(contractKey, this.nearConnection);
@@ -135,7 +149,7 @@ export class NearOwnershipService {
           from_index: skip.toString(), 
           limit: BATCH_LIMIT 
         });
-        results.push(...nfts.map(nft => ({ token_id: nft.token_id, contract_key: contractKey, smart_contract_owner: wallet }) ));
+        results.push(...nfts.map(nft => ({ token_id: nft.token_id, contract_key: contractKey }) ));
         skip += BATCH_LIMIT;
       } while (nfts.length === BATCH_LIMIT);
 
@@ -161,14 +175,14 @@ export class NearOwnershipService {
 
         if (promisesBatch.length % ASYNC_SMART_CONTRACTS === 0) {
           const nfts = await Promise.all(promisesBatch) ;
-          results.push(...nfts.flatMap(item => (item)));
+          results.push(...nfts.flatMap(item => item));
           promisesBatch = [];
         }
       }
 
       if (promisesBatch.length) {
         const nfts = await Promise.all(promisesBatch) ;
-        results.push(...nfts);
+        results.push(...nfts.flatMap(item => item));
       }
 
       return results;
@@ -219,30 +233,39 @@ export class NearOwnershipService {
     let actualOwner = nftMeta.nft_state?.owner;
 
     let actionId: string;
-    try {
-      const newAction = this.actionRepo.create({
-        block_height: this.recentTransfer.block_height,
-        block_time: this.recentTransfer.block_time,
-        tx_id: '0', // Non nullable
-        action: ActionName.reset_owner,
-        ...(actualOwner && { seller: actualOwner }),
-        buyer: owner,
-        nft_meta_id: nftMeta.id,
-        collection_id: nftMeta.collection_id,
-        smart_contract_id: nftMeta.smart_contract_id
-      });
 
-      const saved = await this.actionRepo.save(newAction);
-      actionId = saved.id;
+    if (actualOwner !== owner) {
+      try {
+        const newAction = this.actionRepo.create({
+          block_height: this.recentTransfer.block_height,
+          block_time: this.recentTransfer.block_time,
+          tx_id: '0', // Non nullable
+          action: ActionName.reset_owner,
+          ...(actualOwner && { seller: actualOwner }),
+          buyer: owner,
+          nft_meta_id: nftMeta.id,
+          collection_id: nftMeta.collection_id,
+          smart_contract_id: nftMeta.smart_contract_id
+        });
 
-      await this.nftStateRepo.upsert({ meta_id: nftMeta.id, owner: owner }, ["meta_id"]);
-      this.logger.log(`Fixed owner ${actualOwner || ''} --> ${owner} for ${contract_key} ${token_id}`);
-    } catch (err) {
-      if (actionId) {
-        // Delete action when upsert fails to maintain data consistency
-        await this.actionRepo.delete({ id: actionId });
+        const saved = await this.actionRepo.save(newAction);
+        actionId = saved.id;
+
+        await this.nftStateRepo.upsert({ 
+          meta_id: nftMeta.id,
+          owner: owner,
+          owner_block_height: this.recentTransfer.block_height,
+          burned: owner === null ? true : false
+        }, ["meta_id"]);
+
+        this.logger.log(`Fixed owner ${actualOwner || ''} --> ${owner} for ${contract_key} ${token_id}`);
+      } catch (err) {
+        if (actionId) {
+          // Delete action when upsert fails to maintain data consistency
+          await this.actionRepo.delete({ id: actionId });
+        }
+        throw err;
       }
-      throw err;
     }
   }
 
@@ -261,13 +284,13 @@ export class NearOwnershipService {
 
     let result: WalletNft[] = [];
     for (let diff of differences) {
-      let owner = diff.smart_contract_owner;
-      if (!owner) {
-        owner = await this.fetchSmartContractNftOwner(diff.contract_key, diff.token_id);
-      }
-      if (owner) {
+      let token = await this.fetchSmartContractNft(diff.contract_key, diff.token_id);
+
+      let owner = token === null ? null : token?.owner_id;
+      if (token === null || token?.owner_id) {
         await this.fixNftMetaOwner(diff.token_id, diff.contract_key, owner);
       }
+
       result.push({
         token_id: diff.token_id,
         contract_key: diff.contract_key,
@@ -296,8 +319,7 @@ export class NearOwnershipService {
 
       return nftMetas.map(i => ({
         token_id: i.token_id,
-        contract_key: i.smart_contract.contract_key,
-        universal_owner: i.nft_state?.owner
+        contract_key: i.smart_contract.contract_key
       }));
     } else {
       return [];
@@ -305,14 +327,48 @@ export class NearOwnershipService {
   }
 
   getSimetricalDifference(walletNfts: WalletNft[], universalNfts: WalletNft[]): WalletNft[] {
-    return walletNfts.filter(a =>
+    const a =  walletNfts.filter(a =>
       !universalNfts.some(b=> a.contract_key == b.contract_key && a.token_id == b.token_id)
     );
+
+    const b =  universalNfts.filter(b =>
+      !walletNfts.some(a=> a.contract_key == b.contract_key && a.token_id == b.token_id)
+    );
+
+    return [...a, ...b];
   }
 
   reportResult(wallet: string, differences: WalletNft[]): void {
     this.logger.log(`${differences.length} NFT differences found for owner: ${wallet}`);
     this.logger.log({ owner: wallet, differences });
+  }
+
+  async getActiveWallets(chainSymbol: string, total = 5000): Promise<string[]> {
+    const superUserWallets = await this.fetchSuperUsersWallets();
+    const rows: [any] = await this.actionRepo.query(`
+    select wallet from
+    (select buyer wallet from
+      (SELECT buyer, count(*) actions from action 
+      WHERE action in ( 'bid', 'buy')
+      AND block_time > current_date - (interval '3 months')
+      and buyer is not null
+      AND smart_contract_id in 
+        (select id from smart_contract sc where sc.chain_id = (select id from chain where symbol = '${chainSymbol}'))
+      GROUP BY buyer HAVING count(*) > 0 ORDER by count(*) desc) subquery1
+    UNION
+    select seller wallet from
+      (SELECT seller, count(*) actions from action 
+      WHERE action in ('list', 'unlist', 'accept-bid')
+      AND block_time > current_date - (interval '3 months')
+      and seller is not null
+      AND smart_contract_id in 
+        (select id from smart_contract sc where sc.chain_id = (select id from chain where symbol = '${chainSymbol}'))
+      GROUP BY seller HAVING count(*) > 0 ORDER by count(*) desc) subquery2
+    ) subquery3
+    WHERE wallet not in (${superUserWallets.map((c) => `'${c}'`).join(',')});`);
+
+    const wallets = rows.map(r => r.wallet);
+    return wallets;
   }
 
 }

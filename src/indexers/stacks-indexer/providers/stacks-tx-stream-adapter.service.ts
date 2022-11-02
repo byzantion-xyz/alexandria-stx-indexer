@@ -7,30 +7,60 @@ import * as Cursor from 'pg-cursor';
 import { Transaction as TransactionEntity } from 'src/database/stacks-stream/entities/Transaction';
 import { CommonTx } from 'src/indexers/common/interfaces/common-tx.interface';
 import { TxProcessResult } from 'src/indexers/common/interfaces/tx-process-result.interface';
-import { StacksTxBatchResult, TxCursorBatch, TxStreamAdapter } from 'src/indexers/common/interfaces/tx-stream-adapter.interface';
-import { In, Not, Repository } from 'typeorm';
+import { TxCursorBatch, TxResult, TxStreamAdapter } from 'src/indexers/common/interfaces/tx-stream-adapter.interface';
+import { Repository } from 'typeorm';
 import { StacksTransaction } from '../dto/stacks-transaction.dto';
 import { StacksTxHelperService } from './stacks-tx-helper.service';
-import { SmartContract } from 'src/database/universal/entities/SmartContract';
 import { IndexerOptions } from 'src/indexers/common/interfaces/indexer-options';
+import { CommonUtilService } from 'src/common/helpers/common-util/common-util.service';
+import ExpiryMap = require('expiry-map');
 
-const EXCLUDED_ACTIONS = ['add-collection', 'add-contract'];
+const BNS_CONTRACT_KEY = 'SP000000000000000000002Q6VF78.bns::names';
+// Btc domain marketplaces
+const EXCLUDED_SMART_CONTRACTS = [
+  'SP000000000000000000002Q6VF78.bns',
+  'SP2KAF9RF86PVX3NEE27DFV1CQX0T4WGR41X3S45C.bns-marketplace',
+  'SP2KAF9RF86PVX3NEE27DFV1CQX0T4WGR41X3S45C.bns-marketplace-v1',
+  'SP2KAF9RF86PVX3NEE27DFV1CQX0T4WGR41X3S45C.bns-marketplace-v3',
+  'SP3XYJ8XFZYF7MD86QQ5EF8HBVHHZFFQ9HM6SPJNQ.market',
+  'SP3XYJ8XFZYF7MD86QQ5EF8HBVHHZFFQ9HM6SPJNQ.instant-regist',
+  'SP1K1A1PMGW2ZJCNF46NWZWHG8TS1D23EGH1KNK60.pool-registry',
+  'SP1K1A1PMGW2ZJCNF46NWZWHG8TS1D23EGH1KNK60.pool-registry-v1',
+  'SP3A6FJ92AA0MS2F57DG786TFNG8J785B3F8RSQC9.owl-link',
+  'SP1N3865XAA3BHRSDG8ZCR58HF74541F0F91SXPQ5.register-multi',
+  'SPCHKJ49HXP2CJ2PDCHQ2NC40TJBSYPWVXX99SBM.bns-1666908872969-v1',
+  'SP1CS7R196SBKRP38QKJ3B6BAY0504P72EGYC9WZ5.bns-1666034732909-v1',
+  'SP1N3865XAA3BHRSDG8ZCR58HF74541F0F91SXPQ5.register-multi',
+  'SP251VH8CE3CCBKZHBJX2GW4SWAHT6X6N5T962QK3.bns-1666435087024-v1',
+  'SPYZJ11GZP4B5JGMWPFFJWNJ5DMXW17AKBVQQ4J2.bns-1666427545320-v1',
+  'SP17QGCDJFHJ8MNFY3N1V2M0P620AGRDZ7XJ2BQR1.bns-1666434029301-v1',
+  'SP11EJYV0PJKKX92R16KKV0J3E0T5MWE2VQ70NDFB.bns-1666438515774-v1',
+  'SP32G7RSR5ZMFBD1494PZWHB1N3THA4WTJZC6T88M.bns-1666441714432-v1',
+  'SP6Z867FTR4SZFR9MW23K30XHGF12E3PDRC04EXM.bns-instant-register',
+  'SP39WQ90WHTTN6BTTW8GST8FJXPZVVX8R2JESYT44.bns-1664872470359-v1',
+  'SP1MT9ZCBE8NZ2ACGD8EVYQAAHP98EY0GQSFQKCJN.bns-1665193051606-v1',
+  'SP3RZCB3QWNYCJB3TMAHDTARQ0NBMZGZ4HCJ02M76.bns-1667163108546-v1',
+  'SP1Q15X8SQ51GK5V1V2KZ025HW8VYK29HHWWXMRGG.bns-1667169357547-v1',
+  'SP2C20XGZBAYFZ1NYNHT1J6MGMM0EW9X7PFBWK7QG.amoritze-bns-marketplace'
+];
 
 @Injectable()
 export class StacksTxStreamAdapterService implements TxStreamAdapter {
+  readonly chainSymbol = 'Stacks';
+
   private poolClient: PoolClient;
   private pool: Pool;
-  private txBatchResults: StacksTxBatchResult[] = [];
   private readonly logger = new Logger(StacksTxStreamAdapterService.name);
-  chainSymbol = 'Stacks';
+
+  private txBatchResults: TxResult[] = [];
+  private readonly txResults = new ExpiryMap(this.configService.get('indexer.txResultExpiration') || 60000);
 
   constructor (
     private configService: ConfigService,
     private stacksTxHelper: StacksTxHelperService,
+    private commonUtil: CommonUtilService,
     @InjectRepository(TransactionEntity, "CHAIN-STREAM")
-    private transactionRepository: Repository<TransactionEntity>,
-    @InjectRepository(SmartContract)
-    private smartContractRepository: Repository<SmartContract>
+    private transactionRepository: Repository<TransactionEntity>
   ) {}
 
   async connectPool(): Promise<any> {
@@ -46,95 +76,151 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
   }
 
   async fetchTxs(options: IndexerOptions): Promise<TxCursorBatch> {
-    const contracts = await this.findSmartContracts(options.contract_key);
+    const end_block_height = this.configService.get('indexer.blockRanges.Stacks.end_block_height') || 0;    
 
-    const sql = `SELECT * from transaction t
-      WHERE t.contract_id IN (${contracts.map((c) => `'${c.contract_key}'`).join(',')})
-      ${ options.start_block_height ? 'AND t.block_height >=' + options.start_block_height : '' }
-      ${ options.end_block_height ? 'AND t.block_height <='+ options.end_block_height  : '' }
-      AND tx->>'tx_type' = 'contract_call'
+    const sql = `SELECT * FROM transaction t
+      WHERE block_height >= ${options.start_block_height ?? 0}
+      AND block_height <= ${options.end_block_height ?? end_block_height}
+      AND contract_id NOT IN (${EXCLUDED_SMART_CONTRACTS.map((key) => `'${key}'`).join(',')})
       AND tx->>'tx_status' = 'success'
-      AND processed = false
-      AND missing = ${ options.includeMissings ? true : false }
-      ORDER BY t.block_height ASC, tx->>'microblock_sequence' asc, tx->>'tx_index' ASC 
+      AND processed = ${options.includeMissings}
+      AND missing = ${options.includeMissings}
+      ORDER BY t.block_height ASC, tx->>'microblock_sequence' ASC, tx->>'tx_index' ASC
     `;
 
     const cursor = this.poolClient.query(new Cursor(sql));
     return { cursor };
   }
 
-  async setTxResult(tx: CommonTx, txResult: TxProcessResult): Promise<void> {
-    if (txResult.processed || txResult.missing) {
-      this.txBatchResults.push({
-        hash: tx.hash,
-        processed: txResult.processed,
-        missing: txResult.missing
-      });
+  setTxResult(tx: CommonTx, result: TxProcessResult): void {
+    const txResult: [number, TxResult] = this.txResults.get(tx.hash);
+
+    if (!txResult) {
+      this.logger.warn(`Couldn't set TxProcessResult: ${tx.hash}`);
+      return;
+    }
+
+    const isNftEvent = tx.function_name?.endsWith('_event');
+
+    if (!result.processed && !result.missing) {
+      txResult[1].processed = false;
+    }
+
+    if (isNftEvent) {
+      txResult[1].missingNftEvent = txResult[1].missingNftEvent || result.missing;
+    } else {
+      txResult[1].matchingFunctionCall = txResult[1].matchingFunctionCall || result.processed;
+    }
+
+    if (result.missing) {
+      txResult[1].skipped.push(`${tx.function_name}${isNftEvent ? ':' + tx.args.event_index : ''}`);
+    }
+
+    if (txResult[0] <= 1) {
+      this.txResults.delete(tx.hash);
+
+      this.txBatchResults.push(txResult[1]);
+    } else {
+      this.txResults.set(tx.hash, [txResult[0] - 1, txResult[1]]);
     }
   }
 
   async saveTxResults(): Promise<void> {
+    const values = this.txBatchResults.map((res) => {
+      const skipped = `'{${res.skipped.join(',')}}'::text[]`;
+      const missing = res.missingNftEvent || (!res.matchingFunctionCall && res.totalCommonTxs === 1);
+      return `('${res.hash}', ${res.processed}, ${missing}, ${skipped})`;
+    });
+
+    this.txBatchResults = [];
+
+    const sql = `update transaction as t set
+        processed = v.processed,
+        missing = v.missing,
+        skipped = v.skipped
+        from (values ${values.join(',')}) as v(hash, processed, missing, skipped) 
+        where t.hash = v.hash`;
+
+    this.logger.debug(`saveTxResults() txs: ${values.length}`);
+
     try {
-      const values = this.txBatchResults.map(rowValue => `('${rowValue.hash}', ${rowValue.processed}, ${rowValue.missing})`);
-
-      const sql = `update transaction as t set
-          processed = c.processed,
-          missing = c.missing
-          from (values ${values.join(',')}) as c(hash, processed, missing) 
-          where t.hash = c.hash;`;
-
-      this.logger.debug(`saveTxResults() txs: ${this.txBatchResults.length}`);
-      this.txBatchResults = [];
-      if (values.length) {
-        await this.transactionRepository.query(sql);
-      }
+      await this.transactionRepository.query(sql);
     } catch (err) {
       this.logger.warn('saveTxResults() failed');
       this.logger.error(err);
-    } 
+    }
   }
 
   transformTxs(txs: StacksTransaction[]): CommonTx[] {
-    let result: CommonTx[] = [];
-
-    for (let tx of txs) {
-      const transformed_tx = this.transformTx(tx);
-      if (transformed_tx) result.push(transformed_tx);
-    }
-
-    return result;
+    return txs.flatMap(tx => this.transformTx(tx))
   }
 
-  transformTx(tx: StacksTransaction): CommonTx {
-    try {
-      const function_name = tx.tx.contract_call.function_name;
-      if (EXCLUDED_ACTIONS.includes(function_name)) {
-        return; // Do not process transaction
+  transformTx(tx: StacksTransaction): CommonTx[] {
+    try {  
+      let commonTxs: CommonTx[] = [];
+      
+      if (tx.tx.tx_type === "contract_call") {
+        const args = tx.tx.contract_call.function_args;
+        const parsed_args = this.stacksTxHelper.parseHexArguments(args);
+
+        commonTxs.push({
+          function_name: tx.tx.contract_call.function_name,
+          args: parsed_args,
+          ...this.transformTxBase(commonTxs.length, tx)
+        });
+      }
+      
+      const nftEvents = tx.tx.event_count ? this.stacksTxHelper.getNftEvents(tx) : [];
+
+      if (nftEvents.length) {
+        nftEvents.forEach(e => {
+          if (e.asset.asset_id !== BNS_CONTRACT_KEY) {
+            commonTxs.push({
+              function_name: 'nft_' + e.asset.asset_event_type + '_event',
+              args: {
+                event_index: e.event_index
+              },
+              ... this.transformTxBase(commonTxs.length, tx),
+            });
+          }         
+        });
       }
 
-      const args = tx.tx.contract_call.function_args;
-      let parsed_args;
-      if (args) {
-        parsed_args = this.stacksTxHelper.parseHexArguments(args);
+      if (commonTxs.length) {
+        this.txResults.set(tx.hash, [commonTxs.length, {
+          hash : tx.hash,
+          processed: true,
+          missingNftEvent: false,
+          matchingFunctionCall: false,
+          skipped: [],
+          totalCommonTxs: commonTxs.length
+        } as TxResult]);
       }
 
-      return {
-        hash: tx.hash,
-        block_hash: tx.tx.block_hash,
-        block_timestamp: tx.tx.burn_block_time * 1000,
-        block_height: tx.block_height,
-        nonce: BigInt(tx.tx.nonce),
-        index: BigInt(tx.tx.tx_index),
-        sub_block_sequence: BigInt(tx.tx.microblock_sequence),
-        signer: tx.tx.sender_address,
-        receiver: tx.tx.contract_call.contract_id,
-        function_name: function_name,
-        args: parsed_args,
-        events: tx.tx.events
-      };
+      return commonTxs;
     } catch (err) {
-      this.logger.warn(`transormTx() has failed for tx hash: ${tx.hash}`);
+      this.logger.warn(`transformTx() has failed for tx hash: ${tx.hash}`);
     }
+  }
+
+  transformTxBase(i: number, tx: StacksTransaction) {
+    const tx_index = BigInt(
+      tx.tx.microblock_sequence.toString() + 
+      this.commonUtil.padWithZeros(tx.tx.tx_index, 5) + 
+      this.commonUtil.padWithZeros(i, 4)
+    );
+
+    return {
+      hash: tx.hash,
+      block_hash: tx.tx.block_hash,
+      block_timestamp: tx.tx.burn_block_time * 1000,
+      block_height: tx.block_height,
+      nonce: BigInt(tx.tx.nonce),
+      index: tx_index,
+      signer: tx.tx.sender_address,
+      receiver: tx.tx.tx_type === 'contract_call' ? tx.tx.contract_call.contract_id : tx.tx.smart_contract.contract_id,
+      events: tx.tx.events
+    };
   }
 
   subscribeToEvents(): Client {
@@ -152,9 +238,9 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
 
   async fetchEventData(event): Promise<CommonTx[]> {
     const sql = `SELECT * from transaction t
-      WHERE block_height=${event} 
-      AND tx->>'tx_type' = 'contract_call' 
-      AND tx->>'tx_status' = 'success' 
+      WHERE block_height=${event}
+      AND contract_id NOT IN (${EXCLUDED_SMART_CONTRACTS.map((key) => `'${key}'`).join(',')}) 
+      AND tx->>'tx_status' = 'success'
       AND processed = false 
       AND missing = false
       ORDER BY tx->>'microblock_sequence' asc, tx->>'tx_index' ASC;
@@ -164,27 +250,5 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
     const result: CommonTx[] = this.transformTxs(txs);
 
     return result;
-  }
-
-  private async findSmartContracts(contract_key?: string): Promise<SmartContract[]> {
-    // Bns marketplaces excluded until micro indexers are fully implemented.
-    let accounts = await this.smartContractRepository.find({
-      where: {
-        chain : { symbol: this.chainSymbol },
-        ...( contract_key
-          ? { contract_key }
-          : { contract_key: Not(In([
-            'SP000000000000000000002Q6VF78.bns',
-            'SP2KAF9RF86PVX3NEE27DFV1CQX0T4WGR41X3S45C.bns-marketplace',
-            'SP2KAF9RF86PVX3NEE27DFV1CQX0T4WGR41X3S45C.bns-marketplace-v1',
-            'SP2KAF9RF86PVX3NEE27DFV1CQX0T4WGR41X3S45C.bns-marketplace-v3'
-          ])) }
-        )
-      },
-      select: { contract_key: true }
-    });
-    if (!accounts || !accounts.length) throw new Error('Invalid contract_key');
-
-    return accounts;
   }
 }

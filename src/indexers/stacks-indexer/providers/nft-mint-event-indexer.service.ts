@@ -62,6 +62,6 @@ export class NftMintEventIndexerService implements IndexerService {
   }
   
   async createAction(params: CreateMintActionTO): Promise<Action> {
-    return await this.txActionService.saveAction(params);
+    return await this.txActionService.upsertAction(params);
   }
 }

@@ -85,6 +85,7 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
       AND tx->>'tx_type' = 'contract_call'
       AND tx->>'tx_status' = 'success'
       AND (tx->>'event_count')::int > 96
+      AND  (tx->>'event_count')::int = jsonb_array_length(tx->'events')::int
       AND ( 
             tx->'events' @> '[{ "event_type": "non_fungible_token_asset" }, { "asset": {"asset_event_type": "mint"}}]' 
             OR tx->'events' @> '[{ "event_type": "non_fungible_token_asset" }, { "asset": {"asset_event_type": "transfer" }}]'

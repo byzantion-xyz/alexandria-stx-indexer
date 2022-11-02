@@ -83,8 +83,8 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
       AND block_height <= ${options.end_block_height ?? end_block_height}
       AND contract_id NOT IN (${EXCLUDED_SMART_CONTRACTS.map((key) => `'${key}'`).join(',')})
       AND tx->>'tx_status' = 'success'
-      and processed = ${options.includeMissings}
-      and missing = ${options.includeMissings}
+      AND processed = ${options.includeMissings}
+      AND missing = ${options.includeMissings}
       ORDER BY t.block_height ASC, tx->>'microblock_sequence' ASC, tx->>'tx_index' ASC
     `;
 

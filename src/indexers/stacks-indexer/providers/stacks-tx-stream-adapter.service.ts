@@ -82,15 +82,7 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
       WHERE block_height >= ${options.start_block_height ?? 0}
       AND block_height <= ${options.end_block_height ?? end_block_height}
       AND contract_id NOT IN (${EXCLUDED_SMART_CONTRACTS.map((key) => `'${key}'`).join(',')})
-      AND tx->>'tx_type' = 'smart_contract'
       AND tx->>'tx_status' = 'success'
-      AND (tx->>'event_count')::int > 96
-      AND  (tx->>'event_count')::int = jsonb_array_length(tx->'events')
-      AND (
-            tx->'events' @> '[{ "event_type": "non_fungible_token_asset" }, { "asset": {"asset_event_type": "mint"}}]' 
-            OR tx->'events' @> '[{ "event_type": "non_fungible_token_asset" }, { "asset": {"asset_event_type": "transfer" }}]'
-            OR tx->'events' @> '[{ "event_type": "non_fungible_token_asset" }, { "asset": {"asset_event_type": "burn" }}]'
-          )
       ORDER BY t.block_height ASC, tx->>'microblock_sequence' ASC, tx->>'tx_index' ASC
     `;
 
@@ -246,8 +238,7 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
     const sql = `SELECT * from transaction t
       WHERE block_height=${event}
       AND contract_id NOT IN (${EXCLUDED_SMART_CONTRACTS.map((key) => `'${key}'`).join(',')}) 
-      AND tx->>'tx_type' = 'contract_call' 
-      AND tx->>'tx_status' = 'success' 
+      AND tx->>'tx_status' = 'success'
       AND processed = false 
       AND missing = false
       ORDER BY tx->>'microblock_sequence' asc, tx->>'tx_index' ASC;

@@ -6,7 +6,7 @@ const NFT_EVENT_ARGS = {
 
 export default registerAs("indexer", () => ({
   chainSymbol: process.env.CHAIN_SYMBOL || "Near",
-  txResultExpiration: 120000,
+  txResultExpiration: 300000,
   enableStreamerSubscription: process.env.ENABLE_STREAMER_SUBSCRIPTION === 'true' || false,
   runPendingTransactions: process.env.RUN_PENDING_TRANSACTIONS === 'true' || false,
   byzOldMarketplaceContractKeys: [

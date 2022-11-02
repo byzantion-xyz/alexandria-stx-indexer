@@ -15,6 +15,7 @@ import { IndexerOptions } from 'src/indexers/common/interfaces/indexer-options';
 import { CommonUtilService } from 'src/common/helpers/common-util/common-util.service';
 import ExpiryMap = require('expiry-map');
 
+const BNS_CONTRACT_KEY = 'SP000000000000000000002Q6VF78.bns::names';
 // Btc domain marketplaces
 const EXCLUDED_SMART_CONTRACTS = [
   'SP000000000000000000002Q6VF78.bns',
@@ -22,7 +23,25 @@ const EXCLUDED_SMART_CONTRACTS = [
   'SP2KAF9RF86PVX3NEE27DFV1CQX0T4WGR41X3S45C.bns-marketplace-v1',
   'SP2KAF9RF86PVX3NEE27DFV1CQX0T4WGR41X3S45C.bns-marketplace-v3',
   'SP3XYJ8XFZYF7MD86QQ5EF8HBVHHZFFQ9HM6SPJNQ.market',
-  'SP3XYJ8XFZYF7MD86QQ5EF8HBVHHZFFQ9HM6SPJNQ.instant-regist'
+  'SP3XYJ8XFZYF7MD86QQ5EF8HBVHHZFFQ9HM6SPJNQ.instant-regist',
+  'SP1K1A1PMGW2ZJCNF46NWZWHG8TS1D23EGH1KNK60.pool-registry',
+  'SP1K1A1PMGW2ZJCNF46NWZWHG8TS1D23EGH1KNK60.pool-registry-v1',
+  'SP3A6FJ92AA0MS2F57DG786TFNG8J785B3F8RSQC9.owl-link',
+  'SP1N3865XAA3BHRSDG8ZCR58HF74541F0F91SXPQ5.register-multi',
+  'SPCHKJ49HXP2CJ2PDCHQ2NC40TJBSYPWVXX99SBM.bns-1666908872969-v1',
+  'SP1CS7R196SBKRP38QKJ3B6BAY0504P72EGYC9WZ5.bns-1666034732909-v1',
+  'SP1N3865XAA3BHRSDG8ZCR58HF74541F0F91SXPQ5.register-multi',
+  'SP251VH8CE3CCBKZHBJX2GW4SWAHT6X6N5T962QK3.bns-1666435087024-v1',
+  'SPYZJ11GZP4B5JGMWPFFJWNJ5DMXW17AKBVQQ4J2.bns-1666427545320-v1',
+  'SP17QGCDJFHJ8MNFY3N1V2M0P620AGRDZ7XJ2BQR1.bns-1666434029301-v1',
+  'SP11EJYV0PJKKX92R16KKV0J3E0T5MWE2VQ70NDFB.bns-1666438515774-v1',
+  'SP32G7RSR5ZMFBD1494PZWHB1N3THA4WTJZC6T88M.bns-1666441714432-v1',
+  'SP6Z867FTR4SZFR9MW23K30XHGF12E3PDRC04EXM.bns-instant-register',
+  'SP39WQ90WHTTN6BTTW8GST8FJXPZVVX8R2JESYT44.bns-1664872470359-v1',
+  'SP1MT9ZCBE8NZ2ACGD8EVYQAAHP98EY0GQSFQKCJN.bns-1665193051606-v1',
+  'SP3RZCB3QWNYCJB3TMAHDTARQ0NBMZGZ4HCJ02M76.bns-1667163108546-v1',
+  'SP1Q15X8SQ51GK5V1V2KZ025HW8VYK29HHWWXMRGG.bns-1667169357547-v1',
+  'SP2C20XGZBAYFZ1NYNHT1J6MGMM0EW9X7PFBWK7QG.amoritze-bns-marketplace'
 ];
 
 @Injectable()
@@ -63,7 +82,6 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
       WHERE block_height >= ${options.start_block_height ?? 0}
       AND block_height <= ${options.end_block_height ?? end_block_height}
       AND contract_id NOT IN (${EXCLUDED_SMART_CONTRACTS.map((key) => `'${key}'`).join(',')})
-      AND tx->>'tx_type' = 'contract_call'
       AND tx->>'tx_status' = 'success'
       AND ( 
             tx->'events' @> '[{ "event_type": "non_fungible_token_asset" }, { "asset": {"asset_event_type": "mint"}}]' 
@@ -143,29 +161,31 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
   transformTx(tx: StacksTransaction): CommonTx[] {
     try {  
       let commonTxs: CommonTx[] = [];
-      const args = tx.tx.contract_call.function_args;
-      let parsed_args;
-      if (args) {
-        parsed_args = this.stacksTxHelper.parseHexArguments(args);
-      }
+      
+      if (tx.tx.tx_type === "contract_call") {
+        const args = tx.tx.contract_call.function_args;
+        const parsed_args = this.stacksTxHelper.parseHexArguments(args);
 
-      commonTxs.push({
-        function_name: tx.tx.contract_call.function_name,
-        args: parsed_args,
-        ...this.transformTxBase(commonTxs.length, tx)
-      });
+        commonTxs.push({
+          function_name: tx.tx.contract_call.function_name,
+          args: parsed_args,
+          ...this.transformTxBase(commonTxs.length, tx)
+        });
+      }
       
       const nftEvents = tx.tx.event_count ? this.stacksTxHelper.getNftEvents(tx) : [];
 
       if (nftEvents.length) {
         nftEvents.forEach(e => {
-          commonTxs.push({
-            function_name: 'nft_' + e.asset.asset_event_type + '_event',
-            args: {
-              event_index: e.event_index
-            },
-            ... this.transformTxBase(commonTxs.length, tx),
-          });
+          if (e.asset.asset_id !== BNS_CONTRACT_KEY) {
+            commonTxs.push({
+              function_name: 'nft_' + e.asset.asset_event_type + '_event',
+              args: {
+                event_index: e.event_index
+              },
+              ... this.transformTxBase(commonTxs.length, tx),
+            });
+          }         
         });
       }
 
@@ -182,7 +202,7 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
 
       return commonTxs;
     } catch (err) {
-      this.logger.warn(`transormTx() has failed for tx hash: ${tx.hash}`);
+      this.logger.warn(`transformTx() has failed for tx hash: ${tx.hash}`);
     }
   }
 
@@ -201,7 +221,7 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
       nonce: BigInt(tx.tx.nonce),
       index: tx_index,
       signer: tx.tx.sender_address,
-      receiver: tx.tx.contract_call.contract_id,
+      receiver: tx.tx.tx_type === 'contract_call' ? tx.tx.contract_call.contract_id : tx.tx.smart_contract.contract_id,
       events: tx.tx.events
     };
   }

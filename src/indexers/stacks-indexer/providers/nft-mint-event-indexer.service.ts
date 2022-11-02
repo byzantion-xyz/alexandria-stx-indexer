@@ -28,6 +28,10 @@ export class NftMintEventIndexerService implements IndexerService {
 
     const event = this.stacksTxHelper.findNftEventByIndex(tx.events, tx.args.event_index);
     const token_id = this.stacksTxHelper.extractTokenIdFromNftEvent(event);
+    if (isNaN(token_id)) {
+      this.logger.warn('Unable to extract token_id from NFT event');
+      return txResult;
+    }
     const contract_key = this.stacksTxHelper.extractContractKeyFromNftEvent(event);
     const buyer = event.asset.recipient;
     const price = this.stacksTxHelper.findAndExtractMintPrice(event, tx.events);
@@ -58,6 +62,6 @@ export class NftMintEventIndexerService implements IndexerService {
   }
   
   async createAction(params: CreateMintActionTO): Promise<Action> {
-    return await this.txActionService.saveAction(params);
+    return await this.txActionService.upsertAction(params);
   }
 }

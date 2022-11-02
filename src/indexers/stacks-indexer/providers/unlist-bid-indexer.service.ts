@@ -34,31 +34,32 @@ export class UnlistBidIndexerService implements IndexerService {
 
     const contract_key = this.stacksTxHelper.extractAndParseContractKey(tx.args, scf);
     const token_id = this.stacksTxHelper.extractArgumentData(tx.args, scf, 'token_id');
+    const price = this.stacksTxHelper.findAndExtractSalePriceFromEvents(tx.events);
+    const buyer = tx.signer;
 
     const nftMeta = await this.txHelper.createOrFetchMetaByContractKey(contract_key, token_id, sc.chain_id);
 
-    let bidState = await this.txBidHelper.findActiveSoloBid(nftMeta, sc);
+    const actionCommonArgs = this.txHelper.setCommonActionParams(
+      ActionName.unlist_bid, tx, nftMeta, sc
+    );
+    const bidActionParams: CreateUnlistBidActionTO = {
+      ...actionCommonArgs,
+      bid_price: price,
+      buyer
+    };
 
-    if (bidState && this.txBidHelper.isNewBid(tx, bidState)) {
-      await this.txBidHelper.cancelBid(bidState, tx);
+    let bidState = await this.txBidHelper.findActiveSoloBid(nftMeta, sc, buyer);
 
-      const actionCommonArgs = this.txHelper.setCommonActionParams(
-        ActionName.unlist_bid, tx, nftMeta, sc
-      );
-      const bidActionParams: CreateUnlistBidActionTO = {
-        ...actionCommonArgs,
-        bid_price: bidState.bid_price,
-        buyer: bidState.bid_buyer
-      };
-      await this.createAction(bidActionParams);
-      txResult.processed = true;
-    } else if (bidState) {
-      this.logger.debug(`Too Late`);
-      txResult.processed = true;
-    } else {
-      this.logger.log(`bid_state not found`);
-      txResult.missing = true;
+    if (bidState) {
+      if (this.txBidHelper.isNewBid(tx, bidState)) {
+        await this.txBidHelper.cancelBid(bidState, tx);
+      } else {
+        this.logger.debug(`Too Late`);
+      }  
     }
+
+    await this.createAction(bidActionParams);
+    txResult.processed = true;
 
     return txResult;
   }

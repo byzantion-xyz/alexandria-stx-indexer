@@ -33,32 +33,32 @@ export class AcceptBidIndexerService implements IndexerService {
 
     const contract_key = this.stacksTxHelper.extractAndParseContractKey(tx.args, scf);
     const token_id = this.stacksTxHelper.extractArgumentData(tx.args, scf, 'token_id');
+    const buyer = this.stacksTxHelper.findAndExtractBuyerFromEvents(tx.events);
+    const price = this.stacksTxHelper.findAndExtractSalePriceFromEvents(tx.events);
 
     const nftMeta = await this.txHelper.createOrFetchMetaByContractKey(contract_key, token_id, sc.chain_id);
 
-    let bidState = await this.txBidHelper.findActiveSoloBid(nftMeta, sc);
+    const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName.accept_bid, tx, nftMeta, sc);
+    const acceptBidActionParams: CreateAcceptBidActionTO = {
+      ...actionCommonArgs,
+      bid_price: price,
+      buyer: buyer,
+      seller: tx.signer
+    };
 
-    if (bidState && this.txBidHelper.isNewBid(tx, bidState)) {
-      await this.txBidHelper.acceptSoloBid(bidState, tx);
+    let bidState = await this.txBidHelper.findActiveSoloBid(nftMeta, sc, buyer);
+    if (bidState) {
+      if (this.txBidHelper.isNewBid(tx, bidState)) {
+        await this.txBidHelper.acceptSoloBid(bidState, tx);
 
-      await this.txHelper.unlistMetaInAllMarkets(nftMeta, tx, sc, bidState.bid_seller);
-
-      const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName.accept_bid, tx, nftMeta, sc);
-      const acceptBidActionParams: CreateAcceptBidActionTO = {
-        ...actionCommonArgs,
-        bid_price: bidState?.bid_price,
-        buyer: bidState?.bid_buyer,
-        seller: tx.signer
-      };
-      await this.createAction(acceptBidActionParams);
-      txResult.processed = true;
-    } else if (bidState) {
-      this.logger.debug(`Too Late`);
-      txResult.processed = true;
-    } else {
-      this.logger.debug(`bid_state not found`);
-      txResult.missing = true;
+        await this.txHelper.unlistMetaInAllMarkets(nftMeta, tx, sc, bidState.bid_seller);
+      } else {
+        this.logger.debug(`Too Late`);
+      }
     }
+
+    await this.createAction(acceptBidActionParams);
+    txResult.processed = true;
 
     return txResult;
   }

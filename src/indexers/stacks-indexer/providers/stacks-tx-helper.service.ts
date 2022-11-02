@@ -180,6 +180,14 @@ export class StacksTxHelperService {
     return stxTransfers && stxTransfers.length ? stxTransfers[0].asset.recipient : undefined;
   }
 
+  findAndExtractBuyerFromEvents(events: TransactionEvent[]): string {
+    let nftTransfer =  events.find(evt => 
+      evt.event_type === NFT_EVENT_TYPE && evt.asset.asset_event_type === 'transfer'
+    ) as TransactionEventNonFungibleAsset;
+
+    return nftTransfer.asset.recipient;
+  }
+
   findAndExtractSalePriceFromEvents(events: TransactionEvent[]): bigint {
     let stxTransfers = events.filter(evt => evt.event_type === 'stx_asset') as TransactionEventStxAsset[];
     return stxTransfers.reduce((acc, evt) => acc + BigInt(evt.asset.amount), BigInt(0));    

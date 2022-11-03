@@ -37,25 +37,21 @@ export class BuyIndexerService implements IndexerService {
     const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName.buy, tx, nftMeta, sc);
     const nft_state_list = this.txHelper.findStateList(nftMeta.nft_state, sc.id);
 
-      const buyActionParams: CreateBuyActionTO = { 
-        ...actionCommonArgs,
-        list_price: price,
-        seller: seller,
-        buyer: tx.signer,
-        market_name: nft_state_list?.commission?.market_name || null,
-        commission_id: nft_state_list?.commission?.id || null
-      };
+    const buyActionParams: CreateBuyActionTO = { 
+      ...actionCommonArgs,
+      list_price: price,
+      seller: seller,
+      buyer: tx.signer,
+      market_name: nft_state_list?.commission?.market_name || null,
+      commission_id: nft_state_list?.commission?.id || null
+    };
 
     if (this.stacksTxHelper.isNewerEvent(tx, nft_state_list)) {
       await this.txHelper.unlistMetaInAllMarkets(nftMeta, tx, sc, buyActionParams.seller);
-      await this.createAction(buyActionParams);
-    } else {
-      this.logger.debug(`Too Late`);
-      // Create missing action
-      await this.createAction(buyActionParams);
     }
-    txResult.processed = true;
 
+    await this.createAction(buyActionParams);
+    txResult.processed = true;
 
     return txResult;
   }

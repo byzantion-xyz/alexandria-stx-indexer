@@ -63,14 +63,13 @@ export class ChangePriceIndexerService implements IndexerService {
     }
 
     // List in new market
-    if (this.stacksTxHelper.isNewerEvent(tx, nft_state_list)) {
+    if (this.stacksTxHelper.isNewerEvent(tx, nft_state_list) && list_sc) {
       const args: NftStateArguments = {
         collection_map_id: collection_map_id || contract_key || null
       };
       await this.txHelper.listMeta(nftMeta, tx, list_sc, price, commission?.id, args);
-    } else {
-      this.logger.debug(`Too Late`);
     }
+
     await this.createAction(relistActionParams);
 
     txResult.processed = true;

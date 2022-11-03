@@ -57,12 +57,9 @@ export class BuyWrapperIndexerService implements IndexerService {
 
       if (this.stacksTxHelper.isNewerEvent(tx, nft_state_list)) {
         await this.txHelper.unlistMetaInAllMarkets(nftMeta, tx, msc, buyActionParams.seller);
-        await this.createAction(buyActionParams);
-      } else  {
-        this.logger.debug(`Too Late`);
-        // Create missing action
-        await this.createAction(buyActionParams);
       }
+
+      await this.createAction(buyActionParams);
       txResult.processed = true;
     } else {
       this.logger.warn(`contract_key_wrapper not found for ${sc.contract_key}`);  

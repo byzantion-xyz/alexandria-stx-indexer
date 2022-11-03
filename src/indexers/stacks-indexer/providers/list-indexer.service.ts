@@ -55,9 +55,8 @@ export class ListIndexerService implements IndexerService {
         ... (collection_map_id && { collection_map_id })
       };
       await this.txHelper.listMeta(nftMeta, tx, sc, price, commission?.id, args);
-    } else {
-      this.logger.debug(`Too Late`);
     }
+
     await this.createAction(listActionParams);
 
     txResult.processed = true;

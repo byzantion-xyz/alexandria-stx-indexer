@@ -64,9 +64,12 @@ export class TxBidHelperService {
 
       return saved;
     } catch (err) { 
-      this.logger.warn(`createOrReplaceBid() Failed saving bid_state with id: ${bidState.id}`);
-      this.logger.warn(err);
-      throw err;
+      if (err && (!err.constraint || err.constraint !== 'bid_contract_nonce_uk')) {
+        this.logger.warn(`createOrReplaceBid() Failed saving bid_state with id: ${bidState.id}`);
+        this.logger.warn(err);
+
+        throw err;
+      }
     }
   }
 

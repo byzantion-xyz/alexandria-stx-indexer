@@ -33,9 +33,7 @@ export class CollectionRemoveOrderBookBidIndexerService implements IndexerServic
       const nonce = this.stacksTxHelper.build_nonce(sc.contract_key, event.data.order);
       const bidState = await this.stacksTxHelper.findBidStateByNonce(nonce);
 
-      if (bidState && bidState.status === CollectionBidStatus.active) {
-        await this.txBidHelper.cancelBid(bidState, tx);
-
+      if (bidState) {
         const actionCommonArgs = this.txHelper.setCommonCollectionActionParams(
           ActionName.cancel_collection_bid, tx, bidState.collection, sc
         );
@@ -45,13 +43,16 @@ export class CollectionRemoveOrderBookBidIndexerService implements IndexerServic
           bid_price: bidState.bid_price,
           buyer: bidState.bid_buyer
         };
-  
+
+        if (bidState.status === CollectionBidStatus.active) {
+          await this.txBidHelper.cancelBid(bidState, tx);
+        }
+
         await this.createAction(actionParams);
-        txResult.processed = true;
-      } else if (bidState) {
-        this.logger.warn(`Unable to cancel collection bid nonce: ${bidState.nonce} status: ${bidState.status}`);
+
         txResult.processed = true;
       } else {
+        this.logger.warn(`bid_state not found bid_contract_nonce: ${nonce}`);
         txResult.missing = true;
       }
     } else {

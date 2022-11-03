@@ -43,13 +43,7 @@ export class CollectionOrderBookAcceptBidIndexerService implements IndexerServic
         relations: { collection: { smart_contract: true } }
       });
 
-      if (bidState && bidState.status !== CollectionBidStatus.matched) {
-        const { contract_key } = bidState.collection.smart_contract;
-        const nftMeta = await this.txHelper.createOrFetchMetaByContractKey(contract_key, token_id.toString(), sc.chain_id);
-
-        await this.txBidHelper.acceptBid(bidState, tx, nftMeta);
-        await this.txHelper.unlistMetaInAllMarkets(nftMeta, tx, sc, bidState.bid_seller);
-
+      if (bidState) {
         const actionCommonArgs = this.txHelper.setCommonCollectionActionParams(
           ActionName.accept_collection_bid, tx, bidState.collection, sc
         );
@@ -61,15 +55,20 @@ export class CollectionOrderBookAcceptBidIndexerService implements IndexerServic
           seller: bidState.bid_seller
         };
 
-        await this.createAction(acceptBidActionParams);
+        if (bidState.status !== CollectionBidStatus.matched) {
+          const { contract_key } = bidState.collection.smart_contract;
+          const nftMeta = await this.txHelper.createOrFetchMetaByContractKey(contract_key, token_id.toString(), sc.chain_id);
 
-      } else if (bidState) {
-        this.logger.log(`Collection bid already "${bidState.status}" with nonce: ${bidState.nonce}`);
+          await this.txBidHelper.acceptBid(bidState, tx, nftMeta);
+          await this.txHelper.unlistMetaInAllMarkets(nftMeta, tx, sc, bidState.bid_seller);
+        }
+        
+        await this.createAction(acceptBidActionParams);
         txResult.processed = true;
       } else {
-        this.logger.log(`bid_state not found bid_contract_nonce: ${bid_contract_nonce}`);
+        this.logger.warn(`bid_state not found bid_contract_nonce: ${bid_contract_nonce}`);
+        txResult.missing = true;
       }
-
     } else {
       txResult.missing = true;
     }

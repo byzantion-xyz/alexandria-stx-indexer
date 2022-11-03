@@ -36,13 +36,14 @@ export class SoloIdBidIndexerService implements IndexerService {
     const event = events.find(e => e && e.data?.data && e.data.data['collection-id']);
 
     if (event) {
+      const market_contract_key = event.contract_log.contract_id;
       const { offer, buyer } = event.data.data;
       const contract_key = this.stacksTxHelper.extractContractKeyFromEvent(event);
-      const nftMeta = await this.txHelper.createOrFetchMetaByContractKey(contract_key, token_id, sc.chain_id);
-
-      const bid_sc = await this.scService.readOrFetchByKey(event.contract_log.contract_id, sc.chain_id, this.marketScs);
+      const bid_sc = await this.scService.readOrFetchByKey(market_contract_key, sc.chain_id, this.marketScs);
 
       if (contract_key && bid_sc) {
+        const nftMeta = await this.txHelper.createOrFetchMetaByContractKey(contract_key, token_id, sc.chain_id);
+
         const bidCommonArgs = this.stacksTxHelper.setCommonBidArgs(
           tx, bid_sc, event, nftMeta.collection, BidType.solo
         );
@@ -64,7 +65,11 @@ export class SoloIdBidIndexerService implements IndexerService {
   
         await this.createAction(acceptBidActionParams);
         txResult.processed = true;
-      } else {
+      } else if (!contract_key) {
+        this.logger.warn(`Unable to extract contract_key from event`);
+        txResult.missing = true;
+      } else if (!bid_sc) {
+        this.logger.warn(`Unable to find bid marketplace ${market_contract_key} from event`);
         txResult.missing = true;
       }
     } else {

@@ -28,7 +28,7 @@ export class UnlistIndexerService implements IndexerService {
 
     const token_id = this.stacksTxHelper.extractArgumentData(tx.args, scf, "token_id");
     const contract_key = this.stacksTxHelper.extractArgumentData(tx.args, scf, "contract_key");
-
+    const seller = this.stacksTxHelper.findAndExtractNftRecipient(tx.events);
     const nftMeta = await this.txHelper.createOrFetchMetaByContractKey(contract_key, token_id, sc.chain_id);
 
     const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName[scf.name], tx, nftMeta, sc);
@@ -37,7 +37,7 @@ export class UnlistIndexerService implements IndexerService {
     const unlistActionParams: CreateUnlistActionTO = {
       ...actionCommonArgs,
       list_price: nft_list_state?.list_price,
-      seller: nft_list_state?.list_seller,
+      seller: seller || nft_list_state?.list_seller,
       market_name: nft_list_state?.commission?.market_name || null,
       commission_id: nft_list_state?.commission?.id
     };

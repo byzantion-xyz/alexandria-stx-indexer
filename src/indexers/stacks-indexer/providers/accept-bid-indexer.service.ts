@@ -33,7 +33,7 @@ export class AcceptBidIndexerService implements IndexerService {
 
     const contract_key = this.stacksTxHelper.extractAndParseContractKey(tx.args, scf);
     const token_id = this.stacksTxHelper.extractArgumentData(tx.args, scf, 'token_id');
-    const buyer = this.stacksTxHelper.findAndExtractBuyerFromEvents(tx.events);
+    const buyer = this.stacksTxHelper.findAndExtractNftRecipient(tx.events);
     const price = this.stacksTxHelper.findAndExtractSalePriceFromEvents(tx.events);
 
     const nftMeta = await this.txHelper.createOrFetchMetaByContractKey(contract_key, token_id, sc.chain_id);

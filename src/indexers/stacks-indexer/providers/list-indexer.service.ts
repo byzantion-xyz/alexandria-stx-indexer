@@ -33,8 +33,8 @@ export class ListIndexerService implements IndexerService {
       return txResult;
     }
     const collection_map_id = this.stacksTxHelper.extractArgumentData(tx.args, scf, "collection_map_id");
-    let commission_key = this.stacksTxHelper.extractArgumentData(tx.args, scf, 'commission_trait');
-    let contract_key = this.stacksTxHelper.extractArgumentData(tx.args, scf, "contract_key");
+    const commission_key = this.stacksTxHelper.extractArgumentData(tx.args, scf, 'commission_trait');
+    const contract_key = this.stacksTxHelper.extractArgumentData(tx.args, scf, "contract_key");
 
     const nftMeta = await this.txHelper.createOrFetchMetaByContractKey(contract_key, token_id, sc.chain_id);
 

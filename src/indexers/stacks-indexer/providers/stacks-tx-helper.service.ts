@@ -180,7 +180,7 @@ export class StacksTxHelperService {
     return stxTransfers && stxTransfers.length ? stxTransfers[0].asset.recipient : undefined;
   }
 
-  findAndExtractBuyerFromEvents(events: TransactionEvent[]): string {
+  findAndExtractNftRecipient(events: TransactionEvent[]): string {
     let nftTransfer =  events.find(evt => 
       evt.event_type === NFT_EVENT_TYPE && evt.asset.asset_event_type === 'transfer'
     ) as TransactionEventNonFungibleAsset;

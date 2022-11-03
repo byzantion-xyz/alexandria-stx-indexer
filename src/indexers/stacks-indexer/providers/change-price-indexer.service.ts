@@ -45,6 +45,12 @@ export class ChangePriceIndexerService implements IndexerService {
     const unlist_sc = await this.scService.readOrFetchByKey(first_market, sc.chain_id, this.marketScs);
     const list_sc = await this.scService.readOrFetchByKey(second_market, sc.chain_id, this.marketScs);
 
+    if (!unlist_sc || !list_sc) {
+      this.logger.warn(`Marketplaces for change price ${first_market} or ${second_market} not found`);
+      txResult.missing = true;
+      return txResult;
+    }
+
     const nft_state_list = this.txHelper.findStateList(nftMeta.nft_state, list_sc.id);
     const nft_state_unlist = this.txHelper.findStateList(nftMeta.nft_state, unlist_sc.id);
 

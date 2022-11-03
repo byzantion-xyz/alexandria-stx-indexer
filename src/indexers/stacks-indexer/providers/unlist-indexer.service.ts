@@ -37,7 +37,7 @@ export class UnlistIndexerService implements IndexerService {
     const unlistActionParams: CreateUnlistActionTO = {
       ...actionCommonArgs,
       list_price: nft_list_state?.list_price,
-      seller: seller || nft_list_state?.list_seller,
+      seller: seller || tx.signer,
       market_name: nft_list_state?.commission?.market_name || null,
       commission_id: nft_list_state?.commission?.id
     };

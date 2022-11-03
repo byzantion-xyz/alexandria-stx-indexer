@@ -33,7 +33,7 @@ export class UnstakeIndexerService implements IndexerService {
     }
 
     if (!sc.type.includes(SmartContractType.staking)) {
-      this.logger.log(`Stake contract: ${contract_key} does not have staking type`);
+      this.logger.warn(`Stake contract: ${contract_key} does not have staking type`);
       txResult.missing = true;
       return txResult;
     }

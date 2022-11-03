@@ -43,7 +43,7 @@ export class StakeIndexerService implements IndexerService {
     const stake_sc = await this.scService.readOrFetchByKey(stake_contract, sc.chain_id, this.stakingScs); 
 
     if (!stake_sc || !stake_sc.type.includes(SmartContractType.staking)) {
-      this.logger.log(`Stake contract: ${stake_contract} not found`);
+      this.logger.warn(`Stake contract: ${stake_contract} not found`);
       txResult.missing = true;
       return txResult;
     }

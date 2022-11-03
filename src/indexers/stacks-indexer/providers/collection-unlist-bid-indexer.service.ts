@@ -37,38 +37,34 @@ export class CollectionUnlistBidIndexerService implements IndexerService {
     }
 
     const contract_key = this.stacksTxHelper.extractAndParseContractKey(tx.args, scf);
+    const buyer = tx.signer;
 
     const collection = await this.collectionRepository.findOne({ where: { 
       smart_contract: { contract_key }
     }})
 
     if (collection) {
-      let bidState = await this.txBidHelper.findActiveCollectionBid(collection.id, sc);
+      let bidState = await this.txBidHelper.findActiveCollectionBid(collection.id, sc, buyer);
+
+      const actionCommonArgs = this.txHelper.setCommonCollectionActionParams(
+        ActionName.unlist_collection_bid, tx, collection, sc
+      );
+      const actionParams: CreateUnlistCollectionBidActionTO = {
+        ...actionCommonArgs,
+        buyer
+      };
 
       if (bidState && this.txBidHelper.isNewBid(tx, bidState)) {
         this.txBidHelper.cancelBid(bidState, tx);
-
-        const actionCommonArgs = this.txHelper.setCommonCollectionActionParams(
-          ActionName.unlist_collection_bid, tx, collection, sc
-        );
-        const actionParams: CreateUnlistCollectionBidActionTO = {
-          ...actionCommonArgs,
-          buyer: tx.signer
-        };
-        await this.createAction(actionParams);
-        txResult.processed = true;
-      } else if (bidState) {
-        this.logger.debug(`Too Late Unlist Bid ${tx.hash}`);
-        txResult.processed = true;
-      } else {
-        this.logger.log(`bid_state not found for collection: ${collection.slug}`);
-        txResult.missing = true;
       }
+
+      await this.createAction(actionParams);
+        
+      txResult.processed = true;
     } else {
-      this.logger.log(`Missing Collection Unlist Bid ${contract_key} ${tx.hash}`);
+      this.logger.warn(`Missing Collection Unlist Bid ${contract_key} ${tx.hash}`);
       txResult.missing = true;
     }
-
     return txResult;
   }
 

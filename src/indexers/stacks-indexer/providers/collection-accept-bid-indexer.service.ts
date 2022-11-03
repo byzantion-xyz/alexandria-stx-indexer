@@ -33,34 +33,29 @@ export class CollectionAcceptBidIndexerService implements IndexerService {
 
     const contract_key = this.stacksTxHelper.extractAndParseContractKey(tx.args, scf);
     const token_id = this.stacksTxHelper.extractArgumentData(tx.args, scf, 'token_id');
-
+    const buyer = this.stacksTxHelper.findAndExtractBuyerFromEvents(tx.events);
+    const price = this.stacksTxHelper.findAndExtractSalePriceFromEvents(tx.events);
     const nftMeta = await this.txHelper.createOrFetchMetaByContractKey(contract_key, token_id, sc.chain_id);
 
-    let bidState = await this.txBidHelper.findActiveCollectionBid(nftMeta.collection.id, sc);
+    const actionCommonArgs = this.txHelper.setCommonActionParams(
+      ActionName.accept_collection_bid, tx, nftMeta, sc
+    );
+    const actionParams: CreateAcceptCollectionBidActionTO = {
+      ...actionCommonArgs,
+      bid_price: price,
+      seller: tx.signer,
+      buyer: buyer
+    };
 
+    let bidState = await this.txBidHelper.findActiveCollectionBid(nftMeta.collection.id, sc, buyer);
     if (bidState && this.txBidHelper.isNewBid(tx, bidState)) {
       await this.txBidHelper.acceptBid(bidState, tx, nftMeta);
 
       await this.txHelper.unlistMetaInAllMarkets(nftMeta, tx, sc, bidState.bid_seller);
-
-      const actionCommonArgs = this.txHelper.setCommonActionParams(
-        ActionName.accept_collection_bid, tx, nftMeta, sc
-      );
-      const actionParams: CreateAcceptCollectionBidActionTO = {
-        ...actionCommonArgs,
-        bid_price: bidState.bid_price,
-        seller: tx.signer,
-        buyer: bidState.bid_buyer
-      };
-
-      await this.createAction(actionParams);
-    } else if (bidState) {
-      this.logger.debug('Too late');
-      txResult.processed = true;
-    } else {
-      this.logger.log(`bid_state not found for collection: ${nftMeta.collection.slug}`);
-      txResult.missing = true;
     }
+
+    await this.createAction(actionParams);
+    txResult.processed = true;
 
     return txResult;
   }

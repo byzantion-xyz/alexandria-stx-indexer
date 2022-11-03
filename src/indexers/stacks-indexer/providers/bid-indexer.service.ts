@@ -41,8 +41,6 @@ export class BidIndexerService implements IndexerService {
     const buyer = tx.signer;
     const nftMeta = await this.txHelper.createOrFetchMetaByContractKey(contract_key, token_id, sc.chain_id);
 
-    let bidState = await this.txBidHelper.findActiveSoloBid(nftMeta, sc, buyer);
-
     const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName.bid, tx, nftMeta, sc);
     const bidActionParams: CreateBidActionTO = {
       ...actionCommonArgs,
@@ -50,15 +48,22 @@ export class BidIndexerService implements IndexerService {
       buyer: buyer
     };
 
-    if (this.txBidHelper.isNewBid(tx, bidState)) {
-      const bidCommonArgs: CreateBidCommonArgs = this.txBidHelper.setCommonBidArgs(
-        tx, sc, nftMeta.collection, BidType.solo, price
-      );
-      const bidParams: CreateBidStateArgs = {
-        ...bidCommonArgs,
-        bid_buyer: tx.signer
-      };
+    const bidCommonArgs: CreateBidCommonArgs = this.txBidHelper.setCommonBidArgs(
+      tx, sc, nftMeta.collection, BidType.solo, price
+    );
+    const bidParams: CreateBidStateArgs = {
+      ...bidCommonArgs,
+      bid_buyer: tx.signer
+    };
+
+    let bidState = await this.txBidHelper.findSoloBid(nftMeta, sc, buyer);
+
+    if (!bidState) {
+      await this.txBidHelper.createOrReplaceBid(bidParams, null, nftMeta.id);
+    } else if (bidState.status === 'active' && this.txBidHelper.isNewBid(tx, bidState)) {
       await this.txBidHelper.createOrReplaceBid(bidParams, bidState, nftMeta.id);
+    } else if (this.txBidHelper.isNewBid(tx, bidState)) {
+      await this.txBidHelper.createOrReplaceBid(bidParams, null, nftMeta.id);
     }
 
     await this.createAction(bidActionParams);

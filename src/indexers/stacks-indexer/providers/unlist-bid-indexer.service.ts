@@ -50,12 +50,8 @@ export class UnlistBidIndexerService implements IndexerService {
 
     let bidState = await this.txBidHelper.findActiveSoloBid(nftMeta, sc, buyer);
 
-    if (bidState) {
-      if (this.txBidHelper.isNewBid(tx, bidState)) {
-        await this.txBidHelper.cancelBid(bidState, tx);
-      } else {
-        this.logger.debug(`Too Late`);
-      }  
+    if (bidState && this.txBidHelper.isNewBid(tx, bidState)) {
+      await this.txBidHelper.cancelBid(bidState, tx);
     }
 
     await this.createAction(bidActionParams);

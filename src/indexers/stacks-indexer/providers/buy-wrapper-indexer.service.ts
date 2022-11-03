@@ -31,13 +31,14 @@ export class BuyWrapperIndexerService implements IndexerService {
 
   async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {
     let txResult: TxProcessResult = { processed: false, missing: false };
+
     const token_id = this.stacksTxHelper.extractArgumentData(tx.args, scf, "token_id");
     const contract_key = this.stacksTxHelper.extractArgumentData(tx.args, scf, "contract_key");
     const market_contract_key = this.stacksTxHelper.extractArgumentData(tx.args, scf, 'market');
     const seller = this.stacksTxHelper.findAndExtractSellerFromEvents(tx.events);
     const price = this.stacksTxHelper.findAndExtractSalePriceFromEvents(tx.events); 
 
-    const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
+    const nftMeta = await this.txHelper.createOrFetchMetaByContractKey(contract_key, token_id, sc.chain_id);
 
     if (nftMeta.smart_contract.contract_key_wrapper || market_contract_key) {
       let msc = nftMeta.smart_contract.contract_key_wrapper ? nftMeta.smart_contract 

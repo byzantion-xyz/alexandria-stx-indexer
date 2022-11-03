@@ -113,7 +113,7 @@ export class IndexerOrchestratorService {
       const methodName = transaction.function_name;
       const contractKey = transaction.receiver;
 
-      let sc = await this.smartContractService.readOrFetchByContractKey(contractKey, this.chainId, this.scs);
+      let sc = await this.smartContractService.readOrFetchByKeyWithFunctions(contractKey, this.chainId, this.scs);
 
       let scf = Array.isArray(this.genericScf) && this.genericScf.find((f) => f.function_name === methodName);
       if (!sc && scf) {

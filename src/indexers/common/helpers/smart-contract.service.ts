@@ -49,11 +49,17 @@ export class SmartContractService {
     });
 
     return sc;
+  } 
+
+  async readOrFetchByContractKey(contractKey: string, chainId: string, scs: SmartContract[]): Promise<SmartContract> {
+    return Array.isArray(scs) && scs.length
+      ? scs.find(sc => sc.contract_key === contractKey) 
+      : await this.findByContractKey(contractKey, chainId);
   }
 
-  async readOrFetchByKey(contractKey: string, chainId: string, marketScs?: SmartContract[]): Promise<SmartContract> {
-    return Array.isArray(marketScs) && marketScs.length
-      ? marketScs.find(sc => sc.contract_key === contractKey)
+  async readOrFetchByKey(contractKey: string, chainId: string, scs?: SmartContract[]): Promise<SmartContract> {
+    return Array.isArray(scs) && scs.length
+      ? scs.find(sc => sc.contract_key === contractKey)
       : await this.smartContractRepository.findOne({ 
         where: { chain_id: chainId, contract_key: contractKey }
       });

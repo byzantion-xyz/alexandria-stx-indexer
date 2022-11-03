@@ -110,18 +110,14 @@ export class IndexerOrchestratorService {
     let result: TxProcessResult = { processed: false, missing: false };
 
     try {
-      const method_name = transaction.function_name;
+      const methodName = transaction.function_name;
+      const contractKey = transaction.receiver;
 
-      let sc = Array.isArray(this.scs)
-        ? this.scs.find(sc => sc.contract_key === transaction.receiver) 
-        : await this.smartContractService.findByContractKey(transaction.receiver, this.chainId);
+      let sc = await this.smartContractService.readOrFetchByContractKey(contractKey, this.chainId, this.scs);
 
-      let scf = Array.isArray(this.genericScf) &&
-        this.genericScf.find((f) => f.function_name === method_name);
-
+      let scf = Array.isArray(this.genericScf) && this.genericScf.find((f) => f.function_name === methodName);
       if (!sc && scf) {
-        sc = await this.txHelper.createSmartContractSkeleton(transaction.receiver, this.chainId);
-        sc.smart_contract_functions = [];
+        sc = await this.txHelper.createSmartContractSkeleton(contractKey, this.chainId);
         if (Array.isArray(this.scs)) {
           this.scs.push(sc);
         }
@@ -129,12 +125,12 @@ export class IndexerOrchestratorService {
 
       if (sc) {
         if (!scf) {
-          scf = sc.smart_contract_functions.find((f) => f.function_name === method_name);
+          scf = sc.smart_contract_functions.find((f) => f.function_name === methodName);
         }
 
         if (scf) {
-          const indexer_name = transaction.indexer_name || scf.name;
-          const txHandler = this.getMicroIndexer(indexer_name);
+          const indexerName = transaction.indexer_name || scf.name;
+          const txHandler = this.getMicroIndexer(indexerName);
           
           if (txHandler) {
             txHandler.stakingScs = Array.isArray(this.scs) && this.scs.filter(sc => sc.type.includes(SmartContractType.staking)); 
@@ -142,21 +138,19 @@ export class IndexerOrchestratorService {
             this.logger.log(`process() ${transaction.hash} with: ${txHandler.constructor.name} `);
             result = await txHandler.process(transaction, sc, scf);
           } else {
-            this.logger.debug(`No micro indexer defined for the context: ${indexer_name}`);
+            this.logger.debug(`No micro indexer defined for the context: ${indexerName}`);
             result.missing = true;
           }
         } else {
-          this.logger.debug(`function_name: ${method_name} not found in ${transaction.receiver}`);
+          this.logger.debug(`function_name: ${methodName} not found in ${contractKey}`);
           result.missing = true;
         }
       } else {
-        this.logger.debug(`smart_contract: ${transaction.receiver} not found for hash: ${transaction.hash}`);
+        this.logger.debug(`smart_contract: ${contractKey} not found for hash: ${transaction.hash}`);
         result.missing = true;
       }
     } catch (err) {
-      this.logger.error(
-        `Error processing transaction with hash: ${transaction.hash}`
-      );
+      this.logger.error(`Error processing transaction with hash: ${transaction.hash}`);
       this.logger.error(err);
     } finally {
       return result;

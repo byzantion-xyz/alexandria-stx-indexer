@@ -26,7 +26,6 @@ export class UpgradeMegaIndexerService implements IndexerService {
       const component_asset_name = this.stacksTxHelper.extractArgumentData(tx.args, scf, 'component_asset_name');
       const token_id = this.stacksTxHelper.extractArgumentData(tx.args, scf, 'token_id');
       const name = this.stacksTxHelper.extractArgumentData(tx.args, scf, 'name');
-      const { contract_key } = sc;
       
       const token_id_list: string[] = attribute_names.map(attr_name => {
         return this.stacksTxHelper.extractArgumentData(tx.args, scf, attr_name).toString();

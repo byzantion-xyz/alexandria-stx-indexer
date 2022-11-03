@@ -185,7 +185,7 @@ export class StacksTxHelperService {
       evt.event_type === NFT_EVENT_TYPE && evt.asset.asset_event_type === 'transfer'
     ) as TransactionEventNonFungibleAsset;
 
-    return nftTransfer.asset?.recipient;
+    return nftTransfer?.asset.recipient;
   }
 
   findAndExtractSalePriceFromEvents(events: TransactionEvent[]): bigint {

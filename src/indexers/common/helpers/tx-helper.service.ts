@@ -60,7 +60,7 @@ export class TxHelperService {
   }
 
   async createOrFetchMetaByContractKey(contract_key: string, token_id: string, chain_id: string): Promise<NftMeta> {
-    if (!contract_key || !token_id || !chain_id) {
+    if (!contract_key || !chain_id || typeof token_id === 'undefined') {
       throw new Error(`invalid parameters ${contract_key} ${token_id} ${chain_id}`);
     }
 

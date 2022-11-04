@@ -51,7 +51,7 @@ export class SoloIdUnlistBidIndexerService implements IndexerService {
         await this.createAction(actionParams);
         txResult.processed = true;
       } else {
-        this.logger.warn(`Unable to find solo bid nonce: ${bidState.nonce}`);
+        this.logger.warn(`Unable to find solo bid nonce: ${nonce}`);
         txResult.missing = true;
       }
     } else {

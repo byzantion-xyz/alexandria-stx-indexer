@@ -36,6 +36,8 @@ export class SetSuitMappingIndexerService implements IndexerService {
       }
     );
 
+    txResult.processed = true;
+
     return txResult;
   }
   

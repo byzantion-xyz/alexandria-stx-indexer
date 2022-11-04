@@ -38,6 +38,7 @@ export class CollectionBidIndexerService implements IndexerService {
 
     const contract_key = this.stacksTxHelper.extractAndParseContractKey(tx.args, scf);
     const price = this.stacksTxHelper.extractArgumentData(tx.args, scf, 'bid_price');
+    const buyer = tx.signer;
 
     const collection = await this.collectionRepository.findOne({ where: { 
       smart_contract: { contract_key }
@@ -57,23 +58,25 @@ export class CollectionBidIndexerService implements IndexerService {
       );
       const actionParams: CreateCollectionBidActionTO = {
         ...actionCommonArgs,
-        buyer: tx.signer,
+        buyer,
         bid_price: price
       };
       
-      let bidState = await this.txBidHelper.findActiveCollectionBid(collection.id, sc);
+      let bidState = await this.txBidHelper.findCollectionBid(collection.id, sc, buyer);
 
-      if (this.txBidHelper.isNewBid(tx, bidState)) {
+      if (!bidState) {
+        await this.txBidHelper.createOrReplaceBid(collectionBidArgs);
+      } else if (bidState.status === 'active' && this.txBidHelper.isNewBid(tx, bidState)) {
         await this.txBidHelper.createOrReplaceBid(collectionBidArgs, bidState);
-      } else {
-        this.logger.debug('Too late bid');
+      } else if (this.txBidHelper.isNewBid(tx, bidState)) {
+        await this.txBidHelper.createOrReplaceBid(collectionBidArgs);
       }
 
       await this.createAction(actionParams);
       
       txResult.processed = true;
     } else {
-      this.logger.log(`Missing Collection ${contract_key} ${tx.hash}`);
+      this.logger.warn(`Missing Collection ${contract_key} ${tx.hash}`);
       txResult.missing = true;
     }
 

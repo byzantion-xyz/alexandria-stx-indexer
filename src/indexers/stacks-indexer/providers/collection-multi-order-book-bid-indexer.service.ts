@@ -71,14 +71,14 @@ export class CollectionMultiOrderBookBidIndexerService implements IndexerService
       const actionCommonArgs = this.txHelper.setCommonCollectionActionParams(
         ActionName.multi_collection_bid, tx, collection, sc
       );
-      const acceptBidActionParams: CreateCollectionMultiOrderBookBidActionTO = {
+      const bidActionParams: CreateCollectionMultiOrderBookBidActionTO = {
         ...actionCommonArgs,
         bid_price: price,
         buyer: tx.signer,
         units: units
       };
   
-      await this.createAction(acceptBidActionParams);
+      await this.createAction(bidActionParams);
       txResult.processed = true;
     } else {
       txResult.missing = true;

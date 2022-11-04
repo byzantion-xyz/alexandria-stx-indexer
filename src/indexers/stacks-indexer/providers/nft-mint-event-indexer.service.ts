@@ -16,12 +16,12 @@ export class NftMintEventIndexerService implements IndexerService {
   private readonly logger = new Logger(NftMintEventIndexerService.name);
   readonly marketScs?: SmartContract[];
   readonly stakingScs?: SmartContract[];
-  
+
   constructor(
     private txHelper: TxHelperService,
     private stacksTxHelper: StacksTxHelperService,
     private txActionService: TxActionService,
-  ) {}
+  ) { }
 
   async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {
     let txResult: TxProcessResult = { processed: false, missing: false };
@@ -36,31 +36,26 @@ export class NftMintEventIndexerService implements IndexerService {
     const buyer = event.asset.recipient;
     const price = this.stacksTxHelper.findAndExtractMintPrice(event, tx.events);
 
-    const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
+    const nftMeta = await this.txHelper.createOrFetchMetaByContractKey(contract_key, token_id, sc.chain_id);
 
-    if (nftMeta) {
-      const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName.mint, tx, nftMeta, sc);
-      const mintActionParams: CreateMintActionTO = { 
-        ...actionCommonArgs,
-        buyer,
-        list_price: price
-      };
+    const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName.mint, tx, nftMeta, sc);
+    const mintActionParams: CreateMintActionTO = {
+      ...actionCommonArgs,
+      buyer,
+      list_price: price
+    };
 
-      if (!nftMeta.nft_state || !nftMeta.nft_state.minted) {
-        await this.txHelper.mintMeta(nftMeta, tx, buyer);
-      }
-  
-      await this.createAction(mintActionParams);
-
-      txResult.processed = true;
-    } else {
-      this.logger.debug(`NftMeta not found ${contract_key} ${token_id}`);
-      txResult.missing = true;
+    if (!nftMeta.nft_state || !nftMeta.nft_state.minted) {
+      await this.txHelper.mintMeta(nftMeta, tx, buyer);
     }
+
+    await this.createAction(mintActionParams);
+
+    txResult.processed = true;
 
     return txResult;
   }
-  
+
   async createAction(params: CreateMintActionTO): Promise<Action> {
     return await this.txActionService.upsertAction(params);
   }

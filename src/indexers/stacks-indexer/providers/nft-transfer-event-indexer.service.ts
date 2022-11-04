@@ -14,9 +14,7 @@ import { StacksTxHelperService } from './stacks-tx-helper.service';
 @Injectable()
 export class NftTransferEventIndexerService implements IndexerService {
   private readonly logger = new Logger(NftTransferEventIndexerService.name);
-  readonly marketScs?: SmartContract[];
-  readonly stakingScs?: SmartContract[];
-  
+
   constructor(
     private txHelper: TxHelperService,
     private stacksTxHelper: StacksTxHelperService,
@@ -36,38 +34,33 @@ export class NftTransferEventIndexerService implements IndexerService {
     const contract_key = this.stacksTxHelper.extractContractKeyFromNftEvent(event);
     const seller = event.asset.sender;
     const buyer = event.asset.recipient;
-    
+
     if (!(this.stacksTxHelper.isValidWalletAddress(seller) && this.stacksTxHelper.isValidWalletAddress(buyer))) {
       this.logger.log(`-------non standard transfer-------- ${sc.contract_key}`);
       txResult.missing = true;
       return txResult;
     }
 
-    const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
+    const nftMeta = await this.txHelper.createOrFetchMetaByContractKey(contract_key, token_id, sc.chain_id);
 
-    if (nftMeta) {
-      const actionArgs = this.txHelper.setCommonActionParams(ActionName.transfer, tx, nftMeta);
-      const transferParams: CreateTransferActionTO = {
-        ...actionArgs,
-        buyer,
-        seller,
-      };
+    const actionArgs = this.txHelper.setCommonActionParams(ActionName.transfer, tx, nftMeta);
+    const transferParams: CreateTransferActionTO = {
+      ...actionArgs,
+      buyer,
+      seller,
+    };
 
-      if (this.txHelper.isListedPreviously(nftMeta.nft_state, tx)) {
-        await this.txHelper.unlistMetaInAllMarkets(nftMeta, tx);
-      }
-
-      if (this.txHelper.isNewOwnerEvent(tx, nftMeta.nft_state, buyer)) {
-        await this.txHelper.setNewMetaOwner(nftMeta, tx, buyer);
-      }
-
-      await this.createAction(transferParams);
-
-      txResult.processed = true;
-    } else {
-      this.logger.debug(`NftMeta not found ${contract_key} ${token_id}`);
-      txResult.missing = true;
+    if (this.txHelper.isListedPreviously(nftMeta.nft_state, tx)) {
+      await this.txHelper.unlistMetaInAllMarkets(nftMeta, tx);
     }
+
+    if (this.txHelper.isNewOwnerEvent(tx, nftMeta.nft_state, buyer)) {
+      await this.txHelper.setNewMetaOwner(nftMeta, tx, buyer);
+    }
+
+    await this.createAction(transferParams);
+
+    txResult.processed = true;
 
     return txResult;
   }
@@ -75,5 +68,5 @@ export class NftTransferEventIndexerService implements IndexerService {
   async createAction(params: CreateTransferActionTO): Promise<Action> {
     return await this.txActionService.saveAction(params);
   }
-  
+
 }

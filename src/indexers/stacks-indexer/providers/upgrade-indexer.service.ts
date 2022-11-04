@@ -2,14 +2,12 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Action } from 'src/database/universal/entities/Action';
 import { SmartContract } from 'src/database/universal/entities/SmartContract';
 import { SmartContractFunction } from 'src/database/universal/entities/SmartContractFunction';
-import { TxHelperService } from 'src/indexers/common/helpers/tx-helper.service';
 import { attribute_names, TxUpgradeHelperService } from 'src/indexers/stacks-indexer/helpers/tx-upgrade-helper.service';
 import { CommonTx } from 'src/indexers/common/interfaces/common-tx.interface';
-import { CreateActionTO, CreateListActionTO } from 'src/indexers/common/interfaces/create-action-common.dto';
+import { CreateActionTO } from 'src/indexers/common/interfaces/create-action-common.dto';
 import { IndexerService } from 'src/indexers/common/interfaces/indexer-service.interface';
 import { TxProcessResult } from 'src/indexers/common/interfaces/tx-process-result.interface';
 import { StacksTxHelperService } from './stacks-tx-helper.service';
-import { TxActionService } from 'src/indexers/common/providers/tx-action.service';
 
 @Injectable()
 export class UpgradeIndexerService implements IndexerService {

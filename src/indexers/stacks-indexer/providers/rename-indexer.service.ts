@@ -16,14 +16,14 @@ import { StacksTxHelperService } from './stacks-tx-helper.service';
 export class RenameIndexerService implements IndexerService {
   private readonly logger = new Logger(RenameIndexerService.name);
 
-  constructor (
+  constructor(
     private txHelper: TxHelperService,
     private stacksTxHelper: StacksTxHelperService,
     @InjectRepository(Action)
     private actionRepository: Repository<Action>,
     @InjectRepository(NftMeta)
     private nftMetaRepository: Repository<NftMeta>
-  ) {}
+  ) { }
 
   async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {
     let txResult: TxProcessResult = { processed: false, missing: false };
@@ -32,16 +32,12 @@ export class RenameIndexerService implements IndexerService {
     const token_id = this.stacksTxHelper.extractArgumentData(tx.args, scf, 'token_id');
     const name = this.stacksTxHelper.extractArgumentData(tx.args, scf, 'name');
 
-    const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
-    if (nftMeta) {
-      nftMeta.name = `#${nftMeta.token_id} - ${name}`;
-      await this.nftMetaRepository.save(nftMeta);
+    const nftMeta = await this.txHelper.createOrFetchMetaByContractKey(contract_key, token_id, sc.chain_id);
 
-      txResult.processed = true;
-    } else {
-      this.logger.debug(`NftMeta not found ${contract_key} ${token_id}`);
-      txResult.missing = true;
-    }
+    nftMeta.name = `#${nftMeta.token_id} - ${name}`;
+    await this.nftMetaRepository.save(nftMeta);
+
+    txResult.processed = true;
 
     return txResult;
   }

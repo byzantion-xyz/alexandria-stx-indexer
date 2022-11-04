@@ -33,9 +33,7 @@ export class SoloIdUnlistBidIndexerService implements IndexerService {
       const nonce = this.stacksTxHelper.build_nonce(sc.contract_key, event.data.order);
       const bidState = await this.stacksTxHelper.findSoloBidStateByNonce(nonce);
 
-      if (bidState && bidState.status === CollectionBidStatus.active) {
-        await this.txBidHelper.cancelBid(bidState, tx);
-
+      if (bidState) {
         const actionCommonArgs = this.txHelper.setCommonActionParams(
           ActionName.unlist_bid, tx, bidState.nft_metas[0].meta, sc
         );
@@ -45,13 +43,15 @@ export class SoloIdUnlistBidIndexerService implements IndexerService {
           bid_price: bidState.bid_price,
           buyer: bidState.bid_buyer
         };
-  
+
+        if (bidState.status === CollectionBidStatus.active) {
+          await this.txBidHelper.cancelBid(bidState, tx);
+        }
+
         await this.createAction(actionParams);
         txResult.processed = true;
-      } else if (bidState) {
-        this.logger.warn(`Unable to cancel collection bid nonce: ${bidState.nonce} status: ${bidState.status}`);
-        txResult.processed = true;
       } else {
+        this.logger.warn(`Unable to find solo bid nonce: ${nonce}`);
         txResult.missing = true;
       }
     } else {

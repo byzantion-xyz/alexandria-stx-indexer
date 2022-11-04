@@ -21,53 +21,50 @@ export class SoloIdAcceptBidIndexerService implements IndexerService {
     private txHelper: TxHelperService,
     private txBidHelper: TxBidHelperService,
     private txActionService: TxActionService
-  ) {}
+  ) { }
 
   async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {
     let txResult: TxProcessResult = { processed: false, missing: false };
 
     const events = this.stacksTxHelper.extractSmartContractLogEvents(tx.events);
     const event = events.find(e => e && e.data?.data && e.data.order && e.data.data['item-id']);
-    
+
     if (event) {
       const token_id: bigint = event.data.data['item-id'];
       const bid_contract_nonce = this.stacksTxHelper.build_nonce(sc.contract_key, event.data.order);
       const bidState = await this.stacksTxHelper.findSoloBidStateByNonce(bid_contract_nonce);
 
-      if (bidState && bidState.status === CollectionBidStatus.active) {
+      if (bidState) {
         const { contract_key } = bidState.nft_metas[0].meta.smart_contract;
 
-        const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id.toString());
+        const nftMeta = await this.txHelper.createOrFetchMetaByContractKey(contract_key, token_id.toString(), sc.chain_id);
 
-        if (nftMeta) {
+        const actionCommonArgs = this.txHelper.setCommonActionParams(
+          ActionName.accept_bid, tx, nftMeta, sc
+        );
+        const acceptBidActionParams: CreateAcceptBidActionTO = {
+          ...actionCommonArgs,
+          nonce: BigInt(bidState.nonce),
+          bid_price: bidState.bid_price,
+          buyer: bidState.bid_buyer,
+          seller: bidState.bid_seller
+        };
+
+        if (bidState.status === CollectionBidStatus.active) {
           await this.txBidHelper.acceptSoloBid(bidState, tx);
-          await this.txHelper.unlistMetaInAllMarkets(nftMeta, tx, sc, bidState.bid_seller);
-  
-          const actionCommonArgs = this.txHelper.setCommonActionParams(
-            ActionName.accept_bid, tx, nftMeta, sc
-          );
-          const acceptBidActionParams: CreateAcceptBidActionTO = {
-            ...actionCommonArgs,
-            nonce: BigInt(bidState.nonce),
-            bid_price: bidState.bid_price,
-            buyer: bidState.bid_buyer,
-            seller: bidState.bid_seller
-          };
 
-          await this.createAction(acceptBidActionParams);
-          txResult.processed = true;
-        } else {
-          this.logger.debug(`NftMeta not found ${contract_key} ${token_id}`);
-          txResult.missing = true;
+          if (this.txHelper.isListedPreviously(nftMeta.nft_state, tx)) {
+            await this.txHelper.unlistMetaInAllMarkets(nftMeta, tx, sc, bidState.bid_seller);  
+          }
         }
-      } else if (bidState) {
-        this.logger.log(`Solo id bid already "${bidState.status}" with nonce: ${bidState.nonce}`);
+        
+        await this.createAction(acceptBidActionParams);
+
         txResult.processed = true;
       } else {
-        this.logger.log(`bid_state not found bid_contract_nonce: ${bid_contract_nonce}`);
-        txResult.missing = true;       
+        this.logger.warn(`bid_state not found bid_contract_nonce: ${bid_contract_nonce}`);
+        txResult.missing = true;
       }
-
     } else {
       txResult.missing = true;
     }

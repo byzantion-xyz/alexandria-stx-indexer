@@ -4,6 +4,7 @@ import { Action } from 'src/database/universal/entities/Action';
 import { SmartContract } from 'src/database/universal/entities/SmartContract';
 import { SmartContractFunction } from 'src/database/universal/entities/SmartContractFunction';
 import { ActionName } from 'src/indexers/common/helpers/indexer-enums';
+import { SmartContractService } from 'src/indexers/common/helpers/smart-contract.service';
 import { TxBidHelperService } from 'src/indexers/common/helpers/tx-bid-helper.service';
 import { TxHelperService } from 'src/indexers/common/helpers/tx-helper.service';
 import { CommonTx } from 'src/indexers/common/interfaces/common-tx.interface';
@@ -27,8 +28,7 @@ export class AcceptBidIndexerService implements IndexerService {
     private nearTxHelper: NearTxHelperService,
     private txBidHelper: TxBidHelperService,
     private txActionService: TxActionService,
-    @InjectRepository(SmartContract)
-    private smartContractRepository: Repository<SmartContract>
+    private scService: SmartContractService
   ) {}
 
   async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {
@@ -57,9 +57,7 @@ export class AcceptBidIndexerService implements IndexerService {
 
     const nftMeta = await this.txHelper.createOrFetchMetaByContractKey(contract_key, token_id, sc.chain_id);
 
-    const msc = Array.isArray(this.marketScs) 
-      ? this.marketScs.find(sc => sc.contract_key === receipt.receiver_id )
-      : await this.smartContractRepository.findOneBy({ contract_key: receipt.receiver_id });
+    const msc = await this.scService.readOrFetchByKey(receipt.receiver_id, sc.chain_id, this.marketScs); 
 
     if (!msc) {
       this.logger.log(`Marketplace smart_contract: ${receipt.receiver_id} not found`);

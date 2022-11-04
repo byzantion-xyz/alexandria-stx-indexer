@@ -64,9 +64,12 @@ export class TxBidHelperService {
 
       return saved;
     } catch (err) { 
-      this.logger.warn(`createOrReplaceBid() Failed saving bid_state with id: ${bidState.id}`);
-      this.logger.warn(err);
-      throw err;
+      if (err && (!err.constraint || err.constraint !== 'bid_contract_nonce_uk')) {
+        this.logger.warn(`createOrReplaceBid() Failed saving bid_state with id: ${bidState.id}`);
+        this.logger.warn(err);
+
+        throw err;
+      }
     }
   }
 
@@ -79,32 +82,42 @@ export class TxBidHelperService {
     );
   }
 
-  async findActiveSoloBid(nftMeta: NftMeta, sc: SmartContract, buyer?: string): Promise<BidState> {
+  async findActiveSoloBid(nftMeta: NftMeta, sc: SmartContract, buyer: string): Promise<BidState> {
+    return await this.findSoloBid(nftMeta, sc, buyer, CollectionBidStatus.active);
+  }
+
+  async findSoloBid(nftMeta: NftMeta, sc: SmartContract, buyer: string, status?: CollectionBidStatus): Promise<BidState> {
     return await this.bidStateRepo.findOne({
       where: {
         ...(nftMeta.collection && { collection_id: nftMeta.collection_id }),
         smart_contract_id: sc.id,
         bid_type: BidType.solo,
-        status: CollectionBidStatus.active,
+        ...(status && { status }),
         nonce: IsNull(),
         bid_contract_nonce: IsNull(),
         nft_metas: { meta_id: nftMeta.id },
         ...(buyer && { bid_buyer: buyer })
-      }
+      },
+      order: { block_height: 'desc' }
     });
   }
 
-  async findActiveCollectionBid(collectionId: string, sc: SmartContract, buyer?: string): Promise<BidState> {
+  async findActiveCollectionBid(collectionId: string, sc: SmartContract, buyer: string): Promise<BidState> {
+    return this.findCollectionBid(collectionId, sc, buyer, CollectionBidStatus.active);
+  }
+
+  async findCollectionBid(collectionId: string, sc: SmartContract, buyer: string, status?: CollectionBidStatus): Promise<BidState> {
     return await this.bidStateRepo.findOne({
       where: {
         collection_id: collectionId,
         smart_contract_id: sc.id,
         bid_type: BidType.collection,
-        status: CollectionBidStatus.active,
+        ...(status && { status }),
         nonce: IsNull(),
         bid_contract_nonce: IsNull(),
         ... (buyer && { bid_buyer: buyer })
-      }
+      },
+      order: { block_height: 'desc' }
     });
   }
 

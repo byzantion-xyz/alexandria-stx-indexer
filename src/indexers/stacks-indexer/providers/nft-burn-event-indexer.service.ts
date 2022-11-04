@@ -11,18 +11,15 @@ import { TxProcessResult } from 'src/indexers/common/interfaces/tx-process-resul
 import { TxActionService } from 'src/indexers/common/providers/tx-action.service';
 import { StacksTxHelperService } from './stacks-tx-helper.service';
 
-
 @Injectable()
 export class NftBurnEventIndexerService implements IndexerService {
   private readonly logger = new Logger(NftBurnEventIndexerService.name);
-  readonly marketScs?: SmartContract[];
-  readonly stakingScs?: SmartContract[];
 
   constructor(
     private txHelper: TxHelperService,
     private stacksTxHelper: StacksTxHelperService,
     private txActionService: TxActionService
-  ) {}
+  ) { }
 
   async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {
     let txResult: TxProcessResult = { processed: false, missing: false };
@@ -36,37 +33,32 @@ export class NftBurnEventIndexerService implements IndexerService {
     const contract_key = this.stacksTxHelper.extractContractKeyFromNftEvent(event);
     const seller = event.asset.sender;
 
-    const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
+    const nftMeta = await this.txHelper.createOrFetchMetaByContractKey(contract_key, token_id, sc.chain_id);
 
-    if (nftMeta) {
-      const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName.burn, tx, nftMeta, sc);
-      const burnActionParams: CreateBurnActionTO = { ...actionCommonArgs, seller };
+    const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName.burn, tx, nftMeta, sc);
+    const burnActionParams: CreateBurnActionTO = { ...actionCommonArgs, seller };
 
-      if (!nftMeta.nft_state || !nftMeta.nft_state.burned) {
-        if (this.txHelper.isListedInAnyMarketplace(nftMeta.nft_state)) {
-          await this.txHelper.unlistMetaInAllMarkets(nftMeta, tx);
-        }
-        if (nftMeta.nft_state && nftMeta.nft_state.staked) {
-          await this.txHelper.unstakeMeta(nftMeta.id, tx);
-        }
-        
-        await this.txHelper.burnMeta(nftMeta.id);
-      } else {
-        this.logger.debug(`NftMeta ${contract_key} ${token_id} is already burned`);
+    if (!nftMeta.nft_state || !nftMeta.nft_state.burned) {
+      if (this.txHelper.isListedInAnyMarketplace(nftMeta.nft_state)) {
+        await this.txHelper.unlistMetaInAllMarkets(nftMeta, tx);
+      }
+      if (nftMeta.nft_state && nftMeta.nft_state.staked) {
+        await this.txHelper.unstakeMeta(nftMeta.id, tx);
       }
 
-      await this.createAction(burnActionParams);
-
-      txResult.processed = true;
+      await this.txHelper.burnMeta(nftMeta.id);
     } else {
-      this.logger.debug(`NftMeta not found ${contract_key} ${token_id}`);
-      txResult.missing = true;
+      this.logger.debug(`NftMeta ${contract_key} ${token_id} is already burned`);
     }
+
+    await this.createAction(burnActionParams);
+
+    txResult.processed = true;
 
     return txResult;
   }
   async createAction(params: CreateBurnActionTO): Promise<Action> {
     return await this.txActionService.saveAction(params);
   }
-  
+
 }

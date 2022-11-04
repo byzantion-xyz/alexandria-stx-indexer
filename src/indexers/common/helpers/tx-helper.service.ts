@@ -60,6 +60,10 @@ export class TxHelperService {
   }
 
   async createOrFetchMetaByContractKey(contract_key: string, token_id: string, chain_id: string): Promise<NftMeta> {
+    if (!contract_key || !chain_id || typeof token_id === 'undefined') {
+      throw new Error(`invalid parameters ${contract_key} ${token_id} ${chain_id}`);
+    }
+
     let nftMeta = await this.findMetaByContractKey(contract_key, token_id);
 
     if (!nftMeta) {
@@ -98,6 +102,8 @@ export class TxHelperService {
       });
   
       const saved = await this.smartContractRepository.save(smartContract);
+      saved.smart_contract_functions = [];
+
       this.logger.debug(`createSmartContractSkeleton() added smart_contract skeleton for ${contract_key}`);
       return saved;
     } catch (err) {
@@ -105,7 +111,9 @@ export class TxHelperService {
 
       if (err && err.constraint && err.constraint === 'smart_contract_contract_key_key') {
         this.logger.debug(`createSmartContractSkeleton() ${contract_key} already created. Fetching...`);
-        return await this.smartContractRepository.findOne({ where: { contract_key }});
+        const sc = await this.smartContractRepository.findOne({ where: { chain_id, contract_key }});
+        sc.smart_contract_functions = [];
+        return sc;
       }
 
       this.logger.error(err);

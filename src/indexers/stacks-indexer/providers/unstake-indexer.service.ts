@@ -21,7 +21,7 @@ export class UnstakeIndexerService implements IndexerService {
     private stacksTxHelper: StacksTxHelperService,
     private txStakingHelper: TxStakingHelper,
     private txActionService: TxActionService
-  ) {}
+  ) { }
 
   async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {
     let txResult: TxProcessResult = { processed: false, missing: false };
@@ -33,34 +33,27 @@ export class UnstakeIndexerService implements IndexerService {
     }
 
     if (!sc.type.includes(SmartContractType.staking)) {
-      this.logger.log(`Stake contract: ${contract_key} does not have staking type`);
+      this.logger.warn(`Stake contract: ${contract_key} does not have staking type`);
       txResult.missing = true;
       return txResult;
     }
 
-    const nftMeta = await this.txHelper.findMetaByContractKey(contract_key, token_id);
-    if (nftMeta) {
-      const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName[scf.name], tx, nftMeta, sc);
-      const unstakeActionParams: CreateUnstakeActionTO = {
-        ...actionCommonArgs,
-        seller: tx.signer,
-        market_name: null,
-      };
+    const nftMeta = await this.txHelper.createOrFetchMetaByContractKey(contract_key, token_id, sc.chain_id);
 
-      if (this.txStakingHelper.isNewStakingBlock(tx, nftMeta.nft_state)) {
-        await this.txHelper.unstakeMeta(nftMeta.id, tx);
+    const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName[scf.name], tx, nftMeta, sc);
+    const unstakeActionParams: CreateUnstakeActionTO = {
+      ...actionCommonArgs,
+      seller: tx.signer,
+      market_name: null,
+    };
 
-        await this.createAction(unstakeActionParams);
-      } else {
-        this.logger.debug(`Too Late`);
-        await this.createAction(unstakeActionParams);
-      }
-      txResult.processed = true;
-    } else {
-      this.logger.debug(`NftMeta not found ${contract_key} ${token_id}`);
-      txResult.missing = true;
+    if (this.txStakingHelper.isNewStakingBlock(tx, nftMeta.nft_state)) {
+      await this.txHelper.unstakeMeta(nftMeta.id, tx);
     }
 
+    await this.createAction(unstakeActionParams);
+
+    txResult.processed = true;
     return txResult;
   }
 

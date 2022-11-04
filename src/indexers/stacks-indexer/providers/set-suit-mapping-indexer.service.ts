@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import axios from 'axios';
 import { Action } from 'src/database/universal/entities/Action';
 import { SmartContract } from 'src/database/universal/entities/SmartContract';
@@ -14,6 +14,8 @@ import { ConfigService } from "@nestjs/config";
 export class SetSuitMappingIndexerService implements IndexerService {
   marketScs?: SmartContract[];
   stakingScs?: SmartContract[];
+  private readonly logger = new Logger(SetSuitMappingIndexerService.name);
+
   
   constructor(
     private stacksTxHelper: StacksTxHelperService,
@@ -35,6 +37,8 @@ export class SetSuitMappingIndexerService implements IndexerService {
         }
       }
     );
+
+    this.logger.log(`${asset_name} set-suit-mapping: Scrape of token_id #${token_id} triggered`)
 
     txResult.processed = true;
 

@@ -1,6 +1,4 @@
 import { MiddlewareConsumer, Module, RequestMethod } from "@nestjs/common";
-import { AppController } from "./app.controller";
-import { AppService } from "./app.service";
 import { ConfigModule, ConfigService } from "@nestjs/config";
 import { IndexersModule } from "./indexers/indexers.module";
 import { CommonModule } from "./common/common.module";
@@ -59,8 +57,8 @@ import { OwnershipModule } from './ownership/ownership.module';
     }),
     OwnershipModule,
   ],
-  controllers: [AppController],
-  providers: [AppService],
+  controllers: [],
+  providers: [],
 })
 export class AppModule {
   configure(consumer: MiddlewareConsumer) {

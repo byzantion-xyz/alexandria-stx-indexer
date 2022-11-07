@@ -1,6 +1,5 @@
 import { DynamicModule, Module } from "@nestjs/common";
 import { IndexerController } from "./indexer.controller";
-import { ScrapersModule } from "src/scrapers/scrapers.module";
 import { NearIndexerModule } from "./near-indexer/near-indexer.module";
 import { CommonIndexerModule } from "./common/common-indexer.module";
 import { StacksIndexerModule } from "./stacks-indexer/stacks-indexer.module";
@@ -31,7 +30,6 @@ export class IndexersModule {
     return {
       module: IndexersModule,
       imports: [
-        ScrapersModule,
         CommonIndexerModule,
         IndexerModule,
         ConfigModule.forRoot(),

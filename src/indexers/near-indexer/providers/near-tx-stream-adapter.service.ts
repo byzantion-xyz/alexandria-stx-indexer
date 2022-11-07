@@ -310,7 +310,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
     return {
       hash : tx.hash,
       block_hash: tx.block_hash,
-      block_timestamp: this.txHelper.nanoToMiliSeconds(tx.block_timestamp),
+      block_timestamp: this.nearTxHelper.nanoToMiliSeconds(tx.block_timestamp),
       block_height: tx.block_height,
       nonce: tx.nonce,
       index: BigInt(i),

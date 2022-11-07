@@ -35,10 +35,6 @@ export class TxHelperService {
     private commonUtil: CommonUtilService 
   ) {}
 
-  nanoToMiliSeconds(nanoseconds: bigint) {
-    return Number(BigInt(nanoseconds) / BigInt(1e6));
-  }
-
   async findMetaByContractKey(contract_key: string, token_id: string): Promise<NftMeta> {
     const nftMetas = await this.nftMetaRepository.find({
       where: { smart_contract: { contract_key }, token_id },

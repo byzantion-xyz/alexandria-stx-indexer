@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
-import { ScrapersModule } from 'src/scrapers/scrapers.module';
 import { CommonIndexerModule } from '../common/common-indexer.module';
 import { Block } from "src/database/stacks-stream/entities/Block";
 import { Transaction as StacksTransaction } from "src/database/stacks-stream/entities/Transaction";
@@ -84,7 +83,6 @@ const microIndexers = [
 
 @Module({
   imports: [
-    ScrapersModule,
     CommonIndexerModule,
     TypeOrmModule.forFeature([StacksTransaction, Block], "CHAIN-STREAM"),
   ],

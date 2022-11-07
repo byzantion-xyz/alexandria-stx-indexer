@@ -10,7 +10,6 @@ import { UnlistIndexerService } from './providers/unlist-indexer.service';
 import { StakeIndexerService } from './providers/stake-indexer.service';
 import { UnstakeIndexerService } from './providers/unstake-indexer.service';
 import { AcceptBidIndexerService } from './providers/accept-bid-indexer.service';
-import { ScrapersModule } from 'src/scrapers/scrapers.module';
 import { RelistIndexerService } from './providers/relist-indexer.service';
 import { NftMintEventIndexerService } from './providers/nft-mint-event-indexer.service';
 import { NftTransferEventIndexerService } from './providers/nft-transfer-event-indexer.service';
@@ -35,7 +34,6 @@ const microIndexers = [
 
 @Module({
   imports: [
-    ScrapersModule,
     CommonIndexerModule,
     TypeOrmModule.forFeature([NearIndexerTxEvent], "CHAIN-STREAM"),
   ],

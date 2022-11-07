@@ -2,7 +2,6 @@ import { Module } from "@nestjs/common";
 import { NearScraperController } from "./near-scraper/near-scraper.controller";
 import { NearScraperService } from "./near-scraper/near-scraper.service";
 import { IpfsHelperService } from "./providers/ipfs-helper.service";
-import { MissingCollectionService } from "./near-scraper/providers/missing-collection.service";
 import { ContractConnectionService } from "./near-scraper/providers/contract-connection-service";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { SmartContract } from "src/database/universal/entities/SmartContract";
@@ -34,10 +33,9 @@ import { SmartContractFunction } from "src/database/universal/entities/SmartCont
   providers: [
     NearScraperService,
     IpfsHelperService,
-    MissingCollectionService,
     ContractConnectionService,
     DbHelperService,
   ],
-  exports: [MissingCollectionService, ContractConnectionService],
+  exports: [ContractConnectionService],
 })
 export class ScrapersModule {}

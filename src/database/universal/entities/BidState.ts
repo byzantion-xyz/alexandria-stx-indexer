@@ -48,6 +48,7 @@ export class BidState {
   cancel_tx_id: string;
 
   @Column({ type: "enum", enum: BidType })
+  bid_type: BidType;
 
   @Column("timestamp without time zone", { default: () => "CURRENT_TIMESTAMP" })
   created_at: Date;

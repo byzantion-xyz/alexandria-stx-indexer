@@ -36,7 +36,7 @@ export class TxHelperService {
   ) {}
 
   async findMetaByContractKey(contract_key: string, token_id: string): Promise<NftMeta> {
-    const nftMetas = await this.nftMetaRepository.find({
+    const nftMeta = await this.nftMetaRepository.findOne({
       where: { smart_contract: { contract_key }, token_id },
       relations: {
         nft_state: { 
@@ -48,11 +48,7 @@ export class TxHelperService {
       }
     });
 
-    if (nftMetas && nftMetas.length === 1) {
-      return nftMetas[0];
-    } else if (nftMetas && nftMetas.length > 1) {
-      throw new Error(`Unable to find unique meta for: ${contract_key} ${token_id}`);
-    }
+    return nftMeta;
   }
 
   async createOrFetchMetaByContractKey(contract_key: string, token_id: string, chain_id: string): Promise<NftMeta> {

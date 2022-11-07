@@ -1,3 +1,4 @@
+import { BidType } from "src/indexers/common/helpers/indexer-enums";
 import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 import { BidAttribute } from "./BidAttribute";
 import { BidStateNftMeta } from "./BidStateNftMeta";
@@ -46,9 +47,7 @@ export class BidState {
   @Column("text")
   cancel_tx_id: string;
 
-  // TODO: Use BidType;
-  @Column("enum", { enum: ["collection", "attribute", "solo"] })
-  bid_type: "collection" | "attribute" | "solo";
+  @Column({ type: "enum", enum: BidType })
 
   @Column("timestamp without time zone", { default: () => "CURRENT_TIMESTAMP" })
   created_at: Date;

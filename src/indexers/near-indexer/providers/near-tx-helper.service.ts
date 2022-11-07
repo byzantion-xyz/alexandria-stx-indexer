@@ -18,6 +18,10 @@ const flatten = (item) => [item, _.flatMapDeep(item.receipts, flatten)];
 export class NearTxHelperService {
   private readonly logger = new Logger(NearTxHelperService.name);
 
+  nanoToMiliSeconds(nanoseconds: bigint) {
+    return Number(BigInt(nanoseconds) / BigInt(1e6));
+  }
+  
   isNewerEvent(tx: CommonTx, state_list: NftStateList) {
     return (
       !state_list ||

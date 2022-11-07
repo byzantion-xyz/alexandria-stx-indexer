@@ -4,7 +4,6 @@ import { CollectionScrape } from "./CollectionScrape";
 import { SmartContract } from "./SmartContract";
 import { CollectionAttribute } from "./CollectionAttribute";
 import { CollectionCreator } from "./CollectionCreator";
-import { CollectionOnDiscordServerChannel } from "./CollectionOnDiscordServerChannel";
 import { NftMeta } from "./NftMeta";
 import { BidState } from "./BidState";
 
@@ -84,12 +83,6 @@ export class Collection {
 
   @OneToMany(() => BidState, (bidState) => bidState.collection)
   bid_states: BidState[];
-
-  @OneToMany(
-    () => CollectionOnDiscordServerChannel,
-    (collectionOnDiscordServerChannel) => collectionOnDiscordServerChannel.collection
-  )
-  collection_on_discord_server_channels: CollectionOnDiscordServerChannel[];
 
   @OneToMany(() => NftMeta, (nftMeta) => nftMeta.collection)
   nft_metas: NftMeta[];

@@ -2,7 +2,6 @@ import { Injectable, Logger } from "@nestjs/common";
 import { CommonTx } from "src/indexers/common/interfaces/common-tx.interface";
 import { TxProcessResult } from "src/indexers/common/interfaces/tx-process-result.interface";
 import { TxResult, TxCursorBatch, TxStreamAdapter } from "src/indexers/common/interfaces/tx-stream-adapter.interface";
-import { TxHelperService } from "../../common/helpers/tx-helper.service";
 import { Client, Pool, PoolClient } from 'pg';
 import * as Cursor from 'pg-cursor';
 import { NearTxHelperService } from "./near-tx-helper.service";
@@ -31,7 +30,6 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
   private txBatchResults: TxResult[] = [];
 
   constructor(
-    private txHelper: TxHelperService,
     private nearTxHelper: NearTxHelperService,
     private configService: ConfigService,
     @InjectRepository(TxEvent, "CHAIN-STREAM")
@@ -310,7 +308,7 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
     return {
       hash : tx.hash,
       block_hash: tx.block_hash,
-      block_timestamp: this.txHelper.nanoToMiliSeconds(tx.block_timestamp),
+      block_timestamp: this.nearTxHelper.nanoToMiliSeconds(tx.block_timestamp),
       block_height: tx.block_height,
       nonce: tx.nonce,
       index: BigInt(i),

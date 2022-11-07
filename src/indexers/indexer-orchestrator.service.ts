@@ -176,7 +176,7 @@ export class IndexerOrchestratorService {
       throw new Error(`No stream adapter defined for chain: ${this.chainSymbol}`);
     }
 
-    // Load generic functinos per chain (i.e transfer)
+    // Load generic functions per chain (i.e NFT event transfer)
     const functions = this.configService.get("indexer.genericFunctions")[this.chainSymbol];
     for (let genericFunction of functions) {
       const scf = new SmartContractFunction();

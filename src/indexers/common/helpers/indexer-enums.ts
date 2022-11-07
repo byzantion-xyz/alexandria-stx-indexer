@@ -77,10 +77,3 @@ export enum ActionName {
   reset_owner = "reset-owner"
 }
 
-
-
-export enum DiscordChannelType {
-  sales = "sales",
-  listings = "listings",
-  bids = "bids",
-}

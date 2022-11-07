@@ -45,7 +45,6 @@ export class IndexerController {
     }
 
     const blockConfig = this.configService.get('indexer.blockRanges')[this.configService.get('indexer.chainSymbol')];
-    // TODO: Query block when contract was deployed and latest block.
     const initial_block = Number(options.start_block_height) || Number(blockConfig.start_block_height);
     const end_block: number = options.end_block_height || blockConfig.end_block_height;
     const block_range: number = blockConfig.block_range;

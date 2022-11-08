@@ -60,7 +60,7 @@ export class StacksTxStreamAdapterService extends TxStreamAdapter {
     @InjectRepository(TransactionEntity, "CHAIN-STREAM")
     private transactionRepository: Repository<TransactionEntity>
   ) {
-    super('Near', configService.get('STACKS_STREAMER_SQL_DATABASE_URL'));
+    super('Stacks', configService.get('STACKS_STREAMER_SQL_DATABASE_URL'));
   }
 
   async fetchSmartContract(contractKey: string): Promise<SmartContract> {

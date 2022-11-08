@@ -23,6 +23,13 @@ export interface TxCursorBatch {
 export abstract class TxStreamAdapter {
   pool: Pool;
   poolClient: PoolClient;
+  chainSymbol: string;
+  streamerDbUri: string;
+
+  constructor(chainSymbol: string, dbUri: string) {
+    this.chainSymbol = chainSymbol;
+    this.streamerDbUri = dbUri;
+  }
 
   async connectPool(dbUri: string): Promise<any> {
     this.pool = new Pool({ connectionString: dbUri });

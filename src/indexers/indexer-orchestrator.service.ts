@@ -20,7 +20,6 @@ const BATCH_SIZE = 1000;
 
 @Injectable()
 export class IndexerOrchestratorService {
-  private chainSymbol: string;
   private genericScf: SmartContractFunction[] = [];
   private readonly logger = new Logger(IndexerOrchestratorService.name);
   private chainId: string;
@@ -163,22 +162,17 @@ export class IndexerOrchestratorService {
   }
 
   async setUpChainAndStreamer() {
-    this.chainSymbol = this.configService.get("indexer.chainSymbol");
-    if (!this.chainSymbol) {
-      throw new Error(`CHAIN_SYMBOL must be provided as environment variable`);
+    if (!this.isTxStreamAdapter(this.txStreamAdapter)) {
+      throw new Error(`No stream adapter defined`);
     }
-    const chain = await this.chainRepository.findOneByOrFail({ symbol: this.chainSymbol });
+    const { chainSymbol } = this.txStreamAdapter;
+    const chain = await this.chainRepository.findOneByOrFail({ symbol: chainSymbol });
     this.chainId = chain.id;
 
-    if (!this.isTxStreamAdapter(this.txStreamAdapter)) {
-      throw new Error(`No stream adapter defined for chain: ${this.chainSymbol}`);
-    }
-
-    const streamerDbUri = this.configService.get(`${this.chainSymbol.toUpperCase()}_STREAMER_SQL_DATABASE_URL`);
-    await this.txStreamAdapter.connectPool(streamerDbUri);
+    await this.txStreamAdapter.connectPool(this.txStreamAdapter.streamerDbUri);
 
     // Load generic functions per chain (i.e NFT event transfer)
-    const functions = this.configService.get("indexer.genericFunctions")[this.chainSymbol];
+    const functions = this.configService.get("indexer.genericFunctions")[chainSymbol];
     for (let genericFunction of functions) {
       const scf = new SmartContractFunction();
       scf.function_name = genericFunction.function_name;
@@ -189,7 +183,7 @@ export class IndexerOrchestratorService {
   }
 
   isTxStreamAdapter(arg: TxStreamAdapter): arg is TxStreamAdapter {
-    return (arg instanceof TxStreamAdapter);
+    return (arg && arg instanceof TxStreamAdapter);
   }
 
   isTxStreamAdapterWithSubsriptions(arg: TxStreamAdapter): boolean {

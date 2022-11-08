@@ -47,9 +47,7 @@ const EXCLUDED_SMART_CONTRACTS = [
 
 @Injectable()
 export class StacksTxStreamAdapterService extends TxStreamAdapter {
-  private readonly chainSymbol = 'Stacks';
   private readonly logger = new Logger(StacksTxStreamAdapterService.name);
-
   private txBatchResults: TxResult[] = [];
   private readonly txResults = new ExpiryMap(this.configService.get('indexer.txResultExpiration') || 60000);
 
@@ -62,7 +60,7 @@ export class StacksTxStreamAdapterService extends TxStreamAdapter {
     @InjectRepository(TransactionEntity, "CHAIN-STREAM")
     private transactionRepository: Repository<TransactionEntity>
   ) {
-    super();
+    super('Near', configService.get('STACKS_STREAMER_SQL_DATABASE_URL'));
   }
 
   async fetchSmartContract(contractKey: string): Promise<SmartContract> {

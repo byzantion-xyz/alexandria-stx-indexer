@@ -19,9 +19,7 @@ export const NEAR_FARMING_STANDARD = 'ref-farming';
 
 @Injectable()
 export class NearTxStreamAdapterService extends TxStreamAdapter {
-  private readonly chainSymbol = 'Near';
   private readonly logger = new Logger(NearTxStreamAdapterService.name);
-
   private readonly txResults = new ExpiryMap(this.configService.get('indexer.txResultExpiration') || 60000);
   private txBatchResults: TxResult[] = [];
 
@@ -33,7 +31,7 @@ export class NearTxStreamAdapterService extends TxStreamAdapter {
     @InjectRepository(SmartContract)
     private smartContractRepository: Repository<SmartContract>
   ) {
-    super();
+    super('Near', configService.get('NEAR_STREAMER_SQL_DATABASE_URL'));
   }
 
   async fetchTxs(options: IndexerOptions): Promise<TxCursorBatch> {

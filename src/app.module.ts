@@ -2,16 +2,13 @@ import { MiddlewareConsumer, Module, RequestMethod } from "@nestjs/common";
 import { ConfigModule, ConfigService } from "@nestjs/config";
 import { IndexersModule } from "./indexers/indexers.module";
 import { CommonModule } from "./common/common.module";
-import { ScrapersModule } from "./scrapers/scrapers.module";
 import { ScheduleModule } from "@nestjs/schedule";
 import { TasksModule } from "./tasks/tasks.module";
 
 import appConfig from "./config/app.config";
 import indexerConfig from "./config/indexer.config";
 import { TypeOrmModule } from "@nestjs/typeorm";
-import { ApiProtectMiddleware } from "./common/middleware/apiprotect.middleware";
 import { ApiKey } from "./database/universal/entities/ApiKey";
-import { OwnershipModule } from "./ownership/ownership.module";
 
 @Module({
   imports: [
@@ -20,7 +17,6 @@ import { OwnershipModule } from "./ownership/ownership.module";
       load: [appConfig, indexerConfig],
       isGlobal: true,
     }),
-    ScrapersModule,
     ScheduleModule.forRoot(),
     IndexersModule.register({ chainSymbol: process.env.CHAIN_SYMBOL }),
     CommonModule,
@@ -55,13 +51,8 @@ import { OwnershipModule } from "./ownership/ownership.module";
       }),
       inject: [ConfigService],
     }),
-    OwnershipModule,
   ],
   controllers: [],
   providers: [],
 })
-export class AppModule {
-  configure(consumer: MiddlewareConsumer) {
-    consumer.apply(ApiProtectMiddleware).forRoutes({ path: "*", method: RequestMethod.ALL });
-  }
-}
+export class AppModule {}

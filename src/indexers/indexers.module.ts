@@ -1,6 +1,5 @@
 import { DynamicModule, Module } from "@nestjs/common";
 import { IndexerController } from "./indexer.controller";
-import { NearIndexerModule } from "./near-indexer/near-indexer.module";
 import { CommonIndexerModule } from "./common/common-indexer.module";
 import { StacksIndexerModule } from "./stacks-indexer/stacks-indexer.module";
 import { IndexerOrchestratorService } from "./indexer-orchestrator.service";
@@ -14,8 +13,6 @@ interface ChainOptions {
 
 const loadIndexerModule = (options: ChainOptions) => {
   switch (options.chainSymbol) {
-    case "Near":
-      return NearIndexerModule;
     case "Stacks":
       return StacksIndexerModule;
     default:

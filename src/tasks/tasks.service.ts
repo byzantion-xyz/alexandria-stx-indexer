@@ -3,17 +3,12 @@ import { ConfigService } from "@nestjs/config";
 import { Cron, CronExpression, Timeout } from "@nestjs/schedule";
 import { IndexerOptions } from "src/indexers/common/interfaces/indexer-options";
 import { IndexerOrchestratorService } from "src/indexers/indexer-orchestrator.service";
-import { NearOwnershipService } from "src/ownership/providers/near-ownership.service";
 
 @Injectable()
 export class TasksService {
   private readonly logger = new Logger(TasksService.name);
 
-  constructor(
-    private indexerOrchestrator: IndexerOrchestratorService,
-    private configService: ConfigService,
-    private nearOwnershipService: NearOwnershipService
-  ) {}
+  constructor(private indexerOrchestrator: IndexerOrchestratorService, private configService: ConfigService) {}
 
   @Timeout(10000)
   async handleCron() {
@@ -39,16 +34,6 @@ export class TasksService {
     const streamerSubscription = this.configService.get("indexer.enableStreamerSubscription");
     if (streamerSubscription) {
       this.indexerOrchestrator.subscribeToEvents();
-    }
-  }
-
-  @Cron(CronExpression.EVERY_6_HOURS)
-  async checkOwnership() {
-    const runFixNearOwnership = this.configService.get("app.runFixNearOwnership");
-    if (runFixNearOwnership) {
-      this.logger.log("checkOwnership() task running");
-      await this.nearOwnershipService.process();
-      this.logger.log("checkOwnership() task completed");
     }
   }
 }

@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Client, Pool, PoolClient } from 'pg';
+import { Client } from 'pg';
 import * as Cursor from 'pg-cursor';
 
 import { Transaction as TransactionEntity } from 'src/database/stacks-stream/entities/Transaction';
@@ -14,6 +14,7 @@ import { StacksTxHelperService } from './stacks-tx-helper.service';
 import { IndexerOptions } from 'src/indexers/common/interfaces/indexer-options';
 import { CommonUtilService } from 'src/common/helpers/common-util/common-util.service';
 import ExpiryMap = require('expiry-map');
+import { SmartContract } from 'src/database/universal/entities/SmartContract';
 
 const BNS_CONTRACT_KEY = 'SP000000000000000000002Q6VF78.bns::names';
 // Btc domain marketplaces
@@ -45,13 +46,8 @@ const EXCLUDED_SMART_CONTRACTS = [
 ];
 
 @Injectable()
-export class StacksTxStreamAdapterService implements TxStreamAdapter {
-  readonly chainSymbol = 'Stacks';
-
-  private poolClient: PoolClient;
-  private pool: Pool;
+export class StacksTxStreamAdapterService extends TxStreamAdapter {
   private readonly logger = new Logger(StacksTxStreamAdapterService.name);
-
   private txBatchResults: TxResult[] = [];
   private readonly txResults = new ExpiryMap(this.configService.get('indexer.txResultExpiration') || 60000);
 
@@ -59,28 +55,39 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
     private configService: ConfigService,
     private stacksTxHelper: StacksTxHelperService,
     private commonUtil: CommonUtilService,
+    @InjectRepository(SmartContract)
+    private smartContractRepository: Repository<SmartContract>,
     @InjectRepository(TransactionEntity, "CHAIN-STREAM")
     private transactionRepository: Repository<TransactionEntity>
-  ) {}
-
-  async connectPool(): Promise<any> {
-    this.pool = new Pool({
-      connectionString: this.configService.get('STACKS_STREAMER_SQL_DATABASE_URL')
-    });
-    this.poolClient = await this.pool.connect();
+  ) {
+    super('Stacks', configService.get('STACKS_STREAMER_SQL_DATABASE_URL'));
   }
 
-  async closePool(): Promise<any> {
-    this.poolClient.release();
-    await this.pool.end();
+  async fetchSmartContract(contractKey: string): Promise<SmartContract> {
+    return await this.smartContractRepository.findOne({
+      where: {
+        chain : { symbol: this.chainSymbol },
+        contract_key: contractKey
+      }
+    });
   }
 
   async fetchTxs(options: IndexerOptions): Promise<TxCursorBatch> {
     const end_block_height = this.configService.get('indexer.blockRanges.Stacks.end_block_height') || 0;    
+    
+    let contract_key: string;
+    if (options.contract_key) {
+      let sc = await this.fetchSmartContract(options.contract_key);
+      if (!sc) {
+        throw new Error(`Couldn't find matching smart contract: ${options.contract_key}`)
+      } 
+      contract_key = sc.contract_key;
+    }
 
     const sql = `SELECT * FROM transaction t
       WHERE block_height >= ${options.start_block_height ?? 0}
       AND block_height <= ${options.end_block_height ?? end_block_height}
+      ${contract_key ? `AND contract_id='${contract_key}'` : ''}
       AND contract_id NOT IN (${EXCLUDED_SMART_CONTRACTS.map((key) => `'${key}'`).join(',')})
       AND tx->>'tx_status' = 'success'
       AND processed = ${options.includeMissings}

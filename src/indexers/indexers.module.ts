@@ -1,6 +1,5 @@
 import { DynamicModule, Module } from "@nestjs/common";
 import { IndexerController } from "./indexer.controller";
-import { ScrapersModule } from "src/scrapers/scrapers.module";
 import { NearIndexerModule } from "./near-indexer/near-indexer.module";
 import { CommonIndexerModule } from "./common/common-indexer.module";
 import { StacksIndexerModule } from "./stacks-indexer/stacks-indexer.module";
@@ -13,25 +12,23 @@ interface ChainOptions {
   chainSymbol: string;
 }
 
+const loadIndexerModule = (options: ChainOptions) => {
+  switch (options.chainSymbol) {
+    case "Near": return NearIndexerModule;
+    case "Stacks": return StacksIndexerModule;
+    default:
+      throw new Error(`Invalid CHAIN_SYMBOL: ${options.chainSymbol}`);
+  }
+};
+
 @Module({})
 export class IndexersModule {
   static register(options: ChainOptions): DynamicModule {
-    let IndexerModule;
-    switch (options.chainSymbol) {
-      case "Near":
-        IndexerModule = NearIndexerModule;
-        break;
-      case "Stacks":
-        IndexerModule = StacksIndexerModule;
-        break;
-      default:
-        throw new Error(`Invalid CHAIN_SYMBOL: ${options.chainSymbol}`);
-    }
+    const IndexerModule = loadIndexerModule(options);
 
     return {
       module: IndexersModule,
       imports: [
-        ScrapersModule,
         CommonIndexerModule,
         IndexerModule,
         ConfigModule.forRoot(),

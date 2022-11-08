@@ -20,15 +20,33 @@ export interface TxCursorBatch {
   cursor: any
 }
 
-export interface TxStreamAdapter {
-  connectPool(): Promise<PoolClient>;
-  fetchTxs(options: IndexerOptions): Promise<TxCursorBatch>;
-  setTxResult(tx: CommonTx, txResult: TxProcessResult): void;
-  saveTxResults(): void;
-  closePool(): Promise<any>;
+export abstract class TxStreamAdapter {
+  pool: Pool;
+  poolClient: PoolClient;
+  chainSymbol: string;
+  streamerDbUri: string;
 
-  subscribeToEvents?(): Client;
-  fetchEventData?(event: any): Promise<CommonTx[]>;
+  constructor(chainSymbol: string, dbUri: string) {
+    this.chainSymbol = chainSymbol;
+    this.streamerDbUri = dbUri;
+  }
 
-  transformTxs(txs): CommonTx[];
+  async connectPool(dbUri: string): Promise<any> {
+    this.pool = new Pool({ connectionString: dbUri });
+    this.poolClient = await this.pool.connect();
+  }
+
+  async closePool(): Promise<any> {
+    this.poolClient.release();
+    await this.pool.end();
+  }
+
+  abstract fetchTxs(options: IndexerOptions): Promise<TxCursorBatch>;
+  abstract transformTxs(txs): CommonTx[];
+
+  abstract setTxResult(tx: CommonTx, txResult: TxProcessResult): void;
+  abstract saveTxResults(): void;
+
+  abstract subscribeToEvents?(): Client;
+  abstract fetchEventData?(event: any): Promise<CommonTx[]>;
 }

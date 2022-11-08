@@ -53,7 +53,6 @@ export class NftBurnEventIndexerService implements IndexerService {
       }
       
       await this.txHelper.burnMeta(nftMeta.id);
-      // TODO: Cancel any active bids when bids are implemented in NEAR
     } else {
       this.logger.debug(`Too Late`);
     }

@@ -1,9 +1,9 @@
-﻿import { Column, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 import { Collection } from "./Collection";
 import { SmartContract } from "./SmartContract";
 import { NftMeta } from "./NftMeta";
 import { Commission } from "./Commission";
-import { ActionName } from "../../../indexers/common/helpers/indexer-enums";
+import { ActionName } from "src/indexers/common/helpers/indexer-enums";
 
 @Index("action_pkey", ["id"], { unique: true })
 @Entity("action", { schema: "public" })
@@ -52,7 +52,7 @@ export class Action {
   @Column("text")
   tx_id: string;
 
-  @Column("boolean", { default: false })
+  @Column("boolean", { default: () => "false" })
   segment: boolean;
 
   @Column("text", { nullable: true })
@@ -104,7 +104,7 @@ export class Action {
   @JoinColumn([{ name: "smart_contract_id", referencedColumnName: "id" }])
   smart_contract: SmartContract;
 
-  @Column("uuid", { nullable: true })
+  @Column("uuid")
   commission_id: string;
 
   @ManyToOne(() => Commission, (commission) => commission.actions, {

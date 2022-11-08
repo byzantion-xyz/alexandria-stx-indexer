@@ -1,25 +1,21 @@
-﻿import { Injectable, Logger } from "@nestjs/common";
+import { Injectable, Logger } from "@nestjs/common";
 import * as moment from "moment";
 import { CreateActionCommonArgs } from "../interfaces/create-action-common.dto";
 import { CommonTx } from "src/indexers/common/interfaces/common-tx.interface";
-
 import { InjectRepository } from "@nestjs/typeorm";
 import { NftState } from "src/database/universal/entities/NftState";
 import { NftMeta } from "src/database/universal/entities/NftMeta";
 import { SmartContract } from "src/database/universal/entities/SmartContract";
-import { SmartContractFunction } from "src/database/universal/entities/SmartContractFunction";
 import { Collection } from "src/database/universal/entities/Collection";
 import { Repository } from "typeorm";
 import { ActionName, SmartContractType } from "./indexer-enums";
 import { Commission } from "src/database/universal/entities/Commission";
 import { NftStateList } from "src/database/universal/entities/NftStateList";
-import { makeContractCall } from "@stacks/transactions";
+import { CommonUtilService } from "src/common/helpers/common-util/common-util.service";
 
 export interface NftStateArguments {
   collection_map_id?: string;
 }
-
-// TODO: Refactor nft_state changes into unified service
 
 @Injectable()
 export class TxHelperService {
@@ -30,76 +26,122 @@ export class TxHelperService {
     private nftStateRepository: Repository<NftState>,
     @InjectRepository(SmartContract)
     private smartContractRepository: Repository<SmartContract>,
+    @InjectRepository(NftMeta)
+    private nftMetaRepository: Repository<NftMeta>,
     @InjectRepository(Commission)
     private commissionRepository: Repository<Commission>,
     @InjectRepository(NftStateList)
-    private nftStateListRepository: Repository<NftStateList>
+    private nftStateListRepository: Repository<NftStateList>,
+    private commonUtil: CommonUtilService
   ) {}
 
-  nanoToMiliSeconds(nanoseconds: bigint) {
-    return Number(BigInt(nanoseconds) / BigInt(1e6));
-  }
-
-  findAndExtractArgumentData(args: JSON, scf: SmartContractFunction, fields: string[]) {
-    for (let field of fields) {
-      let value = this.extractArgumentData(args, scf, field);
-      if (value) return value;
-    }
-  }
-
-  private findArgumentData(args: JSON, scf: SmartContractFunction, field: string) {
-    const index = scf.args[field];
-    if (typeof index === "undefined") {
-      return undefined;
-    }
-    if (index.toString().includes(".")) {
-      const indexArr = index.toString().split(".");
-      // TODO: Use recursive function
-      if (indexArr.length === 2) {
-        return args[indexArr[0]][indexArr[1]];
-      } else if (indexArr.length === 3) {
-        return args[indexArr[0]][indexArr[1]][indexArr[2]];
-      }
-    } else {
-      return args[scf.args[field]];
-    }
-  }
-
-  extractArgumentData(args: JSON, scf: SmartContractFunction, field: string) {
-    // Any data stored directly in smart_contract_function must override arguments
-    if (scf.data && scf.data[field]) {
-      return scf.data[field];
-    }
-
-    return this.findArgumentData(args, scf, field);
-  }
-
-  // TODO: Optimize relations fetched per event type
-  async findMetaByContractKey(contract_key: string, token_id: string) {
-    const nft_smart_contract = await this.smartContractRepository.findOne({
-      where: {
-        contract_key,
-        nft_metas: { token_id },
-      },
+  async findMetaByContractKey(contract_key: string, token_id: string): Promise<NftMeta> {
+    const nftMeta = await this.nftMetaRepository.findOne({
+      where: { smart_contract: { contract_key }, token_id },
       relations: {
-        nft_metas: {
-          nft_state: {
-            staked_contract: true,
-            nft_states_list: { commission: true, list_contract: true },
-          },
-          smart_contract: true,
-          collection: true,
+        nft_state: {
+          staked_contract: true,
+          nft_states_list: { commission: true, list_contract: true },
         },
+        smart_contract: true,
+        collection: true,
       },
     });
 
-    if (nft_smart_contract && nft_smart_contract.nft_metas && nft_smart_contract.nft_metas.length === 1) {
-      return nft_smart_contract.nft_metas[0];
+    return nftMeta;
+  }
+
+  async createOrFetchMetaByContractKey(contract_key: string, token_id: string, chain_id: string): Promise<NftMeta> {
+    if (!contract_key || !chain_id || typeof token_id === "undefined") {
+      throw new Error(`invalid parameters ${contract_key} ${token_id} ${chain_id}`);
+    }
+
+    let nftMeta = await this.findMetaByContractKey(contract_key, token_id);
+
+    if (!nftMeta) {
+      let smartContract = await this.smartContractRepository.findOne({
+        where: { contract_key },
+        relations: { collections: true },
+      });
+      let collection: Collection;
+
+      if (!smartContract) {
+        smartContract = await this.createSmartContractSkeleton(contract_key, chain_id);
+      } else if (!smartContract.custodial_smart_contract_id && smartContract.collections.length === 1) {
+        collection = smartContract.collections[0];
+      }
+
+      nftMeta = await this.createMetaSkeleton(smartContract, token_id, collection);
+      this.logger.debug(`createOrFetchMetaByContractKey() created nft_meta for ${contract_key} ${token_id}`);
+      nftMeta.smart_contract = smartContract;
+    }
+
+    if (!nftMeta) {
+      throw new Error(`Unable to fetch nft_meta for ${contract_key} ${token_id}`);
+    }
+
+    return nftMeta;
+  }
+
+  async createSmartContractSkeleton(contract_key: string, chain_id: string): Promise<SmartContract> {
+    this.logger.debug(`createSmartContractSkeleton() contract_key: ${contract_key}`);
+
+    try {
+      const smartContract = this.smartContractRepository.create({
+        contract_key,
+        type: [SmartContractType.non_fungible_tokens],
+        chain_id,
+      });
+
+      const saved = await this.smartContractRepository.save(smartContract);
+      saved.smart_contract_functions = [];
+
+      this.logger.debug(`createSmartContractSkeleton() added smart_contract skeleton for ${contract_key}`);
+      return saved;
+    } catch (err) {
+      this.logger.warn(`createSmartContractSkeleton() failed for contract_key: ${contract_key} `);
+
+      if (err && err.constraint && err.constraint === "smart_contract_contract_key_key") {
+        this.logger.debug(`createSmartContractSkeleton() ${contract_key} already created. Fetching...`);
+        const sc = await this.smartContractRepository.findOne({ where: { chain_id, contract_key } });
+        sc.smart_contract_functions = [];
+        return sc;
+      }
+
+      this.logger.error(err);
+      throw err;
+    }
+  }
+
+  async createMetaSkeleton(sc: SmartContract, token_id: string, collection?: Collection): Promise<NftMeta> {
+    try {
+      const newMeta = this.nftMetaRepository.create({
+        smart_contract_id: sc.id,
+        chain_id: sc.chain_id,
+        ...(collection && { collection_id: collection.id }),
+        token_id,
+      });
+
+      return await this.nftMetaRepository.save(newMeta);
+    } catch (err) {
+      this.logger.warn(`createMetaSkeleton() failed for ${sc.contract_key} ${token_id}`);
+      this.logger.warn(err);
+      throw err;
     }
   }
 
   findStateList(nftState: NftState, msc_id: string): NftStateList {
     return nftState?.nft_states_list?.find((s) => s.list_contract_id === msc_id);
+  }
+
+  isListedInAnyMarketplace(nftState: NftState): boolean {
+    return nftState?.nft_states_list?.some((s) => s.listed === true);
+  }
+
+  isListedPreviously(nftState: NftState, tx: CommonTx): boolean {
+    return nftState?.nft_states_list?.some((s) => {
+      return s.listed === true && s.list_block_height < tx.block_height;
+    });
   }
 
   async findCommissionByKey(sc: SmartContract, contract_key: string, key?: string): Promise<Commission> {
@@ -120,7 +162,6 @@ export class TxHelperService {
       list_contract_id: msc.id,
       list_tx_index: tx.index,
       list_block_height: tx.block_height,
-      list_sub_block_seq: tx.sub_block_sequence,
       list_block_datetime: null,
       function_args: null,
       commission_id: null,
@@ -129,14 +170,13 @@ export class TxHelperService {
     return await this.createOrUpsertNftStateList(nftMeta, nftStateList);
   }
 
-  async unlistMetaInAllMarkets(nftMeta: NftMeta, tx: CommonTx, msc: SmartContract, seller?: string) {
+  async unlistMetaInAllMarkets(nftMeta: NftMeta, tx: CommonTx, msc?: SmartContract, seller?: string) {
     let nftStateList = this.nftStateListRepository.create({
       listed: false,
       list_price: null,
       list_seller: null,
       list_tx_index: tx.index,
       list_block_height: tx.block_height,
-      list_sub_block_seq: tx.sub_block_sequence,
       list_block_datetime: null,
       function_args: null,
       commission_id: null,
@@ -151,15 +191,17 @@ export class TxHelperService {
         }
       });
 
-      let alreadyExists = this.findStateList(nftMeta.nft_state, msc.id);
-      if (!alreadyExists) {
-        nftMeta.nft_state.nft_states_list.push(
-          this.nftStateListRepository.create({ ...nftStateList, list_contract_id: msc.id })
-        );
+      if (msc) {
+        let alreadyExists = this.findStateList(nftMeta.nft_state, msc.id);
+        if (!alreadyExists) {
+          nftMeta.nft_state.nft_states_list.push(
+            this.nftStateListRepository.create({ ...nftStateList, list_contract_id: msc.id })
+          );
+        }
       }
 
       await this.nftStateRepository.save(nftMeta.nft_state);
-    } else {
+    } else if (msc) {
       let nftState = this.nftStateRepository.create();
       nftState.meta_id = nftMeta.id;
       nftState.nft_states_list = [this.nftStateListRepository.merge(nftStateList, { list_contract_id: msc.id })];
@@ -201,7 +243,6 @@ export class TxHelperService {
       list_seller: tx.signer,
       list_block_height: tx.block_height,
       list_block_datetime: moment(new Date(tx.block_timestamp)).toDate(),
-      list_sub_block_seq: tx.sub_block_sequence,
       ...(commission_id && { commission_id }),
       ...(args && { function_args: args }),
     });
@@ -232,7 +273,32 @@ export class TxHelperService {
   }
 
   async burnMeta(nftMetaId: string) {
-    await this.nftStateRepository.upsert({ meta_id: nftMetaId, burned: true }, ["meta_id"]);
+    await this.nftStateRepository.upsert(
+      {
+        meta_id: nftMetaId,
+        burned: true,
+        owner: null,
+        owner_block_height: null,
+        owner_tx_id: null,
+      },
+      ["meta_id"]
+    );
+  }
+
+  async mintMeta(nftMeta: NftMeta, tx: CommonTx, owner: string) {
+    await this.nftStateRepository.upsert(
+      {
+        meta_id: nftMeta.id,
+        minted: true,
+        mint_tx: tx.hash,
+        ...((!nftMeta.nft_state || !nftMeta.nft_state.owner) && {
+          owner: owner,
+          owner_block_height: tx.block_height,
+          owner_tx_id: tx.hash,
+        }),
+      },
+      ["meta_id"]
+    );
   }
 
   setCommonActionParams(
@@ -245,7 +311,7 @@ export class TxHelperService {
     let params: CreateActionCommonArgs = {
       ...common,
       nft_meta_id: nftMeta.id,
-      collection_id: nftMeta.collection_id,
+      ...(nftMeta.collection_id && { collection_id: nftMeta.collection_id }),
       smart_contract_id: nftMeta.smart_contract.id,
     };
     return params;
@@ -280,5 +346,26 @@ export class TxHelperService {
         marketplace_smart_contract_id: msc.id,
       }),
     };
+  }
+
+  isNewOwnerEvent(tx: CommonTx, nft_state: NftState, owner?: string): boolean {
+    return (
+      !nft_state ||
+      !nft_state.owner_block_height ||
+      tx.block_height > nft_state.owner_block_height ||
+      (tx.block_height === nft_state.owner_block_height && owner && owner !== nft_state.owner)
+    );
+  }
+
+  async setNewMetaOwner(nftMeta: NftMeta, tx: CommonTx, owner: string) {
+    await this.nftStateRepository.upsert(
+      {
+        meta_id: nftMeta.id,
+        owner: owner,
+        owner_block_height: tx.block_height,
+        owner_tx_id: tx.hash,
+      },
+      ["meta_id"]
+    );
   }
 }

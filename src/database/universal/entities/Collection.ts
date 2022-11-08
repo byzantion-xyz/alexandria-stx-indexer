@@ -1,5 +1,6 @@
-﻿import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
 import { Action } from "./Action";
+import { CollectionScrape } from "./CollectionScrape";
 import { SmartContract } from "./SmartContract";
 import { CollectionAttribute } from "./CollectionAttribute";
 import { CollectionCreator } from "./CollectionCreator";
@@ -28,26 +29,24 @@ export class Collection {
   @Column({ type: "numeric", precision: 14, default: 0 })
   volume: number;
 
-  @Column("integer", { default: "0" })
+  @Column("integer", { default: () => "0" })
   floor: number;
 
   @Column("text", { nullable: true })
   cover_image: string | null;
 
-  @Column("boolean", { default: "false" })
+  @Column("boolean", { default: () => "false" })
   trending: boolean;
 
   @Column("text", { nullable: true })
   title: string | null;
 
   @Column("timestamp without time zone", {
-    default: "CURRENT_TIMESTAMP",
+    default: () => "CURRENT_TIMESTAMP",
   })
   created_at: Date;
 
-  @Column("timestamp without time zone", {
-    default: "CURRENT_TIMESTAMP",
-  })
+  @Column("timestamp without time zone")
   updated_at: Date;
 
   @Column("text", { nullable: true })
@@ -58,6 +57,13 @@ export class Collection {
 
   @OneToMany(() => Action, (action) => action.collection)
   actions: Action[];
+
+  @OneToOne(() => CollectionScrape, (collectionScrape) => collectionScrape.collection, {
+    onDelete: "SET NULL",
+    onUpdate: "CASCADE",
+  })
+  @JoinColumn([{ name: "collection_scrape_id", referencedColumnName: "id" }])
+  collection_scrape: CollectionScrape;
 
   @Column()
   smart_contract_id: string;

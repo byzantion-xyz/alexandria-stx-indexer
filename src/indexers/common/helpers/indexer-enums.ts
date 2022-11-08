@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Enums
  */
 
@@ -73,10 +73,6 @@ export enum ActionName {
   unlist_collection_bid = "unlist-collection-bid",
   unstake = "unstake",
   solo_bid = "solo-bid",
-}
-
-export enum DiscordChannelType {
-  sales = "sales",
-  listings = "listings",
-  bids = "bids",
+  burn = "burn",
+  reset_owner = "reset-owner",
 }

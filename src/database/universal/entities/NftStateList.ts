@@ -1,4 +1,4 @@
-﻿import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 import { SmartContract } from "./SmartContract";
 import { Commission } from "./Commission";
 import { NftState } from "./NftState";
@@ -9,7 +9,7 @@ export class NftStateList {
   @PrimaryGeneratedColumn("uuid")
   readonly id: string;
 
-  @Column("boolean", { default: "false" })
+  @Column("boolean", { default: () => "false" })
   listed: boolean;
 
   @Column("numeric", { nullable: true, precision: 40, scale: 0 })

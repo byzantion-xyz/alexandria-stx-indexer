@@ -1,5 +1,6 @@
-﻿import { Injectable, Logger } from "@nestjs/common";
+import { Injectable, Logger } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
+import { MegapontAttribute } from "src/database/universal/entities/MegapontAttribute";
 import { NftMeta } from "src/database/universal/entities/NftMeta";
 import { NftMetaAttribute } from "src/database/universal/entities/NftMetaAttribute";
 import { TxHelperService } from "src/indexers/common/helpers/tx-helper.service";
@@ -16,7 +17,9 @@ export class TxUpgradeHelperService {
     @InjectRepository(NftMeta)
     private nftMetaRepository: Repository<NftMeta>,
     @InjectRepository(NftMetaAttribute)
-    private nftMetaAttributeRepository: Repository<NftMetaAttribute>
+    private nftMetaAttributeRepository: Repository<NftMetaAttribute>,
+    @InjectRepository(MegapontAttribute)
+    private megapontAttributeRepository: Repository<MegapontAttribute>
   ) {}
 
   async findMetasByContractKeyWithAttr(contract_key: string, token_ids: string[]) {
@@ -25,7 +28,7 @@ export class TxUpgradeHelperService {
         smart_contract: { contract_key },
         token_id: In(token_ids),
       },
-      relations: { nft_state: true },
+      relations: { attributes: { megapont_attribute: true }, nft_state: true },
     });
 
     if (nft_metas.length === token_ids.length) {
@@ -47,7 +50,7 @@ export class TxUpgradeHelperService {
         asset_name: asset_name,
         token_id: In(token_ids),
       },
-      relations: { nft_state: true },
+      relations: { attributes: { megapont_attribute: true }, nft_state: true },
     });
 
     if (nft_metas.length === token_ids.length) {
@@ -87,7 +90,54 @@ export class TxUpgradeHelperService {
 
         let arrayIndex = nftMeta.attributes.findIndex((i) => i.trait_type === newAttr.trait_type);
 
-        delete nftMeta.attributes[arrayIndex];
+        if (newAttr.megapont_attribute?.trait_group) {
+          if (arrayIndex >= 0) {
+            nftMeta.attributes[arrayIndex] = this.nftMetaAttributeRepository.merge(nftMeta.attributes[arrayIndex], {
+              value: newAttr.value,
+            });
+
+            if (nftMeta.attributes[arrayIndex].megapont_attribute) {
+              nftMeta.attributes[arrayIndex].megapont_attribute = this.megapontAttributeRepository.merge(
+                nftMeta.attributes[arrayIndex].megapont_attribute,
+                {
+                  trait_group: newAttr.megapont_attribute.trait_group,
+                  token_id: newAttr.megapont_attribute.token_id,
+                  sequence: newAttr.megapont_attribute.sequence,
+                }
+              );
+            } else {
+              nftMeta.attributes[arrayIndex].megapont_attribute = this.megapontAttributeRepository.create({
+                trait_group: newAttr.megapont_attribute.trait_group,
+                token_id: newAttr.megapont_attribute.token_id,
+                sequence: newAttr.megapont_attribute.sequence,
+              });
+            }
+          } else {
+            nftMeta.attributes.push(
+              this.nftMetaAttributeRepository.create({
+                trait_type: newAttr.trait_type,
+                value: newAttr.value,
+                megapont_attribute: this.megapontAttributeRepository.create({
+                  trait_group: newAttr.megapont_attribute.trait_group,
+                  token_id: newAttr.megapont_attribute.token_id,
+                  sequence: newAttr.megapont_attribute.sequence,
+                }),
+              })
+            );
+          }
+
+          let burn =
+            newBotMetas && newBotMetas.length
+              ? newBotMetas.find((meta) => meta.token_id === newAttr.megapont_attribute.token_id)
+              : undefined;
+          if (!burn.nft_state?.burned) {
+            await this.txHelper.burnMeta(burn.id);
+          } else {
+            this.logger.log(`Already burned name:${burn.name} id:${burn.token_id}`);
+          }
+        } else {
+          delete nftMeta.attributes[arrayIndex];
+        }
       }
 
       let arrayIndex = nftMeta.attributes.findIndex((i) => i.trait_type === "Trait Count");

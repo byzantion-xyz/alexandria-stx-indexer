@@ -1,0 +1,1 @@
+ alter table "public".nft_meta drop column namespace;

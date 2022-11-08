@@ -1,4 +1,4 @@
-﻿import { Entity, Index, JoinColumn, ManyToOne, PrimaryColumn } from "typeorm";
+import { Entity, Index, JoinColumn, ManyToOne, PrimaryColumn } from "typeorm";
 import { BidState } from "./BidState";
 import { CollectionAttribute } from "./CollectionAttribute";
 

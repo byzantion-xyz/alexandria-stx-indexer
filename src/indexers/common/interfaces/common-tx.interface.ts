@@ -1,4 +1,5 @@
-﻿import { TransactionEvent as StacksTransactionEvent } from "@stacks/stacks-blockchain-api-types";
+import { TransactionEvent as StacksTransactionEvent } from "@stacks/stacks-blockchain-api-types";
+import { Receipt as NearReceipt } from "../../near-indexer/interfaces/near-indexer-tx-event.dto";
 
 export interface CommonTx {
   hash: string;
@@ -7,16 +8,15 @@ export interface CommonTx {
   block_timestamp?: number;
   block_height: bigint;
 
-  nonce: bigint;
+  nonce?: bigint;
   index?: bigint;
-  sub_block_sequence?: bigint;
   signer: string;
   receiver: string;
 
   function_name: string;
   indexer_name?: string;
   args: any;
-  events?: StacksTransactionEvent[]; // TODO: Add near events
 
-  notify: boolean;
+  events?: StacksTransactionEvent[];
+  receipts?: NearReceipt[];
 }

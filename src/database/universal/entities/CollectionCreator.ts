@@ -1,4 +1,4 @@
-﻿import { Column, Entity, Index, JoinColumn, OneToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, Index, JoinColumn, OneToOne, PrimaryGeneratedColumn } from "typeorm";
 import { Collection } from "./Collection";
 
 @Index("collection_creator_collection_id_key", ["collection_id"], {

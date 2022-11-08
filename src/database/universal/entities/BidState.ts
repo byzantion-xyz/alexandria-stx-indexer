@@ -1,4 +1,5 @@
-﻿import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { BidType } from "src/indexers/common/helpers/indexer-enums";
+import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 import { BidAttribute } from "./BidAttribute";
 import { BidStateNftMeta } from "./BidStateNftMeta";
 import { Collection } from "./Collection";
@@ -22,7 +23,7 @@ export class BidState {
   @Column("text", { nullable: true })
   bid_seller: string;
 
-  @Column("enum", { enum: ["active", "pending", "cancelled", "matched"], default: "active" })
+  @Column("enum", { enum: ["active", "pending", "cancelled", "matched"], default: () => "active" })
   status: "active" | "pending" | "cancelled" | "matched";
 
   @Column("text", { nullable: true, array: true })
@@ -46,16 +47,13 @@ export class BidState {
   @Column("text")
   cancel_tx_id: string;
 
-  // TODO: Use BidType;
-  @Column("enum", { enum: ["collection", "attribute", "solo"] })
-  bid_type: "collection" | "attribute" | "solo";
+  @Column({ type: "enum", enum: BidType })
+  bid_type: BidType;
 
-  @Column("timestamp without time zone", { default: "CURRENT_TIMESTAMP" })
+  @Column("timestamp without time zone", { default: () => "CURRENT_TIMESTAMP" })
   created_at: Date;
 
-  @Column("timestamp without time zone", {
-    default: "CURRENT_TIMESTAMP",
-  })
+  @Column("timestamp without time zone")
   updated_at: Date;
 
   @Column("numeric", {

@@ -1,4 +1,4 @@
-﻿import { Logger, Injectable, Provider, Inject } from "@nestjs/common";
+import { Logger, Injectable, Provider, Inject } from "@nestjs/common";
 import { TxProcessResult } from "src/indexers/common/interfaces/tx-process-result.interface";
 import { Client } from "pg";
 import { CommonTx } from "./common/interfaces/common-tx.interface";
@@ -7,47 +7,46 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { ConfigService } from "@nestjs/config";
 import { Chain } from "src/database/universal/entities/Chain";
-import {
-  CommonTxResult,
-  ProcessedTxsResult,
-  TxStreamAdapter,
-} from "src/indexers/common/interfaces/tx-stream-adapter.interface";
+import { ProcessedTxsResult, TxStreamAdapter } from "src/indexers/common/interfaces/tx-stream-adapter.interface";
 import { IndexerService } from "./common/interfaces/indexer-service.interface";
-import { IndexerOptions, IndexerSubscriptionOptions } from "./common/interfaces/indexer-options";
+import { IndexerOptions } from "./common/interfaces/indexer-options";
 import { SmartContractFunction } from "src/database/universal/entities/SmartContractFunction";
 import { CommonUtilService } from "src/common/helpers/common-util/common-util.service";
-import { StacksMicroIndexers } from "./common/providers/stacks-micro-indexers.service";
+import { SmartContractService } from "./common/helpers/smart-contract.service";
+import { TxHelperService } from "./common/helpers/tx-helper.service";
+import { SmartContractType } from "./common/helpers/indexer-enums";
 
 const BATCH_SIZE = 1000;
 
 @Injectable()
 export class IndexerOrchestratorService {
-  private chainSymbol: string;
   private genericScf: SmartContractFunction[] = [];
   private readonly logger = new Logger(IndexerOrchestratorService.name);
-  private readonly MSG_NO_MICRO_INDEXER = "No micro indexer defined for the context";
+  private chainId: string;
+  private scs: SmartContract[];
 
   constructor(
-    @Inject("StacksMicroIndexers") private stacksMicroIndexers: StacksMicroIndexers,
+    @Inject("MicroIndexers") private microIndexers: Array<IndexerService>,
     private configService: ConfigService,
-    @InjectRepository(SmartContract)
-    private smartContractRepository: Repository<SmartContract>,
+    private txHelper: TxHelperService,
     @InjectRepository(Chain)
     private chainRepository: Repository<Chain>,
     @Inject("TxStreamAdapter") private txStreamAdapter: TxStreamAdapter,
-    private commonUtil: CommonUtilService
+    private commonUtil: CommonUtilService,
+    private smartContractService: SmartContractService
   ) {}
 
   async runIndexer(options: IndexerOptions) {
-    this.logger.debug(`runIndexer() Initialize with options: `, options);
+    this.logger.log(`runIndexer() Initialize with options: `, options);
     try {
-      await this.setUpChainAndStreamer();
       if (options.includeMissings && !options.contract_key) {
         this.logger.warn("A contract_key is required while running missing transactions");
         return;
       }
+      await this.setUpChainAndStreamer();
 
-      const { cursor, pool } = await this.txStreamAdapter.fetchTxs(options);
+      this.scs = await this.smartContractService.findChainSmartContracts(this.chainId);
+      const { cursor } = await this.txStreamAdapter.fetchTxs(options);
 
       let txs = [];
       this.logger.log(`Querying transactions cursor batch_size: ${BATCH_SIZE} `);
@@ -59,10 +58,9 @@ export class IndexerOrchestratorService {
       } while (txs.length > 0);
 
       cursor.close();
-      pool.end();
+      await this.txStreamAdapter.closePool();
 
-      this.logger.debug(`runIndexer() Completed with options: `, options);
-      await this.commonUtil.delay(5000); // Wait for any discord post to be sent
+      this.logger.log(`runIndexer() Completed with options: `, options);
     } catch (err) {
       this.logger.error(err);
     }
@@ -91,10 +89,15 @@ export class IndexerOrchestratorService {
 
   async processTransactions(transactions: CommonTx[]): Promise<ProcessedTxsResult> {
     let processed = 0;
+
     for await (const tx of transactions) {
       const txResult: TxProcessResult = await this.processTransaction(tx);
       if (txResult.processed) processed++;
-      await this.txStreamAdapter.setTxResult(tx.hash, txResult);
+      this.txStreamAdapter.setTxResult(tx, txResult);
+    }
+
+    if (transactions && transactions.length) {
+      this.txStreamAdapter.saveTxResults();
     }
 
     return { total: processed };
@@ -104,80 +107,74 @@ export class IndexerOrchestratorService {
     let result: TxProcessResult = { processed: false, missing: false };
 
     try {
-      const method_name = transaction.function_name;
-      const smart_contract = await this.smartContractRepository.findOne({
-        where: {
-          contract_key: transaction.receiver,
-          chain: { symbol: this.chainSymbol },
-        },
-        relations: {
-          smart_contract_functions: true,
-          custodial_smart_contract: true,
-        },
-        cache: 60000,
-      });
+      const methodName = transaction.function_name;
+      const contractKey = transaction.receiver;
 
-      if (smart_contract) {
-        let smart_contract_function = smart_contract.smart_contract_functions.find(
-          (f) => f.function_name === method_name
-        );
+      let sc = await this.smartContractService.readOrFetchByKeyWithFunctions(contractKey, this.chainId, this.scs);
 
-        if (!smart_contract_function && this.genericScf && this.genericScf.length) {
-          smart_contract_function = this.genericScf.find((f) => f.function_name === method_name);
+      let scf = Array.isArray(this.genericScf) && this.genericScf.find((f) => f.function_name === methodName);
+      if (!sc && scf) {
+        sc = await this.txHelper.createSmartContractSkeleton(contractKey, this.chainId);
+        if (Array.isArray(this.scs)) {
+          this.scs.push(sc);
+        }
+      }
+
+      if (sc) {
+        if (!scf) {
+          scf = sc.smart_contract_functions.find((f) => f.function_name === methodName);
         }
 
-        if (smart_contract_function) {
-          const txHandler = this.getMicroIndexer(transaction.indexer_name || smart_contract_function.name);
-          result = await txHandler.process(transaction, smart_contract, smart_contract_function);
+        if (scf) {
+          const indexerName = transaction.indexer_name || scf.name;
+          const txHandler = this.getMicroIndexer(indexerName);
+
+          if (txHandler) {
+            txHandler.stakingScs =
+              Array.isArray(this.scs) && this.scs.filter((sc) => sc.type.includes(SmartContractType.staking));
+            txHandler.marketScs =
+              Array.isArray(this.scs) && this.scs.filter((sc) => sc.type.includes(SmartContractType.marketplace));
+            this.logger.log(`process() ${transaction.hash} with: ${txHandler.constructor.name} `);
+            result = await txHandler.process(transaction, sc, scf);
+          } else {
+            this.logger.debug(`No micro indexer defined for the context: ${indexerName}`);
+            result.missing = true;
+          }
         } else {
-          this.logger.log(`function_name: ${method_name} not found in ${transaction.receiver}`);
+          this.logger.debug(`function_name: ${methodName} not found in ${contractKey}`);
           result.missing = true;
         }
       } else {
-        this.logger.log(`smart_contract: ${transaction.receiver} not found`);
+        this.logger.debug(`smart_contract: ${contractKey} not found for hash: ${transaction.hash}`);
         result.missing = true;
       }
     } catch (err) {
-      if (err.message.includes(this.MSG_NO_MICRO_INDEXER)) {
-        this.logger.log(`Unable to process transaction with hash: ${transaction.hash}`);
-        this.logger.log(this.MSG_NO_MICRO_INDEXER);
-      } else {
-        this.logger.error(`Error processing transaction with hash: ${transaction.hash}`);
-        if (err.stack) this.logger.error(err.stack);
-        else this.logger.error(err);
-      }
+      this.logger.error(`Error processing transaction with hash: ${transaction.hash}`);
+      this.logger.error(err);
     } finally {
       return result;
     }
   }
 
-  getMicroIndexer(name: string) {
-    const indexerName = this.commonUtil.toCamelCase(name) + "Indexer";
-    let microIndexer;
-    switch (this.chainSymbol) {
-      case "Stacks":
-        microIndexer = this.stacksMicroIndexers[indexerName];
-        break;
-    }
-    if (!microIndexer || !this.isMicroIndexer(microIndexer)) {
-      throw new Error(`${this.MSG_NO_MICRO_INDEXER}: ${name}`);
-    }
-    return microIndexer;
+  getMicroIndexer(name: string): IndexerService | null {
+    const indexerName = this.commonUtil.toPascalCase(name) + "IndexerService";
+    let microIndexer = this.microIndexers.find((indexer) => indexer.constructor.name === indexerName);
+
+    return this.isMicroIndexer(microIndexer) ? microIndexer : null;
   }
 
   async setUpChainAndStreamer() {
-    this.chainSymbol = this.configService.get("indexer.chainSymbol");
-    if (!this.chainSymbol) {
-      throw new Error(`CHAIN_SYMBOL must be provided as environment variable`);
+    if (!this.isTxStreamAdapter(this.txStreamAdapter)) {
+      throw new Error(`No stream adapter defined`);
     }
-    const chain = await this.chainRepository.findOneByOrFail({ symbol: this.chainSymbol });
+    const { chainSymbol } = this.txStreamAdapter;
+    const chain = await this.chainRepository.findOneByOrFail({ symbol: chainSymbol });
+    this.chainId = chain.id;
 
-    if (!this.txStreamAdapter || !this.isTxStreamAdapter(this.txStreamAdapter)) {
-      throw new Error(`No stream adapter defined for chain: ${this.chainSymbol}`);
-    }
+    await this.txStreamAdapter.connectPool(this.txStreamAdapter.streamerDbUri);
 
-    // Load generic functinos per chain (i.e transfer)
-    const functions = this.configService.get("indexer.genericFunctions")[this.chainSymbol];
+    // Load generic functions per chain (i.e NFT event transfer)
+    const functions = this.configService.get("indexer.genericFunctions")[chainSymbol];
     for (let genericFunction of functions) {
       const scf = new SmartContractFunction();
       scf.function_name = genericFunction.function_name;
@@ -187,11 +184,11 @@ export class IndexerOrchestratorService {
     }
   }
 
-  isTxStreamAdapter(arg): arg is TxStreamAdapter {
-    return typeof arg.fetchTxs === "function" && typeof arg.setTxResult === "function";
+  isTxStreamAdapter(arg: TxStreamAdapter): arg is TxStreamAdapter {
+    return arg && arg instanceof TxStreamAdapter;
   }
 
-  isTxStreamAdapterWithSubsriptions(arg): arg is TxStreamAdapter {
+  isTxStreamAdapterWithSubsriptions(arg: TxStreamAdapter): boolean {
     return (
       this.isTxStreamAdapter(arg) &&
       typeof arg.subscribeToEvents === "function" &&
@@ -200,6 +197,6 @@ export class IndexerOrchestratorService {
   }
 
   isMicroIndexer(arg) {
-    return (arg as IndexerService).process !== undefined && (arg as IndexerService).createAction !== undefined;
+    return arg && (arg as IndexerService).process !== undefined && (arg as IndexerService).createAction !== undefined;
   }
 }

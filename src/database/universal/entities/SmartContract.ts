@@ -1,4 +1,4 @@
-﻿import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
 import { Action } from "./Action";
 import { Collection } from "./Collection";
 import { BidState } from "./BidState";
@@ -7,7 +7,7 @@ import { NftMeta } from "./NftMeta";
 import { NftState } from "./NftState";
 import { Chain } from "./Chain";
 import { SmartContractFunction } from "./SmartContractFunction";
-import { SmartContractType } from "../../../indexers/common/helpers/indexer-enums";
+import { SmartContractType } from "src/indexers/common/helpers/indexer-enums";
 import { NftStateList } from "./NftStateList";
 
 @Index("smart_contract_contract_key_key", ["contract_key"], { unique: true })
@@ -20,13 +20,13 @@ export class SmartContract {
   @Column("text")
   contract_key: string;
 
-  @Column("text", { nullable: true })
+  @Column("text")
   contract_key_wrapper: string;
 
   @Column("text", { nullable: true })
   name: string | null;
 
-  @Column("integer", { default: "0" })
+  @Column("integer", { default: () => "0" })
   scanned_transactions: number;
 
   @Column({
@@ -37,19 +37,17 @@ export class SmartContract {
   type: SmartContractType[];
 
   @Column("timestamp without time zone", {
-    default: "CURRENT_TIMESTAMP",
+    default: () => "CURRENT_TIMESTAMP",
   })
   created_at: Date;
 
-  @Column("timestamp without time zone", {
-    default: "CURRENT_TIMESTAMP",
-  })
+  @Column("timestamp without time zone")
   updated_at: Date;
 
   @Column("text", { nullable: true })
   asset_name: string | null;
 
-  @Column("boolean", { default: "false" })
+  @Column("boolean", { default: () => "false" })
   frozen: boolean;
 
   @Column("jsonb", { nullable: true })
@@ -106,7 +104,7 @@ export class SmartContract {
   @OneToMany(() => NftState, (nftState) => nftState.staked_contract, { cascade: true })
   staked_nft_states: NftState[];
 
-  @Column("uuid", { nullable: true })
+  @Column("uuid")
   default_commission_id: string;
 
   @OneToOne(() => Commission, (commission) => commission.default_for_smart_contract, {

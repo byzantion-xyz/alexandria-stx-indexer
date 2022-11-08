@@ -2,14 +2,13 @@ import { Injectable, Logger } from "@nestjs/common";
 import { CommonTx } from "src/indexers/common/interfaces/common-tx.interface";
 import { TxProcessResult } from "src/indexers/common/interfaces/tx-process-result.interface";
 import { TxResult, TxCursorBatch, TxStreamAdapter } from "src/indexers/common/interfaces/tx-stream-adapter.interface";
-import { Client, Pool, PoolClient } from 'pg';
+import { Client, Pool } from 'pg';
 import * as Cursor from 'pg-cursor';
 import { NearTxHelperService } from "./near-tx-helper.service";
 import {FunctionCall, NftOrFtEvent, Receipt} from "../interfaces/near-indexer-tx-event.dto";
 import { SmartContract } from "src/database/universal/entities/SmartContract";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
-import { SmartContractFunction } from "src/database/universal/entities/SmartContractFunction";
 import { IndexerTxEvent as TxEvent } from "src/database/near-stream/entities/IndexerTxEvent";
 import { ConfigService } from "@nestjs/config";
 import { IndexerOptions } from "src/indexers/common/interfaces/indexer-options";
@@ -18,11 +17,8 @@ import ExpiryMap = require('expiry-map');
 export const NEAR_FT_STANDARD = 'nep141';
 export const NEAR_FARMING_STANDARD = 'ref-farming';
 
-
 @Injectable()
-export class NearTxStreamAdapterService implements TxStreamAdapter {
-  private poolClient: PoolClient;
-  private pool: Pool;
+export class NearTxStreamAdapterService extends TxStreamAdapter {
   private readonly chainSymbol = 'Near';
   private readonly logger = new Logger(NearTxStreamAdapterService.name);
 
@@ -35,17 +31,9 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
     @InjectRepository(TxEvent, "CHAIN-STREAM")
     private txEventRepository: Repository<TxEvent>,
     @InjectRepository(SmartContract)
-    private smartContractRepository: Repository<SmartContract>,
-    @InjectRepository(SmartContractFunction)
-    private smartContractFunctionRepository: Repository<SmartContractFunction>
-  ) {}
-
-  async connectPool(): Promise<any> {
-    this.pool = new Pool({
-      connectionString: this.configService.get('NEAR_STREAMER_SQL_DATABASE_URL')
-    });
-
-    this.poolClient = await this.pool.connect();
+    private smartContractRepository: Repository<SmartContract>
+  ) {
+    super();
   }
 
   async fetchTxs(options: IndexerOptions): Promise<TxCursorBatch> {
@@ -132,12 +120,6 @@ export class NearTxStreamAdapterService implements TxStreamAdapter {
       this.logger.warn('saveTxResults() failed');
       this.logger.error(err);
     }
-  }
-
-  async closePool(): Promise<any> {
-    this.poolClient.release();
-
-    await this.pool.end();
   }
 
   subscribeToEvents(): Client {

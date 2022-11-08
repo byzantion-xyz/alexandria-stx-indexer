@@ -40,15 +40,13 @@ export class IndexerOrchestratorService {
   async runIndexer(options: IndexerOptions) {
     this.logger.log(`runIndexer() Initialize with options: `, options);
     try {
-      await this.setUpChainAndStreamer();
       if (options.includeMissings && !options.contract_key) {
         this.logger.warn('A contract_key is required while running missing transactions');
         return;
       }
+      await this.setUpChainAndStreamer();
 
       this.scs = await this.smartContractService.findChainSmartContracts(this.chainId);
-
-      await this.txStreamAdapter.connectPool();
       const { cursor } = await this.txStreamAdapter.fetchTxs(options);
 
       let txs = [];
@@ -176,6 +174,9 @@ export class IndexerOrchestratorService {
       throw new Error(`No stream adapter defined for chain: ${this.chainSymbol}`);
     }
 
+    const streamerDbUri = this.configService.get(`${this.chainSymbol.toUpperCase()}_STREAMER_SQL_DATABASE_URL`);
+    await this.txStreamAdapter.connectPool(streamerDbUri);
+
     // Load generic functions per chain (i.e NFT event transfer)
     const functions = this.configService.get("indexer.genericFunctions")[this.chainSymbol];
     for (let genericFunction of functions) {
@@ -187,19 +188,11 @@ export class IndexerOrchestratorService {
     }
   }
 
-  isTxStreamAdapter(arg): arg is TxStreamAdapter {
-    return (
-      arg &&
-      typeof arg.fetchTxs === 'function' &&
-      typeof arg.transformTxs === 'function' &&
-      typeof arg.setTxResult === 'function' &&
-      typeof arg.saveTxResults === 'function' &&
-      typeof arg.connectPool === 'function' &&
-      typeof arg.closePool === 'function'
-    );
+  isTxStreamAdapter(arg: TxStreamAdapter): arg is TxStreamAdapter {
+    return (arg instanceof TxStreamAdapter);
   }
 
-  isTxStreamAdapterWithSubsriptions(arg): arg is TxStreamAdapter {
+  isTxStreamAdapterWithSubsriptions(arg: TxStreamAdapter): boolean {
     return this.isTxStreamAdapter(arg) &&
       typeof arg.subscribeToEvents === 'function' &&
       typeof arg.fetchEventData === 'function';

@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Client, Pool, PoolClient } from 'pg';
+import { Client } from 'pg';
 import * as Cursor from 'pg-cursor';
 
 import { Transaction as TransactionEntity } from 'src/database/stacks-stream/entities/Transaction';
@@ -15,7 +15,6 @@ import { IndexerOptions } from 'src/indexers/common/interfaces/indexer-options';
 import { CommonUtilService } from 'src/common/helpers/common-util/common-util.service';
 import ExpiryMap = require('expiry-map');
 import { SmartContract } from 'src/database/universal/entities/SmartContract';
-import { SmartContractService } from 'src/indexers/common/helpers/smart-contract.service';
 
 const BNS_CONTRACT_KEY = 'SP000000000000000000002Q6VF78.bns::names';
 // Btc domain marketplaces
@@ -47,10 +46,8 @@ const EXCLUDED_SMART_CONTRACTS = [
 ];
 
 @Injectable()
-export class StacksTxStreamAdapterService implements TxStreamAdapter {
+export class StacksTxStreamAdapterService extends TxStreamAdapter {
   private readonly chainSymbol = 'Stacks';
-  private poolClient: PoolClient;
-  private pool: Pool;
   private readonly logger = new Logger(StacksTxStreamAdapterService.name);
 
   private txBatchResults: TxResult[] = [];
@@ -64,18 +61,8 @@ export class StacksTxStreamAdapterService implements TxStreamAdapter {
     private smartContractRepository: Repository<SmartContract>,
     @InjectRepository(TransactionEntity, "CHAIN-STREAM")
     private transactionRepository: Repository<TransactionEntity>
-  ) {}
-
-  async connectPool(): Promise<any> {
-    this.pool = new Pool({
-      connectionString: this.configService.get('STACKS_STREAMER_SQL_DATABASE_URL')
-    });
-    this.poolClient = await this.pool.connect();
-  }
-
-  async closePool(): Promise<any> {
-    this.poolClient.release();
-    await this.pool.end();
+  ) {
+    super();
   }
 
   async fetchSmartContract(contractKey: string): Promise<SmartContract> {

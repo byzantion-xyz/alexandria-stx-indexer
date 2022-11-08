@@ -191,6 +191,7 @@ export class IndexerOrchestratorService {
     return (
       arg &&
       typeof arg.fetchTxs === 'function' &&
+      typeof arg.transformTxs === 'function' &&
       typeof arg.setTxResult === 'function' &&
       typeof arg.saveTxResults === 'function' &&
       typeof arg.connectPool === 'function' &&

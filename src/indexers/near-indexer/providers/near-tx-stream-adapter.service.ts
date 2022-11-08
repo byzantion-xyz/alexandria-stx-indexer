@@ -23,7 +23,7 @@ export const NEAR_FARMING_STANDARD = 'ref-farming';
 export class NearTxStreamAdapterService implements TxStreamAdapter {
   private poolClient: PoolClient;
   private pool: Pool;
-  chainSymbol = 'Near';
+  private readonly chainSymbol = 'Near';
   private readonly logger = new Logger(NearTxStreamAdapterService.name);
 
   private readonly txResults = new ExpiryMap(this.configService.get('indexer.txResultExpiration') || 60000);

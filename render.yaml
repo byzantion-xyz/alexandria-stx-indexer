@@ -9,6 +9,10 @@ services:
     startCommand: yarn start:prod
     autoDeploy: false
     envVars:
+      - key: CHAIN_SYMBOL
+        value: Stacks
+      - key: ENABLE_STREAMER_SUBSCRIPTION
+        value: true
       - key: DATABASE_URL
         fromDatabase:
           name: alexandria-indexer-db
@@ -21,6 +25,8 @@ services:
         value: true
       - key: NODE_VERSION
         value: 16.15.1
+      - key: LOG_LEVEL
+        value: debug
 
 databases:
   - name: alexandria-indexer-db

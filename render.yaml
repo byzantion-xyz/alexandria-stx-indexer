@@ -25,3 +25,6 @@ databases:
   - name: alexandria-index-db
     plan: free
     ipAllowList: []
+  - name: alexandria-data-lake-db
+    plan: free
+    ipAllowList: []

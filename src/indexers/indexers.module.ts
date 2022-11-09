@@ -1,5 +1,4 @@
 import { DynamicModule, Module } from "@nestjs/common";
-import { IndexerController } from "./indexer.controller";
 import { CommonIndexerModule } from "./common/common-indexer.module";
 import { StacksIndexerModule } from "./stacks-indexer/stacks-indexer.module";
 import { IndexerOrchestratorService } from "./indexer-orchestrator.service";
@@ -30,7 +29,7 @@ export class IndexersModule {
       imports: [CommonIndexerModule, IndexerModule, ConfigModule.forRoot(), TypeOrmModule.forFeature([ApiKey])],
       providers: [IndexerOrchestratorService],
       exports: [IndexerOrchestratorService],
-      controllers: [IndexerController],
+      controllers: [],
     };
   }
 }

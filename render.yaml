@@ -24,7 +24,7 @@ services:
 
 databases:
   - name: alexandria-indexer-db
-    plan: free
+    plan: starter
     ipAllowList: []
   - name: alexandria-data-lake-db
     plan: free

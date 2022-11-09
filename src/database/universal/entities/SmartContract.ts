@@ -7,8 +7,17 @@ import { NftMeta } from "./NftMeta";
 import { NftState } from "./NftState";
 import { Chain } from "./Chain";
 import { SmartContractFunction } from "./SmartContractFunction";
-import { SmartContractType } from "src/indexers/common/helpers/indexer-enums";
 import { NftStateList } from "./NftStateList";
+
+export enum SmartContractType {
+  non_fungible_tokens = "non_fungible_tokens",
+  token_series = "token_series",
+  marketplace = "marketplace",
+  staking = "staking",
+  utility = "utility",
+  fungible_tokens = "fungible_tokens",
+  bridge = "bridge",
+}
 
 @Index("smart_contract_contract_key_key", ["contract_key"], { unique: true })
 @Index("smart_contract_pkey", ["id"], { unique: true })

@@ -5,13 +5,13 @@ import { CommonTx } from "src/indexers/common/interfaces/common-tx.interface";
 import { InjectRepository } from "@nestjs/typeorm";
 import { NftState } from "src/database/universal/entities/NftState";
 import { NftMeta } from "src/database/universal/entities/NftMeta";
-import { SmartContract } from "src/database/universal/entities/SmartContract";
+import { SmartContract, SmartContractType } from "src/database/universal/entities/SmartContract";
 import { Collection } from "src/database/universal/entities/Collection";
 import { Repository } from "typeorm";
-import { ActionName, SmartContractType } from "./indexer-enums";
 import { Commission } from "src/database/universal/entities/Commission";
 import { NftStateList } from "src/database/universal/entities/NftStateList";
 import { CommonUtilService } from "src/common/helpers/common-util/common-util.service";
+import { ActionName } from "src/database/universal/entities/Action";
 
 export interface NftStateArguments {
   collection_map_id?: string;

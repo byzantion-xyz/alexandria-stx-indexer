@@ -1,4 +1,11 @@
-import { MiddlewareConsumer, Module, RequestMethod } from "@nestjs/common";
+import {
+  Logger,
+  MiddlewareConsumer,
+  Module,
+  OnApplicationBootstrap,
+  OnModuleInit,
+  RequestMethod,
+} from "@nestjs/common";
 import { ConfigModule, ConfigService } from "@nestjs/config";
 import { IndexersModule } from "./indexers/indexers.module";
 import { CommonModule } from "./common/common.module";
@@ -9,6 +16,8 @@ import appConfig from "./config/app.config";
 import indexerConfig from "./config/indexer.config";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { ApiKey } from "./database/universal/entities/ApiKey";
+import { DataSource, Migration } from "typeorm";
+import { AppDataSource } from "./config/data.source";
 
 @Module({
   imports: [
@@ -55,4 +64,25 @@ import { ApiKey } from "./database/universal/entities/ApiKey";
   controllers: [],
   providers: [],
 })
-export class AppModule {}
+export class AppModule implements OnModuleInit {
+  private readonly logger = new Logger(AppModule.name);
+
+  async onModuleInit(): Promise<void> {
+    // Run migrations. Requires datasource to be connected, so force connect
+    const dataSource = await AppDataSource.initialize();
+    await this.runMigrations(dataSource);
+  }
+
+  async runMigrations(ds: DataSource): Promise<Migration[]> {
+    try {
+      this.logger.log("Migrations: Checking for pending migrations and attempting to run...");
+      const migrations: Migration[] = await ds.runMigrations();
+      this.logger.log(`Migrations: Done. Migrations ran successfully.`);
+      return migrations;
+    } catch (err) {
+      this.logger.error("Run migrations failed. Processing stopped.");
+      this.logger.error(err);
+      process.exit(1);
+    }
+  }
+}

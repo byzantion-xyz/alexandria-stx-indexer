@@ -8,8 +8,7 @@ import { IndexerService } from "src/indexers/common/interfaces/indexer-service.i
 
 import { SmartContract } from "src/database/universal/entities/SmartContract";
 import { SmartContractFunction } from "src/database/universal/entities/SmartContractFunction";
-import { ActionName } from "src/indexers/common/helpers/indexer-enums";
-import { Action } from "src/database/universal/entities/Action";
+import { Action, ActionName } from "src/database/universal/entities/Action";
 import { StacksTxHelperService } from "./stacks-tx-helper.service";
 import { TxActionService } from "src/indexers/common/providers/tx-action.service";
 

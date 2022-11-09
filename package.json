@@ -22,7 +22,8 @@
     "m:gen": "yarn typeorm migration:generate",
     "m:run": "yarn typeorm migration:run",
     "m:create": "typeorm-ts-node-esm migration:create",
-    "m:revert": "yarn typeorm migration:revert"
+    "m:revert": "yarn build && yarn typeorm migration:revert",
+    "m:show": "yarn typeorm migration:show"
   },
   "dependencies": {
     "@nestjs/common": "^8.0.0",
@@ -35,11 +36,14 @@
     "@stacks/stacks-blockchain-api-types": "^4.1.0",
     "@stacks/transactions": "^4.3.1",
     "axios": "^0.27.2",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.13.2",
     "expiry-map": "^2.0.0",
     "micro-stacks": "^0.6.1",
     "moment": "^2.29.3",
     "pg": "^8.7.3",
     "pg-cursor": "^2.7.3",
+    "reflect-metadata": "^0.1.13",
     "rimraf": "^3.0.2",
     "rxjs": "^7.2.0",
     "typeorm": "^0.3.9",

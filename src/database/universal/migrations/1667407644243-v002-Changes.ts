@@ -21,6 +21,9 @@ export class v002Changes1667407644243 implements MigrationInterface {
         ALTER TABLE IF EXISTS public.nft_meta
             ALTER COLUMN ranking DROP NOT NULL;
         
+        ALTER TABLE nft_meta 
+        ALTER COLUMN uuid SET DEFAULT gen_random_uuid();
+        
         ALTER TABLE IF EXISTS public.nft_meta
             ADD COLUMN token_id_numeric numeric(64, 0) GENERATED ALWAYS AS (
         CASE
@@ -86,6 +89,15 @@ export class v002Changes1667407644243 implements MigrationInterface {
 
     // action table
     await queryRunner.query(`
+        ALTER TABLE IF EXISTS public.action
+            ALTER COLUMN collection_id DROP NOT NULL;
+
+        ALTER TABLE IF EXISTS public.action
+            ALTER COLUMN marketplace_smart_contract_id DROP NOT NULL;
+
+        ALTER TABLE IF EXISTS public.action
+            ALTER COLUMN nft_meta_id DROP NOT NULL;
+
         ALTER TABLE IF EXISTS public.action
             ADD COLUMN created_at timestamp without time zone NOT NULL DEFAULT now();
         

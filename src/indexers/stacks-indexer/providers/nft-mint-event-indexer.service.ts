@@ -1,15 +1,14 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { Action } from 'src/database/universal/entities/Action';
-import { SmartContract } from 'src/database/universal/entities/SmartContract';
-import { SmartContractFunction } from 'src/database/universal/entities/SmartContractFunction';
-import { ActionName } from 'src/indexers/common/helpers/indexer-enums';
-import { TxHelperService } from 'src/indexers/common/helpers/tx-helper.service';
-import { CommonTx } from 'src/indexers/common/interfaces/common-tx.interface';
-import { CreateMintActionTO } from 'src/indexers/common/interfaces/create-action-common.dto';
-import { IndexerService } from 'src/indexers/common/interfaces/indexer-service.interface';
-import { TxProcessResult } from 'src/indexers/common/interfaces/tx-process-result.interface';
-import { TxActionService } from 'src/indexers/common/providers/tx-action.service';
-import { StacksTxHelperService } from './stacks-tx-helper.service';
+import { Injectable, Logger } from "@nestjs/common";
+import { Action, ActionName } from "src/database/universal/entities/Action";
+import { SmartContract } from "src/database/universal/entities/SmartContract";
+import { SmartContractFunction } from "src/database/universal/entities/SmartContractFunction";
+import { TxHelperService } from "src/indexers/common/helpers/tx-helper.service";
+import { CommonTx } from "src/indexers/common/interfaces/common-tx.interface";
+import { CreateMintActionTO } from "src/indexers/common/interfaces/create-action-common.dto";
+import { IndexerService } from "src/indexers/common/interfaces/indexer-service.interface";
+import { TxProcessResult } from "src/indexers/common/interfaces/tx-process-result.interface";
+import { TxActionService } from "src/indexers/common/providers/tx-action.service";
+import { StacksTxHelperService } from "./stacks-tx-helper.service";
 
 @Injectable()
 export class NftMintEventIndexerService implements IndexerService {
@@ -20,8 +19,8 @@ export class NftMintEventIndexerService implements IndexerService {
   constructor(
     private txHelper: TxHelperService,
     private stacksTxHelper: StacksTxHelperService,
-    private txActionService: TxActionService,
-  ) { }
+    private txActionService: TxActionService
+  ) {}
 
   async process(tx: CommonTx, sc: SmartContract, scf: SmartContractFunction): Promise<TxProcessResult> {
     let txResult: TxProcessResult = { processed: false, missing: false };
@@ -29,7 +28,7 @@ export class NftMintEventIndexerService implements IndexerService {
     const event = this.stacksTxHelper.findNftEventByIndex(tx.events, tx.args.event_index);
     const token_id = this.stacksTxHelper.extractTokenIdFromNftEvent(event);
     if (isNaN(token_id)) {
-      this.logger.warn('Unable to extract token_id from NFT event');
+      this.logger.warn("Unable to extract token_id from NFT event");
       return txResult;
     }
     const contract_key = this.stacksTxHelper.extractContractKeyFromNftEvent(event);
@@ -42,7 +41,7 @@ export class NftMintEventIndexerService implements IndexerService {
     const mintActionParams: CreateMintActionTO = {
       ...actionCommonArgs,
       buyer,
-      list_price: price
+      list_price: price,
     };
 
     if (!nftMeta.nft_state || !nftMeta.nft_state.minted) {

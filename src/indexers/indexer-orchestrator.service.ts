@@ -2,7 +2,7 @@ import { Logger, Injectable, Provider, Inject } from "@nestjs/common";
 import { TxProcessResult } from "src/indexers/common/interfaces/tx-process-result.interface";
 import { Client } from "pg";
 import { CommonTx } from "./common/interfaces/common-tx.interface";
-import { SmartContract } from "src/database/universal/entities/SmartContract";
+import { SmartContract, SmartContractType } from "src/database/universal/entities/SmartContract";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { ConfigService } from "@nestjs/config";
@@ -14,7 +14,6 @@ import { SmartContractFunction } from "src/database/universal/entities/SmartCont
 import { CommonUtilService } from "src/common/helpers/common-util/common-util.service";
 import { SmartContractService } from "./common/helpers/smart-contract.service";
 import { TxHelperService } from "./common/helpers/tx-helper.service";
-import { SmartContractType } from "./common/helpers/indexer-enums";
 
 const BATCH_SIZE = 1000;
 

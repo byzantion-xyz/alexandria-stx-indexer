@@ -6,10 +6,9 @@ import { CreateListActionTO } from "src/indexers/common/interfaces/create-action
 import { CommonTx } from "src/indexers/common/interfaces/common-tx.interface";
 import { IndexerService } from "src/indexers/common/interfaces/indexer-service.interface";
 
-import { Action } from "src/database/universal/entities/Action";
+import { Action, ActionName } from "src/database/universal/entities/Action";
 import { SmartContract } from "src/database/universal/entities/SmartContract";
 import { SmartContractFunction } from "src/database/universal/entities/SmartContractFunction";
-import { ActionName } from "src/indexers/common/helpers/indexer-enums";
 import { StacksTxHelperService } from "./stacks-tx-helper.service";
 import { TxActionService } from "src/indexers/common/providers/tx-action.service";
 

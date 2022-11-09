@@ -1,9 +1,14 @@
-import { BidType } from "src/indexers/common/helpers/indexer-enums";
 import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 import { BidAttribute } from "./BidAttribute";
 import { BidStateNftMeta } from "./BidStateNftMeta";
 import { Collection } from "./Collection";
 import { SmartContract } from "./SmartContract";
+
+export enum BidType {
+  collection = "collection",
+  attribute = "attribute",
+  solo = "solo",
+}
 
 @Index("bid_state_pkey", ["id"], { unique: true })
 @Entity("bid_state", { schema: "public" })

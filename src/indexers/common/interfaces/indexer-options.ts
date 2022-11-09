@@ -1,5 +1,7 @@
-import { IndexerEventType } from "../helpers/indexer-enums";
-
+export enum IndexerEventType {
+  block = "block",
+  tx = "tx",
+}
 export interface IndexerOptions {
   includeMissings: boolean;
   contract_key?: string;

@@ -240,7 +240,7 @@ export class StacksTxStreamAdapterService extends TxStreamAdapter {
     client.connect();
 
     client.query("LISTEN new_block;", (err, res) => {
-      this.logger.log("Listening DB block notifications");
+      this.logger.log("Listening for DB block notifications...");
     });
 
     return client;

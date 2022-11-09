@@ -2,7 +2,7 @@ import { Injectable, Logger } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { TransactionEventSmartContractLog } from "@stacks/stacks-blockchain-api-types";
 import { BidAttribute } from "src/database/universal/entities/BidAttribute";
-import { BidState } from "src/database/universal/entities/BidState";
+import { BidState, BidType } from "src/database/universal/entities/BidState";
 import { BidStateNftMeta } from "src/database/universal/entities/BidStateNftMeta";
 import { CollectionAttribute } from "src/database/universal/entities/CollectionAttribute";
 import { NftMeta } from "src/database/universal/entities/NftMeta";
@@ -11,7 +11,13 @@ import { Collection } from "src/database/universal/entities/Collection";
 import { TransactionEventSmartContractLogWithData } from "src/indexers/stacks-indexer/providers/stacks-tx-helper.service";
 import { In, IsNull, Repository } from "typeorm";
 import { CommonTx } from "../interfaces/common-tx.interface";
-import { BidType, CollectionBidStatus } from "./indexer-enums";
+
+export enum CollectionBidStatus {
+  active = "active",
+  pending = "pending",
+  cancelled = "cancelled",
+  matched = "matched",
+}
 
 export interface CreateBidCommonArgs {
   nonce: number;

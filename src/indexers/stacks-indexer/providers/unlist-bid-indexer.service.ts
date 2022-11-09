@@ -1,9 +1,8 @@
 import { Injectable, Logger } from "@nestjs/common";
-import { Action } from "src/database/universal/entities/Action";
+import { Action, ActionName } from "src/database/universal/entities/Action";
 import { BidState } from "src/database/universal/entities/BidState";
 import { SmartContract } from "src/database/universal/entities/SmartContract";
 import { SmartContractFunction } from "src/database/universal/entities/SmartContractFunction";
-import { ActionName, BidType } from "src/indexers/common/helpers/indexer-enums";
 import { TxBidHelperService } from "src/indexers/common/helpers/tx-bid-helper.service";
 import { TxHelperService } from "src/indexers/common/helpers/tx-helper.service";
 import { CommonTx } from "src/indexers/common/interfaces/common-tx.interface";

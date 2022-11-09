@@ -3,7 +3,33 @@ import { Collection } from "./Collection";
 import { SmartContract } from "./SmartContract";
 import { NftMeta } from "./NftMeta";
 import { Commission } from "./Commission";
-import { ActionName } from "src/indexers/common/helpers/indexer-enums";
+
+export enum ActionName {
+  list = "list",
+  unlist = "unlist",
+  buy = "buy",
+  accept_collection_bid = "accept-collection-bid",
+  accept_attribute_bid = "accept-attribute-bid",
+  accept_bid = "accept-bid",
+  asking_price = "asking-price",
+  attribute_bid = "attribute-bid",
+  bid = "bid",
+  cancel_attribute_bid = "cancel-attribute-bid",
+  cancel_collection_bid = "cancel-collection-bid",
+  collection_bid = "collection-bid",
+  mint = "mint",
+  multi_attribute_bid = "multi-attribute-bid",
+  multi_collection_bid = "multi-collection-bid",
+  relist = "relist",
+  stake = "stake",
+  transfer = "transfer",
+  unlist_bid = "unlist-bid",
+  unlist_collection_bid = "unlist-collection-bid",
+  unstake = "unstake",
+  solo_bid = "solo-bid",
+  burn = "burn",
+  reset_owner = "reset-owner",
+}
 
 @Index("action_pkey", ["id"], { unique: true })
 @Entity("action", { schema: "public" })

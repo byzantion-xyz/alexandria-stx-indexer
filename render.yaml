@@ -3,6 +3,7 @@ services:
   - type: worker
     name: alexandria-data-lake-svc
     env: node
+    repo: https://github.com/byzantion-xyz/alexandria-stx-datalake.git
     region: oregon
     plan: starter
     buildCommand: yarn && yarn build

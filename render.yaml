@@ -24,7 +24,6 @@ services:
     env: node
     region: oregon
     plan: starter
-    branch: release-002-refresh
     buildCommand: yarn && yarn build
     startCommand: yarn start:prod
     autoDeploy: false

@@ -1,11 +1,11 @@
-﻿import { ActionName as ActionNameTO } from "../helpers/indexer-enums";
+import { ActionName } from "src/database/universal/entities/Action";
 
 export interface CreateActionCommonArgs {
   nft_meta_id?: string;
   collection_id: string;
   smart_contract_id: string;
   market_name: string;
-  action: ActionNameTO;
+  action: ActionName;
   block_height: bigint;
   tx_index?: bigint;
   nonce: bigint;
@@ -70,6 +70,14 @@ export interface CreateMultiAttributeBidActionTO extends CreateBidActionTO {
 
 export interface CreateSoloBidActionTO extends CreateBidActionTO {}
 
+export interface CreateMintActionTO extends CreateActionCommonArgs {
+  buyer: string;
+  list_price: bigint;
+}
+export interface CreateBurnActionTO extends CreateActionCommonArgs {
+  seller: string;
+}
+
 export type CreateActionTO =
   | CreateListActionTO
   | CreateUnlistActionTO
@@ -86,4 +94,6 @@ export type CreateActionTO =
   | CreateMultiAttributeBidActionTO
   | CreateCancelBidActionTO
   | CreateSoloBidActionTO
-  | CreateUnlistCollectionBidActionTO;
+  | CreateUnlistCollectionBidActionTO
+  | CreateMintActionTO
+  | CreateBurnActionTO;

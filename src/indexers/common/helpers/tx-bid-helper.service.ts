@@ -1,8 +1,8 @@
-﻿import { Injectable, Logger } from "@nestjs/common";
+import { Injectable, Logger } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { TransactionEventSmartContractLog } from "@stacks/stacks-blockchain-api-types";
 import { BidAttribute } from "src/database/universal/entities/BidAttribute";
-import { BidState } from "src/database/universal/entities/BidState";
+import { BidState, BidType } from "src/database/universal/entities/BidState";
 import { BidStateNftMeta } from "src/database/universal/entities/BidStateNftMeta";
 import { CollectionAttribute } from "src/database/universal/entities/CollectionAttribute";
 import { NftMeta } from "src/database/universal/entities/NftMeta";
@@ -11,7 +11,13 @@ import { Collection } from "src/database/universal/entities/Collection";
 import { TransactionEventSmartContractLogWithData } from "src/indexers/stacks-indexer/providers/stacks-tx-helper.service";
 import { In, IsNull, Repository } from "typeorm";
 import { CommonTx } from "../interfaces/common-tx.interface";
-import { BidType, CollectionBidStatus } from "./indexer-enums";
+
+export enum CollectionBidStatus {
+  active = "active",
+  pending = "pending",
+  cancelled = "cancelled",
+  matched = "matched",
+}
 
 export interface CreateBidCommonArgs {
   nonce: number;
@@ -28,21 +34,12 @@ export interface CreateBidCommonArgs {
   collection_id: string;
 }
 
-export interface CreateCollectionBidStateArgs extends CreateBidCommonArgs {
-  bid_buyer: string;
-}
-
-export interface CreateAttributeBidStateArgs extends CreateCollectionBidStateArgs {}
 export interface CreateBidStateArgs extends CreateBidCommonArgs {
   bid_buyer: string;
 }
 
-//bid_buyer: string;
-//bid_seller: string;
-//math_tx_id: string;
-//cancel_tx_id?: string;
-//pending_txs: string[];
-//pending_tx: string[];
+export interface CreateCollectionBidStateArgs extends CreateBidStateArgs {}
+export interface CreateAttributeBidStateArgs extends CreateBidStateArgs {}
 
 @Injectable()
 export class TxBidHelperService {
@@ -57,11 +54,7 @@ export class TxBidHelperService {
     private collectionAttributeRepo: Repository<CollectionAttribute>
   ) {}
 
-  async createOrReplaceBid(
-    params: CreateCollectionBidStateArgs,
-    bidState?: BidState,
-    nftMetaId?: string
-  ): Promise<BidState> {
+  async createOrReplaceBid(params: CreateBidStateArgs, bidState?: BidState, nftMetaId?: string): Promise<BidState> {
     try {
       if (bidState) {
         bidState = this.bidStateRepo.merge(bidState, params);
@@ -75,10 +68,15 @@ export class TxBidHelperService {
       }
       const saved = await this.bidStateRepo.save(bidState);
 
-      this.logger.log(`New bid_state bid_type:${params.bid_type}  id: ${saved.id} `);
-
       return saved;
-    } catch (err) {}
+    } catch (err) {
+      if (err && (!err.constraint || err.constraint !== "bid_contract_nonce_uk")) {
+        this.logger.warn(`createOrReplaceBid() Failed saving bid_state with id: ${bidState.id}`);
+        this.logger.warn(err);
+
+        throw err;
+      }
+    }
   }
 
   isNewBid(tx: CommonTx, bidState: BidState): boolean {
@@ -90,49 +88,94 @@ export class TxBidHelperService {
     );
   }
 
-  async findActiveBid(collectionId: string, bid_type: BidType, nftMetaId?: string) {
+  async findActiveSoloBid(nftMeta: NftMeta, sc: SmartContract, buyer: string): Promise<BidState> {
+    return await this.findSoloBid(nftMeta, sc, buyer, CollectionBidStatus.active);
+  }
+
+  async findSoloBid(
+    nftMeta: NftMeta,
+    sc: SmartContract,
+    buyer: string,
+    status?: CollectionBidStatus
+  ): Promise<BidState> {
     return await this.bidStateRepo.findOne({
       where: {
-        collection_id: collectionId,
-        bid_type: bid_type,
-        status: CollectionBidStatus.active,
+        ...(nftMeta.collection && { collection_id: nftMeta.collection_id }),
+        smart_contract_id: sc.id,
+        bid_type: BidType.solo,
+        ...(status && { status }),
         nonce: IsNull(),
         bid_contract_nonce: IsNull(),
-        ...(nftMetaId && { nft_metas: { meta_id: nftMetaId } }),
+        nft_metas: { meta_id: nftMeta.id },
+        ...(buyer && { bid_buyer: buyer }),
       },
+      order: { block_height: "desc" },
     });
   }
 
-  async createTokenIdsBid(params: CreateAttributeBidStateArgs, token_ids: [string], trait?: any[]): Promise<BidState> {
+  async findActiveCollectionBid(collectionId: string, sc: SmartContract, buyer: string): Promise<BidState> {
+    return this.findCollectionBid(collectionId, sc, buyer, CollectionBidStatus.active);
+  }
+
+  async findCollectionBid(
+    collectionId: string,
+    sc: SmartContract,
+    buyer: string,
+    status?: CollectionBidStatus
+  ): Promise<BidState> {
+    return await this.bidStateRepo.findOne({
+      where: {
+        collection_id: collectionId,
+        smart_contract_id: sc.id,
+        bid_type: BidType.collection,
+        ...(status && { status }),
+        nonce: IsNull(),
+        bid_contract_nonce: IsNull(),
+        ...(buyer && { bid_buyer: buyer }),
+      },
+      order: { block_height: "desc" },
+    });
+  }
+
+  async createTokenIdsBid(params: CreateAttributeBidStateArgs, token_ids: [string], trait?: [any]): Promise<BidState> {
     const bidState = this.bidStateRepo.create(params);
+    bidState.nft_metas = [];
+    bidState.attributes = [];
     return await this.setTokenIdsAndAttributes(bidState, token_ids, trait);
   }
 
-  async setTokenIdsAndAttributes(bidState: BidState, token_ids: [string], trait?: any[]): Promise<BidState> {
+  async setTokenIdsAndAttributes(bidState: BidState, token_ids: [string], trait?: [any]): Promise<BidState> {
     try {
-      const nftMetas = await this.nftMetaRepo.find({ where: { token_id: In(token_ids) } });
+      const nftMetas = await this.nftMetaRepo.find({
+        where: {
+          collection_id: bidState.collection_id,
+          token_id: In(token_ids),
+        },
+      });
+
       for (let meta of nftMetas) {
         const bidStateNftMeta = new BidStateNftMeta();
         bidStateNftMeta.meta_id = meta.id;
         bidState.nft_metas.push(bidStateNftMeta);
       }
 
-      for (let attr of trait) {
-        const bid_attribute = new BidAttribute();
-        const collectionAttribute = await this.collectionAttributeRepo.findOne({
-          where: {
-            collection_id: bidState.collection_id,
-            trait_type: attr.trait_type,
-            value: attr.value,
-          },
-        });
-        bid_attribute.collection_attribute_id = collectionAttribute.id;
-        bidState.attributes.push(bid_attribute);
+      if (trait && trait.length) {
+        for (let attr of trait) {
+          const bid_attribute = new BidAttribute();
+          const collectionAttribute = await this.collectionAttributeRepo.findOne({
+            where: {
+              collection_id: bidState.collection_id,
+              trait_type: attr.trait_type,
+              value: attr.value,
+            },
+          });
+          bid_attribute.collection_attribute_id = collectionAttribute.id;
+          bidState.attributes.push(bid_attribute);
+        }
       }
-
       const saved = await this.bidStateRepo.save(bidState);
 
-      this.logger.log(`New attribute Bid: ${bidState.bid_type}: ${saved.id} `);
+      this.logger.debug(`New bid_state bid_type: ${bidState.bid_type} id: ${saved.id} `);
 
       return saved;
     } catch (err) {}
@@ -150,35 +193,7 @@ export class TxBidHelperService {
     return await this.createTokenIdsBid(params, [token_id]);
   }
 
-  async findBidStateByNonce(nonce: string): Promise<BidState> {
-    return await this.bidStateRepo.findOne({
-      where: { bid_contract_nonce: nonce },
-      relations: { collection: { smart_contract: true } },
-    });
-  }
-
   setCommonBidArgs(
-    tx: CommonTx,
-    sc: SmartContract,
-    e: TransactionEventSmartContractLogWithData,
-    collection: Collection,
-    type: BidType
-  ): CreateBidCommonArgs {
-    return {
-      smart_contract_id: sc.id,
-      collection_id: collection.id,
-      nonce: Number(e.data.order),
-      bid_contract_nonce: this.build_nonce(e.contract_log.contract_id, e.data.order),
-      bid_price: e.data.data.offer,
-      tx_id: tx.hash,
-      tx_index: tx.index,
-      block_height: tx.block_height,
-      bid_type: type,
-      status: CollectionBidStatus.active,
-    };
-  }
-
-  setCommonV6BidArgs(
     tx: CommonTx,
     sc: SmartContract,
     collection: Collection,
@@ -187,7 +202,7 @@ export class TxBidHelperService {
   ): CreateBidCommonArgs {
     return {
       smart_contract_id: sc.id,
-      collection_id: collection.id,
+      ...(collection && { collection_id: collection.id }),
       nonce: null,
       bid_contract_nonce: null,
       bid_price: BigInt(price),
@@ -197,6 +212,27 @@ export class TxBidHelperService {
       bid_type: type,
       status: CollectionBidStatus.active,
     };
+  }
+
+  async acceptSoloBid(bidState: BidState, tx: CommonTx) {
+    try {
+      await this.bidStateRepo.update(
+        { id: bidState.id },
+        {
+          status: CollectionBidStatus.matched,
+          bid_seller: tx.signer,
+          match_tx_id: tx.hash,
+        }
+      );
+
+      this.logger.debug(`Accept solo bid id: ${bidState.id} ` + ` ${bidState.nonce ? "nonce: " + bidState.nonce : ""}`);
+    } catch (err) {
+      this.logger.warn(
+        `Error saving bid acceptance id: ${bidState.id} ` + ` ${bidState.nonce ? "nonce: " + bidState.nonce : ""}`
+      );
+
+      throw err;
+    }
   }
 
   async acceptBid(bidState: BidState, tx: CommonTx, nftMeta: NftMeta) {
@@ -209,25 +245,30 @@ export class TxBidHelperService {
       bidState.nft_metas = [bidStateNftMeta];
 
       await this.bidStateRepo.save(bidState);
-      this.logger.log(`Accept bid nonce: ${bidState.nonce || "unknown"}`);
+      this.logger.debug(`Accept solo bid id: ${bidState.id} ` + ` ${bidState.nonce ? "nonce: " + bidState.nonce : ""}`);
     } catch (err) {
-      this.logger.warn("Error saving acceptance", bidState.nonce, err);
+      this.logger.warn(
+        `Error saving bid acceptance id: ${bidState.id} ` + ` ${bidState.nonce ? "nonce: " + bidState.nonce : ""}`
+      );
+      throw err;
     }
   }
 
   async cancelBid(bidState: BidState, tx: CommonTx) {
     try {
-      bidState.status = CollectionBidStatus.cancelled;
-      bidState.cancel_tx_id = tx.hash;
+      await this.bidStateRepo.update(
+        { id: bidState.id },
+        {
+          status: CollectionBidStatus.cancelled,
+          cancel_tx_id: tx.hash,
+        }
+      );
 
-      await this.bidStateRepo.save(bidState);
-      this.logger.log(`Cancelled bid nonce: ${bidState.nonce || "Unknown"} `);
+      this.logger.debug(`Cancelled bid id: ${bidState.id} ` + ` ${bidState.nonce ? "nonce: " + bidState.nonce : ""}`);
     } catch (err) {
-      this.logger.warn("Error saving cancellation with nonce: ", bidState.nonce || "Unknown", err);
+      this.logger.warn(
+        `Error saving bid cancellation id: ${bidState.id} ` + ` ${bidState.nonce ? "nonce: " + bidState.nonce : ""}`
+      );
     }
-  }
-
-  build_nonce(contract_key: string, order: bigint): string {
-    return `${contract_key}::${order.toString()}`;
   }
 }

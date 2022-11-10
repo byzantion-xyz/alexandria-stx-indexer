@@ -1,4 +1,4 @@
-﻿import { Column, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 import { SmartContract } from "./SmartContract";
 
 @Index("smart_contract_function_function_name_smart_contract_id_key", ["function_name", "smart_contract_id"], {
@@ -19,20 +19,18 @@ export class SmartContractFunction {
   @Column("jsonb")
   args: object;
 
-  @Column("jsonb", { nullable: true })
+  @Column("jsonb")
   data: object;
 
   @Column("uuid")
   smart_contract_id: string;
 
   @Column("timestamp without time zone", {
-    default: "CURRENT_TIMESTAMP",
+    default: () => "CURRENT_TIMESTAMP",
   })
   created_at: Date;
 
-  @Column("timestamp without time zone", {
-    default: "CURRENT_TIMESTAMP",
-  })
+  @Column("timestamp without time zone")
   updated_at: Date;
 
   @ManyToOne(() => SmartContract, (smartContract) => smartContract.smart_contract_functions, {

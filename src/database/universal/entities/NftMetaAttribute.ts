@@ -1,4 +1,5 @@
-﻿import { Column, Entity, Index, JoinColumn, ManyToOne, OneToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, Index, JoinColumn, ManyToOne, OneToOne, PrimaryGeneratedColumn } from "typeorm";
+import { MegapontAttribute } from "./MegapontAttribute";
 import { NftMeta } from "./NftMeta";
 
 @Index("nft_meta_attribute_pkey", ["id"], { unique: true })
@@ -16,12 +17,14 @@ export class NftMetaAttribute {
   value: string;
 
   @Column("double precision", {
-    default: "0",
+    precision: 53,
+    default: () => "0",
   })
   rarity: number;
 
   @Column("double precision", {
-    default: "0",
+    precision: 53,
+    default: () => "0",
   })
   score: number;
 
@@ -29,13 +32,11 @@ export class NftMetaAttribute {
   meta_id: string;
 
   @Column("timestamp without time zone", {
-    default: "CURRENT_TIMESTAMP",
+    default: () => "CURRENT_TIMESTAMP",
   })
   created_at: Date;
 
-  @Column("timestamp without time zone", {
-    default: "CURRENT_TIMESTAMP",
-  })
+  @Column("timestamp without time zone")
   updated_at: Date;
 
   @ManyToOne(() => NftMeta, (nftMeta) => nftMeta.attributes, {
@@ -44,4 +45,7 @@ export class NftMetaAttribute {
   })
   @JoinColumn([{ name: "meta_id", referencedColumnName: "id" }])
   meta: NftMeta;
+
+  @OneToOne(() => MegapontAttribute, (megapontAttribute) => megapontAttribute.nft_meta_attribute, { cascade: true })
+  megapont_attribute: MegapontAttribute;
 }

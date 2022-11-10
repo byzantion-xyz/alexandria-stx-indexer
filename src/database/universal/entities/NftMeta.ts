@@ -1,4 +1,4 @@
-﻿import {
+import {
   Column,
   Entity,
   Index,
@@ -14,7 +14,7 @@ import { Chain } from "./Chain";
 import { Collection } from "./Collection";
 import { SmartContract } from "./SmartContract";
 import { NftMetaAttribute } from "./NftMetaAttribute";
-// import { NftMetaBns } from "../entities-excluded/NftMetaBns";
+import { NftMetaBns } from "./NftMetaBns";
 import { NftState } from "./NftState";
 import { BidStateNftMeta } from "./BidStateNftMeta";
 import { BidState } from "./BidState";
@@ -31,7 +31,7 @@ export class NftMeta {
   @Column("text")
   uuid: string;
 
-  @Column("text")
+  @Column("text", { nullable: true })
   name: string;
 
   @Column("text")
@@ -40,7 +40,7 @@ export class NftMeta {
   @Column("text")
   token_id: string;
 
-  @Column("double precision", { nullable: true })
+  @Column("double precision", { nullable: true, precision: 53 })
   rarity: number | null;
 
   @Column("integer")
@@ -56,16 +56,14 @@ export class NftMeta {
   collection_id: string | null;
 
   @Column("timestamp without time zone", {
-    default: "CURRENT_TIMESTAMP",
+    default: () => "CURRENT_TIMESTAMP",
   })
   created_at: Date;
 
-  @Column("boolean", { default: "false" })
+  @Column("boolean", { default: () => "false" })
   chain_locked: boolean;
 
-  @Column("timestamp without time zone", {
-    default: "CURRENT_TIMESTAMP",
-  })
+  @Column("timestamp without time zone")
   updated_at: Date;
 
   @Column("jsonb", { nullable: true })
@@ -103,6 +101,9 @@ export class NftMeta {
 
   @OneToMany(() => NftMetaAttribute, (nftMetaAttribute) => nftMetaAttribute.meta, { cascade: true })
   attributes: NftMetaAttribute[];
+
+  @OneToOne(() => NftMetaBns, (nftMetaBns) => nftMetaBns.meta)
+  nft_meta_bns: NftMetaBns;
 
   @OneToOne(() => NftState, (nftState) => nftState.meta)
   nft_state: NftState;

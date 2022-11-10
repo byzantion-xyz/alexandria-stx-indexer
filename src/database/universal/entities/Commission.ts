@@ -1,4 +1,4 @@
-﻿import { Column, Entity, Index, JoinColumn, OneToMany, OneToOne } from "typeorm";
+import { Column, Entity, Index, JoinColumn, OneToMany, OneToOne } from "typeorm";
 import { Action } from "./Action";
 import { NftState } from "./NftState";
 import { NftStateList } from "./NftStateList";
@@ -17,10 +17,10 @@ export class Commission {
   @Column("boolean")
   custodial: boolean;
 
-  @Column("float4", { default: 0 })
+  @Column("float4", { default: () => 0 })
   commission: number;
 
-  @Column("float4", { default: 0 })
+  @Column("float4", { default: () => 0 })
   royalty: number;
 
   @Column("integer", { nullable: true })
@@ -33,13 +33,11 @@ export class Commission {
   market_name: string;
 
   @Column("timestamp without time zone", {
-    default: "CURRENT_TIMESTAMP",
+    default: () => "CURRENT_TIMESTAMP",
   })
   created_at: Date;
 
-  @Column("timestamp without time zone", {
-    default: "CURRENT_TIMESTAMP",
-  })
+  @Column("timestamp without time zone")
   updated_at: Date;
 
   @OneToOne(() => SmartContract, (smartContract) => smartContract.commission, {

@@ -1,4 +1,5 @@
-﻿import { Column, Entity, Index, OneToMany } from "typeorm";
+import { Column, Entity, Index, OneToMany } from "typeorm";
+import { CryptoRate } from "./CryptoRate";
 import { NftMeta } from "./NftMeta";
 import { SmartContract } from "./SmartContract";
 
@@ -13,13 +14,11 @@ export class Chain {
   name: string;
 
   @Column("timestamp without time zone", {
-    default: "CURRENT_TIMESTAMP",
+    default: () => "CURRENT_TIMESTAMP",
   })
   created_at: Date;
 
-  @Column("timestamp without time zone", {
-    default: "CURRENT_TIMESTAMP",
-  })
+  @Column("timestamp without time zone")
   updated_at: Date;
 
   @Column("integer")
@@ -36,4 +35,7 @@ export class Chain {
 
   @OneToMany(() => SmartContract, (smartContract) => smartContract.chain)
   smart_contracts: SmartContract[];
+
+  @OneToMany(() => CryptoRate, (cryptoRate) => cryptoRate.chain)
+  crypto_rates: CryptoRate[];
 }

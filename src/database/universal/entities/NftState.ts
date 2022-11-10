@@ -1,4 +1,4 @@
-﻿import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
 import { SmartContract } from "./SmartContract";
 import { NftMeta } from "./NftMeta";
 import { NftStateList } from "./NftStateList";
@@ -10,16 +10,16 @@ export class NftState {
   @PrimaryGeneratedColumn("uuid")
   readonly id!: string;
 
-  @Column("boolean", { default: "false" })
+  @Column("boolean", { default: () => "false" })
   burned: boolean;
 
-  @Column("boolean", { default: "false" })
+  @Column("boolean", { default: () => "false" })
   minted: boolean;
 
   @Column("text", { nullable: true })
   mint_tx: string | null;
 
-  @Column("boolean", { default: "false" })
+  @Column("boolean", { default: () => "false" })
   staked: boolean;
 
   @Column("text", { nullable: true })
@@ -31,12 +31,19 @@ export class NftState {
   @Column("bigint", { nullable: true })
   staked_tx_index: bigint;
 
+  @Column("text", { nullable: true })
+  owner: string | null;
+
+  @Column("bigint", { nullable: true })
+  owner_block_height: bigint;
+
+  @Column("bigint", { nullable: true })
+  owner_tx_id: string | null;
+
   @Column("uuid")
   meta_id: string;
 
-  @Column("timestamp without time zone", {
-    default: "CURRENT_TIMESTAMP",
-  })
+  @Column("timestamp without time zone")
   updated_at: Date;
 
   @Column("uuid", { nullable: true })

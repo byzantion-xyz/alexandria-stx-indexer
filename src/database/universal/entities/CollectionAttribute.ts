@@ -1,4 +1,4 @@
-﻿import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany } from "typeorm";
+import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany } from "typeorm";
 import { BidAttribute } from "./BidAttribute";
 import { Collection } from "./Collection";
 
@@ -14,20 +14,18 @@ export class CollectionAttribute {
   @Column("text")
   value: string;
 
-  @Column("double precision")
+  @Column("double precision", { precision: 53 })
   rarity: number;
 
   @Column("uuid")
   collection_id: string;
 
   @Column("timestamp without time zone", {
-    default: "CURRENT_TIMESTAMP",
+    default: () => "CURRENT_TIMESTAMP",
   })
   created_at: Date;
 
-  @Column("timestamp without time zone", {
-    default: "CURRENT_TIMESTAMP",
-  })
+  @Column("timestamp without time zone")
   updated_at: Date;
 
   @Column("text")

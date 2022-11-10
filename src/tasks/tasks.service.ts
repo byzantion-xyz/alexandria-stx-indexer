@@ -1,7 +1,6 @@
-﻿import { Injectable, Logger } from "@nestjs/common";
+import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { Cron, CronExpression, Timeout } from "@nestjs/schedule";
-import { IndexerEventType } from "src/indexers/common/helpers/indexer-enums";
 import { IndexerOptions } from "src/indexers/common/interfaces/indexer-options";
 import { IndexerOrchestratorService } from "src/indexers/indexer-orchestrator.service";
 
@@ -12,8 +11,9 @@ export class TasksService {
   constructor(private indexerOrchestrator: IndexerOrchestratorService, private configService: ConfigService) {}
 
   @Timeout(10000)
-  async handlePendingTxs() {
-    if (process.env.NODE_ENV === "production") {
+  async handleCron() {
+    const runPendingTransactions = this.configService.get("indexer.runPendingTransactions");
+    if (runPendingTransactions) {
       const blockConfig = this.configService.get("indexer.blockRanges")[this.configService.get("indexer.chainSymbol")];
       const initial_block = blockConfig.start_block_height_tip;
       const end_block = blockConfig.end_block_height;
@@ -26,13 +26,14 @@ export class TasksService {
 
         await this.indexerOrchestrator.runIndexer(options);
       }
-    } else {
-      this.logger.debug("Not in production environment. Skipping near indexer pending txs trigger.");
     }
   }
 
   @Timeout(2000)
   handleIndexerSubscription() {
-    this.indexerOrchestrator.subscribeToEvents();
+    const streamerSubscription = this.configService.get("indexer.enableStreamerSubscription");
+    if (streamerSubscription) {
+      this.indexerOrchestrator.subscribeToEvents();
+    }
   }
 }

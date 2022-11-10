@@ -12,6 +12,20 @@ It consists of 2 components:
 
 Follow these setup steps to get going with the indexer. You can also watch starlord walking you through the setup in the following video https://www.loom.com/share/a02e448a7e3e47888df0f4121ab20771
 
+The setup steps are also documented below. However, if you want to take the easy route and do a **1-click deploy**, then see the immediate optione below:
+
+### 1-Click Render Deploy
+
+This option makes it possible to deploy a full running instance of the Alexandria STX Indexer stack inside a set of hosted [render.com](https://render.com) services.
+
+To get started, you will need to [register for a render account](https://dashboard.render.com/register) and get familiar with the [documentation for render](https://render.com/docs).
+
+Once you've registered, hit this big blue button:
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/byzantion-xyz/alexandria-stx-indexer&branch=main)
+
+Important! Please note that this deployment uses paid starter plans for most of the services (you can upgrade as your needs require) and requires that you have payment details added to your account. Check the Render pricing for pricing information.
+
 ### 1. Dependencies
 
 For proper functioning, the Indexer relies on a live instance of the [Alexandria STX Data Lake](https://github.com/byzantion-xyz/alexandria-stx-datalake) service and database. Refer to the [repository for the data lake here](https://github.com/byzantion-xyz/alexandria-stx-datalake) for instruction on how to get this setup.

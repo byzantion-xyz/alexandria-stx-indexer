@@ -51,7 +51,8 @@ const microIndexers = [
   NftTransferEventIndexerService,
   NftBurnEventIndexerService,
   NftMintEventIndexerService,
-  // Add new micro-indexer here
+  // Add new micro-indexers under here
+  StakeIndexerService
 ];
 ```
 

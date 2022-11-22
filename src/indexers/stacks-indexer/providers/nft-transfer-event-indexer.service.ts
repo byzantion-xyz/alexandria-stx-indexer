@@ -30,7 +30,7 @@ export class NftTransferEventIndexerService implements IndexerService {
       return txResult;
     }
 
-    const contract_key = this.stacksTxHelper.extractContractKeyFromNftEvent(event);
+    const { contract_key } = this.stacksTxHelper.parseAssetIdFromNftEvent(event);
     const seller = event.asset.sender;
     const buyer = event.asset.recipient;
 
@@ -40,7 +40,8 @@ export class NftTransferEventIndexerService implements IndexerService {
       return txResult;
     }
 
-    const nftMeta = await this.txHelper.createOrFetchMetaByContractKey(contract_key, token_id, sc.chain_id);
+    const asset = this.stacksTxHelper.parseAssetIdFromNftEvent(event);
+    const nftMeta = await this.txHelper.createOrFetchMetaByContractKey(contract_key, token_id, sc.chain_id, asset.name);
 
     const actionArgs = this.txHelper.setCommonActionParams(ActionName.transfer, tx, nftMeta);
     const transferParams: CreateTransferActionTO = {

@@ -51,7 +51,12 @@ export class TxHelperService {
     return nftMeta;
   }
 
-  async createOrFetchMetaByContractKey(contract_key: string, token_id: string, chain_id: string): Promise<NftMeta> {
+  async createOrFetchMetaByContractKey(
+    contract_key: string,
+    token_id: string,
+    chain_id: string,
+    asset_name?: string
+  ): Promise<NftMeta> {
     if (!contract_key || !chain_id || typeof token_id === "undefined") {
       throw new Error(`invalid parameters ${contract_key} ${token_id} ${chain_id}`);
     }
@@ -63,12 +68,19 @@ export class TxHelperService {
         where: { contract_key },
         relations: { collections: true },
       });
+
       let collection: Collection;
 
       if (!smartContract) {
-        smartContract = await this.createSmartContractSkeleton(contract_key, chain_id);
-      } else if (!smartContract.custodial_smart_contract_id && smartContract.collections.length === 1) {
-        collection = smartContract.collections[0];
+        smartContract = await this.createSmartContractSkeleton(contract_key, chain_id, asset_name);
+      } else {
+        if (!smartContract.custodial_smart_contract_id && smartContract.collections.length === 1) {
+          collection = smartContract.collections[0];
+        }
+        if (!smartContract.asset_name && asset_name) {
+          smartContract.asset_name = asset_name;
+          await this.smartContractRepository.save(smartContract);
+        }
       }
 
       nftMeta = await this.createMetaSkeleton(smartContract, token_id, collection);
@@ -83,12 +95,17 @@ export class TxHelperService {
     return nftMeta;
   }
 
-  async createSmartContractSkeleton(contract_key: string, chain_id: string): Promise<SmartContract> {
+  async createSmartContractSkeleton(
+    contract_key: string,
+    chain_id: string,
+    asset_name?: string
+  ): Promise<SmartContract> {
     this.logger.debug(`createSmartContractSkeleton() contract_key: ${contract_key}`);
 
     try {
       const smartContract = this.smartContractRepository.create({
         contract_key,
+        ...(asset_name && { asset_name }),
         type: [SmartContractType.non_fungible_tokens],
         chain_id,
       });

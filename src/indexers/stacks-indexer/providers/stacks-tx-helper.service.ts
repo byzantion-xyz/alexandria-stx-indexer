@@ -42,6 +42,11 @@ export type TransactionEventSmartContractLogWithData = TransactionEventSmartCont
   };
 };
 
+interface Asset {
+  contract_key: string
+  name: string
+};
+
 @Injectable()
 export class StacksTxHelperService {
   private byzOldMarketplaces: [string];
@@ -166,12 +171,16 @@ export class StacksTxHelperService {
     ) as TransactionEventNonFungibleAsset;
   }
 
-  parseContractKeyFromAssetId(assetId: string) {
-    return assetId.split("::")[0].replace("'", "");
+  parseAssetId(assetId: string): Asset {
+    const arr = assetId.split('::');
+    return {
+      contract_key: arr[0].replace("'", ""),
+      name: arr[1]
+    };
   }
 
-  extractContractKeyFromNftEvent(e: TransactionEventNonFungibleAsset): string {
-    return this.parseContractKeyFromAssetId(e.asset.asset_id);
+  parseAssetIdFromNftEvent(e: TransactionEventNonFungibleAsset): Asset {
+    return this.parseAssetId(e.asset.asset_id);
   }
 
   extractContractKeyFromEvent(e: TransactionEventSmartContractLogWithData): string {

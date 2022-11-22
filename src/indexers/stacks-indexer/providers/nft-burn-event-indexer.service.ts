@@ -29,10 +29,11 @@ export class NftBurnEventIndexerService implements IndexerService {
       this.logger.warn("Unable to extract token_id from NFT event");
       return txResult;
     }
-    const contract_key = this.stacksTxHelper.extractContractKeyFromNftEvent(event);
+    const { contract_key } = this.stacksTxHelper.parseAssetIdFromNftEvent(event);
     const seller = event.asset.sender;
 
-    const nftMeta = await this.txHelper.createOrFetchMetaByContractKey(contract_key, token_id, sc.chain_id);
+    const asset = await this.stacksTxHelper.parseAssetIdFromNftEvent(event);
+    const nftMeta = await this.txHelper.createOrFetchMetaByContractKey(contract_key, token_id, sc.chain_id, asset.name);
 
     const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName.burn, tx, nftMeta, sc);
     const burnActionParams: CreateBurnActionTO = { ...actionCommonArgs, seller };

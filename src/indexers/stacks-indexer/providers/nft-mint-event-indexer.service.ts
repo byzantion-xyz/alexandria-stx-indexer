@@ -31,11 +31,12 @@ export class NftMintEventIndexerService implements IndexerService {
       this.logger.warn("Unable to extract token_id from NFT event");
       return txResult;
     }
-    const contract_key = this.stacksTxHelper.extractContractKeyFromNftEvent(event);
+    const { contract_key } = this.stacksTxHelper.parseAssetIdFromNftEvent(event);
     const buyer = event.asset.recipient;
     const price = this.stacksTxHelper.findAndExtractMintPrice(event, tx.events);
 
-    const nftMeta = await this.txHelper.createOrFetchMetaByContractKey(contract_key, token_id, sc.chain_id);
+    const asset = this.stacksTxHelper.parseAssetIdFromNftEvent(event);
+    const nftMeta = await this.txHelper.createOrFetchMetaByContractKey(contract_key, token_id, sc.chain_id, asset.name);
 
     const actionCommonArgs = this.txHelper.setCommonActionParams(ActionName.mint, tx, nftMeta, sc);
     const mintActionParams: CreateMintActionTO = {
